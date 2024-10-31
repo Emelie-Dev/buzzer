@@ -1,11 +1,11 @@
 @font-face {
   font-family: appFont;
-  src: url(../../public/assets/fonts/Poppins-Regular.ttf);
+  src: url(../../assets/fonts/Poppins-Regular.ttf);
 }
 
 @font-face {
   font-family: appFontMedium;
-  src: url(../../public/assets/fonts/Poppins-Medium.ttf);
+  src: url(../../assets/fonts/Poppins-Medium.ttf);
 }
 
 :root {

@@ -149,7 +149,7 @@ const Auth = () => {
           <form className={styles.form} action="#">
             <div className={styles['logo-head']}>
               <img
-                src="../../public/assets/logo.png"
+                src="../../assets/logo.png"
                 alt="Buzzer Logo"
                 className={styles.logo}
               />
@@ -329,7 +329,7 @@ const Auth = () => {
           <form className={styles.form} action="#">
             <div className={styles['logo-head']}>
               <img
-                src="../../public/assets/logo.png"
+                src="../../assets/logo.png"
                 alt="Buzzer Logo"
                 className={styles.logo}
               />
