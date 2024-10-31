@@ -1,0 +1,23 @@
+@font-face {
+  font-family: appFont;
+  src: url(../../public/assets/fonts/Poppins-Regular.ttf);
+}
+
+@font-face {
+  font-family: appFontMedium;
+  src: url(../../public/assets/fonts/Poppins-Medium.ttf);
+}
+
+:root {
+  --dark-theme-background: #141420;
+  --general-font-family: appFont, sans-serif;
+  --app-theme-color: #a855f7;
+}
+
+body {
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
