@@ -373,6 +373,25 @@
   pointer-events: none;
 }
 
+.alt-auth {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  align-items: center;
+  justify-content: center;
+  color: gray;
+  display: none;
+}
+
+.alt-link {
+  margin-left: 1rem;
+  cursor: pointer;
+  color: #333;
+}
+
+.alt-link:hover {
+  font-weight: 600;
+}
+
 /* Animations */
 
 @keyframes show {
@@ -409,10 +428,102 @@
 
 @media screen and (max-width: 800px) {
   .container {
-    width: 95vw;
+    width: 97vw;
+  }
+
+  .form-div {
+    padding: 0 1.5rem;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .body {
+    background: -webkit-linear-gradient(
+        to bottom right,
+        rgb(20, 20, 32, 0.8),
+        rgb(168, 85, 247, 0.8) 80%
+      ),
+      url('../../assets/images/people.avif');
+    background: linear-gradient(
+        to bottom right,
+        rgb(20, 20, 32, 0.8),
+        rgb(168, 85, 247, 0.8) 80%
+      ),
+      url('../../assets/images/people.avif');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 0 0;
+  }
+
+  .container {
+    width: 75vw;
+  }
+
+  .overlay-container {
+    display: none;
+  }
+
+  .sign-in-container {
+    width: 100%;
+  }
+
+  .sign-up-container {
+    width: 100%;
+  }
+
+  .form-div {
+    padding: 0 2.75rem;
+  }
+
+  .alt-auth {
+    display: flex;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .container {
+    width: 80vw;
   }
 
   .form-div {
     padding: 0 2rem;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .container {
+    width: 90vw;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .container {
+    width: 95vw;
+  }
+
+  .form-div {
+    padding: 0 1.5rem;
+  }
+
+  .alt-auth {
+    flex-direction: column;
+  }
+
+  .alt-link {
+    margin-top: 0.2rem;
+  }
+
+  .logo-head {
+    padding: 2rem 1.3rem;
+  }
+}
+
+@media screen and (max-width: 300px) {
+  .form-div {
+    padding: 0 1rem;
+  }
+
+  .logo-head {
+    padding: 2rem 1rem;
   }
 }

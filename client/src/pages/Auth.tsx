@@ -313,6 +313,16 @@ const Auth = () => {
                 </div>
               </span>
 
+              <span className={styles['alt-auth']}>
+                Already have an account?
+                <span
+                  className={styles['alt-link']}
+                  onClick={() => setAuthMode('signin')}
+                >
+                  Sign in
+                </span>
+              </span>
+
               <button
                 className={`${styles.button} ${styles['btn']} ${
                   !authValid.signup ? styles['disable-btn'] : ''
@@ -393,9 +403,20 @@ const Auth = () => {
                   )}
                 </span>
               </span>
+
               <a href="#" className={styles.link}>
                 Forgot your password?
               </a>
+              <span className={styles['alt-auth']}>
+                Don't have an account?{' '}
+                <span
+                  className={styles['alt-link']}
+                  onClick={() => setAuthMode('signup')}
+                >
+                  Sign up
+                </span>
+              </span>
+
               <button
                 className={`${styles.button} ${styles['btn']} ${
                   !authValid.signin ? styles['disable-btn'] : ''
