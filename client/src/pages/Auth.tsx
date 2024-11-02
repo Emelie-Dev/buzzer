@@ -419,8 +419,8 @@ const Auth = () => {
 
               <button
                 className={`${styles.button} ${styles['btn']} ${
-                  !authValid.signin ? styles['disable-btn'] : ''
-                }`}
+                  styles['btn2']
+                }  ${!authValid.signin ? styles['disable-btn'] : ''}`}
               >
                 Sign In
               </button>

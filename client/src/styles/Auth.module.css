@@ -546,15 +546,13 @@
 
 /* Height */
 
-@media screen and (max-height: 700) {
-  .btn {
-    margin-bottom: 2rem;
-  }
-}
-
 @media screen and (min-height: 700px) {
   .container {
     height: 85vh;
+  }
+
+  .btn2 {
+    margin-bottom: 2rem;
   }
 }
 
