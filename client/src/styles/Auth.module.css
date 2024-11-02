@@ -494,6 +494,10 @@
   .alt-auth {
     display: flex;
   }
+
+  .btn {
+    margin-bottom: 2rem;
+  }
 }
 
 @media screen and (max-width: 600px) {
