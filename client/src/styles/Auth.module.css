@@ -494,10 +494,6 @@
   .alt-auth {
     display: flex;
   }
-
-  .btn {
-    margin-bottom: 2rem;
-  }
 }
 
 @media screen and (max-width: 600px) {
@@ -549,6 +545,12 @@
 }
 
 /* Height */
+
+@media screen and (max-height: 700) {
+  .btn {
+    margin-bottom: 2rem;
+  }
+}
 
 @media screen and (min-height: 700px) {
   .container {
