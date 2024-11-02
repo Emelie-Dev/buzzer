@@ -554,30 +554,30 @@
 
 @media screen and (min-height: 800px) {
   .container {
-    height: 77vh;
+    height: 74vh;
   }
 }
 
 @media screen and (min-height: 900px) {
   .container {
-    height: 67vh;
+    height: 66vh;
   }
 }
 
 @media screen and (min-height: 1000px) {
   .container {
-    height: 60vh;
+    height: 59vh;
   }
 }
 
 @media screen and (min-height: 1100px) {
   .container {
-    height: 55vh;
+    height: 54vh;
   }
 }
 
 @media screen and (min-height: 1300px) {
   .container {
-    height: 50vh;
+    height: 49vh;
   }
 }
