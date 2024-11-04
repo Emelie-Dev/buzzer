@@ -1,11 +1,21 @@
 @font-face {
   font-family: appFont;
-  src: url(../../assets/fonts/Poppins-Regular.ttf);
+  src: url(../../assets/fonts/poppins/Poppins-Regular.ttf);
 }
 
 @font-face {
   font-family: appFontMedium;
-  src: url(../../assets/fonts/Poppins-Medium.ttf);
+  src: url(../../assets/fonts/poppins/Poppins-Medium.ttf);
+}
+
+@font-face {
+  font-family: appFontBold;
+  src: url(../../assets/fonts/poppins/Poppins-Bold.ttf);
+}
+
+@font-face {
+  font-family: logoFont;
+  src: url(../../assets/fonts/harrington/HARNGTON.TTF);
 }
 
 :root {
@@ -16,6 +26,7 @@
 
 body {
   margin: 0;
+  padding: 0;
 }
 
 * {

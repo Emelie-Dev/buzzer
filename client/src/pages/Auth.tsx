@@ -55,7 +55,7 @@ const Auth = () => {
   const checkBoxRef = useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
-    document.title = 'Buzzer - Auth';
+    document.title = 'Buzzer - Authentication';
   }, []);
 
   useEffect(() => {

@@ -1,0 +1,12 @@
+Pages =>
+ - Home
+ - Search
+ - Following
+ - Reels
+ - Inbox
+ - Profile
+ - Notifications
+ - More (settings, saved, history, logout, app theme)
+
+ Updates =>
+  - Change apperace icon based on theme
