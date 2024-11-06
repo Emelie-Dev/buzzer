@@ -245,7 +245,7 @@ const NavBar = ({ page }: NavBarProps) => {
                     opacity: 1,
                     transform: ' matrix(1 0 0 1 0 0) ',
                   }}
-                  stroke-linecap="round"
+                  strokeLinecap="round"
                 />
                 <linearGradient
                   id="SVGID_45"
@@ -273,7 +273,7 @@ const NavBar = ({ page }: NavBarProps) => {
                     opacity: 1,
                     transform: ' matrix(1 0 0 1 0 0) ',
                   }}
-                  stroke-linecap="round"
+                  strokeLinecap="round"
                 />
               </g>
             </svg>

@@ -1,0 +1,179 @@
+.content {
+  border-top: 1px solid rgb(128, 128, 128, 0.4);
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.content-head {
+  font-family: appFont;
+  font-weight: 500;
+  margin: 0;
+  padding: 1.1rem 0;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.content-head-box {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: 100%;
+}
+
+.content-name-box {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: calc(100% - 3.5rem);
+}
+
+.content-nickname {
+  font-weight: 600;
+}
+
+.content-username {
+  color: gray;
+  margin-left: 0.5rem;
+}
+
+.dot {
+  fill: gray;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.content-time {
+  color: gray;
+}
+
+.content-menu {
+  color: gray;
+  margin-left: auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.content-menu:hover {
+  color: var(--app-theme-color);
+}
+
+.content-box {
+  display: flex;
+}
+
+.menu-container {
+  margin-left: 2rem;
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+}
+
+.profile-img-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 50%;
+  margin-bottom: 1.5rem;
+}
+
+.profile-img {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-icon-box {
+  position: absolute;
+  bottom: -10px;
+  background: var(--app-theme-color);
+  padding: 0.3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.profile-icon {
+  fill: white;
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.menu-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+
+.menu-icon-box {
+  background: rgb(128, 128, 128, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0.7rem;
+}
+
+.menu-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: black;
+}
+
+.menu-text {
+  font-family: appFontBold;
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+}
+
+.menu-icon-box:hover {
+  box-shadow: 1px 1px 5px -3px black;
+}
+
+.content-description {
+  margin-top: 1rem;
+  font-family: appFont;
+  font-size: 0.9rem;
+  white-space: pre-line;
+  word-wrap: break-word;
+  max-height: 50px;
+  overflow: hidden;
+  position: relative;
+  width: 85%;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.content-description2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1.2rem; /* Height of the fade area */
+  background: linear-gradient(to bottom, transparent, white);
+}
+
+.more-text {
+  margin-top: 0.1rem;
+  z-index: 2;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  color: gray;
+  cursor: pointer;
+}
+
+.show-more {
+  display: block;
+}
