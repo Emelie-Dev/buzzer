@@ -154,7 +154,7 @@ const Carousel = ({ data }: CarouselProps) => {
                 key={index}
                 className={`${
                   contentIndex === index ? styles['current-index'] : ''
-                } `}
+                } ${content.currentTime}`}
               >
                 .
               </span>
@@ -168,7 +168,7 @@ const Carousel = ({ data }: CarouselProps) => {
                   contentIndex > 9 && index > data.length - 11
                     ? styles['hide-data']
                     : ''
-                }`}
+                } ${content.currentTime}`}
               >
                 .
               </span>
