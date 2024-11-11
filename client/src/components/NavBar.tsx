@@ -317,10 +317,16 @@ const NavBar = ({ page }: NavBarProps) => {
           </ul>
         )}
         <span
-          className={styles['more-icon-box']}
+          className={`${styles['more-icon-box']} ${
+            showMore ? styles['active-menu'] : ''
+          }`}
           onClick={() => setShowMore(!showMore)}
         >
-          <BiMenuAltLeft className={styles['more-icon']} />
+          <BiMenuAltLeft
+            className={`${styles['more-icon']}  ${
+              showMore ? styles['active-icon'] : ''
+            }`}
+          />
           More
         </span>
       </div>

@@ -23,6 +23,8 @@
   position: relative;
   padding: 0 0.1rem;
   margin: 0 1rem;
+  display: flex;
+  align-items: center;
 }
 
 .user {
@@ -67,9 +69,10 @@
 
 .left-arrow-box {
   z-index: 2;
-  position: fixed;
-  top: 8%;
-  left: 23.7%;
+  position: sticky;
+  align-self: flex-start;
+  top: 20%;
+  left: 1.5%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -82,9 +85,10 @@
 
 .right-arrow-box {
   z-index: 2;
-  position: fixed;
-  top: 8%;
-  right: 31.7%;
+  position: sticky;
+  align-self: flex-start;
+  top: 20%;
+  right: 1.5%;
   display: inline-flex;
   align-items: center;
   justify-content: center;

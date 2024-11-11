@@ -2,8 +2,9 @@ import { useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Home.module.css';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
-import { Content } from '../components/Carousel';
+import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
+import { ContentContext } from '../Contexts';
 
 interface User {
   name: string;
@@ -39,7 +40,7 @@ const users: User[] = [
 
 const data: Content[] = [
   {
-    src: 'content1',
+    src: 'content23',
     type: 'image',
     description:
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
@@ -162,6 +163,7 @@ const dataList = [
     username: '@dagodfather_100',
     photo: 'profile1.jpeg',
     time: '10m',
+    aspectRatio: 1 / 1,
     description: `Big vibes only! 🌍 Had an amazing time with the fam last night. Nothing but love and energy! 💥✨ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#001</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfrobeatKing</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#OBO👑</span>. Blessed to do what I love with these amazing people. 💯🖤
 
         
@@ -175,6 +177,7 @@ const dataList = [
     username: '@absolute_messi',
     photo: 'profile2.jpeg',
     time: '3h',
+    aspectRatio: 4 / 5,
     description: `Grateful for every step of this journey ⚽️. From Rosario to Barcelona, Paris, and now Miami, it’s always been about the love of the game and the incredible people I’ve met along the way ❤️💙.
 
 Special memories with my family, teammates, and fans who’ve been there through it all. Thank you! 🙏
@@ -194,6 +197,40 @@ const Home = () => {
   });
 
   const storyRef = useRef<HTMLDivElement>(null!);
+  const contentRef = useRef<HTMLDivElement[]>([]);
+
+  const scrollHandler = () => {
+    const videos = contentRef.current;
+    const deviceHeight = window.innerHeight;
+
+    const activeVideos = videos.filter((video) => {
+      const top = video.getBoundingClientRect().top;
+      const bottom = video.getBoundingClientRect().bottom;
+      const active = video.getAttribute('data-active');
+
+      let condition;
+
+      if (active === 'true') {
+        if (
+          (top > 0 && top < deviceHeight * 0.6) ||
+          (bottom < deviceHeight && bottom > deviceHeight * 0.4)
+        ) {
+          condition = true;
+        } else {
+          condition = false;
+        }
+      } else condition = false;
+
+      if (!condition) video.querySelector('video')?.pause();
+
+      return condition;
+    });
+
+    activeVideos.forEach((video, index) => {
+      if (index === 0) video.querySelector('video')?.play();
+      else video.querySelector('video')?.pause();
+    });
+  };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
@@ -212,7 +249,7 @@ const Home = () => {
       <NavBar page="home" />
 
       <section className={styles.main}>
-        <section className={styles['main-container']}>
+        <section className={styles['main-container']} onScroll={scrollHandler}>
           <div
             className={styles['stories-container']}
             ref={storyRef}
@@ -226,6 +263,7 @@ const Home = () => {
                 <MdKeyboardArrowLeft className={styles['left-arrow']} />
               </span>
             )}
+
             {users.map(({ name }, index) => (
               <article key={index} className={styles.user}>
                 <span className={styles['user-pics-box']}>
@@ -250,11 +288,13 @@ const Home = () => {
             )}
           </div>
 
-          <div className={styles['content-container']}>
-            {dataList.map((data, index) => (
-              <ContentBox key={index} data={data} />
-            ))}
-          </div>
+          <ContentContext.Provider value={contentRef}>
+            <div className={styles['content-container']}>
+              {dataList.map((data, index) => (
+                <ContentBox key={index} data={data} />
+              ))}
+            </div>
+          </ContentContext.Provider>
         </section>
 
         <section></section>

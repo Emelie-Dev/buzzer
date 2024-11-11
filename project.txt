@@ -8,5 +8,15 @@ Pages =>
  - Notifications
  - More (settings, saved, history, logout, app theme)
 
+
+    Home page =>
+        Content Box (Menu list)
+            - Follow
+            - Report
+            - Not interested
+            - Add to story(optional)
+            - Clear display
+            - Go to post
+
  Updates =>
   - Change apperace icon based on theme

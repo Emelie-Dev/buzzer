@@ -160,6 +160,13 @@
   cursor: pointer;
 }
 
+.active-menu {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--app-theme-color);
+  font-family: appFontBold;
+  cursor: pointer;
+}
+
 .logout-line {
   border-width: 0;
   height: 2px;

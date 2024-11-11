@@ -1,10 +1,13 @@
 import { BsDot } from 'react-icons/bs';
 import { HiOutlineDotsHorizontal, HiPlus } from 'react-icons/hi';
-import Carousel, { Content } from '../components/Carousel';
+import Carousel from '../components/Carousel';
 import { FaHeart, FaCommentDots, FaShare } from 'react-icons/fa';
 import { IoBookmark } from 'react-icons/io5';
 import styles from '../styles/ContentBox.module.css';
 import { useEffect, useRef, useState } from 'react';
+import { Content } from './CarouselItem';
+import { PiCheckFatFill } from 'react-icons/pi';
+import { LikeContext } from '../Contexts';
 
 type ContentBoxProps = {
   data: {
@@ -14,19 +17,81 @@ type ContentBoxProps = {
     name?: string;
     time: string;
     photo: string;
+    aspectRatio: number;
   };
 };
 
 const ContentBox = ({ data }: ContentBoxProps) => {
-  const { media, description, username, name, time, photo } = data;
+  const { media, description, username, name, time, photo, aspectRatio } = data;
 
   const [showMore, setShowMore] = useState<boolean>(false);
+  const [descriptionWidth, setDescriptionWidth] = useState<number>(0);
+  const [showMenu, setShowMenu] = useState<boolean>(false);
+  const [hideMenu, setHideMenu] = useState<boolean>(true);
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [like, setLike] = useState<boolean>(false);
+  const [hideLike, setHideLike] = useState<boolean>(true);
+  const [saved, setSaved] = useState<boolean>(false);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
+  const contentRef = useRef<HTMLDivElement>(null!);
+  const menuRef = useRef<HTMLDivElement>(null!);
+  const listRef = useRef<HTMLUListElement>(null!);
 
   useEffect(() => {
     if (descriptionRef.current) descriptionRef.current.innerHTML = description!;
   }, []);
+
+  useEffect(() => {
+    if (like) {
+      setTimeout(() => {
+        setHideLike(true);
+      }, 400);
+    }
+  }, [like]);
+
+  useEffect(() => {
+    const clickHandler = (e: Event) => {
+      if (e.target) {
+        if (showMenu && !menuRef.current.contains(e.target as Node)) {
+          setShowMenu(false);
+        }
+      }
+    };
+
+    let animation;
+
+    if (listRef.current) {
+      if (showMenu) {
+        animation = listRef.current.animate(
+          {
+            height: ['0px', `${listRef.current.scrollHeight}px`],
+          },
+          {
+            fill: 'both',
+            duration: 150,
+          }
+        );
+      } else {
+        animation = listRef.current.animate(
+          {
+            height: [`${listRef.current.scrollHeight}px`, '0px'],
+          },
+          {
+            fill: 'both',
+            duration: 150,
+          }
+        );
+        animation.onfinish = () => setHideMenu(true);
+      }
+    }
+
+    window.addEventListener('click', clickHandler);
+
+    return () => {
+      window.removeEventListener('click', clickHandler);
+    };
+  }, [showMenu]);
 
   const handleDescription = () => {
     descriptionRef.current.animate(
@@ -43,7 +108,7 @@ const ContentBox = ({ data }: ContentBoxProps) => {
   };
 
   return (
-    <article className={styles.content}>
+    <article className={styles.content} ref={contentRef}>
       <h1 className={styles['content-head']}>
         <span className={styles['content-head-box']}>
           <span className={styles['content-name-box']}>
@@ -54,11 +119,42 @@ const ContentBox = ({ data }: ContentBoxProps) => {
           <span className={styles['content-time']}>{time}</span>
         </span>
 
-        <HiOutlineDotsHorizontal className={styles['content-menu']} />
-      </h1>
-      <div className={styles['content-box']}>
-        <Carousel data={media} />
+        <div className={styles['menu-div']} ref={menuRef}>
+          <HiOutlineDotsHorizontal
+            className={`${styles['content-menu']} ${
+              showMenu ? styles['active-menu'] : ''
+            }`}
+            onClick={() => {
+              setShowMenu(!showMenu);
+              setHideMenu(false);
+            }}
+          />
 
+          {!hideMenu && (
+            <ul className={styles['menu-list']} ref={listRef}>
+              <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
+                Follow
+              </li>
+              <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
+                Report
+              </li>
+              <li className={styles['menu-item']}>Not interested</li>
+              <li className={styles['menu-item']}>Add to story</li>
+              <li className={styles['menu-item']}>Go to post</li>
+              <li className={styles['menu-item']}>Clear display</li>
+            </ul>
+          )}
+        </div>
+      </h1>
+
+      <div className={styles['content-box']}>
+        <LikeContext.Provider value={{ like, setLike, setHideLike }}>
+          <Carousel
+            data={media}
+            aspectRatio={aspectRatio}
+            setDescriptionWidth={setDescriptionWidth}
+          />
+        </LikeContext.Provider>
         <div className={styles['menu-container']}>
           <div className={styles['profile-img-box']}>
             <img
@@ -66,15 +162,48 @@ const ContentBox = ({ data }: ContentBoxProps) => {
               className={styles['profile-img']}
             />
 
-            <span className={styles['profile-icon-box']} title="Follow">
-              <HiPlus className={styles['profile-icon']} />
-            </span>
+            {isFollowing ? (
+              <span
+                className={styles['profile-icon-box2']}
+                title="Unfollow"
+                onClick={() => setIsFollowing(!isFollowing)}
+              >
+                <PiCheckFatFill className={styles['profile-icon2']} />{' '}
+              </span>
+            ) : (
+              <span
+                className={styles['profile-icon-box']}
+                title="Follow"
+                onClick={() => setIsFollowing(!isFollowing)}
+              >
+                <HiPlus className={styles['profile-icon']} />
+              </span>
+            )}
           </div>
 
           <div className={styles['menu-box']}>
-            <span className={styles['menu-icon-box']} title="Like">
-              <FaHeart className={styles['menu-icon']} />
-            </span>
+            {!hideLike ? (
+              <img
+                src="../../assets/images/Animation - 1731349965809.gif"
+                className={styles['like-icon']}
+              />
+            ) : (
+              <span
+                className={styles['menu-icon-box']}
+                title="Like"
+                onClick={() => {
+                  setLike(!like);
+                  setHideLike(like === true ? true : false);
+                }}
+              >
+                <FaHeart
+                  className={`${styles['menu-icon']} ${
+                    like ? styles['red-icon'] : ''
+                  }`}
+                />
+              </span>
+            )}
+
             <span className={styles['menu-text']}>21K</span>
           </div>
 
@@ -86,8 +215,16 @@ const ContentBox = ({ data }: ContentBoxProps) => {
           </div>
 
           <div className={styles['menu-box']}>
-            <span className={styles['menu-icon-box']} title="Save">
-              <IoBookmark className={styles['menu-icon']} />
+            <span
+              className={styles['menu-icon-box']}
+              title="Save"
+              onClick={() => setSaved(!saved)}
+            >
+              <IoBookmark
+                className={`${styles['menu-icon']} ${
+                  saved ? styles['saved-icon'] : ''
+                }`}
+              />
             </span>
             <span className={styles['menu-text']}>954</span>
           </div>
@@ -107,6 +244,7 @@ const ContentBox = ({ data }: ContentBoxProps) => {
             className={`${styles['content-description']}  ${
               !showMore ? styles['content-description2'] : ''
             } ${showMore ? styles['show-more'] : ''}`}
+            style={{ width: `${descriptionWidth}px` }}
             ref={descriptionRef}
           ></div>
 

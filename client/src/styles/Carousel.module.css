@@ -1,18 +1,19 @@
 .carousel {
-  width: 90%;
+  width: 100%;
+  min-height: 100%;
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: black;
-  border-radius: 5px;
+  justify-content: center;
   user-select: none;
+  overflow: hidden;
+  border-radius: 5px;
 }
 
 .pagination-box {
   position: absolute;
   top: 2%;
   right: 1%;
+  z-index: 2;
   color: black;
   font-family: appFontMedium;
   font-size: 0.95rem;
@@ -21,8 +22,13 @@
   padding: 0.1rem 0.5rem;
 }
 
+.dot-box::-webkit-scrollbar {
+  display: none;
+}
+
 .dot-box {
   position: absolute;
+  z-index: 2;
   top: -15px;
   padding: 0;
   color: gray;
@@ -30,7 +36,20 @@
   font-size: 2.5rem;
   display: flex;
   align-items: center;
-  justify-content: center;
+  white-space: nowrap;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  max-width: 100px;
+}
+
+.dot-cover {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  background: transparent;
+  width: 100px;
 }
 
 .current-index {
@@ -73,141 +92,64 @@
   height: 1.4rem;
 }
 
-.media {
-  object-fit: contain;
-  max-width: 100%;
-  max-height: 90vh;
-  min-width: 50%;
-  min-height: 70vh;
-  border-radius: 5px;
-  cursor: pointer;
+.carousel-container {
+  display: flex;
+  transition: transform 0.5s ease;
 }
 
-.media-description {
+.media-description-container {
   z-index: 3;
   position: absolute;
   bottom: 0;
   left: 0;
+  display: flex;
+  max-width: 75%;
+  max-height: 50px;
+  overflow: hidden;
+  cursor: default;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0 0.5rem;
+  border-radius: 0 5px 0 0;
+}
+
+.media-description {
   color: white;
   font-family: appFont;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  max-width: 70%;
-  max-height: 50px;
+  font-size: 0.9rem;
   word-wrap: break-word;
-  overflow: hidden;
-  font-size: 0.9rem;
-  border-radius: 0 0 0 5px;
+  width: calc(100% - 40px);
+  padding: 0.5rem 0;
+  margin-right: 0.2rem;
 }
 
-.mute-icon-box {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 0.4rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 1px 1px 4px -2px black;
-  cursor: pointer;
+.webkit-style {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
-.mute-icon {
-  fill: white;
-  width: 1rem;
-  height: 1rem;
-}
-
-.more-description {
-  position: absolute;
-  bottom: 0;
-  z-index: 4;
-  left: 70%;
+.more-text {
   color: white;
+  margin-left: auto;
   font-family: appFontMedium;
-  background: rgba(0, 0, 0, 0.3);
-  height: 50px;
-  display: flex;
-  align-items: flex-end;
-  cursor: pointer;
-  padding-right: 0.5rem;
-  border-radius: 0 5px 5px 0;
   font-size: 0.9rem;
+  cursor: pointer;
+  align-self: flex-end;
+}
+
+.show-desc {
+  display: block;
+  padding-bottom: 0.5rem;
 }
 
 .show-description {
   background: rgba(0, 0, 0, 0.7);
 }
 
-.pause-icon-box {
-  position: absolute;
-  top: 40%;
-  cursor: pointer;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.3rem;
-  border-radius: 50%;
-  animation: showPause 0.3s;
-}
-
-.pause-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  fill: white;
-}
-
 .hide-data {
   display: none;
-}
-
-.loader {
-  position: absolute;
-  top: 40%;
-  width: 50px;
-  --b: 8px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  padding: 1px;
-  background: conic-gradient(#0000 10%, var(--app-theme-color)) content-box;
-  -webkit-mask: repeating-conic-gradient(
-      #0000 0deg,
-      #000 1deg 20deg,
-      #0000 21deg 36deg
-    ),
-    radial-gradient(
-      farthest-side,
-      #0000 calc(100% - var(--b) - 1px),
-      #000 calc(100% - var(--b))
-    );
-  -webkit-mask-composite: destination-in;
-  mask-composite: intersect;
-  animation: l4 1s infinite steps(10);
-}
-
-.loading-error-box {
-  color: white;
-  font-family: appFont;
-  position: absolute;
-  top: 40%;
-}
-
-.error-box {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 1rem;
-}
-
-.error-icon {
-  width: 1.2rem;
-  height: 1.2rem;
-  fill: white;
-  margin-right: 0.5rem;
-  flex-shrink: 0;
 }
 
 /* Animations */
@@ -215,14 +157,5 @@
 @keyframes l4 {
   to {
     transform: rotate(1turn);
-  }
-}
-
-@keyframes showPause {
-  from {
-    transform: scale(0);
-  }
-  to {
-    transform: scale(1);
   }
 }
