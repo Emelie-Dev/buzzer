@@ -19,9 +19,11 @@ type ContentBoxProps = {
     photo: string;
     aspectRatio: number;
   };
+  // shareMedia: boolean;
+  setShareMedia: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const ContentBox = ({ data }: ContentBoxProps) => {
+const ContentBox = ({ data, setShareMedia }: ContentBoxProps) => {
   const { media, description, username, name, time, photo, aspectRatio } = data;
 
   const [showMore, setShowMore] = useState<boolean>(false);
@@ -133,7 +135,7 @@ const ContentBox = ({ data }: ContentBoxProps) => {
           {!hideMenu && (
             <ul className={styles['menu-list']} ref={listRef}>
               <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
-                Follow
+                {isFollowing ? 'Unfollow' : 'Follow'}
               </li>
               <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
                 Report
@@ -155,6 +157,7 @@ const ContentBox = ({ data }: ContentBoxProps) => {
             setDescriptionWidth={setDescriptionWidth}
           />
         </LikeContext.Provider>
+
         <div className={styles['menu-container']}>
           <div className={styles['profile-img-box']}>
             <img
@@ -230,7 +233,11 @@ const ContentBox = ({ data }: ContentBoxProps) => {
           </div>
 
           <div className={styles['menu-box']}>
-            <span className={styles['menu-icon-box']} title="Share">
+            <span
+              className={styles['menu-icon-box']}
+              title="Share"
+              onClick={() => setShareMedia(true)}
+            >
               <FaShare className={styles['menu-icon']} />
             </span>
             <span className={styles['menu-text']}>217</span>

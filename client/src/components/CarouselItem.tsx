@@ -158,8 +158,6 @@ const CarouselItem = ({
 
         setTimeout(() => setShowLike(false), 700);
       }
-
-      // if (loading === false)
     };
 
   const addToRef =

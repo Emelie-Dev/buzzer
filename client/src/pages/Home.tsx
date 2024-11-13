@@ -5,12 +5,13 @@ import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
 import { ContentContext } from '../Contexts';
+import ShareMedia from '../components/ShareMedia';
 
 interface User {
   name: string;
 }
 
-interface Arrow {
+export interface Arrow {
   left: boolean;
   right: boolean;
 }
@@ -195,6 +196,7 @@ const Home = () => {
     left: false,
     right: true,
   });
+  const [shareMedia, setShareMedia] = useState<boolean>(false);
 
   const storyRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement[]>([]);
@@ -246,6 +248,8 @@ const Home = () => {
 
   return (
     <>
+      {shareMedia && <ShareMedia setShareMedia={setShareMedia} />}
+
       <NavBar page="home" />
 
       <section className={styles.main}>
@@ -291,7 +295,11 @@ const Home = () => {
           <ContentContext.Provider value={contentRef}>
             <div className={styles['content-container']}>
               {dataList.map((data, index) => (
-                <ContentBox key={index} data={data} />
+                <ContentBox
+                  key={index}
+                  data={data}
+                  setShareMedia={setShareMedia}
+                />
               ))}
             </div>
           </ContentContext.Provider>

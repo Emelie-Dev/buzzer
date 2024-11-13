@@ -1,0 +1,370 @@
+.section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  min-height: 100vh;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 45%;
+  justify-content: center;
+  align-content: center;
+  overflow: auto;
+  animation: showModal 0.3s ease-in-out 0s 1 normal both;
+}
+
+.container {
+  background: white;
+  border-radius: 8px;
+  position: relative;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  margin: 0;
+  justify-content: center;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.5);
+}
+
+.head-text {
+  font-family: appFontMedium;
+  font-size: 1.2rem;
+}
+
+.close-icon-box {
+  position: absolute;
+  right: 2%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0.2rem;
+  transition: background 0.3s;
+}
+
+.close-icon {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.close-icon-box:hover {
+  background: var(--app-theme-color);
+  color: white;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  /* width: 100%; */
+  margin: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 0;
+}
+
+.search-box {
+  position: relative;
+  background: rgba(168, 85, 247, 0.15);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: gray;
+  position: absolute;
+  left: 2%;
+}
+
+.search-input {
+  border: none;
+  outline: none;
+  font-family: appFont;
+  font-size: 0.95rem;
+  width: calc(100% - 4rem);
+  margin-left: 2rem;
+  padding: 0.7rem;
+  background: transparent;
+}
+
+.search-input::placeholder {
+  font-size: 0.95rem;
+}
+
+.close-search-icon {
+  position: absolute;
+  right: 2%;
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: white;
+  cursor: pointer;
+  background: var(--app-theme-color);
+  border-radius: 50%;
+  padding: 0.15rem;
+}
+
+.cancel-text {
+  font-family: appFont;
+  font-weight: 600;
+  margin-left: 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cancel-text:hover {
+  color: gray;
+}
+
+.friends-container {
+  display: grid;
+  grid-template-columns: 25% 25% 25% 25%;
+  align-content: start;
+  margin: 0 2.5rem;
+  padding-bottom: 2rem;
+  padding-top: 1.5rem;
+  height: 45vh;
+  overflow: auto;
+}
+
+.user {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.user:nth-child(4) {
+  margin-right: 0;
+}
+
+.img-box {
+  position: relative;
+}
+
+.img {
+  border-radius: 50%;
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+}
+
+.username {
+  font-family: appFont;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  width: 100%;
+  overflow: hidden;
+}
+
+.options-container::-webkit-scrollbar {
+  display: none;
+}
+
+.options-container {
+  border-top: 1px solid rgba(168, 85, 247, 0.5);
+  display: flex;
+  align-items: center;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  padding: 1.2rem 1.5rem 2rem;
+  position: relative;
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 2rem;
+  cursor: pointer;
+}
+
+.last-option {
+  margin-right: 0;
+}
+
+.share-icon-box {
+  background: rgba(168, 85, 247, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 1rem;
+}
+
+.share-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.share-icon-text {
+  margin-top: 0.5rem;
+  font-family: appFont;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.left-arrow-box {
+  z-index: 2;
+  position: sticky;
+  left: 0%;
+  align-self: flex-start;
+  top: 20%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-theme-color);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0.05rem;
+  box-shadow: 1px 1px 6px -2px black;
+  color: white;
+}
+
+.right-arrow-box {
+  z-index: 2;
+  position: sticky;
+  right: 0%;
+  align-self: flex-start;
+  top: 20%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-theme-color);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0.05rem;
+  box-shadow: 1px 1px 6px -2px black;
+  color: white;
+}
+
+.left-arrow,
+.right-arrow {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.left-arrow-box:hover .left-arrow,
+.right-arrow-box:hover .right-arrow {
+  color: black;
+}
+
+.search-result-container {
+  display: flex;
+  flex-direction: column;
+  margin: 0 1rem;
+  padding-bottom: 2rem;
+  padding-top: 1rem;
+  height: 45vh;
+  overflow: auto;
+}
+
+.search-result {
+  width: 100%;
+  display: flex;
+  height: fit-content;
+  cursor: pointer;
+  padding: 0.5rem 1.5rem;
+}
+
+.search-result:hover {
+  background: rgba(168, 85, 247, 0.1);
+  border-radius: 5px;
+}
+
+.search-img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.name-box {
+  margin-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  font-family: appFont;
+  width: calc(100% - 3rem);
+}
+
+.search-username {
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-handle {
+  font-size: 0.85rem;
+  color: gray;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.send-box {
+  border-top: 1px solid rgba(168, 85, 247, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.send-btn {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  color: white;
+  border-radius: 8px;
+  font-family: appFontMedium;
+  padding: 0.8rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.send-btn:hover {
+  opacity: 0.85;
+}
+
+.check-box {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: var(--app-theme-color);
+  box-shadow: 1px 1px 6px -2px black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+}
+
+.check-icon {
+  width: 0.7rem;
+  height: 0.7rem;
+  fill: white;
+}
+
+/* Animations */
+
+@keyframes showModal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
