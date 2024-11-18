@@ -1,0 +1,510 @@
+.section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  min-height: 100vh;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto;
+  justify-content: center;
+  align-content: center;
+  overflow: auto;
+  animation: showModal 0.5s ease-in-out 0s 1 normal both;
+  padding: 1rem 5rem;
+}
+
+.close-icon-box {
+  position: absolute;
+  right: 1%;
+  top: 1.5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0.3rem;
+  transition: background 0.2s;
+}
+
+.close-icon {
+  fill: white;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.close-icon-box:hover {
+  background: var(--app-theme-color);
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  width: calc(100vw - 10rem);
+}
+
+.carousel-container {
+  width: 55%;
+  background: black;
+  color: white;
+}
+
+.comment-container::-webkit-scrollbar {
+  display: none;
+}
+
+.comment-container {
+  width: 45%;
+  background: white;
+  height: calc(100vh - 2rem);
+  border-radius: 0 5px 5px 0;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  position: relative;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1rem 0.5rem;
+}
+
+.profile-img-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.17rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
+}
+
+.profile-img {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid white;
+}
+
+.name-box {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  font-family: appFont;
+  margin-left: 0.7rem;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.username {
+  color: gray;
+  font-size: 0.85rem;
+}
+
+.menu-div {
+  position: relative;
+  display: inline;
+  margin-left: auto;
+}
+
+.content-menu {
+  color: gray;
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.active-menu {
+  color: var(--app-theme-color);
+}
+
+.content-menu:hover {
+  color: var(--app-theme-color);
+}
+
+.menu-list {
+  position: absolute;
+  top: 25px;
+  right: 0%;
+  z-index: 3;
+  background: white;
+  box-shadow: 1px 1px 10px -5px black;
+  border-radius: 8px;
+  list-style-type: none;
+  margin: 0;
+  padding: 0.5rem;
+  height: 0;
+  overflow: hidden;
+}
+
+.menu-item {
+  text-align: center;
+  white-space: nowrap;
+  padding: 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+  font-family: appFont;
+  font-size: 0.9rem;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  color: var(--app-theme-color);
+  font-weight: 600;
+}
+
+.menu-red {
+  color: red !important;
+}
+
+.engage-div {
+  display: flex;
+  align-items: center;
+  padding: 1rem 2rem 0;
+}
+
+.menu-box {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 1.5rem;
+}
+
+.share-box {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.menu-icon-box {
+  background: rgb(128, 128, 128, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.menu-icon {
+  width: 1rem;
+  height: 1rem;
+  fill: black;
+  opacity: 0.85;
+}
+
+.like-icon {
+  width: 2.625rem;
+  height: 2.625rem;
+}
+
+.red-icon {
+  fill: red;
+}
+
+.saved-icon {
+  fill: var(--app-theme-color);
+}
+
+.menu-text {
+  font-family: appFontBold;
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+  opacity: 0.85;
+}
+
+.menu-icon-box:hover {
+  box-shadow: 1px 1px 5px -3px black;
+}
+
+.comment-div {
+  padding-bottom: 1rem;
+}
+
+.comments-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: appFontMedium;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.3);
+  font-size: 0.95rem;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 2;
+  padding: 1.5rem 1rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.new-comment-div {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid rgba(168, 85, 247, 0.3);
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 1.5rem 2rem;
+}
+
+.new-comment-box {
+  background: rgba(168, 85, 247, 0.2);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  margin-right: 1rem;
+}
+
+.new-comment-text::-webkit-scrollbar {
+  display: none;
+}
+
+.new-comment-text::placeholder {
+  font-family: appFont;
+  font-size: 0.9rem;
+}
+
+.new-comment-text {
+  font-family: appFont;
+  font-size: 0.9rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  background: none;
+  border: none;
+  outline: none;
+  max-height: 80px;
+  overflow: auto;
+  width: 350px;
+  word-wrap: break-word;
+}
+
+.new-comment-tags {
+  margin-left: 0.5rem;
+  font-family: appFontMedium;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.new-comment-post {
+  margin-left: auto;
+  font-family: appFontMedium;
+  color: gray;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.post-comment {
+  opacity: 1;
+  cursor: pointer;
+  pointer-events: all;
+  color: var(--app-theme-color);
+  font-weight: bold;
+}
+
+.new-comment-tag-list::-webkit-scrollbar {
+  display: none;
+}
+
+.new-comment-tag-list {
+  position: absolute;
+  bottom: 85%;
+  background: white;
+  box-shadow: 1px 1px 10px -5px black;
+  border-radius: 8px;
+  margin: 0;
+  padding: 0.5rem;
+  width: 60%;
+  height: 16rem;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  animation: showList 0.2s linear 1 normal both;
+  list-style-type: none;
+}
+
+.comment-placeholder {
+  color: gray;
+  font-family: monospace;
+  font-size: 1.05rem;
+  position: absolute;
+  z-index: -1;
+  left: 3.6rem;
+}
+
+.followers-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+}
+
+.followers-item2 {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.followers-item2:hover {
+  background: rgba(168, 85, 247, 0.2);
+}
+
+.followers-img-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.followers-img {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.followers-icon-box {
+  background: var(--app-theme-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  bottom: -2px;
+  right: 0;
+  color: white;
+  border-radius: 50%;
+  padding: 0.25rem;
+}
+
+.followers-icon {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+.followers-name-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 0.75rem;
+  margin-right: 1rem;
+  white-space: nowrap;
+  width: calc(100% - 5.3rem);
+}
+
+.followers-name {
+  font-family: appFontMedium;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.followers-username {
+  font-family: appFont;
+  font-size: 0.8rem;
+  color: gray;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.radio-btn {
+  accent-color: var(--app-theme-color);
+  width: 1rem;
+  height: 1rem;
+  margin-left: auto;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.searchig-box {
+  position: absolute;
+  top: 40%;
+  font-family: appFontMedium;
+  width: 100%;
+  color: gray;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchig-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-right: 0.5rem;
+  animation: rotate 0.75s linear 0s infinite normal both;
+}
+
+.scroll-up-box {
+  position: sticky;
+  z-index: 5;
+  left: 87%;
+  bottom: 120px;
+  background: white;
+  box-shadow: 1px 1px 10px -4px black;
+  display: inline;
+  text-align: center;
+  border-radius: 50%;
+  padding: 0.8rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.scroll-up-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  vertical-align: -3px;
+}
+
+.scroll-up-box:hover .scroll-up-icon {
+  color: var(--app-theme-color);
+}
+
+.scroll-up-box:hover {
+  box-shadow: inset 1px 1px 10px -5px black;
+}
+
+/* Animations */
+
+@keyframes showModal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes showList {
+  from {
+    height: 0;
+  }
+  to {
+    height: 16rem;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(1turn);
+  }
+}

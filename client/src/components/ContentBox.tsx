@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Content } from './CarouselItem';
 import { PiCheckFatFill } from 'react-icons/pi';
 import { LikeContext } from '../Contexts';
+import CommentBox from './CommentBox';
+import ShareMedia from '../components/ShareMedia';
 
 type ContentBoxProps = {
   data: {
@@ -19,11 +21,9 @@ type ContentBoxProps = {
     photo: string;
     aspectRatio: number;
   };
-  // shareMedia: boolean;
-  setShareMedia: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const ContentBox = ({ data, setShareMedia }: ContentBoxProps) => {
+const ContentBox = ({ data }: ContentBoxProps) => {
   const { media, description, username, name, time, photo, aspectRatio } = data;
 
   const [showMore, setShowMore] = useState<boolean>(false);
@@ -34,6 +34,8 @@ const ContentBox = ({ data, setShareMedia }: ContentBoxProps) => {
   const [like, setLike] = useState<boolean>(false);
   const [hideLike, setHideLike] = useState<boolean>(true);
   const [saved, setSaved] = useState<boolean>(false);
+  const [shareMedia, setShareMedia] = useState<boolean>(false);
+  const [viewComment, setViewComment] = useState<boolean>(false);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -110,159 +112,176 @@ const ContentBox = ({ data, setShareMedia }: ContentBoxProps) => {
   };
 
   return (
-    <article className={styles.content} ref={contentRef}>
-      <h1 className={styles['content-head']}>
-        <span className={styles['content-head-box']}>
-          <span className={styles['content-name-box']}>
-            <span className={styles['content-nickname']}>{name}</span>
-            <span className={styles['content-username']}>{username}</span>
+    <>
+      {shareMedia && <ShareMedia setShareMedia={setShareMedia} />}
+
+      {viewComment && (
+        <CommentBox
+          setViewComment={setViewComment}
+          data={{ media, username, name, photo, aspectRatio }}
+        />
+      )}
+
+      <article className={styles.content} ref={contentRef}>
+        <h1 className={styles['content-head']}>
+          <span className={styles['content-head-box']}>
+            <span className={styles['content-name-box']}>
+              <span className={styles['content-nickname']}>{name}</span>
+              <span className={styles['content-username']}>{username}</span>
+            </span>
+            <BsDot className={styles.dot} />
+            <span className={styles['content-time']}>{time}</span>
           </span>
-          <BsDot className={styles.dot} />
-          <span className={styles['content-time']}>{time}</span>
-        </span>
 
-        <div className={styles['menu-div']} ref={menuRef}>
-          <HiOutlineDotsHorizontal
-            className={`${styles['content-menu']} ${
-              showMenu ? styles['active-menu'] : ''
-            }`}
-            onClick={() => {
-              setShowMenu(!showMenu);
-              setHideMenu(false);
-            }}
-          />
-
-          {!hideMenu && (
-            <ul className={styles['menu-list']} ref={listRef}>
-              <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
-                {isFollowing ? 'Unfollow' : 'Follow'}
-              </li>
-              <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
-                Report
-              </li>
-              <li className={styles['menu-item']}>Not interested</li>
-              <li className={styles['menu-item']}>Add to story</li>
-              <li className={styles['menu-item']}>Go to post</li>
-              <li className={styles['menu-item']}>Clear display</li>
-            </ul>
-          )}
-        </div>
-      </h1>
-
-      <div className={styles['content-box']}>
-        <LikeContext.Provider value={{ like, setLike, setHideLike }}>
-          <Carousel
-            data={media}
-            aspectRatio={aspectRatio}
-            setDescriptionWidth={setDescriptionWidth}
-          />
-        </LikeContext.Provider>
-
-        <div className={styles['menu-container']}>
-          <div className={styles['profile-img-box']}>
-            <img
-              src={`../../assets/images/users/${photo}`}
-              className={styles['profile-img']}
+          <div className={styles['menu-div']} ref={menuRef}>
+            <HiOutlineDotsHorizontal
+              className={`${styles['content-menu']} ${
+                showMenu ? styles['active-menu'] : ''
+              }`}
+              onClick={() => {
+                setShowMenu(!showMenu);
+                setHideMenu(false);
+              }}
             />
 
-            {isFollowing ? (
-              <span
-                className={styles['profile-icon-box2']}
-                title="Unfollow"
-                onClick={() => setIsFollowing(!isFollowing)}
-              >
-                <PiCheckFatFill className={styles['profile-icon2']} />{' '}
-              </span>
-            ) : (
-              <span
-                className={styles['profile-icon-box']}
-                title="Follow"
-                onClick={() => setIsFollowing(!isFollowing)}
-              >
-                <HiPlus className={styles['profile-icon']} />
-              </span>
+            {!hideMenu && (
+              <ul className={styles['menu-list']} ref={listRef}>
+                <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
+                  {isFollowing ? 'Unfollow' : 'Follow'}
+                </li>
+                <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
+                  Report
+                </li>
+                <li className={styles['menu-item']}>Not interested</li>
+                <li className={styles['menu-item']}>Add to story</li>
+                <li className={styles['menu-item']}>Go to post</li>
+                <li className={styles['menu-item']}>Clear display</li>
+              </ul>
             )}
           </div>
+        </h1>
 
-          <div className={styles['menu-box']}>
-            {!hideLike ? (
+        <div className={styles['content-box']}>
+          <LikeContext.Provider value={{ like, setLike, setHideLike }}>
+            <Carousel
+              data={media}
+              aspectRatio={aspectRatio}
+              setDescriptionWidth={setDescriptionWidth}
+            />
+          </LikeContext.Provider>
+
+          <div className={styles['menu-container']}>
+            <div className={styles['profile-img-box']}>
               <img
-                src="../../assets/images/Animation - 1731349965809.gif"
-                className={styles['like-icon']}
+                src={`../../assets/images/users/${photo}`}
+                className={styles['profile-img']}
               />
-            ) : (
+
+              {isFollowing ? (
+                <span
+                  className={styles['profile-icon-box2']}
+                  title="Unfollow"
+                  onClick={() => setIsFollowing(!isFollowing)}
+                >
+                  <PiCheckFatFill className={styles['profile-icon2']} />{' '}
+                </span>
+              ) : (
+                <span
+                  className={styles['profile-icon-box']}
+                  title="Follow"
+                  onClick={() => setIsFollowing(!isFollowing)}
+                >
+                  <HiPlus className={styles['profile-icon']} />
+                </span>
+              )}
+            </div>
+
+            <div className={styles['menu-box']}>
+              {!hideLike ? (
+                <img
+                  src="../../assets/images/Animation - 1731349965809.gif"
+                  className={styles['like-icon']}
+                />
+              ) : (
+                <span
+                  className={styles['menu-icon-box']}
+                  title="Like"
+                  onClick={() => {
+                    setLike(!like);
+                    setHideLike(like === true ? true : false);
+                  }}
+                >
+                  <FaHeart
+                    className={`${styles['menu-icon']} ${
+                      like ? styles['red-icon'] : ''
+                    }`}
+                  />
+                </span>
+              )}
+
+              <span className={styles['menu-text']}>21K</span>
+            </div>
+
+            <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
-                title="Like"
+                title="Comment"
                 onClick={() => {
-                  setLike(!like);
-                  setHideLike(like === true ? true : false);
+                  setViewComment(true);
                 }}
               >
-                <FaHeart
+                <FaCommentDots className={styles['menu-icon']} />
+              </span>
+              <span className={styles['menu-text']}>2345</span>
+            </div>
+
+            <div className={styles['menu-box']}>
+              <span
+                className={styles['menu-icon-box']}
+                title="Save"
+                onClick={() => setSaved(!saved)}
+              >
+                <IoBookmark
                   className={`${styles['menu-icon']} ${
-                    like ? styles['red-icon'] : ''
+                    saved ? styles['saved-icon'] : ''
                   }`}
                 />
               </span>
-            )}
+              <span className={styles['menu-text']}>954</span>
+            </div>
 
-            <span className={styles['menu-text']}>21K</span>
-          </div>
-
-          <div className={styles['menu-box']}>
-            <span className={styles['menu-icon-box']} title="Comment">
-              <FaCommentDots className={styles['menu-icon']} />
-            </span>
-            <span className={styles['menu-text']}>2345</span>
-          </div>
-
-          <div className={styles['menu-box']}>
-            <span
-              className={styles['menu-icon-box']}
-              title="Save"
-              onClick={() => setSaved(!saved)}
-            >
-              <IoBookmark
-                className={`${styles['menu-icon']} ${
-                  saved ? styles['saved-icon'] : ''
-                }`}
-              />
-            </span>
-            <span className={styles['menu-text']}>954</span>
-          </div>
-
-          <div className={styles['menu-box']}>
-            <span
-              className={styles['menu-icon-box']}
-              title="Share"
-              onClick={() => setShareMedia(true)}
-            >
-              <FaShare className={styles['menu-icon']} />
-            </span>
-            <span className={styles['menu-text']}>217</span>
+            <div className={styles['menu-box']}>
+              <span
+                className={styles['menu-icon-box']}
+                title="Share"
+                onClick={() => setShareMedia(true)}
+              >
+                <FaShare className={styles['menu-icon']} />
+              </span>
+              <span className={styles['menu-text']}>217</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {description && (
-        <>
-          <div
-            className={`${styles['content-description']}  ${
-              !showMore ? styles['content-description2'] : ''
-            } ${showMore ? styles['show-more'] : ''}`}
-            style={{ width: `${descriptionWidth}px` }}
-            ref={descriptionRef}
-          ></div>
+        {description && (
+          <>
+            <div
+              className={`${styles['content-description']}  ${
+                !showMore ? styles['content-description2'] : ''
+              } ${showMore ? styles['show-more'] : ''}`}
+              style={{ width: `${descriptionWidth}px` }}
+              ref={descriptionRef}
+            ></div>
 
-          {!showMore && (
-            <div className={styles['more-text']} onClick={handleDescription}>
-              show more
-            </div>
-          )}
-        </>
-      )}
-    </article>
+            {!showMore && (
+              <div className={styles['more-text']} onClick={handleDescription}>
+                show more
+              </div>
+            )}
+          </>
+        )}
+      </article>
+    </>
   );
 };
 

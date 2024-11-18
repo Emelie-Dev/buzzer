@@ -5,7 +5,8 @@ import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
 import { ContentContext } from '../Contexts';
-import ShareMedia from '../components/ShareMedia';
+import { HiPlusSm } from 'react-icons/hi';
+import { BiMessageDetail } from 'react-icons/bi';
 
 interface User {
   name: string;
@@ -196,7 +197,6 @@ const Home = () => {
     left: false,
     right: true,
   });
-  const [shareMedia, setShareMedia] = useState<boolean>(false);
 
   const storyRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement[]>([]);
@@ -248,8 +248,6 @@ const Home = () => {
 
   return (
     <>
-      {shareMedia && <ShareMedia setShareMedia={setShareMedia} />}
-
       <NavBar page="home" />
 
       <section className={styles.main}>
@@ -295,17 +293,187 @@ const Home = () => {
           <ContentContext.Provider value={contentRef}>
             <div className={styles['content-container']}>
               {dataList.map((data, index) => (
-                <ContentBox
-                  key={index}
-                  data={data}
-                  setShareMedia={setShareMedia}
-                />
+                <ContentBox key={index} data={data} />
               ))}
             </div>
           </ContentContext.Provider>
         </section>
 
-        <section></section>
+        <section className={styles.aside}>
+          <header className={styles['aside-header']}>
+            <button className={styles['create-btn']}>
+              Create <HiPlusSm className={styles['create-icon']} />
+            </button>
+
+            <span className={styles['inbox-box']} title="Inbox">
+              <BiMessageDetail className={styles['inbox-icon']} />
+              <span className={styles['inbox-number']}>
+                {' '}
+                <span className={styles['inbox-length']}>9</span>
+              </span>
+            </span>
+
+            <div className={styles['profile-box']}>
+              <span className={styles['profile-img-box']}>
+                {' '}
+                <img
+                  className={styles['profile-img']}
+                  src="../../public/assets/images/users/user14.jpeg"
+                />
+              </span>
+
+              <ul className={styles['view-list']}>
+                <li className={styles['view-item']}>View profile</li>
+                <li className={styles['view-item']}>View story</li>
+                <li className={styles['view-item']}>Switch account</li>
+              </ul>
+            </div>
+          </header>
+
+          <div className={styles['suggested-container']}>
+            <span className={styles['suggested-text']}>Suggested for you</span>
+
+            <div className={styles['suggested-users']}>
+              <article className={styles['suggested-user']}>
+                <img
+                  src="../../public/assets/images/users/user6.jpeg"
+                  className={styles['suggested-user-img']}
+                />
+
+                <span className={styles['suggested-user-names']}>
+                  <span className={styles['suggested-user-username']}>
+                    Arya Stark
+                  </span>
+                  <span className={styles['suggested-user-handle']}>
+                    @aryaofhousestark
+                  </span>
+                </span>
+
+                <button className={styles['follow-btn']}>Follow</button>
+              </article>
+              <article className={styles['suggested-user']}>
+                <img
+                  src="../../public/assets/images/users/user6.jpeg"
+                  className={styles['suggested-user-img']}
+                />
+
+                <span className={styles['suggested-user-names']}>
+                  <span className={styles['suggested-user-username']}>
+                    Arya Stark
+                  </span>
+                  <span className={styles['suggested-user-handle']}>
+                    @aryaofhousestark
+                  </span>
+                </span>
+
+                <button className={styles['follow-btn']}>Follow</button>
+              </article>
+
+              <article className={styles['suggested-user']}>
+                <img
+                  src="../../public/assets/images/users/user6.jpeg"
+                  className={styles['suggested-user-img']}
+                />
+
+                <span className={styles['suggested-user-names']}>
+                  <span className={styles['suggested-user-username']}>
+                    Arya Stark
+                  </span>
+                  <span className={styles['suggested-user-handle']}>
+                    @aryaofhousestark
+                  </span>
+                </span>
+
+                <button className={styles['follow-btn']}>Follow</button>
+              </article>
+              <article className={styles['suggested-user']}>
+                <img
+                  src="../../public/assets/images/users/user6.jpeg"
+                  className={styles['suggested-user-img']}
+                />
+
+                <span className={styles['suggested-user-names']}>
+                  <span className={styles['suggested-user-username']}>
+                    Arya Stark
+                  </span>
+                  <span className={styles['suggested-user-handle']}>
+                    @aryaofhousestark
+                  </span>
+                </span>
+
+                <button className={styles['follow-btn']}>Follow</button>
+              </article>
+              <article className={styles['suggested-user']}>
+                <img
+                  src="../../public/assets/images/users/user6.jpeg"
+                  className={styles['suggested-user-img']}
+                />
+
+                <span className={styles['suggested-user-names']}>
+                  <span className={styles['suggested-user-username']}>
+                    Arya Stark
+                  </span>
+                  <span className={styles['suggested-user-handle']}>
+                    @aryaofhousestark
+                  </span>
+                </span>
+
+                <button className={styles['follow-btn']}>Follow</button>
+              </article>
+              <article className={styles['suggested-user']}>
+                <img
+                  src="../../public/assets/images/users/user6.jpeg"
+                  className={styles['suggested-user-img']}
+                />
+
+                <span className={styles['suggested-user-names']}>
+                  <span className={styles['suggested-user-username']}>
+                    Arya Stark
+                  </span>
+                  <span className={styles['suggested-user-handle']}>
+                    @aryaofhousestark
+                  </span>
+                </span>
+
+                <button className={styles['follow-btn']}>Follow</button>
+              </article>
+              <article className={styles['suggested-user']}>
+                <img
+                  src="../../public/assets/images/users/user6.jpeg"
+                  className={styles['suggested-user-img']}
+                />
+
+                <span className={styles['suggested-user-names']}>
+                  <span className={styles['suggested-user-username']}>
+                    Arya Stark
+                  </span>
+                  <span className={styles['suggested-user-handle']}>
+                    @aryaofhousestark
+                  </span>
+                </span>
+
+                <button className={styles['follow-btn']}>Follow</button>
+              </article>
+              <article className={styles['suggested-user']}>
+                <img
+                  src="../../public/assets/images/users/user6.jpeg"
+                  className={styles['suggested-user-img']}
+                />
+
+                <span className={styles['suggested-user-names']}>
+                  <span className={styles['suggested-user-username']}>
+                    Arya Stark
+                  </span>
+                  <span className={styles['suggested-user-handle']}>
+                    @aryaofhousestark
+                  </span>
+                </span>
+
+                <button className={styles['follow-btn']}>Follow</button>
+              </article>
+            </div>
+          </div>
+        </section>
       </section>
     </>
   );

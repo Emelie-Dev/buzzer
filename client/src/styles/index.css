@@ -33,3 +33,9 @@ body {
   box-sizing: border-box;
   outline: none;
 }
+
+.app-user-tags {
+  color: #a855f7;
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+}

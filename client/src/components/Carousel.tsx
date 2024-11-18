@@ -6,7 +6,7 @@ import CarouselItem, { Content } from './CarouselItem';
 type CarouselProps = {
   data: Content[];
   aspectRatio: number;
-  setDescriptionWidth: React.Dispatch<React.SetStateAction<number>>;
+  setDescriptionWidth?: React.Dispatch<React.SetStateAction<number>>;
 };
 
 const Carousel = ({
@@ -27,7 +27,8 @@ const Carousel = ({
 
   useEffect(() => {
     const resizeHandler = () => {
-      setDescriptionWidth(carouselRef.current.offsetWidth);
+      if (setDescriptionWidth)
+        setDescriptionWidth(carouselRef.current.offsetWidth);
     };
 
     resizeHandler();
