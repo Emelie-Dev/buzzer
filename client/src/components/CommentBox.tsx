@@ -466,8 +466,8 @@ const CommentBox = ({
           <div className={styles['comment-div']}>
             <div className={styles['comments-head']}>Comments (512)</div>
 
-            {new Array(5).fill(0).map((value, index) => (
-              <CommentContent key={index} />
+            {new Array(5).fill(0).map((value) => (
+              <CommentContent key={value} />
             ))}
 
             {scrollHeight > 150 && (
