@@ -112,13 +112,24 @@ const ContentBox = ({ data }: ContentBoxProps) => {
   };
 
   return (
-    <>
+    <LikeContext.Provider value={{ like, setLike, setHideLike }}>
       {shareMedia && <ShareMedia setShareMedia={setShareMedia} />}
 
       {viewComment && (
         <CommentBox
           setViewComment={setViewComment}
-          data={{ media, username, name, photo, aspectRatio }}
+          data={{
+            media,
+            username,
+            name,
+            photo,
+            aspectRatio,
+          }}
+          isFollowing={isFollowing}
+          saved={saved}
+          hideLike={hideLike}
+          setSaved={setSaved}
+          setShareMedia={setShareMedia}
         />
       )}
 
@@ -160,16 +171,15 @@ const ContentBox = ({ data }: ContentBoxProps) => {
             )}
           </div>
         </h1>
-
         <div className={styles['content-box']}>
-          <LikeContext.Provider value={{ like, setLike, setHideLike }}>
+          <div className={styles['carousel-container']}>
             <Carousel
               data={media}
               aspectRatio={aspectRatio}
               setDescriptionWidth={setDescriptionWidth}
+              type="content"
             />
-          </LikeContext.Provider>
-
+          </div>
           <div className={styles['menu-container']}>
             <div className={styles['profile-img-box']}>
               <img
@@ -281,7 +291,7 @@ const ContentBox = ({ data }: ContentBoxProps) => {
           </>
         )}
       </article>
-    </>
+    </LikeContext.Provider>
   );
 };
 

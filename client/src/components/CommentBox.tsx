@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import styles from '../styles/CommentBox.module.css';
 import { Content } from './CarouselItem';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
@@ -9,6 +9,8 @@ import { PiCheckFatFill } from 'react-icons/pi';
 import { IoReloadOutline } from 'react-icons/io5';
 import { IoClose } from 'react-icons/io5';
 import { FaArrowUp } from 'react-icons/fa';
+import Carousel from './Carousel';
+import { LikeContext } from '../Contexts';
 
 type CommentBoxProps = {
   data: {
@@ -19,6 +21,11 @@ type CommentBoxProps = {
     aspectRatio: number;
   };
   setViewComment: React.Dispatch<React.SetStateAction<boolean>>;
+  isFollowing: boolean;
+  saved: boolean;
+  hideLike: boolean;
+  setSaved: React.Dispatch<React.SetStateAction<boolean>>;
+  setShareMedia: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const followers = [
@@ -49,8 +56,16 @@ const followers = [
   },
 ];
 
-const CommentBox = ({ data, setViewComment }: CommentBoxProps) => {
-  const { username, name, photo } = data;
+const CommentBox = ({
+  data,
+  setViewComment,
+  isFollowing,
+  saved,
+  hideLike,
+  setSaved,
+  setShareMedia,
+}: CommentBoxProps) => {
+  const { media, username, name, photo, aspectRatio } = data;
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [hideMenu, setHideMenu] = useState<boolean>(true);
   const [newComment, setNewComment] = useState<string>('');
@@ -60,6 +75,8 @@ const CommentBox = ({ data, setViewComment }: CommentBoxProps) => {
   const [searching, setSearching] = useState<boolean | 'done'>(false);
   const [newTag, setNewTag] = useState<boolean>(false);
   const [scrollHeight, setScrollHeight] = useState<number>(0);
+
+  const { like, setLike, setHideLike } = useContext(LikeContext);
 
   const menuRef = useRef<HTMLDivElement>(null!);
   const listRef = useRef<HTMLUListElement>(null!);
@@ -325,7 +342,9 @@ const CommentBox = ({ data, setViewComment }: CommentBoxProps) => {
       </span>
 
       <div className={styles.container}>
-        <div className={styles['carousel-container']}>skush</div>
+        <div className={styles['carousel-container']}>
+          <Carousel data={media} aspectRatio={aspectRatio} type="comment" />
+        </div>
 
         <div
           className={styles['comment-container']}
@@ -335,18 +354,19 @@ const CommentBox = ({ data, setViewComment }: CommentBoxProps) => {
           }
         >
           <div className={styles['comment-header']}>
-            <span className={styles['profile-img-box']}>
-              <img
-                className={styles['profile-img']}
-                src={`../../assets/images/users/${photo}`}
-              />
-            </span>
+            <div className={styles['comment-header-details']}>
+              <span className={styles['profile-img-box']}>
+                <img
+                  className={styles['profile-img']}
+                  src={`../../assets/images/users/${photo}`}
+                />
+              </span>
 
-            <span className={styles['name-box']}>
-              <span className={styles['name']}>{name}</span>
-              <span className={styles['username']}>{username}</span>
-            </span>
-
+              <span className={styles['name-box']}>
+                <span className={styles['name']}>{name}</span>
+                <span className={styles['username']}>{username}</span>
+              </span>
+            </div>
             <div className={styles['menu-div']} ref={menuRef}>
               <HiOutlineDotsHorizontal
                 className={`${styles['content-menu']} ${
@@ -363,7 +383,7 @@ const CommentBox = ({ data, setViewComment }: CommentBoxProps) => {
                   <li
                     className={`${styles['menu-item']} ${styles['menu-red']}`}
                   >
-                    Follow
+                    {isFollowing ? 'Unfollow' : 'Follow'}
                   </li>
                   <li
                     className={`${styles['menu-item']} ${styles['menu-red']}`}
@@ -381,29 +401,62 @@ const CommentBox = ({ data, setViewComment }: CommentBoxProps) => {
 
           <div className={styles['engage-div']}>
             <div className={styles['menu-box']}>
-              <span className={styles['menu-icon-box']} title="Like">
-                <FaHeart className={`${styles['menu-icon']}`} />
-              </span>
+              {!hideLike ? (
+                <img
+                  src="../../assets/images/Animation - 1731349965809.gif"
+                  className={styles['like-icon']}
+                />
+              ) : (
+                <span
+                  className={styles['menu-icon-box']}
+                  title="Like"
+                  onClick={() => {
+                    setLike(!like);
+                    setHideLike(like === true ? true : false);
+                  }}
+                >
+                  <FaHeart
+                    className={`${styles['menu-icon']} ${
+                      like ? styles['red-icon'] : ''
+                    }`}
+                  />
+                </span>
+              )}
 
               <span className={styles['menu-text']}>21K</span>
             </div>
 
             <div className={styles['menu-box']}>
-              <span className={styles['menu-icon-box']} title="Comment">
+              <span
+                className={styles['menu-icon-box']}
+                title="Comment"
+                onClick={() => textRef.current.focus()}
+              >
                 <FaCommentDots className={styles['menu-icon']} />
               </span>
               <span className={styles['menu-text']}>2345</span>
             </div>
 
             <div className={styles['menu-box']}>
-              <span className={styles['menu-icon-box']} title="Save">
-                <IoBookmark className={`${styles['menu-icon']} `} />
+              <span
+                className={styles['menu-icon-box']}
+                title="Save"
+                onClick={() => setSaved(!saved)}
+              >
+                <IoBookmark
+                  className={`${styles['menu-icon']} ${
+                    saved ? styles['saved-icon'] : ''
+                  }`}
+                />
               </span>
               <span className={styles['menu-text']}>954</span>
             </div>
 
             <div className={`${styles['menu-box']} ${styles['share-box']}`}>
-              <span className={styles['menu-icon-box']}>
+              <span
+                className={styles['menu-icon-box']}
+                onClick={() => setShareMedia(true)}
+              >
                 <FaShare className={styles['menu-icon']} />
               </span>
               <span className={styles['menu-text']}>217</span>
@@ -414,18 +467,19 @@ const CommentBox = ({ data, setViewComment }: CommentBoxProps) => {
             <div className={styles['comments-head']}>Comments (512)</div>
 
             {new Array(5).fill(0).map((value, index) => (
-              <CommentContent key={index} value={value} />
+              <CommentContent key={index} />
             ))}
+
+            {scrollHeight > 150 && (
+              <span
+                className={styles['scroll-up-box']}
+                onClick={() => (commentRef.current.scrollTop = 0)}
+              >
+                <FaArrowUp className={styles['scroll-up-icon']} />
+              </span>
+            )}
           </div>
 
-          {scrollHeight > 150 && (
-            <span
-              className={styles['scroll-up-box']}
-              onClick={() => (commentRef.current.scrollTop = 0)}
-            >
-              <FaArrowUp className={styles['scroll-up-icon']} />
-            </span>
-          )}
           <div className={styles['new-comment-div']}>
             <div className={styles['new-comment-box']}>
               <div
@@ -447,7 +501,9 @@ const CommentBox = ({ data, setViewComment }: CommentBoxProps) => {
               )}
 
               <div
-                className={styles['new-comment-tags']}
+                className={`${styles['new-comment-tags']} ${
+                  showList ? styles['active-comment-tag'] : ''
+                }`}
                 ref={tagRef}
                 onClick={addTag}
               >

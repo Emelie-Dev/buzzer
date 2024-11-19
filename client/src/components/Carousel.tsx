@@ -7,12 +7,14 @@ type CarouselProps = {
   data: Content[];
   aspectRatio: number;
   setDescriptionWidth?: React.Dispatch<React.SetStateAction<number>>;
+  type: 'comment' | 'content';
 };
 
 const Carousel = ({
   data,
   aspectRatio,
   setDescriptionWidth,
+  type: viewType,
 }: CarouselProps) => {
   const [contentIndex, setContentIndex] = useState<number>(0);
   const [hideData, setHideData] = useState<boolean>(false);
@@ -59,7 +61,6 @@ const Carousel = ({
         -(contentIndex - 1) * 100
       }%)`;
 
-      // alert(contentIndex);
       if (contentIndex < 9) dotRef.current.scrollLeft -= 10;
     }
 
@@ -99,7 +100,11 @@ const Carousel = ({
   };
 
   return (
-    <div className={styles.carousel}>
+    <div
+      className={`${styles.carousel} ${
+        viewType === 'comment' ? styles['comment-carousel'] : ''
+      }`}
+    >
       <span
         className={`${styles['pagination-box']} ${
           hideData ? styles['hide-data'] : ''
@@ -140,6 +145,7 @@ const Carousel = ({
               src,
               description,
             }}
+            viewType={viewType}
             itemIndex={index}
             contentIndex={contentIndex}
             aspectRatio={aspectRatio}

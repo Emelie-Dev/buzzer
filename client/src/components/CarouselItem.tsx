@@ -18,6 +18,7 @@ type CarouselItemProps = {
   contentIndex: number;
   itemIndex: number;
   setHideData: React.Dispatch<React.SetStateAction<boolean>>;
+  viewType: 'comment' | 'content';
 };
 
 const CarouselItem = ({
@@ -27,6 +28,7 @@ const CarouselItem = ({
   itemIndex,
   contentIndex,
   setHideData,
+  viewType,
 }: CarouselItemProps) => {
   const { type, src } = item;
   const [loading, setLoading] = useState<
@@ -169,7 +171,9 @@ const CarouselItem = ({
 
   return (
     <div
-      className={styles['carousel-item']}
+      className={`${styles['carousel-item']} ${
+        viewType === 'comment' ? styles['comment-item'] : ''
+      }`}
       ref={type === 'video' ? addToRef(contentRef) : null}
       data-active={contentIndex === itemIndex && !pause}
     >

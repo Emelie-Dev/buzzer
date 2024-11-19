@@ -110,6 +110,10 @@
   min-height: 380px;
 }
 
+.carousel-container {
+  width: 100%;
+}
+
 .menu-container {
   margin-left: 2rem;
   display: flex;

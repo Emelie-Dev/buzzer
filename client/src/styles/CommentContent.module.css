@@ -40,6 +40,8 @@
   font-size: 0.95rem;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .comment-content {

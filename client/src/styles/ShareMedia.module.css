@@ -5,7 +5,7 @@
   background: rgba(0, 0, 0, 0.5);
   width: 100vw;
   min-height: 100vh;
-  z-index: 5;
+  z-index: 6;
   display: grid;
   grid-template-columns: 45%;
   justify-content: center;

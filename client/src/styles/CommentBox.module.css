@@ -41,13 +41,18 @@
 .container {
   display: flex;
   justify-content: center;
-  width: calc(100vw - 10rem);
+  width: calc(100vw - 10rem - 0.5px);
+  height: calc(100vh - 2rem);
 }
 
 .carousel-container {
-  width: 55%;
+  min-width: 45%;
+  max-width: 55%;
+  height: 100%;
+  position: relative;
+  /* overflow: hidden; */
+  border-radius: 5px 0 0 5px;
   background: black;
-  color: white;
 }
 
 .comment-container::-webkit-scrollbar {
@@ -70,6 +75,14 @@
   display: flex;
   align-items: center;
   padding: 1rem 1rem 0.5rem;
+  width: 100%;
+}
+
+.comment-header-details {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: calc(100% - 2.5rem);
 }
 
 .profile-img-box {
@@ -99,16 +112,26 @@
   flex-direction: column;
   font-family: appFont;
   margin-left: 0.7rem;
+  overflow: hidden;
+  width: 100%;
 }
 
 .name {
   font-weight: 600;
   font-size: 0.95rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 100%;
 }
 
 .username {
   color: gray;
   font-size: 0.85rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 100%;
 }
 
 .menu-div {
@@ -231,6 +254,7 @@
 
 .comment-div {
   padding-bottom: 1rem;
+  position: relative;
 }
 
 .comments-head {
@@ -451,11 +475,16 @@
   animation: rotate 0.75s linear 0s infinite normal both;
 }
 
+.active-comment-tag {
+  color: var(--app-theme-color);
+  font-weight: 600;
+}
+
 .scroll-up-box {
   position: sticky;
   z-index: 5;
-  left: 87%;
-  bottom: 120px;
+  left: 80%;
+  bottom: 27%;
   background: white;
   box-shadow: 1px 1px 10px -4px black;
   display: inline;
@@ -478,6 +507,26 @@
 
 .scroll-up-box:hover {
   box-shadow: inset 1px 1px 10px -5px black;
+}
+
+.carousel-pic {
+  min-height: 100%;
+  object-fit: cover;
+  aspect-ratio: 1/1;
+  overflow: hidden;
+}
+
+.saved-icon {
+  fill: var(--app-theme-color);
+}
+
+.like-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.red-icon {
+  fill: red;
 }
 
 /* Animations */

@@ -1,12 +1,16 @@
 .carousel {
   width: 100%;
-  min-height: 100%;
   position: relative;
   display: flex;
   justify-content: center;
   user-select: none;
   overflow: hidden;
   border-radius: 5px;
+  height: 100%;
+}
+
+.comment-carousel {
+  border-radius: 5px 0 0 5px;
 }
 
 .pagination-box {

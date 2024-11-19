@@ -5,11 +5,11 @@ import { MdDelete } from 'react-icons/md';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { useRef, useState } from 'react';
 
-const CommentContent = ({ value }: { value: number }) => {
+const CommentContent = () => {
   const [showMenu, setShowMenu] = useState<boolean>(false);
 
   const subCommentRef = useRef<HTMLDivElement>(null!);
-  console.log(value);
+
   return (
     <article
       className={styles['comment-box']}
