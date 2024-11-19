@@ -3,6 +3,7 @@ import styles from '../styles/Auth.module.css';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebookSquare } from 'react-icons/fa';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
+import { useNavigate } from 'react-router-dom';
 
 type SignupType = {
   username: string;
@@ -50,6 +51,8 @@ const Auth = () => {
     signup: false,
     signin: false,
   });
+
+  const navigate = useNavigate();
 
   const emailRef = useRef<HTMLInputElement>(null!);
   const checkBoxRef = useRef<HTMLInputElement[]>([]);
@@ -327,6 +330,7 @@ const Auth = () => {
                 className={`${styles.button} ${styles['btn']} ${
                   !authValid.signup ? styles['disable-btn'] : ''
                 }`}
+                onClick={() => navigate('/home')}
               >
                 Sign Up
               </button>
@@ -421,12 +425,14 @@ const Auth = () => {
                 className={`${styles.button} ${styles['btn']} ${
                   styles['btn2']
                 }  ${!authValid.signin ? styles['disable-btn'] : ''}`}
+                onClick={() => navigate('/home')}
               >
                 Sign In
               </button>
             </div>
           </form>
         </div>
+
         <div className={styles['overlay-container']}>
           <div className={styles['overlay']}>
             <div
