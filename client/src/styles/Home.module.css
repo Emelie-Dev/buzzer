@@ -305,7 +305,7 @@
 }
 
 .suggested-user-username {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-family: appFontMedium;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -314,7 +314,7 @@
 
 .suggested-user-handle {
   font-family: appFont;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: gray;
   text-overflow: ellipsis;
   white-space: nowrap;

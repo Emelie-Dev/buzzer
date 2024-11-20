@@ -7,6 +7,7 @@ import ContentBox from '../components/ContentBox';
 import { ContentContext } from '../Contexts';
 import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
+import StoryModal from '../components/StoryModal';
 
 interface User {
   name: string;
@@ -197,6 +198,7 @@ const Home = () => {
     left: false,
     right: true,
   });
+  const [viewStory, setViewStory] = useState<boolean>(false);
 
   const storyRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement[]>([]);
@@ -250,6 +252,8 @@ const Home = () => {
     <>
       <NavBar page="home" />
 
+      {viewStory && <StoryModal setViewStory={setViewStory} />}
+
       <section className={styles.main}>
         <section className={styles['main-container']} onScroll={scrollHandler}>
           <div
@@ -267,7 +271,11 @@ const Home = () => {
             )}
 
             {users.map(({ name }, index) => (
-              <article key={index} className={styles.user}>
+              <article
+                key={index}
+                className={styles.user}
+                onClick={() => setViewStory(true)}
+              >
                 <span className={styles['user-pics-box']}>
                   <img
                     src={`../../assets/images/users/user${index + 1}.jpeg`}
