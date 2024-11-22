@@ -181,14 +181,14 @@ const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
             ref={optionsRef}
             onScroll={handleScroll}
           >
-            {showArrow.left && (
-              <span
-                className={styles['left-arrow-box']}
-                onClick={() => (optionsRef.current.scrollLeft -= 300)}
-              >
-                <MdKeyboardArrowLeft className={styles['left-arrow']} />
-              </span>
-            )}
+            <span
+              className={`${styles['left-arrow-box']} ${
+                !showArrow.left ? styles['hide-icon'] : ''
+              }`}
+              onClick={() => (optionsRef.current.scrollLeft -= 300)}
+            >
+              <MdKeyboardArrowLeft className={styles['left-arrow']} />
+            </span>
 
             <div className={styles['share-option']}>
               <span className={styles['share-icon-box']}>
@@ -255,14 +255,14 @@ const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
               <span className={styles['share-icon-text']}>Snapchat</span>
             </div>
 
-            {showArrow.right && (
-              <span
-                className={styles['right-arrow-box']}
-                onClick={() => (optionsRef.current.scrollLeft += 300)}
-              >
-                <MdKeyboardArrowRight className={styles['right-arrow']} />
-              </span>
-            )}
+            <span
+              className={`${styles['right-arrow-box']} ${
+                !showArrow.right ? styles['hide-icon'] : ''
+              }`}
+              onClick={() => (optionsRef.current.scrollLeft += 300)}
+            >
+              <MdKeyboardArrowRight className={styles['right-arrow']} />
+            </span>
           </div>
         )}
 

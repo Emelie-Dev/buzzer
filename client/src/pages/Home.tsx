@@ -261,14 +261,14 @@ const Home = () => {
             ref={storyRef}
             onScroll={handleScroll}
           >
-            {showArrow.left && (
-              <span
-                className={styles['left-arrow-box']}
-                onClick={() => (storyRef.current.scrollLeft -= 300)}
-              >
-                <MdKeyboardArrowLeft className={styles['left-arrow']} />
-              </span>
-            )}
+            <span
+              className={`${styles['left-arrow-box']} ${
+                !showArrow.left ? styles['hide-icon'] : ''
+              }`}
+              onClick={() => (storyRef.current.scrollLeft -= 300)}
+            >
+              <MdKeyboardArrowLeft className={styles['left-arrow']} />
+            </span>
 
             {users.map(({ name }, index) => (
               <article
@@ -288,14 +288,14 @@ const Home = () => {
               </article>
             ))}
 
-            {showArrow.right && (
-              <span
-                className={styles['right-arrow-box']}
-                onClick={() => (storyRef.current.scrollLeft += 300)}
-              >
-                <MdKeyboardArrowRight className={styles['right-arrow']} />
-              </span>
-            )}
+            <span
+              className={`${styles['right-arrow-box']} ${
+                !showArrow.right ? styles['hide-icon'] : ''
+              }`}
+              onClick={() => (storyRef.current.scrollLeft += 300)}
+            >
+              <MdKeyboardArrowRight className={styles['right-arrow']} />
+            </span>
           </div>
 
           <ContentContext.Provider value={contentRef}>

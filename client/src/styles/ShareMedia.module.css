@@ -358,6 +358,10 @@
   fill: white;
 }
 
+.hide-icon {
+  visibility: hidden;
+}
+
 /* Animations */
 
 @keyframes showModal {
