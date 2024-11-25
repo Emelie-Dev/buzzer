@@ -1,23 +1,314 @@
 import styles from '../styles/StoryModal.module.css';
 import { IoClose } from 'react-icons/io5';
-import { BsDot } from 'react-icons/bs';
-import { FaPause } from 'react-icons/fa6';
-import { BiSolidVolumeMute } from 'react-icons/bi';
-import { HiDotsHorizontal } from 'react-icons/hi';
-import { FaRegHeart } from 'react-icons/fa';
-import { AiOutlineSend } from 'react-icons/ai';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import StoryItem from './StoryItem';
+import { StoryContent } from './StoryItem';
+
+export interface Story {
+  name: string;
+  content: StoryContent[];
+  time: string;
+}
 
 type StoryModalProps = {
   setViewStory: React.Dispatch<React.SetStateAction<boolean>>;
+  itemIndex: number;
 };
 
-const StoryModal = ({ setViewStory }: StoryModalProps) => {
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) setViewStory(false);
-  };
+const stories: Story[] = [
+  {
+    name: 'userOne',
+    content: [
+      { type: 'video', src: 'content20' },
+      { type: 'image', src: 'content10' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content20' },
+      { type: 'video', src: 'content6' },
+      { type: 'image', src: 'content8' },
+      { type: 'image', src: 'content14' },
+    ],
+    time: '23 seconds ago',
+  },
+  {
+    name: 'coolGuy',
+    content: [
+      { type: 'image', src: 'content8' },
+      { type: 'video', src: 'content6' },
+      { type: 'video', src: 'content21' },
+      { type: 'video', src: 'content20' },
+      { type: 'video', src: 'content20' },
+    ],
+    time: '12 hours ago',
+  },
+  {
+    name: 'happy123',
+    content: [
+      { type: 'image', src: 'content7' },
+      { type: 'image', src: 'content3' },
+      { type: 'image', src: 'content14' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content24' },
+      { type: 'video', src: 'content6' },
+      { type: 'video', src: 'content20' },
+    ],
+    time: '19 seconds ago',
+  },
+  {
+    name: 'sunshineGirl',
+    content: [
+      { type: 'image', src: 'content16' },
+      { type: 'video', src: 'content6' },
+    ],
+    time: '17 hours ago',
+  },
+  {
+    name: 'codeMaster',
+    content: [
+      { type: 'image', src: 'content15' },
+      { type: 'image', src: 'content10' },
+      { type: 'image', src: 'content2' },
+      { type: 'video', src: 'content20' },
+      { type: 'image', src: 'content1' },
+      { type: 'image', src: 'content5' },
+      { type: 'image', src: 'content22' },
+      { type: 'video', src: 'content25' },
+      { type: 'image', src: 'content18' },
+    ],
+    time: '13 hours ago',
+  },
+  {
+    name: 'skyWalker',
+    content: [
+      { type: 'image', src: 'content5' },
+      { type: 'image', src: 'content7' },
+      { type: 'image', src: 'content3' },
+      { type: 'video', src: 'content21' },
+      { type: 'image', src: 'content13' },
+      { type: 'image', src: 'content5' },
+      { type: 'video', src: 'content20' },
+    ],
+    time: '15 hours ago',
+  },
+  {
+    name: 'theArtist',
+    content: [
+      { type: 'video', src: 'content24' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content20' },
+      { type: 'image', src: 'content8' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content21' },
+      { type: 'video', src: 'content6' },
+      { type: 'image', src: 'content2' },
+      { type: 'video', src: 'content24' },
+      { type: 'image', src: 'content12' },
+    ],
+    time: '12 hours ago',
+  },
+  {
+    name: 'jungleKing',
+    content: [
+      { type: 'video', src: 'content21' },
+      { type: 'image', src: 'content3' },
+    ],
+    time: '17 hours ago',
+  },
+  {
+    name: 'dreamer_98',
+    content: [
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content25' },
+      { type: 'image', src: 'content10' },
+      { type: 'image', src: 'content11' },
+      { type: 'video', src: 'content6' },
+      { type: 'video', src: 'content21' },
+      { type: 'video', src: 'content24' },
+      { type: 'video', src: 'content24' },
+      { type: 'image', src: 'content3' },
+    ],
+    time: '12 minutes ago',
+  },
+  {
+    name: 'techieDude',
+    content: [{ type: 'video', src: 'content24' }],
+    time: '20 hours ago',
+  },
+  {
+    name: 'cityExplorer',
+    content: [
+      { type: 'video', src: 'content21' },
+      { type: 'image', src: 'content22' },
+      { type: 'video', src: 'content6' },
+    ],
+    time: '15 minutes ago',
+  },
+  {
+    name: 'natureLover',
+    content: [
+      { type: 'image', src: 'content19' },
+      { type: 'image', src: 'content22' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content25' },
+      { type: 'image', src: 'content13' },
+      { type: 'video', src: 'content6' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content21' },
+    ],
+    time: '13 seconds ago',
+  },
+  {
+    name: 'mountainView',
+    content: [
+      { type: 'image', src: 'content15' },
+      { type: 'image', src: 'content1' },
+      { type: 'video', src: 'content20' },
+      { type: 'video', src: 'content24' },
+    ],
+    time: '22 hours ago',
+  },
+  {
+    name: 'coffeeAddict',
+    content: [
+      { type: 'image', src: 'content10' },
+      { type: 'image', src: 'content8' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content20' },
+      { type: 'image', src: 'content3' },
+      { type: 'image', src: 'content13' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content20' },
+    ],
+    time: '18 minutes ago',
+  },
+  {
+    name: 'chefTom',
+    content: [
+      { type: 'image', src: 'content8' },
+      { type: 'image', src: 'content10' },
+      { type: 'video', src: 'content20' },
+      { type: 'image', src: 'content10' },
+      { type: 'image', src: 'content8' },
+      { type: 'video', src: 'content21' },
+      { type: 'image', src: 'content2' },
+      { type: 'image', src: 'content19' },
+      { type: 'video', src: 'content6' },
+      { type: 'image', src: 'content5' },
+    ],
+    time: '15 seconds ago',
+  },
+  {
+    name: 'oceanWave',
+    content: [
+      { type: 'video', src: 'content21' },
+      { type: 'video', src: 'content21' },
+      { type: 'image', src: 'content8' },
+    ],
+    time: '6 seconds ago',
+  },
+  {
+    name: 'bookworm101',
+    content: [
+      { type: 'video', src: 'content6' },
+      { type: 'video', src: 'content6' },
+      { type: 'video', src: 'content24' },
+      { type: 'image', src: 'content9' },
+      { type: 'video', src: 'content24' },
+      { type: 'video', src: 'content6' },
+      { type: 'video', src: 'content20' },
+    ],
+    time: '17 seconds ago',
+  },
+  {
+    name: 'fastRunner',
+    content: [
+      { type: 'image', src: 'content22' },
+      { type: 'video', src: 'content25' },
+      { type: 'video', src: 'content25' },
+      { type: 'image', src: 'content17' },
+      { type: 'video', src: 'content24' },
+      { type: 'video', src: 'content25' },
+    ],
+    time: '17 minutes ago',
+  },
+  {
+    name: 'digitalNomad',
+    content: [
+      { type: 'video', src: 'content24' },
+      { type: 'video', src: 'content25' },
+      { type: 'image', src: 'content17' },
+      { type: 'image', src: 'content18' },
+      { type: 'image', src: 'content18' },
+      { type: 'image', src: 'content7' },
+      { type: 'image', src: 'content9' },
+    ],
+    time: '6 seconds ago',
+  },
+  {
+    name: 'starGazer',
+    content: [
+      { type: 'image', src: 'content2' },
+      { type: 'image', src: 'content19' },
+      { type: 'video', src: 'content24' },
+      { type: 'image', src: 'content18' },
+      { type: 'video', src: 'content6' },
+    ],
+    time: '20 hours ago',
+  },
+];
+
+const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
+  const [currentIndex, setCurrentIndex] = useState<number>(itemIndex);
+  const [isOperative, setIsOperative] = useState<boolean>(false);
+
+  const carouselRef = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => {
+    moveToStory(currentIndex, null, null, null, 'initial')();
+
+    if (carouselRef.current)
+      carouselRef.current.style.scrollBehavior = 'smooth';
+  }, []);
+
+  const moveToStory = useCallback(
+    (
+        index: number,
+        storyItemIndex: number | null,
+        contentLength: number | null,
+        setContentIndex: React.Dispatch<React.SetStateAction<number>> | null,
+        type: 'initial' | 'next' | 'prev' | 'jump'
+      ) =>
+      () => {
+        if (type === 'next') {
+          setIsOperative(true);
+          if (storyItemIndex === contentLength) {
+            setCurrentIndex(index);
+            carouselRef.current.scrollLeft =
+              index * (carouselRef.current.offsetWidth * 0.4 - 80);
+          } else {
+            if (setContentIndex) setContentIndex((prev) => prev + 1);
+          }
+        } else if (type === 'prev') {
+          setIsOperative(true);
+          if (storyItemIndex === 0) {
+            setCurrentIndex(index);
+            carouselRef.current.scrollLeft =
+              index * (carouselRef.current.offsetWidth * 0.4 - 80);
+          } else {
+            if (setContentIndex) setContentIndex((prev) => prev - 1);
+          }
+        } else {
+          if (type === 'jump') setIsOperative(true);
+
+          setCurrentIndex(index);
+          carouselRef.current.scrollLeft =
+            index * (carouselRef.current.offsetWidth * 0.4 - 80);
+        }
+      },
+    []
+  );
 
   return (
-    <section className={styles.section} onClick={handleClick}>
+    <section className={styles.section}>
       <span
         className={styles['close-icon-box']}
         title="Close"
@@ -26,68 +317,23 @@ const StoryModal = ({ setViewStory }: StoryModalProps) => {
         <IoClose className={styles['close-icon']} />
       </span>
 
-      <div className={styles['story-container']}>
-        <article className={styles['current-story']}>
-          <div className={styles['line-container']}>
-            <span className={styles['line-box']}>
-              <span className={styles['line-item']}>&nbsp;</span>
-            </span>
+      <div className={styles['story-container']} ref={carouselRef}>
+        <article className={styles['void-next-story']}></article>
 
-            <span className={styles['line-box']}>
-              <span className={styles['line-item']}>&nbsp;</span>
-            </span>
+        {stories.map((data, index) => (
+          <StoryItem
+            key={index}
+            itemIndex={index}
+            active={currentIndex === index}
+            storyIndex={currentIndex}
+            isOperative={isOperative}
+            moveToStory={moveToStory}
+            totalLength={stories.length}
+            data={data}
+          />
+        ))}
 
-            <span className={styles['line-box']}>
-              <span className={styles['line-item']}>&nbsp;</span>
-            </span>
-          </div>
-
-          <div className={styles['details-box']}>
-            <div className={styles['story-details']}>
-              <span className={styles['name-box']}>
-                <img
-                  className={styles['user-pic']}
-                  src="../../assets/images/users/user12.jpeg"
-                />
-                <span className={styles['user-name']}>lyanna_Stark</span>
-              </span>
-              <BsDot className={styles.dot} />
-              <time className={styles['time-sent']}>2h</time>
-            </div>
-
-            <div className={styles['menu-details']}>
-              <FaPause className={styles['pause-icon']} />
-              <BiSolidVolumeMute className={styles['mute-icon']} />
-              <HiDotsHorizontal className={styles['menu-icon']} />
-            </div>
-          </div>
-
-          <div className={styles['content-div']}>
-            {/* <video className={styles.content} autoPlay>
-              <source
-                src="../../public/assets/images/content/content21.mp4"
-                type="video/mp4"
-              />
-              Your browser does not support playing video.
-            </video> */}
-
-            <img
-              className={styles.content}
-              src="../../public/assets/images/content/content22.jpeg"
-            />
-          </div>
-
-          <div className={styles['reply-div']}>
-            <input
-              className={styles['reply-input']}
-              type="text"
-              placeholder="Reply to lyanna...."
-            />
-
-            <FaRegHeart className={styles['like-icon']} />
-            <AiOutlineSend className={styles['send-icon']} />
-          </div>
-        </article>
+        <article className={styles['void-next-story2']}></article>
       </div>
     </section>
   );

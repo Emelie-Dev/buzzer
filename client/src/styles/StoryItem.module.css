@@ -1,0 +1,382 @@
+.current-story {
+  position: relative;
+  width: 30%;
+  margin-right: 3rem;
+  height: calc(100vh - 2rem);
+  background: black;
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  flex-shrink: 0;
+  animation: showStory 0s ease 0s 1 normal both;
+  user-select: none;
+}
+
+.line-container {
+  width: 100%;
+  position: absolute;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0.5rem;
+  z-index: 1;
+}
+
+.line-box {
+  width: 100%;
+  height: 2px;
+  overflow: hidden;
+  margin: 0 0.15rem;
+  border-radius: 5px;
+  background: gray;
+  position: relative;
+}
+
+.line-item {
+  position: absolute;
+  width: 0;
+  background: white;
+  /* transition: width 0.1s linear; */
+}
+
+.viewed-item {
+  width: 100%;
+}
+
+.current-viewed-item {
+  position: absolute;
+  width: 0;
+  background: white;
+  animation: lineWidth 10s linear 0s 1 normal both;
+}
+
+.details-box {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 2rem;
+  padding: 0 1rem;
+  z-index: 1;
+}
+
+.story-details {
+  display: flex;
+  align-items: center;
+}
+
+.name-box {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.user-pic {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+}
+
+.dot {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.time-sent {
+  color: gray;
+  font-family: appFontBold;
+}
+
+.menu-details {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.pause-icon,
+.mute-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-right: 0.7rem;
+  cursor: pointer;
+  fill: white;
+}
+
+.menu-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.content-div {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reply-div {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 1.5rem;
+  z-index: 1;
+}
+
+.reply-input {
+  background: transparent;
+  border-radius: 20px;
+  padding: 0.7rem;
+  font-family: appFont;
+  outline: none;
+  border: 1px solid white;
+  color: white;
+  font-size: 0.95rem;
+  width: calc(100% - 5rem);
+}
+
+.reply-input::placeholder {
+  color: white;
+  font-family: monospace;
+}
+
+.like-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 1rem;
+  cursor: pointer;
+}
+
+.like-icon2 {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 1rem;
+  cursor: pointer;
+  fill: red;
+  animation: showStory 0.3s ease 0s 1 normal both;
+}
+
+.send-icon {
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-left: 1rem;
+  cursor: pointer;
+}
+
+.send-icon:active {
+  fill: var(--app-theme-color);
+}
+
+.content {
+  width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+.next-story {
+  width: calc(40% - 8rem);
+  margin-right: 3rem;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.next-content-div {
+  width: 15rem;
+  height: 20rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.next-content-div:hover {
+  border: 2px solid var(--app-theme-color);
+}
+
+.next-content {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  z-index: 0;
+}
+
+.next-story-content {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+}
+
+.next-story-img-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.17rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
+}
+
+.next-story-img {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.next-story-username {
+  font-family: appFontMedium;
+  font-size: 1rem;
+  margin-top: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: calc(100% - 2rem);
+  text-align: center;
+}
+
+.next-story-time {
+  position: absolute;
+  top: 0.5rem;
+  left: 1rem;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+}
+
+.menu-div {
+  position: relative;
+  display: inline;
+}
+
+.active-menu {
+  color: var(--app-theme-color);
+}
+
+.menu-list {
+  position: absolute;
+  top: 25px;
+  left: -150%;
+  z-index: 3;
+  background: white;
+  box-shadow: 1px 1px 10px -5px black;
+  border-radius: 8px;
+  list-style-type: none;
+  margin: 0;
+  padding: 0.5rem;
+  height: 0;
+  overflow: hidden;
+}
+
+.menu-item {
+  text-align: center;
+  white-space: nowrap;
+  padding: 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+  color: black;
+  font-family: appFont;
+  font-size: 0.9rem;
+  color: red;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  font-weight: 600;
+}
+
+.left-arrow-box {
+  z-index: 2;
+  position: absolute;
+  top: 40%;
+  left: -15%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0.05rem;
+  box-shadow: 1px 1px 6px -2px black;
+}
+
+.right-arrow-box {
+  z-index: 2;
+  position: absolute;
+  top: 40%;
+  right: -15%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0.05rem;
+  box-shadow: 1px 1px 6px -2px black;
+}
+
+.left-arrow,
+.right-arrow {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.left-arrow-box:hover,
+.right-arrow-box:hover {
+  background: var(--app-theme-color);
+  color: white;
+}
+
+/* Animation */
+
+@keyframes showStory {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes lineWidth {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}

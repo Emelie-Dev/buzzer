@@ -40,161 +40,73 @@
 .story-container {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-around;
   width: 100%;
-}
-
-.current-story {
-  position: relative;
-  width: 30%;
-  height: calc(100vh - 2rem);
-  background: black;
-  color: white;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0;
-}
-
-.line-container {
-  width: 100%;
-  position: absolute;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem 0;
-  z-index: 1;
-}
-
-.line-box {
-  width: 30%;
-  height: 2px;
   overflow: hidden;
-  background: white;
-  margin: 0 0.15rem;
-  border-radius: 5px;
 }
 
-.details-box {
+.left-arrow-box {
+  z-index: 2;
   position: absolute;
-  display: flex;
+  top: 40%;
+  left: 30%;
+  display: inline-flex;
   align-items: center;
-  width: 100%;
-  margin-top: 2rem;
-  padding: 0 1rem;
-  z-index: 1;
-}
-
-.story-details {
-  display: flex;
-  align-items: center;
-}
-
-.name-box {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.user-pic {
-  width: 2.5rem;
-  height: 2.5rem;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 50%;
-  object-fit: cover;
+  cursor: pointer;
+  padding: 0.05rem;
+  box-shadow: 1px 1px 6px -2px black;
 }
 
-.user-name {
-  font-family: appFont;
-  font-size: 0.9rem;
-  margin-left: 0.5rem;
-}
-
-.dot {
-  width: 1.1rem;
-  height: 1.1rem;
-}
-
-.time-sent {
-  color: gray;
-  font-family: appFontMedium;
-}
-
-.menu-details {
-  display: flex;
+.right-arrow-box {
+  z-index: 2;
+  position: absolute;
+  top: 40%;
+  right: 30%;
+  display: inline-flex;
   align-items: center;
-  margin-left: auto;
-}
-
-.pause-icon,
-.mute-icon {
-  width: 1.2rem;
-  height: 1.2rem;
-  margin-right: 0.7rem;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
   cursor: pointer;
+  padding: 0.05rem;
+  box-shadow: 1px 1px 6px -2px black;
 }
 
-.menu-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  cursor: pointer;
+.left-arrow,
+.right-arrow {
+  width: 1.4rem;
+  height: 1.4rem;
 }
 
-.content-div {
-  width: 100%;
+.left-arrow-box:hover,
+.right-arrow-box:hover {
+  background: var(--app-theme-color);
+  color: white;
+}
+
+.void-next-story {
+  width: calc(40% - 8rem);
+  margin-right: 3rem;
   height: 100%;
-  border-radius: 8px;
-  z-index: 0;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  visibility: hidden;
 }
 
-.reply-div {
-  position: absolute;
-  bottom: 0;
+.void-next-story2 {
+  width: calc(40% - 8rem);
+  margin-right: 0;
+  height: 100%;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  width: 100%;
-  padding: 1.5rem;
-  z-index: 1;
-}
-
-.reply-input {
-  background: transparent;
-  border-radius: 20px;
-  padding: 0.7rem;
-  font-family: appFont;
-  outline: none;
-  border: 1px solid white;
-  color: white;
-  font-size: 0.95rem;
-  width: calc(100% - 5rem);
-}
-
-.reply-input::placeholder {
-  color: white;
-  font-family: monospace;
-}
-
-.like-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-left: 1rem;
-  cursor: pointer;
-}
-
-.send-icon {
-  width: 1.6rem;
-  height: 1.6rem;
-  margin-left: 1rem;
-  cursor: pointer;
-}
-
-.content {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+  justify-content: center;
+  visibility: hidden;
 }
 
 /* Animations */

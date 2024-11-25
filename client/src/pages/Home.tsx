@@ -9,7 +9,7 @@ import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
 import StoryModal from '../components/StoryModal';
 
-interface User {
+export interface User {
   name: string;
 }
 
@@ -199,6 +199,7 @@ const Home = () => {
     right: true,
   });
   const [viewStory, setViewStory] = useState<boolean>(false);
+  const [storyIndex, setStoryIndex] = useState<number>(0);
 
   const storyRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement[]>([]);
@@ -252,7 +253,9 @@ const Home = () => {
     <>
       <NavBar page="home" />
 
-      {viewStory && <StoryModal setViewStory={setViewStory} />}
+      {viewStory && (
+        <StoryModal setViewStory={setViewStory} itemIndex={storyIndex} />
+      )}
 
       <section className={styles.main}>
         <section className={styles['main-container']} onScroll={scrollHandler}>
@@ -274,7 +277,10 @@ const Home = () => {
               <article
                 key={index}
                 className={styles.user}
-                onClick={() => setViewStory(true)}
+                onClick={() => {
+                  setStoryIndex(index);
+                  setViewStory(true);
+                }}
               >
                 <span className={styles['user-pics-box']}>
                   <img
@@ -326,7 +332,7 @@ const Home = () => {
                 {' '}
                 <img
                   className={styles['profile-img']}
-                  src="../../public/assets/images/users/user14.jpeg"
+                  src="../../assets/images/users/user14.jpeg"
                 />
               </span>
 
@@ -344,7 +350,7 @@ const Home = () => {
             <div className={styles['suggested-users']}>
               <article className={styles['suggested-user']}>
                 <img
-                  src="../../public/assets/images/users/user6.jpeg"
+                  src="../../assets/images/users/user6.jpeg"
                   className={styles['suggested-user-img']}
                 />
 
@@ -361,7 +367,7 @@ const Home = () => {
               </article>
               <article className={styles['suggested-user']}>
                 <img
-                  src="../../public/assets/images/users/user6.jpeg"
+                  src="../../assets/images/users/user6.jpeg"
                   className={styles['suggested-user-img']}
                 />
 
@@ -379,7 +385,7 @@ const Home = () => {
 
               <article className={styles['suggested-user']}>
                 <img
-                  src="../../public/assets/images/users/user6.jpeg"
+                  src="../../assets/images/users/user6.jpeg"
                   className={styles['suggested-user-img']}
                 />
 
@@ -396,7 +402,7 @@ const Home = () => {
               </article>
               <article className={styles['suggested-user']}>
                 <img
-                  src="../../public/assets/images/users/user6.jpeg"
+                  src="../../assets/images/users/user6.jpeg"
                   className={styles['suggested-user-img']}
                 />
 
@@ -413,7 +419,7 @@ const Home = () => {
               </article>
               <article className={styles['suggested-user']}>
                 <img
-                  src="../../public/assets/images/users/user6.jpeg"
+                  src="../../assets/images/users/user6.jpeg"
                   className={styles['suggested-user-img']}
                 />
 
@@ -430,7 +436,7 @@ const Home = () => {
               </article>
               <article className={styles['suggested-user']}>
                 <img
-                  src="../../public/assets/images/users/user6.jpeg"
+                  src="../../assets/images/users/user6.jpeg"
                   className={styles['suggested-user-img']}
                 />
 
@@ -447,7 +453,7 @@ const Home = () => {
               </article>
               <article className={styles['suggested-user']}>
                 <img
-                  src="../../public/assets/images/users/user6.jpeg"
+                  src="../../assets/images/users/user6.jpeg"
                   className={styles['suggested-user-img']}
                 />
 
@@ -464,7 +470,7 @@ const Home = () => {
               </article>
               <article className={styles['suggested-user']}>
                 <img
-                  src="../../public/assets/images/users/user6.jpeg"
+                  src="../../assets/images/users/user6.jpeg"
                   className={styles['suggested-user-img']}
                 />
 
