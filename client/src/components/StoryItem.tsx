@@ -1,7 +1,11 @@
 import styles from '../styles/StoryItem.module.css';
 import { BsDot } from 'react-icons/bs';
 import { FaPause, FaPlay } from 'react-icons/fa6';
-import { BiSolidVolumeMute, BiSolidVolumeFull } from 'react-icons/bi';
+import {
+  BiSolidVolumeMute,
+  BiSolidVolumeFull,
+  BiSolidErrorAlt,
+} from 'react-icons/bi';
 import { HiDotsHorizontal } from 'react-icons/hi';
 import { FaRegHeart } from 'react-icons/fa';
 import { AiOutlineSend } from 'react-icons/ai';
@@ -49,6 +53,9 @@ const StoryItem = ({
   const [pause, setPause] = useState<boolean>(false);
   const [contentIndex, setContentIndex] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
+  const [loading, setLoading] = useState<
+    boolean | 'error' | 'empty' | 'notfound'
+  >(true);
 
   const itemRef = useRef<HTMLDivElement>(null!);
   const menuRef = useRef<HTMLDivElement>(null!);
@@ -108,6 +115,12 @@ const StoryItem = ({
   }, [showMenu]);
 
   useEffect(() => {
+    setLoading(true);
+    if (content[contentIndex].type === 'video') {
+      if (videoRef.current)
+        videoRef.current.src = `../../assets/images/content/${content[contentIndex].src}.mp4`;
+    }
+
     setPause(false);
     setDuration(() => {
       if (content[contentIndex].type === 'image') return 7;
@@ -143,33 +156,6 @@ const StoryItem = ({
   const handleVideoDuration = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration - videoRef.current.currentTime);
-    }
-  };
-
-  const displayContent = (type: 'image' | 'video', src: string) => {
-    if (type === 'image') {
-      return (
-        <img
-          className={styles.content}
-          src={`../../assets/images/content/${src}.jpeg`}
-        />
-      );
-    } else {
-      return (
-        <video
-          className={styles.content}
-          ref={videoRef}
-          autoPlay
-          muted={mute}
-          onLoadedMetadata={handleVideoDuration}
-        >
-          <source
-            src={`../../assets/images/content/${src}.mp4`}
-            type="video/mp4"
-          />
-          Your browser does not support playing video.
-        </video>
-      );
     }
   };
 
@@ -277,18 +263,30 @@ const StoryItem = ({
       </div>
 
       <div className={styles['content-div']}>
-        {/* {content[contentIndex].type === 'image' ? (
+        {content[contentIndex].type === 'image' ? (
           <img
-            className={styles.content}
+            className={`${styles.content} ${
+              loading ? styles['hide-item'] : ''
+            }`}
             src={`../../assets/images/content/${content[contentIndex].src}.jpeg`}
+            onLoad={() => setLoading(false)}
+            onError={() => setLoading('error')}
+            onAbort={() => setLoading('error')}
           />
         ) : (
           <video
-            className={styles.content}
+            className={`${styles.content} ${
+              loading ? styles['hide-item'] : ''
+            }`}
             ref={videoRef}
             autoPlay
             muted={mute}
             onLoadedMetadata={handleVideoDuration}
+            onCanPlay={() => setLoading(false)}
+            onError={() => setLoading('error')}
+            onAbort={() => setLoading('error')}
+            onEmptied={() => setLoading('notfound')}
+            onStalled={() => setLoading('empty')}
           >
             <source
               src={`../../assets/images/content/${content[contentIndex].src}.mp4`}
@@ -296,8 +294,28 @@ const StoryItem = ({
             />
             Your browser does not support playing video.
           </video>
-        )} */}
-        {displayContent(content[contentIndex].type, content[contentIndex].src)}
+        )}
+
+        {loading === true ? (
+          <div className={styles.loader}></div>
+        ) : loading === 'error' ? (
+          <span className={styles['error-box']}>
+            <BiSolidErrorAlt className={styles['error-icon']} />
+            An error occured while loading media.
+          </span>
+        ) : loading === 'empty' ? (
+          <span className={styles['error-box']}>
+            <BiSolidErrorAlt className={styles['error-icon']} />
+            Unable to load media.
+          </span>
+        ) : loading === 'notfound' ? (
+          <span className={styles['error-box']}>
+            <BiSolidErrorAlt className={styles['error-icon']} />
+            This media no longer exists.
+          </span>
+        ) : (
+          ''
+        )}
       </div>
 
       <div className={styles['reply-div']}>
