@@ -18,6 +18,11 @@
   src: url(../../assets/fonts/harrington/HARNGTON.TTF);
 }
 
+@font-face {
+  font-family: appFontSemi;
+  src: url(../../assets/fonts/poppins/Poppins-SemiBold.ttf);
+}
+
 :root {
   --dark-theme-background: #141420;
   --general-font-family: appFont, sans-serif;

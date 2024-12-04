@@ -308,7 +308,9 @@ const StoryItem = ({
             <BiSolidErrorAlt className={styles['error-icon']} />
             Unable to load media.
           </span>
-        ) : loading === 'notfound' ? (
+        ) : loading === 'notfound' &&
+          videoRef.current.src ===
+            `../../assets/images/content/${content[contentIndex].src}.mp4` ? (
           <span className={styles['error-box']}>
             <BiSolidErrorAlt className={styles['error-icon']} />
             This media no longer exists.

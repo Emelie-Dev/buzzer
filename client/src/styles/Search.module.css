@@ -1,0 +1,488 @@
+.section {
+  margin-left: 18%;
+  width: 82%;
+  padding: 2rem;
+  padding-top: 0;
+}
+
+.section-header {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.header-list {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  display: flex;
+  align-items: center;
+  padding-top: 2rem;
+}
+
+.header-item {
+  font-family: appFontMedium;
+  margin-right: 7rem;
+  padding: 0rem 1rem 1rem;
+  font-size: 1.05rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  text-align: left;
+}
+
+.header-item:hover {
+  color: var(--app-theme-color);
+}
+
+.active-item {
+  color: var(--app-theme-color);
+  border-bottom: 2px solid var(--app-theme-color);
+}
+
+.users-container {
+  margin-top: 1rem;
+}
+
+.users-container-head {
+  font-family: appFontMedium;
+  font-size: 1.1rem;
+}
+
+.users-div {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.user {
+  display: flex;
+  flex-direction: column;
+  width: 33%;
+  margin-right: 2rem;
+}
+
+.user:nth-child(3n) {
+  margin-right: 0;
+}
+
+.user-content {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.user-content:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.user-img-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.user-img {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 1rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.user-name {
+  font-family: appFontSemi;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.user-handle {
+  color: gray;
+  font-size: 0.9rem;
+  font-family: appFontMedium;
+  margin-top: 0.05rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.user-followers {
+  font-family: appFont;
+  font-size: 0.95rem;
+  margin-top: 0.05rem;
+}
+
+.user-follower-count {
+  font-family: appFontSemi;
+  text-transform: uppercase;
+}
+
+.follow-icon-box {
+  background: var(--app-theme-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: white;
+  padding: 0.25rem;
+  cursor: pointer;
+  position: absolute;
+  bottom: -2px;
+  right: 0;
+}
+
+.follow-icon-box2 {
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: white;
+  padding: 0.3rem;
+  cursor: pointer;
+  position: absolute;
+  bottom: -2px;
+  right: 0;
+  box-shadow: 1px 1px 10px -3px black;
+}
+
+.follow-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.follow-icon2 {
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: var(--app-theme-color);
+}
+
+.user-latest-content {
+  display: grid;
+  grid-template-columns: 48.5% 48.5%;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.user-latest-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 5px;
+  transition: opacity 0.25s;
+  cursor: pointer;
+}
+
+.user-latest-img:hover {
+  opacity: 0.8;
+}
+
+.contents-container {
+  margin-top: 2rem;
+}
+
+.contents-div {
+  display: grid;
+  grid-template-columns: 31% 31% 31%;
+  column-gap: 1rem;
+  width: 100%;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-bottom: 2rem;
+}
+
+.content:hover {
+  opacity: 0.8;
+}
+
+.content-name {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.content-img {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.content-handle {
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+  margin-left: 0.7rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.content-item-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+  border-radius: 5px;
+  position: relative;
+}
+
+.content-item {
+  border-radius: 5px;
+  width: 100%;
+  height: 50vh;
+  object-fit: cover;
+}
+
+.content-time {
+  position: absolute;
+  bottom: 3%;
+  left: 3%;
+  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  font-family: appFontSemi;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  padding: 0.3rem;
+}
+
+.content-views {
+  position: absolute;
+  bottom: 3%;
+  right: 3%;
+  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  font-family: appFontSemi;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  padding: 0.3rem;
+  display: flex;
+  align-items: center;
+}
+
+.content-views-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  margin-right: 0.3rem;
+}
+
+.content-description {
+  font-family: appFont;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.users-category-container {
+  margin: 1rem 0 1.5rem;
+}
+
+.user-category-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.user-category-item:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.following-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+}
+
+.follow-btn {
+  background: var(--app-theme-color);
+  color: white;
+  border: none;
+  outline: none;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  margin-left: auto;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.follow-btn:hover {
+  color: black;
+}
+
+.following-txt {
+  color: gray;
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+}
+
+.aside-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+  padding-right: 0;
+  margin-left: auto;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  outline: none;
+  font-family: appFontMedium;
+  background: var(--app-theme-color);
+  color: white;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-left: 1rem;
+}
+
+.create-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 0.2rem;
+}
+
+.create-btn:hover {
+  opacity: 0.8;
+}
+
+.inbox-box {
+  position: relative;
+  display: flex;
+  margin-left: 1.5rem;
+  cursor: pointer;
+}
+
+.inbox-icon {
+  fill: black;
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.inbox-box:hover .inbox-icon {
+  opacity: 0.7;
+}
+
+.inbox-number {
+  background: var(--app-theme-color);
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: -10px;
+  right: -8px;
+  border-radius: 50%;
+  padding: 0.3rem;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.inbox-length {
+  color: white;
+  font-size: 0.9rem;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.profile-box {
+  position: relative;
+  margin-left: 5rem;
+  margin-right: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.profile-img-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.17rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
+  cursor: pointer;
+}
+
+.profile-img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid white;
+}
+
+.view-list {
+  position: absolute;
+  top: 100%;
+  list-style-type: none;
+  margin: 0;
+  padding: 0.5rem;
+  white-space: nowrap;
+  background: white;
+  box-shadow: 1px 1px 10px -4px black;
+  border-radius: 5px;
+  right: -10px;
+  display: none;
+}
+
+.view-item {
+  padding: 0.6rem;
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.view-item:hover {
+  background: rgba(128, 128, 128, 0.2);
+  color: var(--app-theme-color);
+}
+
+.profile-box:hover .view-list {
+  display: block;
+}

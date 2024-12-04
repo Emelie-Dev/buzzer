@@ -1,86 +1,58 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Home.module.css';
-import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
 import { ContentContext } from '../Contexts';
 import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
-import StoryModal from '../components/StoryModal';
-import { DataItem } from './Following';
 
-export interface User {
+type CarouselData = {
+  media: Content[];
   name: string;
-}
+  username: string;
+  photo: string;
+  time: string;
+  aspectRatio: number;
+  type: 'carousel';
+  description: string;
+};
 
-export interface Arrow {
-  left: boolean;
-  right: boolean;
-}
+type MediaData = {
+  media: string;
+  name: string;
+  username: string;
+  photo: string;
+  time: string;
+  aspectRatio: number;
+  type: 'image' | 'video';
+  description: string;
+};
 
-const users: User[] = [
-  { name: 'userOne' },
-  { name: 'coolGuy' },
-  { name: 'happy123' },
-  { name: 'sunshineGirl' },
-  { name: 'codeMaster' },
-  { name: 'skyWalker' },
-  { name: 'theArtist' },
-  { name: 'jungleKing' },
-  { name: 'dreamer_98' },
-  { name: 'techieDude' },
-  { name: 'cityExplorer' },
-  { name: 'natureLover' },
-  { name: 'mountainView' },
-  { name: 'coffeeAddict' },
-  { name: 'chefTom' },
-  { name: 'oceanWave' },
-  { name: 'bookworm101' },
-  { name: 'fastRunner' },
-  { name: 'digitalNomad' },
-  { name: 'starGazer' },
-];
+export type DataItem = CarouselData | MediaData;
 
 const data: Content[] = [
   {
-    src: 'content23',
+    src: 'content16',
     type: 'image',
     description:
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
   },
   {
-    src: 'content2',
+    src: 'content7',
     type: 'image',
     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
   },
   {
-    src: 'content3',
+    src: 'content9',
     type: 'image',
     description: '',
-  },
-  {
-    src: 'content4',
-    type: 'image',
-    description: 'Lorem ipsum dolor sit amet.',
-  },
-  {
-    src: 'content5',
-    type: 'image',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-  {
-    src: 'content6',
-    type: 'video',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
   },
 ];
 
 const data2: Content[] = [
   {
-    src: 'content22',
+    src: 'content14',
     type: 'image',
   },
   {
@@ -144,19 +116,9 @@ const data2: Content[] = [
     description: 'Celebrating with his teammates.',
   },
   {
-    src: 'content19',
-    type: 'image',
+    src: 'content24',
+    type: 'video',
     description: 'Messi lifting a trophy high.',
-  },
-  {
-    src: 'content16',
-    type: 'image',
-    description: 'In training gear, focused and ready.',
-  },
-  {
-    src: 'content7',
-    type: 'image',
-    description: '',
   },
 ];
 
@@ -176,7 +138,6 @@ const dataList: DataItem[] = [
         
         <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NaijaToTheWorld</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#30BG</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Davido</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Afrobeats</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LagosVibes</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfricanGiant</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewMusicLoading 🎵</span>.`,
   },
-
   {
     media: data2,
     name: 'Lionel Messi 🐐🐐',
@@ -195,17 +156,24 @@ Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFo
 
 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Argentina</span> – Always proud to wear these colors 💪 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#VamosAlbiceleste</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LaPulga</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Goat</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewGoalsAhead</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FootballFamily</span>`,
   },
+  {
+    media: 'cv',
+    name: 'Godfather 👑👑',
+    username: '@dagodfather_100',
+    photo: 'profile1.jpeg',
+    time: '10m',
+    aspectRatio: 1 / 1,
+    type: 'image',
+    description: `Big vibes only! 🌍 Had an amazing time with the fam last night. Nothing but love and energy! 💥✨ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#001</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfrobeatKing</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#OBO👑</span>. Blessed to do what I love with these amazing people. 💯🖤
+
+        
+        Shoutout to my brothers <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@real_kiddominant</span> and <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@thechefchi</span> 🙌🔥 Let’s keep pushing the culture! 🎶✨
+        
+        <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NaijaToTheWorld</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#30BG</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Davido</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Afrobeats</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LagosVibes</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfricanGiant</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewMusicLoading 🎵</span>.`,
+  },
 ];
 
-const Home = () => {
-  const [showArrow, setShowArrow] = useState<Arrow>({
-    left: false,
-    right: true,
-  });
-  const [viewStory, setViewStory] = useState<boolean>(false);
-  const [storyIndex, setStoryIndex] = useState<number>(0);
-
-  const storyRef = useRef<HTMLDivElement>(null!);
+const Following = () => {
   const contentRef = useRef<HTMLDivElement[]>([]);
 
   const scrollHandler = () => {
@@ -241,73 +209,12 @@ const Home = () => {
     });
   };
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLDivElement;
-
-    setShowArrow({
-      left: target.scrollLeft > 30,
-      right: !(
-        target.scrollLeft + target.clientWidth >=
-        target.scrollWidth - 5
-      ),
-    });
-  };
-
   return (
     <>
-      <NavBar page="home" />
-
-      {viewStory && (
-        <StoryModal setViewStory={setViewStory} itemIndex={storyIndex} />
-      )}
+      <NavBar page="following" />
 
       <section className={styles.main}>
-        <section className={styles['main-container']} onScroll={scrollHandler}>
-          <div
-            className={styles['stories-container']}
-            ref={storyRef}
-            onScroll={handleScroll}
-          >
-            <span
-              className={`${styles['left-arrow-box']} ${
-                !showArrow.left ? styles['hide-icon'] : ''
-              }`}
-              onClick={() => (storyRef.current.scrollLeft -= 300)}
-            >
-              <MdKeyboardArrowLeft className={styles['left-arrow']} />
-            </span>
-
-            {users.map(({ name }, index) => (
-              <article
-                key={index}
-                className={styles.user}
-                onClick={() => {
-                  setStoryIndex(index);
-                  setViewStory(true);
-                }}
-              >
-                <span className={styles['user-pics-box']}>
-                  <img
-                    src={`../../assets/images/users/user${index + 1}.jpeg`}
-                    alt={name}
-                    className={styles['user-pics']}
-                  />
-                </span>
-
-                <span className={styles['user-name']}>{name}</span>
-              </article>
-            ))}
-
-            <span
-              className={`${styles['right-arrow-box']} ${
-                !showArrow.right ? styles['hide-icon'] : ''
-              }`}
-              onClick={() => (storyRef.current.scrollLeft += 300)}
-            >
-              <MdKeyboardArrowRight className={styles['right-arrow']} />
-            </span>
-          </div>
-
+        <section className={styles['main-container2']} onScroll={scrollHandler}>
           <ContentContext.Provider value={contentRef}>
             <div className={styles['content-container']}>
               {dataList.map((data, index) => (
@@ -497,4 +404,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Following;

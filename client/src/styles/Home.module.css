@@ -13,6 +13,14 @@
   overflow: auto;
 }
 
+.main-container2 {
+  padding: 0 2rem 2rem;
+  width: 100%;
+  border-right: 1px solid rgb(128, 128, 128, 0.3);
+  height: 100vh;
+  overflow: auto;
+}
+
 .stories-container::-webkit-scrollbar {
   display: none;
 }

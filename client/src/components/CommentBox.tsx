@@ -13,13 +13,23 @@ import Carousel from './Carousel';
 import { LikeContext } from '../Contexts';
 
 type CommentBoxProps = {
-  data: {
-    media: Content[];
-    username: string;
-    name?: string;
-    photo: string;
-    aspectRatio: number;
-  };
+  data:
+    | {
+        media: Content[];
+        username: string;
+        name?: string;
+        photo: string;
+        aspectRatio: number;
+        type: 'carousel';
+      }
+    | {
+        media: string;
+        username: string;
+        name?: string;
+        photo: string;
+        aspectRatio: number;
+        type: 'image' | 'video';
+      };
   setViewComment: React.Dispatch<React.SetStateAction<boolean>>;
   isFollowing: boolean;
   saved: boolean;
@@ -65,7 +75,7 @@ const CommentBox = ({
   setSaved,
   setShareMedia,
 }: CommentBoxProps) => {
-  const { media, username, name, photo, aspectRatio } = data;
+  const { media, username, name, photo, aspectRatio, type } = data;
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [hideMenu, setHideMenu] = useState<boolean>(true);
   const [newComment, setNewComment] = useState<string>('');
@@ -342,10 +352,13 @@ const CommentBox = ({
       </span>
 
       <div className={styles.container}>
-        <div className={styles['carousel-container']}>
-          <Carousel data={media} aspectRatio={aspectRatio} type="comment" />
-        </div>
-
+        {type === 'carousel' ? (
+          <div className={styles['carousel-container']}>
+            <Carousel data={media} aspectRatio={aspectRatio} type="comment" />
+          </div>
+        ) : (
+          ''
+        )}
         <div
           className={styles['comment-container']}
           ref={commentRef}

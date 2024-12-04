@@ -5,26 +5,39 @@ import { FaHeart, FaCommentDots, FaShare } from 'react-icons/fa';
 import { IoBookmark } from 'react-icons/io5';
 import styles from '../styles/ContentBox.module.css';
 import { useEffect, useRef, useState } from 'react';
-import { Content } from './CarouselItem';
 import { PiCheckFatFill } from 'react-icons/pi';
 import { LikeContext } from '../Contexts';
 import CommentBox from './CommentBox';
 import ShareMedia from '../components/ShareMedia';
+import { DataItem } from '../pages/Following';
+
+import { Content } from '../components/CarouselItem';
 
 type ContentBoxProps = {
-  data: {
-    media: Content[];
-    description?: string;
-    username: string;
-    name?: string;
-    time: string;
-    photo: string;
-    aspectRatio: number;
-  };
+  data: DataItem;
 };
 
+type CommentData =
+  | {
+      media: Content[];
+      username: string;
+      name?: string;
+      photo: string;
+      aspectRatio: number;
+      type: 'carousel';
+    }
+  | {
+      media: string;
+      username: string;
+      name?: string;
+      photo: string;
+      aspectRatio: number;
+      type: 'image' | 'video';
+    };
+
 const ContentBox = ({ data }: ContentBoxProps) => {
-  const { media, description, username, name, time, photo, aspectRatio } = data;
+  const { media, description, username, name, time, photo, aspectRatio, type } =
+    data;
 
   const [showMore, setShowMore] = useState<boolean>(false);
   const [descriptionWidth, setDescriptionWidth] = useState<number>(0);
@@ -118,13 +131,16 @@ const ContentBox = ({ data }: ContentBoxProps) => {
       {viewComment && (
         <CommentBox
           setViewComment={setViewComment}
-          data={{
-            media,
-            username,
-            name,
-            photo,
-            aspectRatio,
-          }}
+          data={
+            {
+              username,
+              name,
+              photo,
+              aspectRatio,
+              type,
+              media,
+            } as CommentData
+          }
           isFollowing={isFollowing}
           saved={saved}
           hideLike={hideLike}
@@ -171,15 +187,20 @@ const ContentBox = ({ data }: ContentBoxProps) => {
             )}
           </div>
         </h1>
+
         <div className={styles['content-box']}>
-          <div className={styles['carousel-container']}>
-            <Carousel
-              data={media}
-              aspectRatio={aspectRatio}
-              setDescriptionWidth={setDescriptionWidth}
-              type="content"
-            />
-          </div>
+          {type === 'carousel' ? (
+            <div className={styles['carousel-container']}>
+              <Carousel
+                data={media}
+                aspectRatio={aspectRatio}
+                setDescriptionWidth={setDescriptionWidth}
+                type="content"
+              />
+            </div>
+          ) : (
+            ''
+          )}
           <div className={styles['menu-container']}>
             <div className={styles['profile-img-box']}>
               <img
