@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Home.module.css';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
@@ -9,6 +9,7 @@ import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
 import StoryModal from '../components/StoryModal';
 import { DataItem } from './Following';
+import useScrollHandler from '../hooks/useScrollHandler';
 
 export interface User {
   name: string;
@@ -205,41 +206,14 @@ const Home = () => {
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [storyIndex, setStoryIndex] = useState<number>(0);
 
+  const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
+    useScrollHandler();
+
   const storyRef = useRef<HTMLDivElement>(null!);
-  const contentRef = useRef<HTMLDivElement[]>([]);
 
-  const scrollHandler = () => {
-    const videos = contentRef.current;
-    const deviceHeight = window.innerHeight;
-
-    const activeVideos = videos.filter((video) => {
-      const top = video.getBoundingClientRect().top;
-      const bottom = video.getBoundingClientRect().bottom;
-      const active = video.getAttribute('data-active');
-
-      let condition;
-
-      if (active === 'true') {
-        if (
-          (top > 0 && top < deviceHeight * 0.6) ||
-          (bottom < deviceHeight && bottom > deviceHeight * 0.4)
-        ) {
-          condition = true;
-        } else {
-          condition = false;
-        }
-      } else condition = false;
-
-      if (!condition) video.querySelector('video')?.pause();
-
-      return condition;
-    });
-
-    activeVideos.forEach((video, index) => {
-      if (index === 0) video.querySelector('video')?.play();
-      else video.querySelector('video')?.pause();
-    });
-  };
+  useEffect(() => {
+    scrollHandler();
+  }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
@@ -308,10 +282,12 @@ const Home = () => {
             </span>
           </div>
 
-          <ContentContext.Provider value={contentRef}>
+          <ContentContext.Provider
+            value={{ contentRef, activeVideo, setActiveVideo }}
+          >
             <div className={styles['content-container']}>
               {dataList.map((data, index) => (
-                <ContentBox key={index} data={data} />
+                <ContentBox key={index} data={data} contentType="home" />
               ))}
             </div>
           </ContentContext.Provider>

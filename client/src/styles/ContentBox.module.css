@@ -4,6 +4,11 @@
   margin-bottom: 2rem;
 }
 
+.reels-content {
+  border-top: none;
+  height: calc(100vh - 4rem);
+}
+
 .content-head {
   font-family: appFont;
   font-weight: 500;
@@ -52,6 +57,15 @@
   display: inline;
 }
 
+.reel-menu-div {
+  position: absolute;
+  right: -1rem;
+  top: 0;
+  display: inline;
+  font-family: appFont;
+  font-size: 0.85rem;
+}
+
 .content-menu {
   color: gray;
   margin-left: auto;
@@ -71,7 +85,7 @@
 .menu-list {
   position: absolute;
   top: 25px;
-  left: -150%;
+  left: -190%;
   z-index: 3;
   background: white;
   box-shadow: 1px 1px 10px -5px black;
@@ -81,6 +95,11 @@
   padding: 0.5rem;
   height: 0;
   overflow: hidden;
+}
+
+.reel-menu-list {
+  position: absolute;
+  top: 1rem;
 }
 
 .menu-item {
@@ -110,8 +129,14 @@
   min-height: 380px;
 }
 
+.reels-content-box {
+  max-height: none;
+  height: 100%;
+}
+
 .carousel-container {
   width: 100%;
+  position: relative;
 }
 
 .menu-container {
@@ -119,6 +144,7 @@
   display: flex;
   flex-direction: column;
   margin-top: auto;
+  user-select: none;
 }
 
 .profile-img-box {
@@ -130,11 +156,25 @@
   margin-bottom: 1.5rem;
 }
 
+.profile-img-span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
+}
+
 .profile-img {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
   object-fit: cover;
+  border: 3px solid white;
 }
 
 .profile-icon-box {
@@ -256,6 +296,7 @@
   font-size: 0.9rem;
   color: gray;
   cursor: pointer;
+  display: inline-block;
 }
 
 .show-more {

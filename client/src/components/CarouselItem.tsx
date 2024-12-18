@@ -4,6 +4,9 @@ import { FaPause, FaPlay } from 'react-icons/fa';
 import { BiSolidErrorAlt } from 'react-icons/bi';
 import { GoUnmute, GoMute } from 'react-icons/go';
 import { ContentContext, LikeContext } from '../Contexts';
+import { BsDot } from 'react-icons/bs';
+import { FaMusic } from 'react-icons/fa';
+import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 
 export interface Content {
   type: 'image' | 'video';
@@ -19,6 +22,8 @@ type CarouselItemProps = {
   itemIndex: number;
   setHideData: React.Dispatch<React.SetStateAction<boolean>>;
   viewType: 'comment' | 'content';
+  contentType: 'carousel' | 'single' | 'reels';
+  description: string;
 };
 
 const CarouselItem = ({
@@ -29,6 +34,8 @@ const CarouselItem = ({
   contentIndex,
   setHideData,
   viewType,
+  contentType,
+  description,
 }: CarouselItemProps) => {
   const { type, src } = item;
   const [loading, setLoading] = useState<
@@ -40,12 +47,18 @@ const CarouselItem = ({
   const [mute, setMute] = useState<boolean>(false);
   const [clickTimeout, setClickTimeout] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const contentRef = useContext(ContentContext);
-  const { like, setLike, setHideLike } = useContext(LikeContext);
+  const { contentRef } = useContext(ContentContext);
+  const { like, setLike, setHideLike, setShowMenu, setHideMenu, reelMenuRef } =
+    useContext(LikeContext);
   const [showLike, setShowLike] = useState<boolean>(false);
+  const [webkit, setWebkit] = useState<boolean>(true);
+  const [showMore, setShowMore] = useState<boolean>(false);
+  const { setActiveVideo } = useContext(ContentContext);
+  const [descriptionHeight, setDescriptionHeight] = useState<number>(0);
 
   const imageRef = useRef<HTMLImageElement>(null!);
   const videoRef = useRef<HTMLVideoElement>(null!);
+  const descriptionRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     const networkHandler = () => {
@@ -81,9 +94,15 @@ const CarouselItem = ({
       } else {
         videoRef.current.currentTime = currentTime;
         videoRef.current.play();
+        if (viewType === 'content') setActiveVideo(videoRef.current);
       }
     }
   }, [contentIndex]);
+
+  useEffect(() => {
+    if (descriptionRef.current)
+      setDescriptionHeight(descriptionRef.current.scrollHeight);
+  }, []);
 
   const handleImageClick = () => {
     if (loading === false) setHideData(!hideData);
@@ -91,7 +110,7 @@ const CarouselItem = ({
 
   const handleClick = () => {
     if (loading === false) {
-      if (hideData) {
+      if (hideData || contentType !== 'carousel') {
         setHidePause(false);
         if (videoRef.current.paused) {
           videoRef.current.play();
@@ -169,6 +188,38 @@ const CarouselItem = ({
       }
     };
 
+  const handleDescription = () => {
+    let animation;
+
+    setWebkit(false);
+    if (showMore) {
+      animation = descriptionRef.current.animate(
+        {
+          maxHeight: [`${descriptionRef.current.scrollHeight}px`, '50px'],
+        },
+        {
+          fill: 'both',
+          duration: 300,
+        }
+      );
+    } else {
+      animation = descriptionRef.current.animate(
+        {
+          maxHeight: ['50px', `${descriptionRef.current.scrollHeight}px`],
+        },
+        {
+          fill: 'both',
+          duration: 300,
+        }
+      );
+    }
+
+    setShowMore(!showMore);
+    animation.onfinish = () => {
+      setWebkit(true);
+    };
+  };
+
   return (
     <div
       className={`${styles['carousel-item']} ${
@@ -245,11 +296,12 @@ const CarouselItem = ({
                   ? styles['hide-visibility']
                   : ''
               }`}
-              style={{ aspectRatio }}
+              style={{
+                aspectRatio: contentType === 'reels' ? 9 / 16 : aspectRatio,
+              }}
               ref={videoRef}
               onClick={handleSingleClick(handleClick)}
               onDoubleClick={handleDoubleClick(setLike, setHideLike)}
-              autoPlay
               muted={mute}
               loop={true}
               onCanPlay={() => {
@@ -291,7 +343,7 @@ const CarouselItem = ({
         )}
       </div>
 
-      {type === 'video' && (
+      {type === 'video' && contentType !== 'reels' && (
         <span
           className={styles['mute-icon-box']}
           onClick={() => setMute(!mute)}
@@ -302,6 +354,66 @@ const CarouselItem = ({
             <GoUnmute className={styles['mute-icon']} />
           )}
         </span>
+      )}
+
+      {contentType === 'reels' && (
+        <>
+          <span
+            className={styles['reel-menu-box']}
+            onClick={() => {
+              setShowMenu((prevState) => !prevState);
+              setHideMenu(false);
+            }}
+            ref={reelMenuRef}
+          >
+            <HiOutlineDotsHorizontal className={styles['reel-menu-icon']} />
+          </span>
+
+          <div
+            className={`${styles['reel-details-box']} ${
+              showMore ? styles['show-description'] : ''
+            }`}
+          >
+            <div className={styles['reel-details']}>
+              <span className={styles['reel-owner']}>Mr Hilarious👑</span>
+              <BsDot className={styles.dot} />
+              <time className={styles['reel-time']}>02-04-24</time>
+            </div>
+
+            <div
+              className={styles['reel-description-container']}
+              ref={descriptionRef}
+            >
+              <span
+                className={`${styles['reel-description']} ${
+                  showMore ? styles['show-desc'] : ''
+                }  ${webkit ? styles['webkit-style'] : ''}`}
+              >
+                {description}
+              </span>
+
+              {descriptionHeight > 50 && (
+                <span
+                  className={`${styles['more-text']}`}
+                  onClick={handleDescription}
+                >
+                  {showMore ? 'less' : 'more'}
+                </span>
+              )}
+            </div>
+
+            <span className={styles['music-box']}>
+              <FaMusic className={styles['music-icon']} />{' '}
+              <span className={styles['music-owner']}>SoVinci</span>{' '}
+              <BsDot className={styles.dot2} />{' '}
+              <span className={styles['music-name']}>Me and the Devil</span>
+            </span>
+          </div>
+
+          <div className={styles['reel-progress-box']}>
+            <input type="range" className={styles['reel-progress']} />
+          </div>
+        </>
       )}
     </div>
   );

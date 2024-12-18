@@ -114,6 +114,10 @@
   stop-color: var(--app-theme-color);
 }
 
+.active-icon {
+  fill: var(--app-theme-color) !important;
+}
+
 .active-nav-item {
   color: var(--app-theme-color);
   font-family: appFontBold;

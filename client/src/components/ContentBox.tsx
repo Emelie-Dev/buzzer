@@ -4,17 +4,19 @@ import Carousel from '../components/Carousel';
 import { FaHeart, FaCommentDots, FaShare } from 'react-icons/fa';
 import { IoBookmark } from 'react-icons/io5';
 import styles from '../styles/ContentBox.module.css';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { PiCheckFatFill } from 'react-icons/pi';
-import { LikeContext } from '../Contexts';
+import { ContentContext, LikeContext } from '../Contexts';
 import CommentBox from './CommentBox';
 import ShareMedia from '../components/ShareMedia';
 import { DataItem } from '../pages/Following';
 
 import { Content } from '../components/CarouselItem';
+import ContentItem from './ContentItem';
 
 type ContentBoxProps = {
   data: DataItem;
+  contentType: 'following' | 'home' | 'reels';
 };
 
 type CommentData =
@@ -35,7 +37,7 @@ type CommentData =
       type: 'image' | 'video';
     };
 
-const ContentBox = ({ data }: ContentBoxProps) => {
+const ContentBox = ({ data, contentType }: ContentBoxProps) => {
   const { media, description, username, name, time, photo, aspectRatio, type } =
     data;
 
@@ -49,15 +51,28 @@ const ContentBox = ({ data }: ContentBoxProps) => {
   const [saved, setSaved] = useState<boolean>(false);
   const [shareMedia, setShareMedia] = useState<boolean>(false);
   const [viewComment, setViewComment] = useState<boolean>(false);
+  const [hideMore, setHideMore] = useState<boolean>(false);
+  const { activeVideo } = useContext(ContentContext);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
   const menuRef = useRef<HTMLDivElement>(null!);
   const listRef = useRef<HTMLUListElement>(null!);
+  const reelMenuRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
-    if (descriptionRef.current) descriptionRef.current.innerHTML = description!;
+    if (descriptionRef.current) {
+      descriptionRef.current.innerHTML = description!;
+    }
   }, []);
+
+  useEffect(() => {
+    if (descriptionRef.current) {
+      if (descriptionRef.current.scrollHeight <= 42) {
+        setHideMore(true);
+      }
+    }
+  }, [descriptionWidth]);
 
   useEffect(() => {
     if (like) {
@@ -70,7 +85,13 @@ const ContentBox = ({ data }: ContentBoxProps) => {
   useEffect(() => {
     const clickHandler = (e: Event) => {
       if (e.target) {
-        if (showMenu && !menuRef.current.contains(e.target as Node)) {
+        if (
+          showMenu &&
+          !(
+            menuRef.current.contains(e.target as Node) ||
+            reelMenuRef.current.contains(e.target as Node)
+          )
+        ) {
           setShowMenu(false);
         }
       }
@@ -110,6 +131,14 @@ const ContentBox = ({ data }: ContentBoxProps) => {
     };
   }, [showMenu]);
 
+  useEffect(() => {
+    if (viewComment) {
+      if (activeVideo) activeVideo.pause();
+    } else {
+      if (activeVideo) activeVideo.play();
+    }
+  }, [viewComment, activeVideo]);
+
   const handleDescription = () => {
     descriptionRef.current.animate(
       {
@@ -125,7 +154,16 @@ const ContentBox = ({ data }: ContentBoxProps) => {
   };
 
   return (
-    <LikeContext.Provider value={{ like, setLike, setHideLike }}>
+    <LikeContext.Provider
+      value={{
+        like,
+        setLike,
+        setHideLike,
+        setShowMenu,
+        setHideMenu,
+        reelMenuRef,
+      }}
+    >
       {shareMedia && <ShareMedia setShareMedia={setShareMedia} />}
 
       {viewComment && (
@@ -149,81 +187,139 @@ const ContentBox = ({ data }: ContentBoxProps) => {
         />
       )}
 
-      <article className={styles.content} ref={contentRef}>
-        <h1 className={styles['content-head']}>
-          <span className={styles['content-head-box']}>
-            <span className={styles['content-name-box']}>
-              <span className={styles['content-nickname']}>{name}</span>
-              <span className={styles['content-username']}>{username}</span>
+      <article
+        className={`${styles.content} ${
+          contentType === 'reels' ? styles['reels-content'] : ''
+        }`}
+        ref={contentRef}
+      >
+        {contentType !== 'reels' && (
+          <h1 className={styles['content-head']}>
+            <span className={styles['content-head-box']}>
+              <span className={styles['content-name-box']}>
+                <span className={styles['content-nickname']}>{name}</span>
+                <span className={styles['content-username']}>{username}</span>
+              </span>
+              <BsDot className={styles.dot} />
+              <span className={styles['content-time']}>{time}</span>
             </span>
-            <BsDot className={styles.dot} />
-            <span className={styles['content-time']}>{time}</span>
-          </span>
 
-          <div className={styles['menu-div']} ref={menuRef}>
-            <HiOutlineDotsHorizontal
-              className={`${styles['content-menu']} ${
-                showMenu ? styles['active-menu'] : ''
-              }`}
-              onClick={() => {
-                setShowMenu(!showMenu);
-                setHideMenu(false);
-              }}
-            />
+            <div className={styles['menu-div']} ref={menuRef}>
+              <HiOutlineDotsHorizontal
+                className={`${styles['content-menu']} ${
+                  showMenu ? styles['active-menu'] : ''
+                }`}
+                onClick={() => {
+                  setShowMenu(!showMenu);
+                  setHideMenu(false);
+                }}
+              />
 
-            {!hideMenu && (
-              <ul className={styles['menu-list']} ref={listRef}>
-                <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
-                  {isFollowing ? 'Unfollow' : 'Follow'}
-                </li>
-                <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
-                  Report
-                </li>
-                <li className={styles['menu-item']}>Not interested</li>
-                <li className={styles['menu-item']}>Add to story</li>
-                <li className={styles['menu-item']}>Go to post</li>
-                <li className={styles['menu-item']}>Clear display</li>
-              </ul>
-            )}
-          </div>
-        </h1>
+              {!hideMenu && (
+                <ul className={styles['menu-list']} ref={listRef}>
+                  <li
+                    className={`${styles['menu-item']} ${styles['menu-red']}`}
+                  >
+                    {isFollowing ? 'Unfollow' : 'Follow'}
+                  </li>
+                  <li
+                    className={`${styles['menu-item']} ${styles['menu-red']}`}
+                  >
+                    Report
+                  </li>
+                  <li className={styles['menu-item']}>Not interested</li>
+                  <li className={styles['menu-item']}>Add to story</li>
+                  <li className={styles['menu-item']}>Go to post</li>
+                  <li className={styles['menu-item']}>Clear display</li>
+                </ul>
+              )}
+            </div>
+          </h1>
+        )}
 
-        <div className={styles['content-box']}>
-          {type === 'carousel' ? (
-            <div className={styles['carousel-container']}>
+        <div
+          className={`${styles['content-box']} ${
+            contentType === 'reels' ? styles['reels-content-box'] : ''
+          }`}
+        >
+          <div className={styles['carousel-container']}>
+            {type === 'carousel' ? (
               <Carousel
                 data={media}
                 aspectRatio={aspectRatio}
                 setDescriptionWidth={setDescriptionWidth}
                 type="content"
               />
-            </div>
-          ) : (
-            ''
-          )}
+            ) : (
+              <ContentItem
+                src={media}
+                aspectRatio={aspectRatio}
+                setDescriptionWidth={setDescriptionWidth}
+                type={type}
+                contentType={contentType === 'reels' ? 'reels' : 'single'}
+                description={description}
+              />
+            )}
+
+            {contentType === 'reels' && (
+              <div className={styles['reel-menu-div']} ref={menuRef}>
+                {!hideMenu && (
+                  <ul
+                    className={`${styles['menu-list']} ${
+                      contentType === 'reels' ? styles['reel-menu-list'] : ''
+                    }`}
+                    ref={listRef}
+                  >
+                    <li
+                      className={`${styles['menu-item']} ${styles['menu-red']}`}
+                    >
+                      {isFollowing ? 'Unfollow' : 'Follow'}
+                    </li>
+                    <li
+                      className={`${styles['menu-item']} ${styles['menu-red']}`}
+                    >
+                      Report
+                    </li>
+                    <li className={styles['menu-item']}>Mute</li>
+                    <li className={styles['menu-item']}>Not interested</li>
+                    <li className={styles['menu-item']}>Add to story</li>
+                    <li className={styles['menu-item']}>Go to post</li>
+                    <li className={styles['menu-item']}>Clear display</li>
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className={styles['menu-container']}>
             <div className={styles['profile-img-box']}>
-              <img
-                src={`../../assets/images/users/${photo}`}
-                className={styles['profile-img']}
-              />
+              <span className={styles['profile-img-span']}>
+                <img
+                  src={`../../assets/images/users/${photo}`}
+                  className={styles['profile-img']}
+                />
+              </span>
 
-              {isFollowing ? (
-                <span
-                  className={styles['profile-icon-box2']}
-                  title="Unfollow"
-                  onClick={() => setIsFollowing(!isFollowing)}
-                >
-                  <PiCheckFatFill className={styles['profile-icon2']} />{' '}
-                </span>
+              {contentType !== 'following' ? (
+                isFollowing ? (
+                  <span
+                    className={styles['profile-icon-box2']}
+                    title="Unfollow"
+                    onClick={() => setIsFollowing(!isFollowing)}
+                  >
+                    <PiCheckFatFill className={styles['profile-icon2']} />{' '}
+                  </span>
+                ) : (
+                  <span
+                    className={styles['profile-icon-box']}
+                    title="Follow"
+                    onClick={() => setIsFollowing(!isFollowing)}
+                  >
+                    <HiPlus className={styles['profile-icon']} />
+                  </span>
+                )
               ) : (
-                <span
-                  className={styles['profile-icon-box']}
-                  title="Follow"
-                  onClick={() => setIsFollowing(!isFollowing)}
-                >
-                  <HiPlus className={styles['profile-icon']} />
-                </span>
+                ''
               )}
             </div>
 
@@ -294,17 +390,17 @@ const ContentBox = ({ data }: ContentBoxProps) => {
           </div>
         </div>
 
-        {description && (
+        {contentType !== 'reels' && description && (
           <>
             <div
               className={`${styles['content-description']}  ${
-                !showMore ? styles['content-description2'] : ''
+                !hideMore && !showMore ? styles['content-description2'] : ''
               } ${showMore ? styles['show-more'] : ''}`}
               style={{ width: `${descriptionWidth}px` }}
               ref={descriptionRef}
             ></div>
 
-            {!showMore && (
+            {!hideMore && !showMore && (
               <div className={styles['more-text']} onClick={handleDescription}>
                 show more
               </div>

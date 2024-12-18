@@ -151,6 +151,8 @@ const Carousel = ({
             aspectRatio={aspectRatio}
             hideData={hideData}
             setHideData={setHideData}
+            contentType="carousel"
+            description={''}
           />
         ))}
       </div>

@@ -20,5 +20,6 @@ Pages =>
 
  Updates =>
   - Change appearance icon based on theme
-  - Add storyborder to fyp profile pictures
+  - Add storyborder to fyp profile pictures ✔
+  - Pause video when comment section is displayed ✔
 

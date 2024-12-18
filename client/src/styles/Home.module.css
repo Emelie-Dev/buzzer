@@ -345,7 +345,7 @@
   margin-left: auto;
   padding: 0.3rem 0.5rem;
   cursor: pointer;
-  transition: opacity 0.3s;
+  transition: color 0.3s;
 }
 
 .follow-btn:hover {

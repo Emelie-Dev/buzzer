@@ -1,3 +1,4 @@
+import ReactDOM from 'react-dom';
 import styles from '../styles/ShareMedia.module.css';
 import { IoClose, IoSearchSharp } from 'react-icons/io5';
 import { PiLinkBold } from 'react-icons/pi';
@@ -31,6 +32,8 @@ const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
 
   const optionsRef = useRef<HTMLDivElement>(null!);
 
+  const target = document.getElementById('share-portal') || document.body;
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
 
@@ -59,7 +62,7 @@ const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
     setSelected([...set]);
   };
 
-  return (
+  return ReactDOM.createPortal(
     <section className={styles.section} onClick={handleClick}>
       <div className={styles.container}>
         <h1 className={styles['head']}>
@@ -272,7 +275,8 @@ const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
           </div>
         )}
       </div>
-    </section>
+    </section>,
+    target
   );
 };
 

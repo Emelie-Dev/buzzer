@@ -258,6 +258,7 @@
   height: 3.5rem;
   border-radius: 50%;
   object-fit: cover;
+  border: 3px solid rgba(0, 0, 0, 0.6);
 }
 
 .next-story-username {

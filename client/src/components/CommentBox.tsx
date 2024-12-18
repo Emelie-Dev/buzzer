@@ -1,6 +1,7 @@
+import ReactDOM from 'react-dom';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import styles from '../styles/CommentBox.module.css';
-import { Content } from './CarouselItem';
+import CarouselItem, { Content } from './CarouselItem';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { FaHeart, FaCommentDots, FaShare } from 'react-icons/fa';
 import { IoBookmark } from 'react-icons/io5';
@@ -11,6 +12,7 @@ import { IoClose } from 'react-icons/io5';
 import { FaArrowUp } from 'react-icons/fa';
 import Carousel from './Carousel';
 import { LikeContext } from '../Contexts';
+import {} from 'react';
 
 type CommentBoxProps = {
   data:
@@ -85,6 +87,7 @@ const CommentBox = ({
   const [searching, setSearching] = useState<boolean | 'done'>(false);
   const [newTag, setNewTag] = useState<boolean>(false);
   const [scrollHeight, setScrollHeight] = useState<number>(0);
+  const [hideData, setHideData] = useState<boolean>(false);
 
   const { like, setLike, setHideLike } = useContext(LikeContext);
 
@@ -94,6 +97,8 @@ const CommentBox = ({
   const followersRef = useRef<HTMLUListElement>(null!);
   const tagRef = useRef<HTMLDivElement>(null!);
   const commentRef = useRef<HTMLDivElement>(null!);
+
+  const target = document.getElementById('comment-portal') || document.body;
 
   useEffect(() => {
     const clickHandler = (e: Event) => {
@@ -341,7 +346,7 @@ const CommentBox = ({
     }
   };
 
-  return (
+  return ReactDOM.createPortal(
     <section className={styles.section} onClick={handleClick}>
       <span
         className={styles['close-icon-box']}
@@ -352,13 +357,23 @@ const CommentBox = ({
       </span>
 
       <div className={styles.container}>
-        {type === 'carousel' ? (
-          <div className={styles['carousel-container']}>
+        <div className={styles['carousel-container']}>
+          {type === 'carousel' ? (
             <Carousel data={media} aspectRatio={aspectRatio} type="comment" />
-          </div>
-        ) : (
-          ''
-        )}
+          ) : (
+            <CarouselItem
+              item={{ src: media, type }}
+              aspectRatio={aspectRatio}
+              hideData={hideData}
+              setHideData={setHideData}
+              contentIndex={0}
+              itemIndex={0}
+              viewType="comment"
+              contentType="single"
+            />
+          )}
+        </div>
+
         <div
           className={styles['comment-container']}
           ref={commentRef}
@@ -613,7 +628,8 @@ const CommentBox = ({
           </div>
         </div>
       </div>
-    </section>
+    </section>,
+    target
   );
 };
 
