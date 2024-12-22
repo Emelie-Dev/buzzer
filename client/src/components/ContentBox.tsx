@@ -281,6 +281,7 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
                       Report
                     </li>
                     <li className={styles['menu-item']}>Mute</li>
+                    <li className={styles['menu-item']}>Pin</li>
                     <li className={styles['menu-item']}>Not interested</li>
                     <li className={styles['menu-item']}>Add to story</li>
                     <li className={styles['menu-item']}>Go to post</li>

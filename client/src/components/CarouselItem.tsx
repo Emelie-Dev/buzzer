@@ -55,10 +55,15 @@ const CarouselItem = ({
   const [showMore, setShowMore] = useState<boolean>(false);
   const { setActiveVideo } = useContext(ContentContext);
   const [descriptionHeight, setDescriptionHeight] = useState<number>(0);
+  const [progress, setProgress] = useState<number>(0);
+  const [isProgressChanging, setIsProgressChanging] = useState<boolean>(false);
+  const [duration, setDuration] = useState<string>('');
+  const [elapsedTime, setElapsedTime] = useState<string>('');
 
   const imageRef = useRef<HTMLImageElement>(null!);
   const videoRef = useRef<HTMLVideoElement>(null!);
   const descriptionRef = useRef<HTMLDivElement>(null!);
+  const progressRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
     const networkHandler = () => {
@@ -104,6 +109,12 @@ const CarouselItem = ({
       setDescriptionHeight(descriptionRef.current.scrollHeight);
   }, []);
 
+  useEffect(() => {
+    if (contentType === 'reels' && progressRef.current) {
+      progressRef.current.style.background = `linear-gradient(to right, white ${progress}%, gray ${progress}%)`;
+    }
+  }, [progress]);
+
   const handleImageClick = () => {
     if (loading === false) setHideData(!hideData);
   };
@@ -111,16 +122,23 @@ const CarouselItem = ({
   const handleClick = () => {
     if (loading === false) {
       if (hideData || contentType !== 'carousel') {
-        setHidePause(false);
         if (videoRef.current.paused) {
+          if (contentType === 'reels') {
+            if (showMore) return handleDescription();
+          } else setHideData(!hideData);
+
           videoRef.current.play();
-          setHideData(!hideData);
           setPause(false);
         } else {
+          if (contentType === 'reels') {
+            if (showMore) return handleDescription();
+          }
+
           videoRef.current.pause();
           setPause(true);
         }
 
+        setHidePause(false);
         setTimeout(() => {
           setHidePause(true);
         }, 300);
@@ -191,34 +209,104 @@ const CarouselItem = ({
   const handleDescription = () => {
     let animation;
 
+    const scrollHeight =
+      descriptionRef.current.scrollHeight > 0.45 * window.innerHeight
+        ? '45vh'
+        : `${descriptionRef.current.scrollHeight}px`;
+
     setWebkit(false);
     if (showMore) {
+      descriptionRef.current.style.scrollBehavior = 'auto';
+      descriptionRef.current.scrollTop = 0;
       animation = descriptionRef.current.animate(
         {
-          maxHeight: [`${descriptionRef.current.scrollHeight}px`, '50px'],
+          maxHeight: [`${scrollHeight}`, '50px'],
         },
         {
           fill: 'both',
           duration: 300,
         }
       );
+
+      descriptionRef.current.style.overflow = 'hidden';
     } else {
       animation = descriptionRef.current.animate(
         {
-          maxHeight: ['50px', `${descriptionRef.current.scrollHeight}px`],
+          maxHeight: ['50px', `${scrollHeight}`],
         },
         {
           fill: 'both',
           duration: 300,
         }
       );
+      descriptionRef.current.style.overflow = 'auto';
     }
 
     setShowMore(!showMore);
     animation.onfinish = () => {
       setWebkit(true);
+      descriptionRef.current.style.scrollBehavior = 'smooth';
     };
   };
+
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setIsProgressChanging(true);
+    setHideData(true);
+    setProgress(value);
+
+    handleMediaTime('current', value)();
+  };
+
+  const handleProgressUpdate = (e: React.SyntheticEvent) => {
+    const target = e.target as HTMLVideoElement;
+
+    const currentTime = target.currentTime;
+    const duration = target.duration;
+
+    if (!isProgressChanging) setProgress((currentTime / duration) * 100);
+  };
+
+  const seekMedia = () => {
+    setIsProgressChanging(false);
+    setHideData(false);
+
+    if (videoRef.current)
+      videoRef.current.currentTime =
+        (progress / 100) * videoRef.current.duration;
+  };
+
+  const handleMediaTime =
+    (type: 'duration' | 'current', value: number = 0) =>
+    () => {
+      const target = videoRef.current;
+      const duration = Math.round(target.duration);
+      const time = Math.round((value / 100) * duration);
+
+      if (type === 'duration') {
+        if (duration < 60) {
+          setDuration(`00:${String(duration).padStart(2, '0')}`);
+        } else {
+          const trunc = Math.trunc(duration / 60);
+          const rem = duration - trunc * 60;
+
+          setDuration(
+            `${String(trunc).padStart(2, '0')}:${String(rem).padStart(2, '0')}`
+          );
+        }
+      } else {
+        if (time < 60) {
+          setElapsedTime(`00:${String(time).padStart(2, '0')}`);
+        } else {
+          const trunc = Math.trunc(time / 60);
+          const rem = time - trunc * 60;
+
+          setElapsedTime(
+            `${String(trunc).padStart(2, '0')}:${String(rem).padStart(2, '0')}`
+          );
+        }
+      }
+    };
 
   return (
     <div
@@ -262,7 +350,16 @@ const CarouselItem = ({
         </div>
       )}
 
-      <div className={styles['media-wrapper']}>
+      <div
+        className={styles['media-wrapper']}
+        onContextMenu={(e) => {
+          if (contentType === 'reels') {
+            e.preventDefault();
+            if (hideData) setHideData(false);
+            else setHideData(true);
+          }
+        }}
+      >
         {type === 'image' ? (
           <img
             src={`../../assets/images/content/${src}.jpeg`}
@@ -312,6 +409,12 @@ const CarouselItem = ({
               onAbort={handleError('error')}
               onEmptied={handleError('notfound')}
               onStalled={handleError('empty')}
+              onTimeUpdate={handleProgressUpdate}
+              onPlaying={() => {
+                setIsProgressChanging(false);
+                setPause(false);
+              }}
+              onDurationChange={handleMediaTime('duration')}
             >
               <source
                 src={`../../assets/images/content/${src}.mp4`}
@@ -372,7 +475,7 @@ const CarouselItem = ({
           <div
             className={`${styles['reel-details-box']} ${
               showMore ? styles['show-description'] : ''
-            }`}
+            } ${hideData ? styles['hide-visibility'] : ''}`}
           >
             <div className={styles['reel-details']}>
               <span className={styles['reel-owner']}>Mr Hilarious👑</span>
@@ -380,14 +483,12 @@ const CarouselItem = ({
               <time className={styles['reel-time']}>02-04-24</time>
             </div>
 
-            <div
-              className={styles['reel-description-container']}
-              ref={descriptionRef}
-            >
+            <div className={styles['reel-description-container']}>
               <span
                 className={`${styles['reel-description']} ${
                   showMore ? styles['show-desc'] : ''
                 }  ${webkit ? styles['webkit-style'] : ''}`}
+                ref={descriptionRef}
               >
                 {description}
               </span>
@@ -411,8 +512,28 @@ const CarouselItem = ({
           </div>
 
           <div className={styles['reel-progress-box']}>
-            <input type="range" className={styles['reel-progress']} />
+            <input
+              type="range"
+              className={`${styles['reel-progress']} ${
+                pause ? styles['reel-progress2'] : ''
+              }`}
+              value={progress}
+              ref={progressRef}
+              min={0}
+              max={100}
+              onKeyDown={(e) => e.preventDefault()}
+              onChange={handleProgressChange}
+              onClick={seekMedia}
+            />
           </div>
+
+          {isProgressChanging && (
+            <div className={styles['seek-box']}>
+              <span>{elapsedTime}</span>
+              <span className={styles.slash}>/</span>
+              <span>{duration}</span>
+            </div>
+          )}
         </>
       )}
     </div>
