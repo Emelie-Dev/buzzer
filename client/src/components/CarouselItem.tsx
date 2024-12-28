@@ -7,7 +7,6 @@ import { ContentContext, LikeContext } from '../Contexts';
 import { BsDot } from 'react-icons/bs';
 import { FaMusic } from 'react-icons/fa';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
-import { RiPinFill } from 'react-icons/ri';
 
 export interface Content {
   type: 'image' | 'video';
@@ -515,9 +514,9 @@ const CarouselItem = ({
                 <GoUnmute className={styles['reel-mute-icon']} />
               </span>
 
-              <span className={styles['reel-pin-box']}>
+              {/* <span className={styles['reel-pin-box']}>
                 <RiPinFill className={styles['reel-pin-icon']} />
-              </span>
+              </span> */}
             </>
           )}
 
