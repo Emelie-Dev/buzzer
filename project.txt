@@ -22,4 +22,5 @@ Pages =>
   - Change appearance icon based on theme
   - Add storyborder to fyp profile pictures ✔
   - Pause video when comment section is displayed ✔
+  - Fix comment box for reels(clicking of black background) ✔
 

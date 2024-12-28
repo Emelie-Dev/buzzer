@@ -7,6 +7,7 @@ interface LikeObj {
   setShowMenu: React.Dispatch<React.SetStateAction<boolean>>;
   setHideMenu: React.Dispatch<React.SetStateAction<boolean>>;
   reelMenuRef: React.MutableRefObject<HTMLDivElement>;
+  viewComment: boolean;
 }
 
 export const ContentContext = createContext<{

@@ -17,13 +17,16 @@
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
+
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
 }
 
 .reels-container {
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 2rem 2rem 0;
+  /* padding: 2rem 2rem 0; */
   position: relative;
 }
 
@@ -168,9 +171,10 @@
 }
 
 .reel-options-box {
-  position: absolute;
+  position: fixed;
   bottom: 0;
-  right: 0;
+  z-index: 4;
+  right: 26%;
   margin: 1rem 1rem 1.5rem;
   z-index: 3;
 }
@@ -347,4 +351,42 @@
   font-family: monospace;
   font-size: 1rem;
   z-index: 5;
+}
+
+.arrow-div {
+  position: fixed;
+  bottom: 45%;
+  z-index: 4;
+  right: calc(27.5%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.arrow-box {
+  background: rgb(128, 128, 128, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.arrow-box:last-child {
+  margin-bottom: 0;
+}
+
+.arrow {
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.arrow-box:hover .arrow {
+  fill: var(--app-theme-color);
+}
+
+.active-arrow {
+  fill: var(--app-theme-color);
 }

@@ -1,6 +1,6 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Reels.module.css';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ContentContext } from '../Contexts';
 import ContentBox from '../components/ContentBox';
 import useScrollHandler from '../hooks/useScrollHandler';
@@ -9,6 +9,8 @@ import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
 import { TbMenuDeep } from 'react-icons/tb';
 import { RiUnpinFill } from 'react-icons/ri';
+import { IoIosArrowUp } from 'react-icons/io';
+import { IoIosArrowDown } from 'react-icons/io';
 
 const dataList: DataItem[] = [
   {
@@ -37,17 +39,71 @@ const dataList: DataItem[] = [
 
 const Reels = () => {
   const { activeVideo, setActiveVideo, contentRef } = useScrollHandler();
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [scrollType, setScrollType] = useState<'up' | 'down' | null>(null);
 
   const mainRef = useRef<HTMLDivElement>(null!);
+  const timeout = useRef<number>();
 
-  useEffect(() => {}, []);
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const video = entry.target.querySelector('video') as HTMLVideoElement;
+        if (entry.isIntersecting) {
+          video.play();
+          setActiveVideo(video);
+        } else {
+          video.pause();
+          video.currentTime = 0;
+        }
+      });
+    },
+    { threshold: 0.7 }
+  );
+
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.forEach((video) => observer.observe(video));
+    }
+  }, []);
+
+  const scrollHandler = () => {
+    clearTimeout(timeout.current);
+    timeout.current = setTimeout(() => {
+      const scrollPosition = mainRef.current.scrollTop;
+
+      setActiveIndex(Math.round(scrollPosition / window.innerHeight));
+    }, 100);
+  };
+
+  const handleKeyPress =
+    (type: 'up' | 'down') => (e: React.KeyboardEvent<HTMLElement>) => {
+      const key = e.key.toLowerCase();
+
+      if (type === 'down') {
+        if (key === 'arrowup') {
+          setScrollType('up');
+        } else if (key === 'arrowdown') {
+          setScrollType('down');
+        }
+      } else setScrollType(null);
+    };
+
+  console.log(activeIndex);
 
   return (
     <>
       <NavBar page="reels" />
 
       <section className={styles.main}>
-        <section className={styles['main-container']} ref={mainRef}>
+        <section
+          className={styles['main-container']}
+          ref={mainRef}
+          tabIndex={0}
+          onScroll={scrollHandler}
+          onKeyDown={handleKeyPress('down')}
+          onKeyUp={handleKeyPress('up')}
+        >
           <div className={styles['reels-container']}>
             <ContentContext.Provider
               value={{ contentRef, activeVideo, setActiveVideo }}
@@ -87,6 +143,34 @@ const Reels = () => {
               </ul>
             </div>
           </div>
+
+          <div className={styles['arrow-div']}>
+            <span
+              className={styles['arrow-box']}
+              onClick={() => {
+                mainRef.current.scrollTop -= mainRef.current.clientHeight;
+              }}
+            >
+              <IoIosArrowUp
+                className={`${styles.arrow}  ${
+                  scrollType === 'up' ? styles['active-arrow'] : ''
+                }`}
+              />
+            </span>
+
+            <span
+              className={styles['arrow-box']}
+              onClick={() => {
+                mainRef.current.scrollTop += mainRef.current.clientHeight;
+              }}
+            >
+              <IoIosArrowDown
+                className={`${styles.arrow}  ${
+                  scrollType === 'down' ? styles['active-arrow'] : ''
+                }`}
+              />
+            </span>
+          </div>
         </section>
 
         <section className={styles.aside}>
@@ -121,7 +205,7 @@ const Reels = () => {
           </header>
 
           <div className={styles['pinned-videos-container']}>
-            <span className={styles['pinned-videos-text']}>Pinned videos</span>
+            <span className={styles['pinned-videos-text']}>Pinned reels</span>
 
             <div className={styles['pinned-videos-div']}>
               <article className={styles['pinned-video-box']}>

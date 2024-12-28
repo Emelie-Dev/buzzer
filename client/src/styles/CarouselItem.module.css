@@ -35,6 +35,10 @@
   object-fit: cover;
 }
 
+.reels-video {
+  width: auto;
+}
+
 .pause-icon-box {
   position: absolute;
   z-index: 4;
@@ -143,6 +147,33 @@
 .reel-menu-icon {
   width: 1.6rem;
   height: 1.6rem;
+}
+
+.reel-mute-box,
+.reel-pin-box {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.4rem;
+  backdrop-filter: blur(5px);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.reel-pin-box {
+  left: 7px;
+  right: none;
+}
+
+.reel-mute-icon,
+.reel-pin-icon {
+  fill: white;
+  width: 1rem;
+  height: 1rem;
 }
 
 .hide-data {

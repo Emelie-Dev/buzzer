@@ -52,7 +52,7 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
   const [shareMedia, setShareMedia] = useState<boolean>(false);
   const [viewComment, setViewComment] = useState<boolean>(false);
   const [hideMore, setHideMore] = useState<boolean>(false);
-  const { activeVideo } = useContext(ContentContext);
+  const { activeVideo, setActiveVideo } = useContext(ContentContext);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -131,14 +131,6 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
     };
   }, [showMenu]);
 
-  useEffect(() => {
-    if (viewComment) {
-      if (activeVideo) activeVideo.pause();
-    } else {
-      if (activeVideo) activeVideo.play();
-    }
-  }, [viewComment, activeVideo]);
-
   const handleDescription = () => {
     descriptionRef.current.animate(
       {
@@ -162,6 +154,7 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
         setShowMenu,
         setHideMenu,
         reelMenuRef,
+        viewComment,
       }}
     >
       {shareMedia && <ShareMedia setShareMedia={setShareMedia} />}
@@ -184,6 +177,8 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
           hideLike={hideLike}
           setSaved={setSaved}
           setShareMedia={setShareMedia}
+          reels={contentType === 'reels'}
+          description={description}
         />
       )}
 
@@ -355,6 +350,8 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
                 className={styles['menu-icon-box']}
                 title="Comment"
                 onClick={() => {
+                  if (activeVideo) activeVideo.pause();
+                  setActiveVideo(null);
                   setViewComment(true);
                 }}
               >

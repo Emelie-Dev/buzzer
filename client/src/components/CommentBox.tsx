@@ -11,7 +11,7 @@ import { IoReloadOutline } from 'react-icons/io5';
 import { IoClose } from 'react-icons/io5';
 import { FaArrowUp } from 'react-icons/fa';
 import Carousel from './Carousel';
-import { LikeContext } from '../Contexts';
+import { ContentContext, LikeContext } from '../Contexts';
 import {} from 'react';
 
 type CommentBoxProps = {
@@ -38,6 +38,8 @@ type CommentBoxProps = {
   hideLike: boolean;
   setSaved: React.Dispatch<React.SetStateAction<boolean>>;
   setShareMedia: React.Dispatch<React.SetStateAction<boolean>>;
+  reels?: boolean;
+  description?: string;
 };
 
 const followers = [
@@ -74,6 +76,8 @@ const CommentBox = ({
   isFollowing,
   saved,
   hideLike,
+  reels,
+  description,
   setSaved,
   setShareMedia,
 }: CommentBoxProps) => {
@@ -88,7 +92,7 @@ const CommentBox = ({
   const [newTag, setNewTag] = useState<boolean>(false);
   const [scrollHeight, setScrollHeight] = useState<number>(0);
   const [hideData, setHideData] = useState<boolean>(false);
-
+  const { setActiveVideo } = useContext(ContentContext);
   const { like, setLike, setHideLike } = useContext(LikeContext);
 
   const menuRef = useRef<HTMLDivElement>(null!);
@@ -351,7 +355,10 @@ const CommentBox = ({
       <span
         className={styles['close-icon-box']}
         title="Close"
-        onClick={() => setViewComment(false)}
+        onClick={() => {
+          setActiveVideo(null);
+          setViewComment(false);
+        }}
       >
         <IoClose className={styles['close-icon']} />
       </span>
@@ -369,7 +376,8 @@ const CommentBox = ({
               contentIndex={0}
               itemIndex={0}
               viewType="comment"
-              contentType="single"
+              contentType={reels ? 'reels' : 'single'}
+              description={description}
             />
           )}
         </div>
@@ -395,6 +403,7 @@ const CommentBox = ({
                 <span className={styles['username']}>{username}</span>
               </span>
             </div>
+
             <div className={styles['menu-div']} ref={menuRef}>
               <HiOutlineDotsHorizontal
                 className={`${styles['content-menu']} ${

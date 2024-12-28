@@ -7,6 +7,7 @@ import { ContentContext, LikeContext } from '../Contexts';
 import { BsDot } from 'react-icons/bs';
 import { FaMusic } from 'react-icons/fa';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
+import { RiPinFill } from 'react-icons/ri';
 
 export interface Content {
   type: 'image' | 'video';
@@ -23,7 +24,7 @@ type CarouselItemProps = {
   setHideData: React.Dispatch<React.SetStateAction<boolean>>;
   viewType: 'comment' | 'content';
   contentType: 'carousel' | 'single' | 'reels';
-  description: string;
+  description?: string;
 };
 
 const CarouselItem = ({
@@ -48,8 +49,15 @@ const CarouselItem = ({
   const [clickTimeout, setClickTimeout] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const { contentRef } = useContext(ContentContext);
-  const { like, setLike, setHideLike, setShowMenu, setHideMenu, reelMenuRef } =
-    useContext(LikeContext);
+  const {
+    like,
+    setLike,
+    setHideLike,
+    setShowMenu,
+    setHideMenu,
+    reelMenuRef,
+    viewComment,
+  } = useContext(LikeContext);
   const [showLike, setShowLike] = useState<boolean>(false);
   const [webkit, setWebkit] = useState<boolean>(true);
   const [showMore, setShowMore] = useState<boolean>(false);
@@ -97,9 +105,16 @@ const CarouselItem = ({
         videoRef.current.pause();
         setCurrentTime(videoRef.current.currentTime);
       } else {
-        videoRef.current.currentTime = currentTime;
-        videoRef.current.play();
-        if (viewType === 'content') setActiveVideo(videoRef.current);
+        if (contentType !== 'reels') {
+          videoRef.current.currentTime = currentTime;
+          videoRef.current.play();
+          setActiveVideo(videoRef.current);
+        } else {
+          if (viewType === 'comment') {
+            videoRef.current.play();
+            setActiveVideo(videoRef.current);
+          }
+        }
       }
     }
   }, [contentIndex]);
@@ -114,6 +129,17 @@ const CarouselItem = ({
       progressRef.current.style.background = `linear-gradient(to right, white ${progress}%, gray ${progress}%)`;
     }
   }, [progress]);
+
+  useEffect(() => {
+    if (contentIndex === itemIndex) {
+      if (type === 'video') {
+        if (!viewComment) {
+          videoRef.current.play();
+          setActiveVideo(videoRef.current);
+        }
+      }
+    }
+  }, [viewComment]);
 
   const handleImageClick = () => {
     if (loading === false) setHideData(!hideData);
@@ -351,7 +377,7 @@ const CarouselItem = ({
       )}
 
       <div
-        className={styles['media-wrapper']}
+        className={`${styles['media-wrapper']} `}
         onContextMenu={(e) => {
           if (contentType === 'reels') {
             e.preventDefault();
@@ -359,6 +385,16 @@ const CarouselItem = ({
             else setHideData(true);
           }
         }}
+        onClick={
+          type === 'video'
+            ? handleSingleClick(handleClick)
+            : handleSingleClick(handleImageClick)
+        }
+        onDoubleClick={
+          type === 'video'
+            ? handleDoubleClick(setLike, setHideLike)
+            : handleDoubleClick(setLike, setHideLike)
+        }
       >
         {type === 'image' ? (
           <img
@@ -377,8 +413,6 @@ const CarouselItem = ({
               setLoading(false);
               setReloading(false);
             }}
-            onClick={handleSingleClick(handleImageClick)}
-            onDoubleClick={handleDoubleClick(setLike, setHideLike)}
             onError={handleError('error')}
             onAbort={handleError('error')}
           />
@@ -386,6 +420,8 @@ const CarouselItem = ({
           <>
             <video
               className={`${styles['video-media']} ${
+                contentType === 'reels' ? styles['reels-video'] : ''
+              } ${
                 loading === true ||
                 loading === 'empty' ||
                 loading === 'error' ||
@@ -397,8 +433,6 @@ const CarouselItem = ({
                 aspectRatio: contentType === 'reels' ? 9 / 16 : aspectRatio,
               }}
               ref={videoRef}
-              onClick={handleSingleClick(handleClick)}
-              onDoubleClick={handleDoubleClick(setLike, setHideLike)}
               muted={mute}
               loop={true}
               onCanPlay={() => {
@@ -415,6 +449,7 @@ const CarouselItem = ({
                 setPause(false);
               }}
               onDurationChange={handleMediaTime('duration')}
+              autoPlay={false}
             >
               <source
                 src={`../../assets/images/content/${src}.mp4`}
@@ -461,27 +496,43 @@ const CarouselItem = ({
 
       {contentType === 'reels' && (
         <>
-          <span
-            className={styles['reel-menu-box']}
-            onClick={() => {
-              setShowMenu((prevState) => !prevState);
-              setHideMenu(false);
-            }}
-            ref={reelMenuRef}
-          >
-            <HiOutlineDotsHorizontal className={styles['reel-menu-icon']} />
-          </span>
+          {viewType !== 'comment' && (
+            <span
+              className={styles['reel-menu-box']}
+              onClick={() => {
+                setShowMenu((prevState) => !prevState);
+                setHideMenu(false);
+              }}
+              ref={reelMenuRef}
+            >
+              <HiOutlineDotsHorizontal className={styles['reel-menu-icon']} />
+            </span>
+          )}
+
+          {viewType === 'comment' && (
+            <>
+              <span className={styles['reel-mute-box']}>
+                <GoUnmute className={styles['reel-mute-icon']} />
+              </span>
+
+              <span className={styles['reel-pin-box']}>
+                <RiPinFill className={styles['reel-pin-icon']} />
+              </span>
+            </>
+          )}
 
           <div
             className={`${styles['reel-details-box']} ${
               showMore ? styles['show-description'] : ''
             } ${hideData ? styles['hide-visibility'] : ''}`}
           >
-            <div className={styles['reel-details']}>
-              <span className={styles['reel-owner']}>Mr Hilarious👑</span>
-              <BsDot className={styles.dot} />
-              <time className={styles['reel-time']}>02-04-24</time>
-            </div>
+            {viewType !== 'comment' && (
+              <div className={styles['reel-details']}>
+                <span className={styles['reel-owner']}>Mr Hilarious👑</span>
+                <BsDot className={styles.dot} />
+                <time className={styles['reel-time']}>02-04-24</time>
+              </div>
+            )}
 
             <div className={styles['reel-description-container']}>
               <span
@@ -515,7 +566,7 @@ const CarouselItem = ({
             <input
               type="range"
               className={`${styles['reel-progress']} ${
-                pause ? styles['reel-progress2'] : ''
+                pause || isProgressChanging ? styles['reel-progress2'] : ''
               }`}
               value={progress}
               ref={progressRef}

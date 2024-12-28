@@ -6,7 +6,10 @@
 
 .reels-content {
   border-top: none;
-  height: calc(100vh - 4rem);
+  height: 100vh;
+  padding: 2rem 0;
+  scroll-snap-align: start;
+  margin-bottom: 0;
 }
 
 .content-head {
