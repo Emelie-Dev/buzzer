@@ -444,7 +444,7 @@ const Friends = () => {
                 <span className={styles['friend-request-img-box']}>
                   <img
                     className={styles['friend-request-img']}
-                    src="../../public/assets/images/users/user13.jpeg"
+                    src="../../assets/images/users/user13.jpeg"
                   />
 
                   <span className={styles['friend-request-icon-box']}>
@@ -472,7 +472,7 @@ const Friends = () => {
                 <span className={styles['friend-request-img-box']}>
                   <img
                     className={styles['friend-request-img']}
-                    src="../../public/assets/images/users/user10.jpeg"
+                    src="../../assets/images/users/user10.jpeg"
                   />
                 </span>
 
@@ -496,7 +496,7 @@ const Friends = () => {
                 <span className={styles['friend-request-img-box']}>
                   <img
                     className={styles['friend-request-img']}
-                    src="../../public/assets/images/users/user1.jpeg"
+                    src="../../assets/images/users/user1.jpeg"
                   />
 
                   <span className={styles['friend-request-icon-box']}>
@@ -524,7 +524,7 @@ const Friends = () => {
                 <span className={styles['friend-request-img-box']}>
                   <img
                     className={styles['friend-request-img']}
-                    src="../../public/assets/images/users/user4.jpeg"
+                    src="../../assets/images/users/user4.jpeg"
                   />
                 </span>
 
@@ -548,7 +548,7 @@ const Friends = () => {
                 <span className={styles['friend-request-img-box']}>
                   <img
                     className={styles['friend-request-img']}
-                    src="../../public/assets/images/users/user5.jpeg"
+                    src="../../assets/images/users/user5.jpeg"
                   />
                 </span>
 
