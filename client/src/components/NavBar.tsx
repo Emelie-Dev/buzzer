@@ -385,10 +385,11 @@ const NavBar = ({ page }: NavBarProps) => {
             className={`${styles['nav-item']} ${
               page === 'notifications' ? styles['active-nav-item'] : ''
             }`}
+            onClick={() => navigate('/notifications')}
           >
             {page === 'notifications' ? (
               <IoNotifications
-                className={`${styles['nav-item']} ${styles['active-nav-item']}`}
+                className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
               />
             ) : (
               <IoMdNotificationsOutline className={styles['nav-icon']} />
@@ -585,7 +586,10 @@ const NavBar = ({ page }: NavBarProps) => {
               </svg>
             </span>
 
-            <span className={styles['search-section-box']}>
+            <span
+              className={styles['search-section-box']}
+              onClick={() => navigate('/notifications')}
+            >
               <IoMdNotificationsOutline
                 className={styles['search-section-icon']}
               />{' '}

@@ -5,18 +5,17 @@ import { ContentContext } from '../Contexts';
 import ContentBox from '../components/ContentBox';
 import useScrollHandler from '../hooks/useScrollHandler';
 import { DataItem } from './Following';
-import { HiPlusSm } from 'react-icons/hi';
-import { BiMessageDetail } from 'react-icons/bi';
 import { TbMenuDeep } from 'react-icons/tb';
 import { RiUnpinFill } from 'react-icons/ri';
 import { IoIosArrowUp } from 'react-icons/io';
 import { IoIosArrowDown } from 'react-icons/io';
+import AsideHeader from '../components/AsideHeader';
 
 const dataList: DataItem[] = [
   {
     media: 'content30',
-    name: '',
-    username: '',
+    name: 'Mr Hilarious👑',
+    username: 'kingofreaction',
     photo: 'profile1.jpeg',
     time: '',
     aspectRatio: 1,
@@ -26,8 +25,8 @@ const dataList: DataItem[] = [
   },
   {
     media: 'content29',
-    name: '',
-    username: '',
+    name: 'MCFC Lad',
+    username: 'mancity_fan',
     photo: 'profile1.jpeg',
     time: '',
     aspectRatio: 1,
@@ -174,35 +173,7 @@ const Reels = () => {
         </section>
 
         <section className={styles.aside}>
-          <header className={styles['aside-header']}>
-            <button className={styles['create-btn']}>
-              Create <HiPlusSm className={styles['create-icon']} />
-            </button>
-
-            <span className={styles['inbox-box']} title="Inbox">
-              <BiMessageDetail className={styles['inbox-icon']} />
-              <span className={styles['inbox-number']}>
-                {' '}
-                <span className={styles['inbox-length']}>9</span>
-              </span>
-            </span>
-
-            <div className={styles['profile-box']}>
-              <span className={styles['profile-img-box']}>
-                {' '}
-                <img
-                  className={styles['profile-img']}
-                  src="../../assets/images/users/user14.jpeg"
-                />
-              </span>
-
-              <ul className={styles['view-list']}>
-                <li className={styles['view-item']}>View profile</li>
-                <li className={styles['view-item']}>View story</li>
-                <li className={styles['view-item']}>Switch account</li>
-              </ul>
-            </div>
-          </header>
+          <AsideHeader />
 
           <div className={styles['pinned-videos-container']}>
             <span className={styles['pinned-videos-text']}>Pinned reels</span>

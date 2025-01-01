@@ -9,6 +9,7 @@ type ContentItemProps = {
   type: 'image' | 'video';
   contentType: 'single' | 'reels';
   description: string;
+  name?: string;
 };
 
 const ContentItem = ({
@@ -18,6 +19,7 @@ const ContentItem = ({
   type,
   contentType,
   description,
+  name,
 }: ContentItemProps) => {
   const [hideData, setHideData] = useState<boolean>(false);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -49,6 +51,7 @@ const ContentItem = ({
         viewType="content"
         contentType={contentType}
         description={description}
+        name={name}
       />
     </div>
   );

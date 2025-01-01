@@ -7,6 +7,7 @@ import { ContentContext, LikeContext } from '../Contexts';
 import { BsDot } from 'react-icons/bs';
 import { FaMusic } from 'react-icons/fa';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
+import { RiPushpinFill } from 'react-icons/ri';
 
 export interface Content {
   type: 'image' | 'video';
@@ -24,6 +25,8 @@ type CarouselItemProps = {
   viewType: 'comment' | 'content';
   contentType: 'carousel' | 'single' | 'reels';
   description?: string;
+  name?: string;
+  time?: string;
 };
 
 const CarouselItem = ({
@@ -36,6 +39,7 @@ const CarouselItem = ({
   viewType,
   contentType,
   description,
+  name,
 }: CarouselItemProps) => {
   const { type, src } = item;
   const [loading, setLoading] = useState<
@@ -514,9 +518,9 @@ const CarouselItem = ({
                 <GoUnmute className={styles['reel-mute-icon']} />
               </span>
 
-              {/* <span className={styles['reel-pin-box']}>
-                <RiPinFill className={styles['reel-pin-icon']} />
-              </span> */}
+              <span className={styles['reel-pin-box']}>
+                <RiPushpinFill className={styles['reel-pin-icon']} />
+              </span>
             </>
           )}
 
@@ -527,7 +531,7 @@ const CarouselItem = ({
           >
             {viewType !== 'comment' && (
               <div className={styles['reel-details']}>
-                <span className={styles['reel-owner']}>Mr Hilarious👑</span>
+                <span className={styles['reel-owner']}>{name}</span>
                 <BsDot className={styles.dot} />
                 <time className={styles['reel-time']}>02-04-24</time>
               </div>

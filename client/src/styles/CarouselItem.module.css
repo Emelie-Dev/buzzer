@@ -149,11 +149,10 @@
   height: 1.6rem;
 }
 
-.reel-mute-box,
-.reel-pin-box {
+.reel-mute-box {
   position: absolute;
-  right: 7px;
-  top: 7px;
+  right: 9px;
+  top: 9px;
   background: rgba(255, 255, 255, 0.3);
   padding: 0.4rem;
   backdrop-filter: blur(5px);
@@ -165,8 +164,17 @@
 }
 
 .reel-pin-box {
-  left: 7px;
-  right: none;
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.4rem;
+  backdrop-filter: blur(5px);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .reel-mute-icon,

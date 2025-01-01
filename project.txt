@@ -23,4 +23,5 @@ Pages =>
   - Add storyborder to fyp profile pictures ✔
   - Pause video when comment section is displayed ✔
   - Fix comment box for reels(clicking of black background) ✔
+  - Fix active video when exiting modals from transparent background ✔
 

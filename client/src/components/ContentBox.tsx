@@ -85,14 +85,13 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
   useEffect(() => {
     const clickHandler = (e: Event) => {
       if (e.target) {
-        if (
-          showMenu &&
-          !(
-            menuRef.current.contains(e.target as Node) ||
-            reelMenuRef.current.contains(e.target as Node)
-          )
-        ) {
-          setShowMenu(false);
+        if (showMenu) {
+          if (contentType === 'reels') {
+            if (!reelMenuRef.current.contains(e.target as Node))
+              setShowMenu(false);
+          } else {
+            if (!menuRef.current.contains(e.target as Node)) setShowMenu(false);
+          }
         }
       }
     };
@@ -157,7 +156,9 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
         viewComment,
       }}
     >
-      {shareMedia && <ShareMedia setShareMedia={setShareMedia} />}
+      {shareMedia && (
+        <ShareMedia setShareMedia={setShareMedia} activeVideo={activeVideo} />
+      )}
 
       {viewComment && (
         <CommentBox
@@ -253,6 +254,7 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
                 type={type}
                 contentType={contentType === 'reels' ? 'reels' : 'single'}
                 description={description}
+                name={name}
               />
             )}
 
@@ -350,7 +352,7 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
                 className={styles['menu-icon-box']}
                 title="Comment"
                 onClick={() => {
-                  if (activeVideo) activeVideo.pause();
+                  activeVideo?.pause();
                   setActiveVideo(null);
                   setViewComment(true);
                 }}
@@ -379,7 +381,10 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
               <span
                 className={styles['menu-icon-box']}
                 title="Share"
-                onClick={() => setShareMedia(true)}
+                onClick={() => {
+                  activeVideo?.pause();
+                  setShareMedia(true);
+                }}
               >
                 <FaShare className={styles['menu-icon']} />
               </span>

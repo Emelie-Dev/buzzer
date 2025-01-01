@@ -12,16 +12,18 @@ import { RiMessengerLine } from 'react-icons/ri';
 import { PiSnapchatLogoBold } from 'react-icons/pi';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { Arrow } from '../pages/Home';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { FaCheck } from 'react-icons/fa';
+import { ContentContext } from '../Contexts';
 
 type ShareMediaProps = {
   setShareMedia: React.Dispatch<React.SetStateAction<boolean>>;
+  activeVideo: HTMLVideoElement | null;
 };
 
 const users: number[] = [1, 2, 3, 4, 5];
 
-const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
+const ShareMedia = ({ setShareMedia, activeVideo }: ShareMediaProps) => {
   const [showArrow, setShowArrow] = useState<Arrow>({
     left: false,
     right: true,
@@ -29,10 +31,17 @@ const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
   const [searching, setSearching] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
   const [selected, setSelected] = useState<number[]>([]);
+  const { setActiveVideo } = useContext(ContentContext);
 
   const optionsRef = useRef<HTMLDivElement>(null!);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const target = document.getElementById('share-portal') || document.body;
+
+  useEffect(() => {
+    videoRef.current = activeVideo;
+    setActiveVideo(null);
+  }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
@@ -47,7 +56,11 @@ const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
   };
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) setShareMedia(false);
+    if (e.target === e.currentTarget) {
+      setShareMedia(false);
+      setActiveVideo(videoRef.current);
+      videoRef.current?.play();
+    }
   };
 
   const updateUsers = (id: number) => () => {
@@ -71,7 +84,11 @@ const ShareMedia = ({ setShareMedia }: ShareMediaProps) => {
           <span
             className={styles['close-icon-box']}
             title="Close"
-            onClick={() => setShareMedia(false)}
+            onClick={() => {
+              setShareMedia(false);
+              setActiveVideo(videoRef.current);
+              videoRef.current?.play();
+            }}
           >
             <IoClose className={styles['close-icon']} />
           </span>

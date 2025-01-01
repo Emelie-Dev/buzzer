@@ -196,7 +196,10 @@ const CommentBox = ({
   }, [newComment]);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) setViewComment(false);
+    if (e.target === e.currentTarget) {
+      setActiveVideo(null);
+      setViewComment(false);
+    }
   };
 
   const handleCommentHeight = () => {

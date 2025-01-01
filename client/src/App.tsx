@@ -6,6 +6,7 @@ import Search from './pages/Search';
 import Following from './pages/Following';
 import Friends from './pages/Friends';
 import Reels from './pages/Reels';
+import Notifications from './pages/Notifications';
 
 const App = () => {
   return (
@@ -17,6 +18,7 @@ const App = () => {
         <Route path="/following" element={<Following />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/reels" element={<Reels />} />
+        <Route path="/notifications" element={<Notifications />} />
       </Routes>
     </>
   );

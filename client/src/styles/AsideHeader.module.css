@@ -1,0 +1,132 @@
+.aside-header {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  padding-right: 0;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  outline: none;
+  font-family: appFontMedium;
+  background: var(--app-theme-color);
+  color: white;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-left: 1rem;
+}
+
+.create-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 0.2rem;
+}
+
+.create-btn:hover {
+  opacity: 0.8;
+}
+
+.inbox-box {
+  position: relative;
+  display: flex;
+  margin-left: 1.5rem;
+  cursor: pointer;
+}
+
+.inbox-icon {
+  fill: black;
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.inbox-box:hover .inbox-icon {
+  opacity: 0.7;
+}
+
+.inbox-number {
+  background: var(--app-theme-color);
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: -10px;
+  right: -8px;
+  border-radius: 50%;
+  padding: 0.3rem;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.inbox-length {
+  color: white;
+  font-size: 0.9rem;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.profile-box {
+  position: relative;
+  margin-left: auto;
+  margin-right: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.profile-img-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.17rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
+  cursor: pointer;
+}
+
+.profile-img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid white;
+}
+
+.view-list {
+  position: absolute;
+  z-index: 3;
+  top: 100%;
+  list-style-type: none;
+  margin: 0;
+  padding: 0.5rem;
+  white-space: nowrap;
+  background: white;
+  box-shadow: 1px 1px 10px -4px black;
+  border-radius: 5px;
+  right: -10px;
+  display: none;
+}
+
+.view-item {
+  padding: 0.6rem;
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.view-item:hover {
+  background: rgba(128, 128, 128, 0.2);
+  color: var(--app-theme-color);
+}
+
+.profile-box:hover .view-list {
+  display: block;
+}
