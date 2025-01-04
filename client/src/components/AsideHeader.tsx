@@ -1,15 +1,22 @@
 import styles from '../styles/AsideHeader.module.css';
 import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
+import { useNavigate } from 'react-router-dom';
 
 const AsideHeader = () => {
+  const navigate = useNavigate();
+
   return (
     <header className={styles['aside-header']}>
       <button className={styles['create-btn']}>
         Create <HiPlusSm className={styles['create-icon']} />
       </button>
 
-      <span className={styles['inbox-box']} title="Inbox">
+      <span
+        className={styles['inbox-box']}
+        title="Inbox"
+        onClick={() => navigate('/inbox')}
+      >
         <BiMessageDetail className={styles['inbox-icon']} />
         <span className={styles['inbox-number']}>
           {' '}

@@ -1,0 +1,188 @@
+.main {
+  display: grid;
+  grid-template-columns: 30% 70%;
+  overflow: hidden;
+  margin-left: 84px;
+}
+
+.users-section {
+  border-right: 1px solid rgb(128, 128, 128, 0.3);
+  height: 100vh;
+}
+
+.user-head {
+  font-family: appFont;
+  font-size: 1.5rem;
+  padding: 1.5rem 1.5rem 1rem;
+  margin: 0;
+}
+
+.user-container {
+  margin: 0;
+  padding: 0 0.5rem;
+}
+
+.user-head-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgb(128, 128, 128, 0.3);
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  font-family: appFontMedium;
+  padding: 1rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.user-item:hover {
+  color: var(--app-theme-color);
+}
+
+.current-category {
+  border-bottom: 2px solid var(--app-theme-color);
+  color: var(--app-theme-color);
+}
+
+.chat-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chat-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--app-theme-color);
+  border-radius: 50%;
+  padding: 1rem;
+}
+
+.chat-icon {
+  width: 3rem;
+  height: 3rem;
+  fill: var(--app-theme-color);
+}
+
+.chat-text {
+  font-family: appFontMedium;
+  color: gray;
+  margin-top: 1rem;
+}
+
+.users-div {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 100% 100%;
+  /* column-gap: 0.1rem; */
+  align-items: start;
+  transition: transform 0.25s ease;
+  /* overflow: auto; */
+}
+
+.friends-container {
+  margin-top: 1rem;
+}
+
+.friend-box {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.friend-img {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.friend-details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 0.8rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.friend-data {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.friend-name {
+  font-family: appFontMedium;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.msg-data {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.friend-msg {
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  color: gray;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.msg-count {
+  background: var(--app-theme-color);
+  color: white;
+  border-radius: 50%;
+  font-family: appFontMedium;
+  font-size: 0.8rem;
+  padding: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  white-space: nowrap;
+  margin-left: 0.5rem;
+  /* overflow: hidden; */
+}
+
+.msg-time {
+  font-family: monospace;
+  color: var(--app-theme-color);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  margin-left: 0.5rem;
+}
+
+.friend-box:hover {
+  background: rgb(128, 128, 128, 0.2);
+}
+
+.msg-count2 {
+  background: transparent;
+}
+
+.msg-time2 {
+  color: gray;
+}

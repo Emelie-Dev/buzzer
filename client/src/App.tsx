@@ -7,6 +7,7 @@ import Following from './pages/Following';
 import Friends from './pages/Friends';
 import Reels from './pages/Reels';
 import Notifications from './pages/Notifications';
+import Inbox from './pages/Inbox';
 
 const App = () => {
   return (
@@ -19,6 +20,7 @@ const App = () => {
         <Route path="/friends" element={<Friends />} />
         <Route path="/reels" element={<Reels />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/inbox" element={<Inbox />} />
       </Routes>
     </>
   );

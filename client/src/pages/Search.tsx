@@ -6,9 +6,12 @@ import { PiCheckFatFill } from 'react-icons/pi';
 import { FaPlay } from 'react-icons/fa6';
 import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
+import { useNavigate } from 'react-router-dom';
 
 const Search = () => {
   const [category, setCategory] = useState<'all' | 'users' | 'contents'>('all');
+
+  const navigate = useNavigate();
 
   return (
     <>
@@ -48,7 +51,11 @@ const Search = () => {
               Create <HiPlusSm className={styles['create-icon']} />
             </button>
 
-            <span className={styles['inbox-box']} title="Inbox">
+            <span
+              className={styles['inbox-box']}
+              title="Inbox"
+              onClick={() => navigate('/inbox')}
+            >
               <BiMessageDetail className={styles['inbox-icon']} />
               <span className={styles['inbox-number']}>
                 {' '}

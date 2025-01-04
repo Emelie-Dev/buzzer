@@ -196,10 +196,8 @@
   display: flex;
   background: white;
   z-index: 5;
-  box-shadow: 1px 1px 10px -5px black;
-  width: 35vw;
+  width: auto;
   height: 100vh;
-  animation: searchSlide 0.5s ease 0s 1 normal both;
 }
 
 .icons-container {
@@ -316,8 +314,10 @@
 
 .search-container {
   padding: 3rem 1rem 2rem;
-  width: calc(100% - 5.3rem);
+  width: 31vw;
   overflow: auto;
+  box-shadow: 1px 1px 10px -5px black;
+  animation: searchSlide 0.5s ease 0s 1 normal both;
 }
 
 .search-head {
@@ -576,7 +576,7 @@
     opacity: 0;
   }
   to {
-    width: 35vw;
+    width: 31vw;
     opacity: 1;
   }
 }
