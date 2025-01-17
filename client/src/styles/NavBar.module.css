@@ -9,6 +9,7 @@
   padding: 1rem;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
 .hide-nav {
@@ -40,7 +41,7 @@
   padding: 0;
   margin: 0.5rem 0 1rem;
   list-style-type: none;
-  overflow: auto;
+  overflow: visible;
 }
 
 .nav-item {
@@ -209,7 +210,6 @@
 }
 
 .app-section-box {
-  padding: 1rem 1rem 0.8rem;
   border-radius: 8px;
   margin-bottom: 1rem;
   flex-shrink: 0;
@@ -224,9 +224,12 @@
 }
 
 .app-section-box:hover {
-  background: rgba(0, 0, 0, 0.08);
   color: var(--app-theme-color);
   cursor: pointer;
+}
+
+.app-section-box2 {
+  padding: 1rem 1rem 0.8rem;
 }
 
 .search-section-box {

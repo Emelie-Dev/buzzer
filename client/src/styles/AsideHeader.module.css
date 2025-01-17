@@ -130,3 +130,7 @@
 .profile-box:hover .view-list {
   display: block;
 }
+
+.hide-create {
+  visibility: hidden;
+}

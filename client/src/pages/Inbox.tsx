@@ -1,10 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Inbox.module.css';
 import { BiMessageDetail } from 'react-icons/bi';
 
 const Inbox = () => {
   const [category, setCategory] = useState<'friends' | 'others'>('friends');
+
+  const containerRef = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      if (category === 'others') {
+        containerRef.current.style.transform = `translateX(-100%)`;
+      } else {
+        containerRef.current.style.transform = `translateX(0%)`;
+      }
+    }
+  }, [category]);
 
   return (
     <>
@@ -34,11 +46,11 @@ const Inbox = () => {
               </li>
             </ul>
 
-            <div className={styles['users-div']}>
+            <div className={styles['users-div']} ref={containerRef}>
               <div className={styles['friends-container']}>
                 <article className={styles['friend-box']}>
                   <img
-                    src="../../public/assets/images/users/user14.jpeg"
+                    src="../../assets/images/users/user14.jpeg"
                     className={styles['friend-img']}
                   />
 
@@ -62,7 +74,7 @@ const Inbox = () => {
 
                 <article className={styles['friend-box']}>
                   <img
-                    src="../../public/assets/images/users/user14.jpeg"
+                    src="../../assets/images/users/user14.jpeg"
                     className={styles['friend-img']}
                   />
 
@@ -94,13 +106,97 @@ const Inbox = () => {
 
                 <article className={styles['friend-box']}>
                   <img
-                    src="../../public/assets/images/users/user14.jpeg"
+                    src="../../assets/images/users/user14.jpeg"
                     className={styles['friend-img']}
                   />
 
                   <span className={styles['friend-details']}>
                     <span className={styles['friend-data']}>
                       <span className={styles['friend-name']}>Godfather👑</span>
+
+                      <time
+                        className={`${styles['msg-time']} ${styles['msg-time2']}`}
+                      >
+                        11:00 AM
+                      </time>
+                    </span>
+
+                    <span className={styles['msg-data']}>
+                      <span className={styles['friend-msg']}></span>
+
+                      <span
+                        className={`${styles['msg-count']} ${styles['msg-count2']}`}
+                      ></span>
+                    </span>
+                  </span>
+                </article>
+              </div>
+              <div className={styles['friends-container']}>
+                <article className={styles['friend-box']}>
+                  <img
+                    src="../../assets/images/users/user3.jpeg"
+                    className={styles['friend-img']}
+                  />
+
+                  <span className={styles['friend-details']}>
+                    <span className={styles['friend-data']}>
+                      <span className={styles['friend-name']}>Jo Youri💖</span>
+
+                      <time className={styles['msg-time']}>11:00 AM</time>
+                    </span>
+
+                    <span className={styles['msg-data']}>
+                      <span className={styles['friend-msg']}>
+                        Please send the full video
+                        mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+                      </span>
+
+                      <span className={styles['msg-count']}>2</span>
+                    </span>
+                  </span>
+                </article>
+
+                <article className={styles['friend-box']}>
+                  <img
+                    src="../../assets/images/users/user3.jpeg"
+                    className={styles['friend-img']}
+                  />
+
+                  <span className={styles['friend-details']}>
+                    <span className={styles['friend-data']}>
+                      <span className={styles['friend-name']}>Jo Youri💖</span>
+
+                      <time
+                        className={`${styles['msg-time']} ${styles['msg-time2']}`}
+                      >
+                        11:00 AM
+                      </time>
+                    </span>
+
+                    <span className={styles['msg-data']}>
+                      <span className={styles['friend-msg']}>
+                        Please send the full video
+                        mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+                      </span>
+
+                      <span
+                        className={`${styles['msg-count']} ${styles['msg-count2']}`}
+                      >
+                        2
+                      </span>
+                    </span>
+                  </span>
+                </article>
+
+                <article className={styles['friend-box']}>
+                  <img
+                    src="../../assets/images/users/user3.jpeg"
+                    className={styles['friend-img']}
+                  />
+
+                  <span className={styles['friend-details']}>
+                    <span className={styles['friend-data']}>
+                      <span className={styles['friend-name']}>Jo Youri💖</span>
 
                       <time
                         className={`${styles['msg-time']} ${styles['msg-time2']}`}

@@ -18,6 +18,9 @@ import { AiFillClockCircle } from 'react-icons/ai';
 import { HiTrendingUp } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import { BiMessageDetail } from 'react-icons/bi';
+import { FaRegSquarePlus } from 'react-icons/fa6';
+import { BsPlusSquareFill } from 'react-icons/bs';
+import { IoNotificationsOutline } from 'react-icons/io5';
 
 type NavBarProps = {
   page: string;
@@ -397,10 +400,28 @@ const NavBar = ({ page }: NavBarProps) => {
                   className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
                 />
               ) : (
-                <IoMdNotificationsOutline className={styles['nav-icon']} />
+                <IoNotificationsOutline className={styles['nav-icon']} />
               )}
               Notifications
             </li>
+
+            {page === 'create' && (
+              <li
+                className={`${styles['nav-item']} ${
+                  page === 'create' ? styles['active-nav-item'] : ''
+                }`}
+                onClick={() => navigate('/create')}
+              >
+                {page === 'create' ? (
+                  <BsPlusSquareFill
+                    className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
+                  />
+                ) : (
+                  <FaRegSquarePlus className={styles['nav-icon']} />
+                )}
+                Create
+              </li>
+            )}
           </ul>
 
           <div className={styles['more-div']} ref={boxRef}>
@@ -452,7 +473,11 @@ const NavBar = ({ page }: NavBarProps) => {
           ref={searchSectionRef}
         >
           <div className={styles['icons-container']}>
-            <span className={styles['app-section-box']}>
+            <span
+              className={`${styles['app-section-box']} ${
+                pageType === 'wide' ? styles['app-section-box2'] : ''
+              }`}
+            >
               {' '}
               <img
                 src="../../assets/logo.png"
@@ -605,19 +630,32 @@ const NavBar = ({ page }: NavBarProps) => {
               />{' '}
             </span>
 
-            {page === 'inbox' && (
-              <span
-                className={`${styles['search-section-box']} ${
-                  !showSearch ? styles['active-search-box'] : ''
-                }`}
-                onClick={() => navigate('/inbox')}
-              >
-                <BiMessageDetail
-                  className={`${styles['search-section-icon']} ${
-                    !showSearch ? styles['active-search-icon'] : ''
+            <span
+              className={styles['search-section-box']}
+              onClick={() => navigate('/create')}
+            >
+              <FaRegSquarePlus className={styles['search-section-icon']} />{' '}
+            </span>
+
+            {pageType === 'small' && (
+              <>
+                <span
+                  className={`${styles['search-section-box']} ${
+                    !showSearch && page === 'inbox'
+                      ? styles['active-search-box']
+                      : ''
                   }`}
-                />{' '}
-              </span>
+                  onClick={() => navigate('/inbox')}
+                >
+                  <BiMessageDetail
+                    className={`${styles['search-section-icon']} ${
+                      !showSearch && page === 'inbox'
+                        ? styles['active-search-icon']
+                        : ''
+                    }`}
+                  />{' '}
+                </span>
+              </>
             )}
 
             <div

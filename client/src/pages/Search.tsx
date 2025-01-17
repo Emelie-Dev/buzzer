@@ -47,7 +47,10 @@ const Search = () => {
           </ul>
 
           <div className={styles['aside-header']}>
-            <button className={styles['create-btn']}>
+            <button
+              className={styles['create-btn']}
+              onClick={() => navigate('/create')}
+            >
               Create <HiPlusSm className={styles['create-icon']} />
             </button>
 

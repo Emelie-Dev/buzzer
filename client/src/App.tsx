@@ -8,6 +8,7 @@ import Friends from './pages/Friends';
 import Reels from './pages/Reels';
 import Notifications from './pages/Notifications';
 import Inbox from './pages/Inbox';
+import Create from './pages/Create';
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
         <Route path="/reels" element={<Reels />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/inbox" element={<Inbox />} />
+        <Route path="/create" element={<Create />} />
       </Routes>
     </>
   );

@@ -1,0 +1,150 @@
+.main {
+  margin-left: 18%;
+  display: grid;
+  grid-template-columns: 68% 32%;
+  overflow: hidden;
+}
+
+.aside {
+  padding: 1.5rem 0 2rem;
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.section {
+  width: 100%;
+  padding: 0 1.5rem;
+  overflow: hidden;
+  height: 100vh;
+  border-right: 1px solid rgb(128, 128, 128, 0.3);
+}
+
+.type-list {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  padding-top: 1.3rem;
+  list-style-type: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.type-item {
+  font-family: appFontMedium;
+  padding: 0 1rem 1rem;
+  font-size: 1.05rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  text-align: center;
+  width: 50%;
+}
+
+.type-item:hover {
+  color: var(--app-theme-color);
+}
+
+.active-item {
+  color: var(--app-theme-color);
+  border-bottom: 2px solid var(--app-theme-color);
+}
+
+.category-container {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 100% 100%;
+
+  align-items: start;
+  transition: transform 0.25s ease;
+  overflow: hidden;
+
+  /* scroll-behavior: smooth; */
+}
+
+.category-div {
+  overflow: auto;
+}
+
+.upload-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0.5rem;
+  border: 1px dashed rgba(0, 0, 0, 0.4);
+  height: calc(100vh - 7.5rem);
+  background: rgb(168, 85, 247, 0.1);
+  border-radius: 10px;
+}
+
+.content-icon {
+  width: 5rem;
+  height: 5rem;
+  fill: gray;
+}
+
+.upload-text {
+  font-family: appFontMedium;
+  margin-top: 0.5rem;
+}
+
+.select-btn {
+  outline: none;
+  border: none;
+  margin-top: 1rem;
+  font-family: appFontMedium;
+  font-size: 1rem;
+  background: var(--app-theme-color);
+  color: white;
+  border-radius: 5px;
+  padding: 0.6rem 2.5rem;
+  cursor: pointer;
+}
+
+.select-btn:hover {
+  box-shadow: 1px 1px 7px -3px black;
+}
+
+.file-input {
+  display: none;
+}
+
+.tips-container {
+  margin-top: 2rem;
+}
+
+.tips-text {
+  color: gray;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  padding: 0 1rem;
+}
+
+.upload-guidelines {
+  margin: 1rem 0 1.5rem;
+}
+
+.guideline {
+  margin-bottom: 1rem;
+  padding-right: 1rem;
+}
+
+.guideline-head {
+  font-family: appFontMedium;
+}
+
+.guideline-text {
+  font-family: appFont;
+  font-size: 0.9rem;
+}
+
+.community-guidelines {
+  color: var(--app-theme-color);
+  cursor: pointer;
+}
+
+.community-guidelines:hover {
+  text-decoration: underline;
+}
