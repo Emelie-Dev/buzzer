@@ -393,7 +393,7 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     {' '}
                     <img
                       className={styles['filter-img']}
-                      src="../../public/assets/filter4.avif"
+                      src="../../assets/filter.avif"
                       style={{ filter }}
                     />
                   </span>
