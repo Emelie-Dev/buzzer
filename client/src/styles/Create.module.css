@@ -5,6 +5,11 @@
   overflow: hidden;
 }
 
+.edit-main {
+  margin-left: 84px;
+  grid-template-columns: 72% 28%;
+}
+
 .aside {
   padding: 1.5rem 0 2rem;
   width: 100%;
@@ -14,14 +19,13 @@
 
 .section {
   width: 100%;
-  padding: 0 1.5rem;
   overflow: hidden;
   height: 100vh;
   border-right: 1px solid rgb(128, 128, 128, 0.3);
 }
 
 .type-list {
-  width: 100%;
+  max-width: 100%;
   margin: 0;
   padding: 0;
   padding-top: 1.3rem;
@@ -30,6 +34,7 @@
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  margin: 0 1.5rem;
 }
 
 .type-item {
@@ -65,6 +70,7 @@
 
 .category-div {
   overflow: auto;
+  height: calc(100vh - 4.125rem);
 }
 
 .upload-div {
@@ -133,6 +139,7 @@
 
 .guideline-head {
   font-family: appFontMedium;
+  font-size: 0.95rem;
 }
 
 .guideline-text {

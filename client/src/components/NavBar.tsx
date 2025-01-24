@@ -24,10 +24,13 @@ import { IoNotificationsOutline } from 'react-icons/io5';
 
 type NavBarProps = {
   page: string;
+  editStage?: boolean;
 };
 
-const NavBar = ({ page }: NavBarProps) => {
-  const pageType = ['inbox'].includes(page) ? 'small' : 'wide';
+const NavBar = ({ page, editStage }: NavBarProps) => {
+  const pageType = ['inbox', editStage ? 'create' : ''].includes(page)
+    ? 'small'
+    : 'wide';
 
   const [showMore, setShowMore] = useState<boolean>(false);
   const [showMore2, setShowMore2] = useState<boolean>(false);
@@ -631,10 +634,20 @@ const NavBar = ({ page }: NavBarProps) => {
             </span>
 
             <span
-              className={styles['search-section-box']}
+              className={`${styles['search-section-box']} ${
+                !showSearch && page === 'create'
+                  ? styles['active-search-box']
+                  : ''
+              }`}
               onClick={() => navigate('/create')}
             >
-              <FaRegSquarePlus className={styles['search-section-icon']} />{' '}
+              <FaRegSquarePlus
+                className={`${styles['search-section-icon']} ${
+                  !showSearch && page === 'create'
+                    ? styles['active-search-icon']
+                    : ''
+                } `}
+              />{' '}
             </span>
 
             {pageType === 'small' && (
