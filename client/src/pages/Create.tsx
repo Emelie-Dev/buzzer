@@ -6,15 +6,6 @@ import { PiVideoBold } from 'react-icons/pi';
 import AsideHeader from '../components/AsideHeader';
 import UploadCarousel from '../components/UploadCarousel';
 
-// const values = {
-//   brightness: [0.5, 1.5],
-//   contrast: [0.5, 1.5],
-//   grayscale: [0, 1],
-//   hueRotate: [-90, 90],
-//   saturate: [0, 2],
-//   sepia: [0.1 - 0.5, 0, 0.6 - 1],
-// };
-
 export interface Content {
   src: string | ArrayBuffer | null;
   type: 'image' | 'video' | null;
@@ -23,7 +14,7 @@ export interface Content {
     brightness: number;
     contrast: number;
     grayscale: number;
-    hueRotate: number;
+    'hue-rotate': number;
     saturate: number;
     sepia: number;
   };
@@ -39,6 +30,7 @@ const Create = () => {
     content: Content[];
     reel: string | ArrayBuffer | null;
   }>({ content: [], reel: null });
+  const [rawFiles, setRawFiles] = useState<File[] | FileList>(null!);
   const [addFiles, setAddFiles] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null!);
@@ -65,36 +57,49 @@ const Create = () => {
     }
   }, [category]);
 
-  useEffect(() => {
-    if (addFiles) fileRef.current.click();
-  }, [addFiles]);
-
   // Add animation while reading files.
   // Remeber to revoke object urls after file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (category === 'content') {
       const uploadFiles = e.target.files;
 
-      if (uploadFiles) {
+      if (uploadFiles && uploadFiles.length > 0) {
         const filesData: Content[] = [];
 
-        // Handle error
-        if (uploadFiles.length > 20) return;
+        const uploadLength = addFiles ? 20 - files.content.length : 20;
 
-        for (let i = 0; i < uploadFiles.length; i++) {
-          try {
-            const result = await isFileValid(uploadFiles[i]);
-            filesData.push(result);
-          } catch (err) {
-            filesData.forEach((data) =>
-              URL.revokeObjectURL(data.src as string)
-            );
-            return alert(err);
-          }
+        // Handle error
+        if (uploadFiles.length > uploadLength) {
+          e.target.files = new DataTransfer().files;
+          return;
         }
 
-        setFiles({ ...files, content: filesData });
+        const promises = [...uploadFiles].map((file) => isFileValid(file));
+
+        try {
+          const results = await Promise.all(promises);
+          results.forEach((result) => filesData.push(result));
+        } catch (error) {
+          filesData.forEach((data) => URL.revokeObjectURL(data.src as string));
+          e.target.files = new DataTransfer().files;
+          return alert(error);
+        }
+
+        e.target.files = new DataTransfer().files;
+        setRawFiles((prevFiles) => {
+          if (addFiles) return [...prevFiles, ...uploadFiles];
+          else return uploadFiles;
+        });
+        setFiles((prevFiles) => {
+          if (addFiles) {
+            return {
+              ...prevFiles,
+              content: [...prevFiles.content, ...filesData],
+            };
+          } else return { ...prevFiles, content: filesData };
+        });
       } else {
+        console.log(rawFiles);
         return;
       }
     }
@@ -128,11 +133,11 @@ const Create = () => {
               type,
               filter: 'Original',
               adjustments: {
-                brightness: 1,
-                contrast: 1,
+                brightness: 0,
+                contrast: 0,
                 grayscale: 0,
-                hueRotate: 0,
-                saturate: 1,
+                'hue-rotate': 0,
+                saturate: 0,
                 sepia: 0,
               },
             });
@@ -147,11 +152,11 @@ const Create = () => {
           type,
           filter: 'Original',
           adjustments: {
-            brightness: 1,
-            contrast: 1,
+            brightness: 0,
+            contrast: 0,
             grayscale: 0,
-            hueRotate: 0,
-            saturate: 1,
+            'hue-rotate': 0,
+            saturate: 0,
             sepia: 0,
           },
         });
@@ -219,6 +224,10 @@ const Create = () => {
                 <UploadCarousel
                   files={files.content}
                   setAddFiles={setAddFiles}
+                  fileRef={fileRef}
+                  setFiles={setFiles}
+                  setRawFiles={setRawFiles}
+                  setStage={setStage}
                 />
               )}
             </div>

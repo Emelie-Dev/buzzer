@@ -47,6 +47,7 @@
 .adjustment-div {
   margin: 0;
   padding: 1rem;
+  padding-right: 0.25rem;
   overflow: auto;
   height: 100%;
 }
@@ -69,6 +70,7 @@
   cursor: pointer;
   font-size: 0.9rem;
   display: none;
+  margin-right: 1rem;
 }
 
 .adjustment-box:hover .adjustment-reset {
@@ -93,8 +95,10 @@
 
 .adjustment-value {
   font-family: appFont;
-  font-size: 0.9rem;
+  font-size: 1rem;
   margin-left: 2rem;
+  font-family: monospace;
+  width: 2.82rem;
 }
 
 .adjustment-input {
@@ -335,6 +339,11 @@
 
 .add-file-box:hover {
   opacity: 0.8;
+}
+
+.disable-add-files {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .remove-file-box {

@@ -6,17 +6,34 @@ import { IoMdCrop } from 'react-icons/io';
 import { useEffect, useRef, useState } from 'react';
 import { IoCheckmarkSharp } from 'react-icons/io5';
 import Cropper from 'react-easy-crop';
-
 import 'react-image-crop/dist/ReactCrop.css';
 import { Content } from '../pages/Create';
 
 type UploadCarouselProps = {
   files: Content[];
   setAddFiles: React.Dispatch<React.SetStateAction<boolean>>;
+  fileRef: React.MutableRefObject<HTMLInputElement>;
+  setFiles: React.Dispatch<
+    React.SetStateAction<{
+      content: Content[];
+      reel: string | ArrayBuffer | null;
+    }>
+  >;
+  setRawFiles: React.Dispatch<React.SetStateAction<FileList | File[]>>;
+  setStage: React.Dispatch<
+    React.SetStateAction<{
+      reel: string;
+      content: string;
+    }>
+  >;
 };
 
 const filters = [
-  { name: 'Original', filter: 'none' },
+  {
+    name: 'Original',
+    filter:
+      'brightness(1) contrast(1) grayscale(0) hue-rotate(0deg) saturate(1) sepia(0)',
+  },
   { name: 'Warm Glow', filter: 'brightness(1.1) saturate(1.2) sepia(0.2)' },
   {
     name: 'Cool Mist',
@@ -64,7 +81,14 @@ const filters = [
   { name: 'Monochrome Bliss', filter: 'grayscale(1) brightness(1.1)' },
 ];
 
-const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
+const UploadCarousel = ({
+  files,
+  fileRef,
+  setAddFiles,
+  setRawFiles,
+  setFiles,
+  setStage,
+}: UploadCarouselProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -81,11 +105,11 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
   const [currentFileData, setCurrentFileData] = useState({
     filter: 'Original',
     adjustments: {
-      brightness: 1,
-      contrast: 1,
+      brightness: 0,
+      contrast: 0,
       grayscale: 0,
-      hueRotate: 0,
-      saturate: 1,
+      'hue-rotate': 0,
+      saturate: 0,
       sepia: 0,
     },
   });
@@ -96,6 +120,8 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
   const imgsRef = useRef<HTMLDivElement | null>(null);
   const editRef = useRef<HTMLDivElement | null>(null);
   const smallImgRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => setEditedFiles(files), [files]);
 
   useEffect(() => {
     setCropImage(false);
@@ -199,6 +225,132 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
     else setCurrentIndex((prev) => prev + 1);
   };
 
+  const removeFile = (itemIndex: number) => {
+    if (files.length > 1) {
+      if (itemIndex === currentIndex) {
+        if (itemIndex !== 0) setCurrentIndex(itemIndex - 1);
+        else setCurrentIndex(0);
+      }
+
+      setRawFiles((prevFiles) =>
+        [...prevFiles].filter((_, index) => index !== itemIndex)
+      );
+      setFiles((prevFiles) => {
+        return {
+          ...prevFiles,
+          content: prevFiles.content.filter((_, index) => index !== itemIndex),
+        };
+      });
+    } else {
+      setRawFiles([]);
+      setFiles((prevFiles) => ({
+        ...prevFiles,
+        content: [],
+      }));
+      setStage((prevStage) => ({ ...prevStage, content: 'select' }));
+    }
+  };
+
+  const changeAdjustmentValue =
+    (type: string, reset?: boolean) =>
+    (
+      e:
+        | React.ChangeEvent<HTMLInputElement>
+        | React.MouseEvent<HTMLSpanElement, MouseEvent>
+    ) => {
+      if (reset) {
+        setCurrentFileData({
+          ...currentFileData,
+          adjustments: {
+            ...currentFileData.adjustments,
+            [type]: 0,
+          },
+        });
+      } else {
+        const target = e.target as HTMLInputElement;
+
+        setCurrentFileData({
+          ...currentFileData,
+          adjustments: {
+            ...currentFileData.adjustments,
+            [type]: parseFloat(target.value),
+          },
+        });
+      }
+    };
+
+  const getFilterValue = () => {
+    const filter = filters.find(
+      (filter) => filter.name === currentFileData.filter
+    )?.filter;
+
+    if (filter) {
+      const initialValues: Record<string, number> = {
+        brightness: 1,
+        contrast: 1,
+        grayscale: 0,
+        'hue-rotate': 0,
+        saturate: 1,
+        sepia: 0,
+        blur: 0,
+      };
+
+      const filterValue = filter.split(' ');
+
+      const filterObj = filterValue.reduce<Record<string, number>>(
+        (accumulator, filter) => {
+          const name = filter.slice(0, filter.indexOf('('));
+          const value = parseFloat(
+            filter.slice(filter.indexOf('(') + 1, filter.indexOf(')'))
+          );
+          accumulator[name] = value;
+          return accumulator;
+        },
+        {}
+      );
+
+      const adjustments: Record<string, number> = getAdjustmentsValue();
+
+      const keys = [
+        ...new Set([...Object.keys(filterObj), ...Object.keys(adjustments)]),
+      ];
+
+      const filterString = keys.reduce((accumulator, value) => {
+        const result =
+          (filterObj[value] || initialValues[value]) +
+          (adjustments[value] || 0);
+
+        if (value === 'hue-rotate') {
+          return accumulator + `${value}(${result}deg) `;
+        } else if (value === 'blur') {
+          return accumulator + `${value}(${result}px) `;
+        }
+
+        return accumulator + `${value}(${result}) `;
+      }, '');
+
+      return filterString;
+    }
+  };
+
+  const getAdjustmentsValue = () => {
+    const adjustments = { ...currentFileData.adjustments };
+
+    for (const [key, value] of Object.entries(adjustments)) {
+      if (key === 'brightness' || key === 'contrast') {
+        adjustments[key] = value / 200;
+      } else if (key === 'saturate') {
+        adjustments[key] = value / 100;
+      } else if (key === 'hue-rotate') {
+        adjustments[key] = value / (10 / 9);
+      } else if (key === 'sepia' || key === 'grayscale') {
+        adjustments[key] = value / 100;
+      }
+    }
+
+    return adjustments;
+  };
+
   return (
     <div className={styles.carousel}>
       <div className={styles['carousel-container']}>
@@ -268,9 +420,7 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                 style={{
                   mediaStyle: {
                     aspectRatio,
-                    filter: filters.find(
-                      (filter) => filter.name === currentFileData.filter
-                    )?.filter,
+                    filter: getFilterValue(),
                   },
                 }}
               />
@@ -283,17 +433,12 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     ref={imageRef}
                     style={{
                       aspectRatio,
-                      filter: filters.find(
-                        (filter) => filter.name === currentFileData.filter
-                      )?.filter,
+                      filter: getFilterValue(),
                     }}
                     onMouseDown={(e) => (e.currentTarget.style.filter = 'none')}
                     onMouseUp={(e) =>
-                      (e.currentTarget.style.filter = `${
-                        filters.find(
-                          (filter) => filter.name === currentFileData.filter
-                        )?.filter
-                      }`)
+                      (e.currentTarget.style.filter =
+                        getFilterValue() as string)
                     }
                   />
                 ) : (
@@ -302,19 +447,14 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     ref={videoRef}
                     style={{
                       aspectRatio,
-                      filter: filters.find(
-                        (filter) => filter.name === currentFileData.filter
-                      )?.filter,
+                      filter: getFilterValue(),
                     }}
                     autoPlay={true}
                     loop={true}
                     onMouseDown={(e) => (e.currentTarget.style.filter = 'none')}
                     onMouseUp={(e) =>
-                      (e.currentTarget.style.filter = `${
-                        filters.find(
-                          (filter) => filter.name === currentFileData.filter
-                        )?.filter
-                      }`)
+                      (e.currentTarget.style.filter =
+                        getFilterValue() as string)
                     }
                   >
                     <source type="video/mp4" />
@@ -421,10 +561,12 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     className={`${styles['adjustment-reset']} ${
                       cropImage ? styles['hide-reset'] : ''
                     }`}
+                    onClick={changeAdjustmentValue('brightness', true)}
                   >
                     Reset
                   </span>
                 </span>
+
                 <span className={styles['adjustment-details']}>
                   <input
                     className={`${styles['adjustment-input']} ${
@@ -432,8 +574,14 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     }`}
                     type="range"
                     disabled={cropImage}
+                    min={-100}
+                    max={100}
+                    value={currentFileData.adjustments.brightness}
+                    onChange={changeAdjustmentValue('brightness')}
                   />
-                  <span className={styles['adjustment-value']}>20</span>
+                  <span className={styles['adjustment-value']}>
+                    {currentFileData.adjustments.brightness}
+                  </span>
                 </span>
               </span>
 
@@ -444,6 +592,7 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     className={`${styles['adjustment-reset']} ${
                       cropImage ? styles['hide-reset'] : ''
                     }`}
+                    onClick={changeAdjustmentValue('contrast', true)}
                   >
                     Reset
                   </span>
@@ -455,33 +604,14 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     }`}
                     type="range"
                     disabled={cropImage}
+                    min={-100}
+                    max={100}
+                    value={currentFileData.adjustments.contrast}
+                    onChange={changeAdjustmentValue('contrast')}
                   />
-                  <span className={styles['adjustment-value']}>20</span>
-                </span>
-              </span>
-
-              <span className={styles['adjustment-box']}>
-                <span className={styles['adjustment-box-head']}>
-                  <label className={styles['adjustment-label']}>
-                    Grayscale
-                  </label>
-                  <span
-                    className={`${styles['adjustment-reset']} ${
-                      cropImage ? styles['hide-reset'] : ''
-                    }`}
-                  >
-                    Reset
+                  <span className={styles['adjustment-value']}>
+                    {currentFileData.adjustments.contrast}
                   </span>
-                </span>
-                <span className={styles['adjustment-details']}>
-                  <input
-                    className={`${styles['adjustment-input']} ${
-                      cropImage ? styles['adjustment-input2'] : ''
-                    }`}
-                    type="range"
-                    disabled={cropImage}
-                  />
-                  <span className={styles['adjustment-value']}>20</span>
                 </span>
               </span>
 
@@ -494,6 +624,7 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     className={`${styles['adjustment-reset']} ${
                       cropImage ? styles['hide-reset'] : ''
                     }`}
+                    onClick={changeAdjustmentValue('hue-rotate', true)}
                   >
                     Reset
                   </span>
@@ -505,8 +636,14 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     }`}
                     type="range"
                     disabled={cropImage}
+                    min={-100}
+                    max={100}
+                    value={currentFileData.adjustments['hue-rotate']}
+                    onChange={changeAdjustmentValue('hue-rotate')}
                   />
-                  <span className={styles['adjustment-value']}>20</span>
+                  <span className={styles['adjustment-value']}>
+                    {currentFileData.adjustments['hue-rotate']}
+                  </span>
                 </span>
               </span>
 
@@ -517,6 +654,7 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     className={`${styles['adjustment-reset']} ${
                       cropImage ? styles['hide-reset'] : ''
                     }`}
+                    onClick={changeAdjustmentValue('saturate', true)}
                   >
                     Reset
                   </span>
@@ -528,8 +666,46 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     }`}
                     type="range"
                     disabled={cropImage}
+                    min={-100}
+                    max={100}
+                    value={currentFileData.adjustments.saturate}
+                    onChange={changeAdjustmentValue('saturate')}
                   />
-                  <span className={styles['adjustment-value']}>20</span>
+                  <span className={styles['adjustment-value']}>
+                    {currentFileData.adjustments.saturate}
+                  </span>
+                </span>
+              </span>
+
+              <span className={styles['adjustment-box']}>
+                <span className={styles['adjustment-box-head']}>
+                  <label className={styles['adjustment-label']}>
+                    Grayscale
+                  </label>
+                  <span
+                    className={`${styles['adjustment-reset']} ${
+                      cropImage ? styles['hide-reset'] : ''
+                    }`}
+                    onClick={changeAdjustmentValue('grayscale', true)}
+                  >
+                    Reset
+                  </span>
+                </span>
+                <span className={styles['adjustment-details']}>
+                  <input
+                    className={`${styles['adjustment-input']} ${
+                      cropImage ? styles['adjustment-input2'] : ''
+                    }`}
+                    type="range"
+                    disabled={cropImage}
+                    min={0}
+                    max={100}
+                    value={currentFileData.adjustments.grayscale}
+                    onChange={changeAdjustmentValue('grayscale')}
+                  />
+                  <span className={styles['adjustment-value']}>
+                    {currentFileData.adjustments.grayscale}
+                  </span>
                 </span>
               </span>
 
@@ -540,6 +716,7 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     className={`${styles['adjustment-reset']} ${
                       cropImage ? styles['hide-reset'] : ''
                     }`}
+                    onClick={changeAdjustmentValue('sepia', true)}
                   >
                     Reset
                   </span>
@@ -551,8 +728,14 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     }`}
                     type="range"
                     disabled={cropImage}
+                    min={0}
+                    max={100}
+                    value={currentFileData.adjustments.sepia}
+                    onChange={changeAdjustmentValue('sepia')}
                   />
-                  <span className={styles['adjustment-value']}>20</span>
+                  <span className={styles['adjustment-value']}>
+                    {currentFileData.adjustments.sepia}
+                  </span>
                 </span>
               </span>
             </div>
@@ -628,6 +811,10 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
                     currentIndex === index ? styles['current-file-box'] : ''
                   }`}
                   title="Remove"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile(index);
+                  }}
                 >
                   <IoClose className={styles['remove-file-icon']} />
                 </span>
@@ -651,8 +838,13 @@ const UploadCarousel = ({ files, setAddFiles }: UploadCarouselProps) => {
               {files.length === 1 ? '1 file' : `${files.length} files`}
             </span>
             <span
-              className={styles['add-file-box']}
-              onClick={() => setAddFiles(true)}
+              className={`${styles['add-file-box']} ${
+                files.length >= 20 ? styles['disable-add-files'] : ''
+              }`}
+              onClick={() => {
+                setAddFiles(true);
+                fileRef.current.click();
+              }}
             >
               <FaPlus className={styles['add-file-icon']} />
             </span>
