@@ -6,7 +6,6 @@ import { IoMdCrop } from 'react-icons/io';
 import { useEffect, useRef, useState } from 'react';
 import { IoCheckmarkSharp } from 'react-icons/io5';
 import Cropper from 'react-easy-crop';
-import 'react-image-crop/dist/ReactCrop.css';
 import { Content } from '../pages/Create';
 import { getFilterValue } from '../Utilities';
 
