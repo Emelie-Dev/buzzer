@@ -5,6 +5,8 @@ import { FaPhotoVideo } from 'react-icons/fa';
 import { PiVideoBold } from 'react-icons/pi';
 import AsideHeader from '../components/AsideHeader';
 import UploadCarousel from '../components/UploadCarousel';
+import UploadDetails from '../components/UploadDetails';
+import UploadReel from '../components/UploadReel';
 
 export interface Content {
   src: string | ArrayBuffer | null;
@@ -22,7 +24,10 @@ export interface Content {
 
 const Create = () => {
   const [category, setCategory] = useState<'reel' | 'content'>('content');
-  const [stage, setStage] = useState<{ reel: string; content: string }>({
+  const [stage, setStage] = useState<{
+    reel: 'select' | 'edit' | 'finish';
+    content: 'select' | 'edit' | 'finish';
+  }>({
     reel: 'select',
     content: 'select',
   });
@@ -32,8 +37,11 @@ const Create = () => {
   }>({ content: [], reel: null });
   const [rawFiles, setRawFiles] = useState<File[] | FileList>(null!);
   const [addFiles, setAddFiles] = useState(false);
+  const [contentIndex, setContentIndex] = useState<number>(0);
+  const [aspectRatio, setAspectRatio] = useState<'initial' | number>(1);
 
   const containerRef = useRef<HTMLDivElement>(null!);
+  const stageRef = useRef<HTMLDivElement>(null!);
   const fileRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
@@ -56,6 +64,10 @@ const Create = () => {
       }
     }
   }, [category]);
+
+  useEffect(() => {
+    if (stageRef.current) stageRef.current.scrollTop = 0;
+  }, [stage]);
 
   // Add animation while reading files.
   // Remeber to revoke object urls after file upload
@@ -203,7 +215,7 @@ const Create = () => {
           />
 
           <div className={styles['category-container']} ref={containerRef}>
-            <div className={styles['category-div']}>
+            <div className={styles['category-div']} ref={stageRef}>
               {stage.content === 'select' ? (
                 <>
                   <div className={styles['upload-div']}>
@@ -220,7 +232,7 @@ const Create = () => {
                     </button>
                   </div>
                 </>
-              ) : (
+              ) : stage.content === 'edit' ? (
                 <UploadCarousel
                   files={files.content}
                   setAddFiles={setAddFiles}
@@ -228,24 +240,40 @@ const Create = () => {
                   setFiles={setFiles}
                   setRawFiles={setRawFiles}
                   setStage={setStage}
+                  contentIndex={contentIndex}
+                  setContentIndex={setContentIndex}
+                  aspectRatio={aspectRatio}
+                  setAspectRatio={setAspectRatio}
+                />
+              ) : (
+                <UploadDetails
+                  setStage={setStage}
+                  editedFiles={files.content}
+                  contentIndex={contentIndex}
+                  aspectRatio={aspectRatio}
+                  setContentIndex={setContentIndex}
                 />
               )}
             </div>
 
             <div className={styles['category-div']}>
-              <div className={styles['upload-div']}>
-                <PiVideoBold className={styles['content-icon']} />
-                <span className={styles['upload-text']}>
-                  {' '}
-                  Select the video you want to post
-                </span>
-                <button
-                  className={styles['select-btn']}
-                  onClick={() => fileRef.current.click()}
-                >
-                  Select
-                </button>
-              </div>
+              {stage.reel === 'select' ? (
+                <div className={styles['upload-div']}>
+                  <PiVideoBold className={styles['content-icon']} />
+                  <span className={styles['upload-text']}>
+                    {' '}
+                    Select the video you want to post
+                  </span>
+                  <button
+                    className={styles['select-btn']}
+                    onClick={() => fileRef.current.click()}
+                  >
+                    Select
+                  </button>
+                </div>
+              ) : (
+                <UploadReel />
+              )}
             </div>
           </div>
         </section>

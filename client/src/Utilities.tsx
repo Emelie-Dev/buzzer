@@ -1,0 +1,136 @@
+type FileData = {
+  filter: string;
+  adjustments: {
+    brightness: number;
+    contrast: number;
+    grayscale: number;
+    'hue-rotate': number;
+    saturate: number;
+    sepia: number;
+  };
+};
+
+const filters = [
+  {
+    name: 'Original',
+    filter:
+      'brightness(1) contrast(1) grayscale(0) hue-rotate(0deg) saturate(1) sepia(0)',
+  },
+  { name: 'Warm Glow', filter: 'brightness(1.1) saturate(1.2) sepia(0.2)' },
+  {
+    name: 'Cool Mist',
+    filter: 'brightness(0.95) saturate(0.8) contrast(1.1) hue-rotate(-20deg)',
+  },
+  { name: 'Vintage Charm', filter: 'sepia(0.5) saturate(0.8) contrast(1.2)' },
+  { name: 'Dreamscape', filter: 'blur(2px) brightness(1.1) saturate(1.1)' },
+  {
+    name: 'Golden Hour',
+    filter: 'brightness(1.2) sepia(0.4) hue-rotate(-10deg)',
+  },
+  {
+    name: 'Ocean Breeze',
+    filter: 'brightness(1.05) saturate(1.3) hue-rotate(-40deg)',
+  },
+  {
+    name: 'Pastel Dreams',
+    filter: 'brightness(1.1) saturate(0.7) contrast(1.1)',
+  },
+  { name: 'Rustic Vibes', filter: 'sepia(0.6) contrast(1.1) brightness(0.9)' },
+  { name: 'Cinematic', filter: 'contrast(1.4) brightness(0.8) saturate(0.9)' },
+  { name: 'Frosted', filter: 'brightness(1.2) blur(1px) saturate(0.8)' },
+  {
+    name: 'Twilight',
+    filter: 'brightness(0.9) contrast(1.1) hue-rotate(40deg)',
+  },
+  { name: 'Ember', filter: 'sepia(0.3) brightness(1.2) saturate(1.1)' },
+  { name: 'Serenity', filter: 'contrast(1.1) brightness(1.1) saturate(0.9)' },
+  {
+    name: 'Lush Forest',
+    filter: 'hue-rotate(80deg) brightness(1.1) saturate(1.3)',
+  },
+  {
+    name: 'Muted Elegance',
+    filter: 'brightness(0.9) saturate(0.7) contrast(1.2)',
+  },
+  { name: 'Radiance', filter: 'brightness(1.3) saturate(1.2) contrast(1.1)' },
+  {
+    name: 'Arctic Chill',
+    filter: 'brightness(1.1) saturate(0.8) hue-rotate(-50deg)',
+  },
+  { name: 'Sepia Luxe', filter: 'sepia(1) brightness(1.2) contrast(1.1)' },
+
+  { name: 'Noir', filter: 'grayscale(1) brightness(0.9) contrast(1.2)' },
+  { name: 'Monochrome Bliss', filter: 'grayscale(1) brightness(1.1)' },
+];
+
+const getAdjustmentsValue = (currentFileData: FileData) => {
+  const adjustments = { ...currentFileData.adjustments };
+
+  for (const [key, value] of Object.entries(adjustments)) {
+    if (key === 'brightness' || key === 'contrast') {
+      adjustments[key] = value / 200;
+    } else if (key === 'saturate') {
+      adjustments[key] = value / 100;
+    } else if (key === 'hue-rotate') {
+      adjustments[key] = value / (10 / 9);
+    } else if (key === 'sepia' || key === 'grayscale') {
+      adjustments[key] = value / 100;
+    }
+  }
+
+  return adjustments;
+};
+
+export const getFilterValue = (currentFileData: FileData) => {
+  const filter = filters.find(
+    (filter) => filter.name === currentFileData.filter
+  )?.filter;
+
+  if (filter) {
+    const initialValues: Record<string, number> = {
+      brightness: 1,
+      contrast: 1,
+      grayscale: 0,
+      'hue-rotate': 0,
+      saturate: 1,
+      sepia: 0,
+      blur: 0,
+    };
+
+    const filterValue = filter.split(' ');
+
+    const filterObj = filterValue.reduce<Record<string, number>>(
+      (accumulator, filter) => {
+        const name = filter.slice(0, filter.indexOf('('));
+        const value = parseFloat(
+          filter.slice(filter.indexOf('(') + 1, filter.indexOf(')'))
+        );
+        accumulator[name] = value;
+        return accumulator;
+      },
+      {}
+    );
+
+    const adjustments: Record<string, number> =
+      getAdjustmentsValue(currentFileData);
+
+    const keys = [
+      ...new Set([...Object.keys(filterObj), ...Object.keys(adjustments)]),
+    ];
+
+    const filterString = keys.reduce((accumulator, value) => {
+      const result =
+        (filterObj[value] || initialValues[value]) + (adjustments[value] || 0);
+
+      if (value === 'hue-rotate') {
+        return accumulator + `${value}(${result}deg) `;
+      } else if (value === 'blur') {
+        return accumulator + `${value}(${result}px) `;
+      }
+
+      return accumulator + `${value}(${result}) `;
+    }, '');
+
+    return filterString;
+  }
+};

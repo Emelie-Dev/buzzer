@@ -489,6 +489,11 @@
   opacity: 0.8;
 }
 
+.cancel-btn {
+  background: red;
+  margin-right: 1rem;
+}
+
 .filters-div {
   margin: 0;
   padding: 1rem;
@@ -542,4 +547,25 @@
 .current-filter-name {
   color: var(--app-theme-color);
   font-weight: 600;
+}
+
+.carousel-details-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+
+.carousel-details-container {
+  position: relative;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0, 0, 0, 0.8);
+  overflow: hidden;
+  user-select: none;
+  width: 500px;
+  height: 500px;
 }

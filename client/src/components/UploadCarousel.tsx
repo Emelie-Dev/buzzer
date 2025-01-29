@@ -8,6 +8,7 @@ import { IoCheckmarkSharp } from 'react-icons/io5';
 import Cropper from 'react-easy-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Content } from '../pages/Create';
+import { getFilterValue } from '../Utilities';
 
 type UploadCarouselProps = {
   files: Content[];
@@ -22,10 +23,14 @@ type UploadCarouselProps = {
   setRawFiles: React.Dispatch<React.SetStateAction<FileList | File[]>>;
   setStage: React.Dispatch<
     React.SetStateAction<{
-      reel: string;
-      content: string;
+      reel: 'select' | 'edit' | 'finish';
+      content: 'select' | 'edit' | 'finish';
     }>
   >;
+  contentIndex: number;
+  setContentIndex: React.Dispatch<React.SetStateAction<number>>;
+  aspectRatio: number | 'initial';
+  setAspectRatio: React.Dispatch<React.SetStateAction<number | 'initial'>>;
 };
 
 const filters = [
@@ -88,16 +93,19 @@ const UploadCarousel = ({
   setRawFiles,
   setFiles,
   setStage,
+  contentIndex,
+  setContentIndex,
+  aspectRatio,
+  setAspectRatio,
 }: UploadCarouselProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
 
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [currentIndex, setCurrentIndex] = useState<number>(contentIndex);
   const [cropImage, setCropImage] = useState<boolean>(false);
   const [showArrow, setShowArrow] = useState({
     left: false,
     right: true,
   });
-  const [aspectRatio, setAspectRatio] = useState<'initial' | number>(1);
   const [editCategory, setEditCategory] = useState<'filters' | 'adjustments'>(
     'filters'
   );
@@ -120,8 +128,32 @@ const UploadCarousel = ({
   const imgsRef = useRef<HTMLDivElement | null>(null);
   const editRef = useRef<HTMLDivElement | null>(null);
   const smallImgRef = useRef<HTMLSpanElement | null>(null);
+  const inputRefs = useRef<{
+    brightness: HTMLInputElement | null;
+    contrast: HTMLInputElement | null;
+    grayscale: HTMLInputElement | null;
+    'hue-rotate': HTMLInputElement | null;
+    saturate: HTMLInputElement | null;
+    sepia: HTMLInputElement | null;
+  }>({
+    brightness: null,
+    contrast: null,
+    grayscale: null,
+    'hue-rotate': null,
+    saturate: null,
+    sepia: null,
+  });
 
-  useEffect(() => setEditedFiles(files), [files]);
+  useEffect(() => {
+    if (files.length === 1) {
+      setShowArrow({
+        left: false,
+        right: false,
+      });
+    }
+
+    setEditedFiles(files);
+  }, [files]);
 
   useEffect(() => {
     setCropImage(false);
@@ -155,11 +187,7 @@ const UploadCarousel = ({
         );
       }
 
-      if (currentIndex > 4) {
-        if (dotRef.current) dotRef.current.scrollLeft += 10.5;
-      } else {
-        if (dotRef.current) dotRef.current.scrollLeft -= 10.5;
-      }
+      if (dotRef.current) dotRef.current.scrollLeft = (currentIndex - 4) * 10.5;
 
       if (imgsRef.current) {
         const width = imgsRef.current.offsetWidth || 0;
@@ -168,11 +196,44 @@ const UploadCarousel = ({
           width / ((smallImgRef.current?.offsetWidth || 1) + 12.8)
         );
 
-        if (currentIndex >= size - 1) {
-          imgsRef.current.scrollLeft +=
-            (smallImgRef.current?.offsetWidth || 0) + 12.8;
+        if (currentIndex > size - 1) {
+          imgsRef.current.scrollLeft =
+            (smallImgRef.current?.offsetWidth || 0) * currentIndex;
+        } else {
+          imgsRef.current.scrollLeft = 0;
         }
       }
+
+      Object.keys(inputRefs.current).forEach((key) => {
+        const typedKey = key as keyof typeof inputRefs.current;
+        const value = editedFiles[currentIndex].adjustments[typedKey];
+
+        if (inputRefs.current[typedKey]) {
+          if (typedKey === 'grayscale' || typedKey === 'sepia') {
+            inputRefs.current[
+              typedKey
+            ].style.background = `linear-gradient(to right, #a855f7 ${value}%, rgb(128, 128, 128, 0.5) ${value}%`;
+          } else {
+            if (value > 0) {
+              inputRefs.current[
+                typedKey
+              ].style.background = `linear-gradient(to right, rgb(128, 128, 128, 0.5) 0%, rgb(128, 128, 128, 0.5) 50%, #a855f7 50%, #a855f7 ${
+                50 + value / 2
+              }%, rgb(128, 128, 128, 0.5) ${
+                50 + value / 2
+              }%, rgb(128, 128, 128, 0.5) 100%`;
+            } else {
+              inputRefs.current[
+                typedKey
+              ].style.background = `linear-gradient(to right, rgb(128, 128, 128, 0.5) 0%, rgb(128, 128, 128, 0.5) ${
+                (value + 100) / 2
+              }%, #a855f7 ${
+                (value + 100) / 2
+              }%, #a855f7 50%, rgb(128, 128, 128, 0.5) 50%, rgb(128, 128, 128, 0.5) 100%`;
+            }
+          }
+        }
+      });
     })();
 
     setCurrentFileData({
@@ -252,7 +313,16 @@ const UploadCarousel = ({
   };
 
   const changeAdjustmentValue =
-    (type: string, reset?: boolean) =>
+    (
+      type:
+        | 'brightness'
+        | 'contrast'
+        | 'hue-rotate'
+        | 'sepia'
+        | 'grayscale'
+        | 'saturate',
+      reset?: boolean
+    ) =>
     (
       e:
         | React.ChangeEvent<HTMLInputElement>
@@ -266,90 +336,138 @@ const UploadCarousel = ({
             [type]: 0,
           },
         });
+
+        if (inputRefs.current[type])
+          inputRefs.current[type].style.background = `rgb(128, 128, 128, 0.5)`;
       } else {
         const target = e.target as HTMLInputElement;
+        const value = parseFloat(target.value);
 
         setCurrentFileData({
           ...currentFileData,
           adjustments: {
             ...currentFileData.adjustments,
-            [type]: parseFloat(target.value),
+            [type]: value,
           },
         });
+
+        if (inputRefs.current[type]) {
+          if (type === 'grayscale' || type === 'sepia') {
+            inputRefs.current[
+              type
+            ].style.background = `linear-gradient(to right, #a855f7 ${value}%, rgb(128, 128, 128, 0.5) ${value}%`;
+          } else {
+            if (value > 0) {
+              inputRefs.current[
+                type
+              ].style.background = `linear-gradient(to right, rgb(128, 128, 128, 0.5) 0%, rgb(128, 128, 128, 0.5) 50%, #a855f7 50%, #a855f7 ${
+                50 + value / 2
+              }%, rgb(128, 128, 128, 0.5) ${
+                50 + value / 2
+              }%, rgb(128, 128, 128, 0.5) 100%`;
+            } else {
+              inputRefs.current[
+                type
+              ].style.background = `linear-gradient(to right, rgb(128, 128, 128, 0.5) 0%, rgb(128, 128, 128, 0.5) ${
+                (value + 100) / 2
+              }%, #a855f7 ${
+                (value + 100) / 2
+              }%, #a855f7 50%, rgb(128, 128, 128, 0.5) 50%, rgb(128, 128, 128, 0.5) 100%`;
+            }
+          }
+        }
       }
     };
 
-  const getFilterValue = () => {
-    const filter = filters.find(
-      (filter) => filter.name === currentFileData.filter
-    )?.filter;
+  // const getFilterValue = () => {
+  //   const filter = filters.find(
+  //     (filter) => filter.name === currentFileData.filter
+  //   )?.filter;
 
-    if (filter) {
-      const initialValues: Record<string, number> = {
-        brightness: 1,
-        contrast: 1,
-        grayscale: 0,
-        'hue-rotate': 0,
-        saturate: 1,
-        sepia: 0,
-        blur: 0,
-      };
+  //   if (filter) {
+  //     const initialValues: Record<string, number> = {
+  //       brightness: 1,
+  //       contrast: 1,
+  //       grayscale: 0,
+  //       'hue-rotate': 0,
+  //       saturate: 1,
+  //       sepia: 0,
+  //       blur: 0,
+  //     };
 
-      const filterValue = filter.split(' ');
+  //     const filterValue = filter.split(' ');
 
-      const filterObj = filterValue.reduce<Record<string, number>>(
-        (accumulator, filter) => {
-          const name = filter.slice(0, filter.indexOf('('));
-          const value = parseFloat(
-            filter.slice(filter.indexOf('(') + 1, filter.indexOf(')'))
-          );
-          accumulator[name] = value;
-          return accumulator;
-        },
-        {}
-      );
+  //     const filterObj = filterValue.reduce<Record<string, number>>(
+  //       (accumulator, filter) => {
+  //         const name = filter.slice(0, filter.indexOf('('));
+  //         const value = parseFloat(
+  //           filter.slice(filter.indexOf('(') + 1, filter.indexOf(')'))
+  //         );
+  //         accumulator[name] = value;
+  //         return accumulator;
+  //       },
+  //       {}
+  //     );
 
-      const adjustments: Record<string, number> = getAdjustmentsValue();
+  //     const adjustments: Record<string, number> = getAdjustmentsValue();
 
-      const keys = [
-        ...new Set([...Object.keys(filterObj), ...Object.keys(adjustments)]),
-      ];
+  //     const keys = [
+  //       ...new Set([...Object.keys(filterObj), ...Object.keys(adjustments)]),
+  //     ];
 
-      const filterString = keys.reduce((accumulator, value) => {
-        const result =
-          (filterObj[value] || initialValues[value]) +
-          (adjustments[value] || 0);
+  //     const filterString = keys.reduce((accumulator, value) => {
+  //       const result =
+  //         (filterObj[value] || initialValues[value]) +
+  //         (adjustments[value] || 0);
 
-        if (value === 'hue-rotate') {
-          return accumulator + `${value}(${result}deg) `;
-        } else if (value === 'blur') {
-          return accumulator + `${value}(${result}px) `;
-        }
+  //       if (value === 'hue-rotate') {
+  //         return accumulator + `${value}(${result}deg) `;
+  //       } else if (value === 'blur') {
+  //         return accumulator + `${value}(${result}px) `;
+  //       }
 
-        return accumulator + `${value}(${result}) `;
-      }, '');
+  //       return accumulator + `${value}(${result}) `;
+  //     }, '');
 
-      return filterString;
-    }
-  };
+  //     return filterString;
+  //   }
+  // };
 
-  const getAdjustmentsValue = () => {
-    const adjustments = { ...currentFileData.adjustments };
+  // const getAdjustmentsValue = () => {
+  //   const adjustments = { ...currentFileData.adjustments };
 
-    for (const [key, value] of Object.entries(adjustments)) {
-      if (key === 'brightness' || key === 'contrast') {
-        adjustments[key] = value / 200;
-      } else if (key === 'saturate') {
-        adjustments[key] = value / 100;
-      } else if (key === 'hue-rotate') {
-        adjustments[key] = value / (10 / 9);
-      } else if (key === 'sepia' || key === 'grayscale') {
-        adjustments[key] = value / 100;
+  //   for (const [key, value] of Object.entries(adjustments)) {
+  //     if (key === 'brightness' || key === 'contrast') {
+  //       adjustments[key] = value / 200;
+  //     } else if (key === 'saturate') {
+  //       adjustments[key] = value / 100;
+  //     } else if (key === 'hue-rotate') {
+  //       adjustments[key] = value / (10 / 9);
+  //     } else if (key === 'sepia' || key === 'grayscale') {
+  //       adjustments[key] = value / 100;
+  //     }
+  //   }
+
+  //   return adjustments;
+  // };
+
+  const addToObjRef =
+    (
+      prop:
+        | 'brightness'
+        | 'contrast'
+        | 'hue-rotate'
+        | 'sepia'
+        | 'grayscale'
+        | 'saturate'
+    ) =>
+    (el: HTMLInputElement) => {
+      const ref = inputRefs;
+
+      if (el && !ref.current[prop]) {
+        ref.current[prop] = el;
       }
-    }
-
-    return adjustments;
-  };
+    };
 
   return (
     <div className={styles.carousel}>
@@ -408,8 +526,9 @@ const UploadCarousel = ({
                     : undefined
                 }
                 crop={crop}
-                aspect={1 / 1}
+                aspect={1}
                 onCropChange={setCrop}
+                // onInteractionEnd={handleInteractionEnd}
                 restrictPosition={true}
                 zoomWithScroll={false}
                 objectFit={'cover'}
@@ -420,7 +539,8 @@ const UploadCarousel = ({
                 style={{
                   mediaStyle: {
                     aspectRatio,
-                    filter: getFilterValue(),
+                    filter: getFilterValue(currentFileData),
+                    height: `${imageRef.current?.offsetHeight}px`,
                   },
                 }}
               />
@@ -433,12 +553,13 @@ const UploadCarousel = ({
                     ref={imageRef}
                     style={{
                       aspectRatio,
-                      filter: getFilterValue(),
+                      filter: getFilterValue(currentFileData),
                     }}
                     onMouseDown={(e) => (e.currentTarget.style.filter = 'none')}
                     onMouseUp={(e) =>
-                      (e.currentTarget.style.filter =
-                        getFilterValue() as string)
+                      (e.currentTarget.style.filter = getFilterValue(
+                        currentFileData
+                      ) as string)
                     }
                   />
                 ) : (
@@ -447,14 +568,15 @@ const UploadCarousel = ({
                     ref={videoRef}
                     style={{
                       aspectRatio,
-                      filter: getFilterValue(),
+                      filter: getFilterValue(currentFileData),
                     }}
                     autoPlay={true}
                     loop={true}
                     onMouseDown={(e) => (e.currentTarget.style.filter = 'none')}
                     onMouseUp={(e) =>
-                      (e.currentTarget.style.filter =
-                        getFilterValue() as string)
+                      (e.currentTarget.style.filter = getFilterValue(
+                        currentFileData
+                      ) as string)
                     }
                   >
                     <source type="video/mp4" />
@@ -473,18 +595,20 @@ const UploadCarousel = ({
             </span>
           )}
 
-          <span className={styles['dot-box']} ref={dotRef}>
-            {files.map((_, index) => (
-              <span
-                key={`${Math.random()}-${index}`}
-                className={`${styles.dot} ${
-                  currentIndex === index ? styles['current-dot'] : ''
-                }`}
-              >
-                .
-              </span>
-            ))}
-          </span>
+          {files.length > 1 && (
+            <span className={styles['dot-box']} ref={dotRef}>
+              {files.map((_, index) => (
+                <span
+                  key={`${Math.random()}-${index}`}
+                  className={`${styles.dot} ${
+                    currentIndex === index ? styles['current-dot'] : ''
+                  }`}
+                >
+                  .
+                </span>
+              ))}
+            </span>
+          )}
         </div>
 
         <div className={styles['edit-container']}>
@@ -578,6 +702,7 @@ const UploadCarousel = ({
                     max={100}
                     value={currentFileData.adjustments.brightness}
                     onChange={changeAdjustmentValue('brightness')}
+                    ref={addToObjRef('brightness')}
                   />
                   <span className={styles['adjustment-value']}>
                     {currentFileData.adjustments.brightness}
@@ -608,6 +733,7 @@ const UploadCarousel = ({
                     max={100}
                     value={currentFileData.adjustments.contrast}
                     onChange={changeAdjustmentValue('contrast')}
+                    ref={addToObjRef('contrast')}
                   />
                   <span className={styles['adjustment-value']}>
                     {currentFileData.adjustments.contrast}
@@ -640,6 +766,7 @@ const UploadCarousel = ({
                     max={100}
                     value={currentFileData.adjustments['hue-rotate']}
                     onChange={changeAdjustmentValue('hue-rotate')}
+                    ref={addToObjRef('hue-rotate')}
                   />
                   <span className={styles['adjustment-value']}>
                     {currentFileData.adjustments['hue-rotate']}
@@ -670,6 +797,7 @@ const UploadCarousel = ({
                     max={100}
                     value={currentFileData.adjustments.saturate}
                     onChange={changeAdjustmentValue('saturate')}
+                    ref={addToObjRef('saturate')}
                   />
                   <span className={styles['adjustment-value']}>
                     {currentFileData.adjustments.saturate}
@@ -702,6 +830,7 @@ const UploadCarousel = ({
                     max={100}
                     value={currentFileData.adjustments.grayscale}
                     onChange={changeAdjustmentValue('grayscale')}
+                    ref={addToObjRef('grayscale')}
                   />
                   <span className={styles['adjustment-value']}>
                     {currentFileData.adjustments.grayscale}
@@ -732,6 +861,7 @@ const UploadCarousel = ({
                     max={100}
                     value={currentFileData.adjustments.sepia}
                     onChange={changeAdjustmentValue('sepia')}
+                    ref={addToObjRef('sepia')}
                   />
                   <span className={styles['adjustment-value']}>
                     {currentFileData.adjustments.sepia}
@@ -853,7 +983,35 @@ const UploadCarousel = ({
       </div>
 
       <div className={styles['next-btn-div']}>
-        <button className={styles['next-btn']}>Next</button>
+        <button
+          className={`${styles['next-btn']} ${styles['cancel-btn']}`}
+          onClick={() => {
+            files.forEach((file) => URL.revokeObjectURL(file.src as string));
+            setStage((prevStage) => ({ ...prevStage, content: 'select' }));
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          className={styles['next-btn']}
+          onClick={() => {
+            setFiles((prevFiles) => {
+              const oldFiles = [...editedFiles];
+              oldFiles[currentIndex].filter = currentFileData.filter;
+              oldFiles[currentIndex].adjustments = currentFileData.adjustments;
+
+              return {
+                ...prevFiles,
+                content: oldFiles,
+              };
+            });
+            setContentIndex(currentIndex);
+            setStage((prevStage) => ({ ...prevStage, content: 'finish' }));
+          }}
+        >
+          Next
+        </button>
       </div>
     </div>
   );
