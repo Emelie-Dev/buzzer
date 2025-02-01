@@ -1,0 +1,380 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: calc(100% - 4rem);
+  grid-template-rows: calc(100% - 2rem);
+  justify-content: center;
+  align-content: center;
+  overflow: auto;
+}
+
+.edit-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: white;
+  box-shadow: 1px 1px 5px -3px black, -1px -1px 5px -3px black;
+  border-radius: 5px;
+}
+
+.container-head {
+  font-family: appFontSemi;
+  border-bottom: 1px solid rgb(128, 128, 128, 0.3);
+  padding: 0.5rem 1rem;
+}
+
+.video-container {
+  height: calc(100% - 6.8rem);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 10% 45% 45%;
+  justify-content: center;
+}
+
+.video-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 1rem;
+  border-left: 1px solid rgb(128, 128, 128, 0.3);
+}
+
+.video {
+  height: 100%;
+  aspect-ratio: 9/16;
+  border-radius: 5px;
+  object-fit: contain;
+  background: black;
+}
+
+.category-list {
+  height: 100%;
+  list-style-type: none;
+  margin: 0;
+  padding: 0.5rem;
+  padding-top: 1rem;
+  border-right: 1px solid rgb(128, 128, 128, 0.3);
+}
+
+.category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-family: appFontMedium;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: gray;
+}
+
+.current-category {
+  color: black;
+}
+
+.edit-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.cover-photo-container {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.cover-photo-head {
+  font-family: appFontMedium;
+  padding: 0.7rem 1rem 0;
+  color: gray;
+}
+
+.cover-photo-div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+  padding-bottom: 0;
+}
+
+.cover-photo-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  width: calc(25% - 1rem);
+  margin: 0 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.current-cover {
+  border: 2px solid var(--app-theme-color);
+}
+
+.cover-photo-img {
+  width: 100%;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.cover-photo-btn-div {
+  display: flex;
+  align-items: center;
+}
+
+.cover-photo-btn {
+  margin: 1.5rem;
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  cursor: pointer;
+  color: white;
+  font-family: appFont;
+  padding: 0.7rem;
+  border-radius: 5px;
+  transition: opacity 0.2s;
+}
+
+.cover-photo-btn:hover {
+  opacity: 0.9;
+}
+
+.add-sound-container {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.add-sound-btn-div {
+  margin: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 70%;
+  justify-content: center;
+}
+
+.add-sound-txt {
+  font-family: appFont;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.add-sound-txt2 {
+  font-family: appFont;
+  font-size: 0.95rem;
+  margin: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60%;
+}
+
+.add-sound-btn {
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  cursor: pointer;
+  color: white;
+  font-family: appFont;
+  padding: 0.7rem;
+  border-radius: 5px;
+  transition: opacity 0.2s;
+}
+
+.add-sound-btn:hover {
+  opacity: 0.9;
+}
+
+/* .add-sound-head {
+  font-family: appFontMedium;
+  padding: 0.7rem 1rem 0;
+  color: gray;
+} */
+
+.sound-category-container {
+  width: 100%;
+}
+
+.sound-category-list {
+  list-style-type: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid rgb(128, 128, 128, 0.3);
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 2;
+}
+
+.sound-category-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  font-family: appFontMedium;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: gray;
+  border-bottom: 1px solid transparent;
+}
+
+.current-sound-category {
+  color: black;
+  border-bottom: 1px solid black;
+}
+
+.sound-category-div {
+  width: 100%;
+  padding: 1rem;
+  position: relative;
+}
+
+.sound-box {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.sound-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: var(--app-theme-color);
+  margin-left: 1rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sound-icon:hover {
+  opacity: 0.8;
+}
+
+.sound-details {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 2.5rem);
+}
+
+.sound-name {
+  font-family: appFontMedium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.95rem;
+}
+
+.sound-duration {
+  font-family: appFont;
+  font-size: 0.9rem;
+  margin-top: 0.1rem;
+}
+
+.sound-btn-box {
+  margin-left: auto;
+  align-items: center;
+  display: none;
+}
+
+.sound-use-button {
+  outline: none;
+  border: none;
+  border-radius: 5px;
+  padding: 0.4rem 0.7rem;
+  background: var(--app-theme-color);
+  color: white;
+  cursor: pointer;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.sound-save-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 1rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sound-use-button:hover,
+.sound-save-icon:hover {
+  opacity: 0.8;
+}
+
+.sound-box:hover .sound-btn-box {
+  display: flex;
+}
+
+.sound-box:hover .sound-details {
+  width: calc(100% - 8.5rem);
+  color: var(--app-theme-color);
+}
+
+.playing-sound {
+  color: var(--app-theme-color);
+}
+
+.hidden-div {
+  display: none;
+}
+
+.plus-icon-div {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 1rem;
+  z-index: 2;
+}
+
+.plus-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-theme-color);
+  color: white;
+  padding: 1rem;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.plus-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.plus-icon-box:hover .plus-icon {
+  color: black;
+}
+
+.hide-video {
+  visibility: hidden;
+}
+
+.local-photo-div {
+  width: 100%;
+  padding: 0rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.local-photo-head {
+  color: gray;
+  font-family: appFontMedium;
+  margin-bottom: 0.5rem;
+}
+
+.trim-container {
+  height: 4rem;
+  background: black;
+  border-radius: 0 0 5px 5px;
+}

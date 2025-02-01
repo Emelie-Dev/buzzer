@@ -36,12 +36,13 @@ const Create = () => {
     reel: string | ArrayBuffer | null;
   }>({ content: [], reel: null });
   const [rawFiles, setRawFiles] = useState<File[] | FileList>(null!);
+  const [rawReelFile, setRawReelFile] = useState<File>(null!);
   const [addFiles, setAddFiles] = useState(false);
   const [contentIndex, setContentIndex] = useState<number>(0);
   const [aspectRatio, setAspectRatio] = useState<'initial' | number>(1);
 
   const containerRef = useRef<HTMLDivElement>(null!);
-  const stageRef = useRef<HTMLDivElement>(null!);
+  const contentRef = useRef<HTMLDivElement>(null!);
   const fileRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
@@ -66,7 +67,7 @@ const Create = () => {
   }, [category]);
 
   useEffect(() => {
-    if (stageRef.current) stageRef.current.scrollTop = 0;
+    if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [stage]);
 
   // Add animation while reading files.
@@ -114,12 +115,30 @@ const Create = () => {
         console.log(rawFiles);
         return;
       }
+    } else {
+      const uploadFile = e.target.files && e.target.files[0];
+
+      if (uploadFile) {
+        try {
+          const result = await isFileValid(uploadFile, true);
+          setRawReelFile(uploadFile);
+          setFiles((prevFiles) => ({ ...prevFiles, reel: result.src }));
+          e.target.files = new DataTransfer().files;
+        } catch (err) {
+          console.log(rawReelFile);
+          e.target.files = new DataTransfer().files;
+          return alert(err);
+        }
+
+        setCategory('content');
+        setTimeout(() => setCategory('reel'), 0);
+      } else return;
     }
 
     setStage({ ...stage, [category]: 'edit' });
   };
 
-  const isFileValid = (file: File): Promise<Content> => {
+  const isFileValid = (file: File, reel?: boolean): Promise<Content> => {
     return new Promise((resolve, reject) => {
       const type = file.type.includes('image')
         ? 'image'
@@ -132,12 +151,13 @@ const Create = () => {
       } else if (type === 'video') {
         const fileURL = URL.createObjectURL(file);
         const video = document.createElement('video');
+        const maxDuration = reel ? 3600 : 60;
 
         video.src = fileURL; // Set the source of the media element
         video.preload = 'metadata'; // Load only metadata (not the entire file)
 
         video.onloadedmetadata = () => {
-          if (video.duration > 60) {
+          if (video.duration > maxDuration) {
             reject('Duration Error');
           } else {
             resolve({
@@ -215,23 +235,21 @@ const Create = () => {
           />
 
           <div className={styles['category-container']} ref={containerRef}>
-            <div className={styles['category-div']} ref={stageRef}>
+            <div className={styles['category-div']} ref={contentRef}>
               {stage.content === 'select' ? (
-                <>
-                  <div className={styles['upload-div']}>
-                    <FaPhotoVideo className={styles['content-icon']} />
-                    <span className={styles['upload-text']}>
-                      {' '}
-                      Select the photos and videos you want to post
-                    </span>
-                    <button
-                      className={styles['select-btn']}
-                      onClick={() => fileRef.current.click()}
-                    >
-                      Select
-                    </button>
-                  </div>
-                </>
+                <div className={styles['upload-div']}>
+                  <FaPhotoVideo className={styles['content-icon']} />
+                  <span className={styles['upload-text']}>
+                    {' '}
+                    Select the photos and videos you want to post
+                  </span>
+                  <button
+                    className={styles['select-btn']}
+                    onClick={() => fileRef.current.click()}
+                  >
+                    Select
+                  </button>
+                </div>
               ) : stage.content === 'edit' ? (
                 <UploadCarousel
                   files={files.content}
@@ -272,7 +290,7 @@ const Create = () => {
                   </button>
                 </div>
               ) : (
-                <UploadReel />
+                <UploadReel src={files.reel} />
               )}
             </div>
           </div>
