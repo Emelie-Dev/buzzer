@@ -6,6 +6,7 @@ import { IoBookmarkOutline } from 'react-icons/io5';
 import { MdDelete } from 'react-icons/md';
 import { FaPlus } from 'react-icons/fa6';
 import { IoBookmark } from 'react-icons/io5';
+import ReactSlider from 'react-slider';
 
 type UploadReelProps = {
   src: string | ArrayBuffer | null;
@@ -543,7 +544,53 @@ const UploadReel = ({ src: reelSrc }: UploadReelProps) => {
           </div>
         </div>
 
-        <div className={styles['trim-container']}>manslaughter</div>
+        <div className={styles['trim-container']}>
+          <div className={styles['trim-div']}>
+            {coverUrls
+              ? coverUrls.map((url) => (
+                  <img className={styles['trim-img']} src={url} />
+                ))
+              : ''}
+
+            <div className={styles['slider-div']}>
+              {/* <input
+                type="range"
+                className={styles['adjustment-input']}
+                onMouseDown={(e) => {
+                  console.log(e.clientX);
+                }}
+              />
+              <input
+                type="range"
+                className={`${styles['adjustment-input']} ${styles['adjustment-input2']}`}
+              /> */}
+
+              <ReactSlider
+                className={styles['slider']}
+                trackClassName={styles['track']}
+                defaultValue={[20, 80]}
+                min={0}
+                max={100}
+                pearling
+                minDistance={3}
+                renderThumb={(props) => (
+                  <div {...props} className={styles['thumb']}>
+                    <img
+                      src="../../public/assets/images/suppository-capsule-svgrepo-com (4).svg"
+                      alt="Thumb"
+                      className={styles['thumb-image']}
+                    />
+                  </div>
+                )}
+                onChange={(index) => console.log(index)}
+              />
+            </div>
+          </div>
+
+          <div className={styles['next-btn-div']}>
+            <button className={styles['next-btn']}>Next</button>
+          </div>
+        </div>
       </div>
     </div>
   );

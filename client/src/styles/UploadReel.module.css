@@ -25,7 +25,7 @@
 }
 
 .video-container {
-  height: calc(100% - 6.8rem);
+  height: calc(100% - 6.6rem);
   overflow: hidden;
   display: grid;
   grid-template-columns: 10% 45% 45%;
@@ -375,6 +375,117 @@
 
 .trim-container {
   height: 4rem;
-  background: black;
   border-radius: 0 0 5px 5px;
+  border-top: 1px solid rgb(128, 128, 128, 0.3);
+  display: flex;
+}
+
+.trim-div {
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgb(128, 128, 128, 0.3);
+  width: calc(100% - 6.15rem);
+  position: relative;
+}
+
+.trim-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  overflow: hidden;
+}
+
+.next-btn-div {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 6.15rem;
+}
+
+.next-btn {
+  outline: none;
+  border: none;
+  background: var(--app-theme-color);
+  border-radius: 8px;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.next-btn:hover {
+  opacity: 0.8;
+}
+
+.slider-div {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  /* justify-content: space-between; */
+  position: absolute;
+  top: 0;
+  z-index: 2;
+}
+
+.adjustment-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1rem;
+  background: rgb(128, 128, 128, 0.5);
+  border-radius: 5px;
+  background: red;
+  margin: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.adjustment-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1rem;
+  height: 3.9rem;
+  background: white;
+  cursor: ew-resize;
+  background: url('../../public/assets/images/suppository-capsule-svgrepo-com\ \(4\).svg')
+    no-repeat center;
+  fill: white;
+  background-size: cover;
+}
+
+.slider {
+  width: 100%;
+  height: 3.9rem;
+  background: transparent; /* Track background */
+  border-radius: 5px;
+  position: relative;
+}
+
+.track {
+  background: transparent; /* Active track color */
+  height: 100%;
+  border-radius: 5px;
+}
+
+.thumb {
+  width: 3rem;
+  height: 3.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ew-resize;
+  position: relative;
+  background: transparent; /* No default background */
+  border: none; /* No borders for clean look */
+  background: none;
+}
+
+.thumb-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Adjust image fit */
+  pointer-events: none; /* Makes the image non-interfering */
+  background: transparent;
 }
