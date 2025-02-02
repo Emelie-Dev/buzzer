@@ -49,7 +49,9 @@ const CarouselItem = ({
   const [hidePause, setHidePause] = useState<boolean>(true);
   const [reloading, setReloading] = useState<boolean>(false);
   const [mute, setMute] = useState<boolean>(false);
-  const [clickTimeout, setClickTimeout] = useState<number | null>(null);
+  const [clickTimeout, setClickTimeout] = useState<
+    number | null | NodeJS.Timeout
+  >(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const { contentRef } = useContext(ContentContext);
   const {

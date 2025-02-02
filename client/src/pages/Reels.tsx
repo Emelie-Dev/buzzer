@@ -42,7 +42,7 @@ const Reels = () => {
   const [scrollType, setScrollType] = useState<'up' | 'down' | null>(null);
 
   const mainRef = useRef<HTMLDivElement>(null!);
-  const timeout = useRef<number>();
+  const timeout = useRef<number | NodeJS.Timeout>();
 
   const observer = new IntersectionObserver(
     (entries) => {

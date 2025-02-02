@@ -182,7 +182,7 @@ const CommentBox = ({
 
     setTagList([...set]);
 
-    let timeout: number;
+    let timeout: number | NodeJS.Timeout;
 
     if (searching === true) {
       timeout = setTimeout(() => {
