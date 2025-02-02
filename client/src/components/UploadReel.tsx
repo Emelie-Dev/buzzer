@@ -576,7 +576,7 @@ const UploadReel = ({ src: reelSrc }: UploadReelProps) => {
                 renderThumb={(props) => (
                   <div {...props} className={styles['thumb']}>
                     <img
-                      src="../../public/assets/images/suppository-capsule-svgrepo-com (4).svg"
+                      src="../../assets/images/suppository-capsule-svgrepo-com (4).svg"
                       alt="Thumb"
                       className={styles['thumb-image']}
                     />
