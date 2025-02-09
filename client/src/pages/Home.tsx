@@ -9,6 +9,7 @@ import StoryModal from '../components/StoryModal';
 import { DataItem } from './Following';
 import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
+import { GoPlus } from 'react-icons/go';
 
 export interface User {
   name: string;
@@ -249,6 +250,20 @@ const Home = () => {
             >
               <MdKeyboardArrowLeft className={styles['left-arrow']} />
             </span>
+
+            <article className={`${styles.user} ${styles['owner']}`}>
+              <span className={styles['add-story']}>
+                <span className={styles['add-story-box']}>
+                  <GoPlus className={styles['add-story-icon']} />
+                </span>
+              </span>
+
+              <span
+                className={`${styles['user-name']} ${styles['owner-name']}`}
+              >
+                Your Story
+              </span>
+            </article>
 
             {users.map(({ name }, index) => (
               <article

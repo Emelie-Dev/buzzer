@@ -32,10 +32,17 @@
   -ms-overflow-style: none;
   scroll-behavior: smooth;
   position: relative;
-  padding: 0 0.1rem;
+  padding: 0 0;
+  padding-right: 0.1rem;
   margin: 0 1rem;
   display: flex;
   align-items: center;
+}
+
+.owner {
+  position: sticky;
+  left: 0;
+  background: white;
 }
 
 .user {
@@ -61,6 +68,36 @@
   );
 }
 
+.add-story {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
+  padding: 0.17rem;
+  border-radius: 50%;
+}
+
+.add-story-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: white;
+  width: 3.8rem;
+  height: 3.8rem;
+}
+
+.add-story-icon {
+  width: 3rem;
+  height: 3rem;
+  fill: var(--app-theme-color);
+}
+
 .user-pics {
   width: 3.8rem;
   height: 3.8rem;
@@ -79,12 +116,17 @@
   text-align: center;
 }
 
+.owner-name {
+  color: var(--app-theme-color);
+  font-weight: 600;
+}
+
 .left-arrow-box {
   z-index: 2;
   position: sticky;
   align-self: flex-start;
   top: 20%;
-  left: 1.5%;
+  left: 14%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
