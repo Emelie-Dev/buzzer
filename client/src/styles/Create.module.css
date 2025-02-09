@@ -60,17 +60,15 @@
   width: 100%;
   display: grid;
   grid-template-columns: 100% 100%;
-
   align-items: start;
   transition: transform 0.25s ease;
-  overflow: hidden;
-
-  /* scroll-behavior: smooth; */
+  scroll-behavior: smooth;
 }
 
 .category-div {
   overflow: auto;
   height: calc(100vh - 4.125rem);
+  width: 100%;
 }
 
 .upload-div {

@@ -16,8 +16,8 @@ declare module 'react-slider' {
       props: object,
       state: { index: number; value: number; valueNow: number }
     ) => React.ReactNode;
-    onChange?: (value: number | number[], index: number) => void;
-    onAfterChange?: (value: number | number[], index: number) => void;
+    onChange?: (value: number | number[]) => void;
+    onAfterChange?: (value: number | number[]) => void;
   }
 
   const ReactSlider: React.FC<ReactSliderProps>;

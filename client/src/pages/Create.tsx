@@ -7,6 +7,9 @@ import AsideHeader from '../components/AsideHeader';
 import UploadCarousel from '../components/UploadCarousel';
 import UploadDetails from '../components/UploadDetails';
 import UploadReel from '../components/UploadReel';
+import UploadReelDetails, {
+  ReelDetails,
+} from '../components/UploadReelDetails';
 
 export interface Content {
   src: string | ArrayBuffer | null;
@@ -21,6 +24,42 @@ export interface Content {
     sepia: number;
   };
 }
+
+export interface videoData {
+  src: string | ArrayBuffer | null;
+  inputRef: React.MutableRefObject<HTMLInputElement>;
+  coverUrls: string[];
+  setCoverUrls: React.Dispatch<React.SetStateAction<string[]>>;
+  coverIndex: number | 'local' | null;
+  setCoverIndex: React.Dispatch<React.SetStateAction<number | 'local' | null>>;
+  localCoverUrl: string;
+  setLocalCoverUrl: React.Dispatch<React.SetStateAction<string>>;
+  sliderValues: number | number[];
+  setSliderValues: React.Dispatch<React.SetStateAction<number | number[]>>;
+  hideVideo: boolean;
+  setHideVideo: React.Dispatch<React.SetStateAction<boolean>>;
+  currentSound: string | null;
+  setCurrentSound: React.Dispatch<React.SetStateAction<string | null>>;
+}
+
+export interface soundData {
+  sounds: AudioFile[];
+  setSounds: React.Dispatch<React.SetStateAction<AudioFile[]>>;
+  rawSounds: File[] | FileList;
+  setRawSounds: React.Dispatch<React.SetStateAction<FileList | File[]>>;
+  savedSounds: AudioFile[];
+  setSavedSounds: React.Dispatch<React.SetStateAction<AudioFile[]>>;
+  setReelData: React.Dispatch<React.SetStateAction<ReelDetails>>;
+}
+
+export type AudioFile = {
+  name: string;
+  duration: string;
+  src: string;
+  id: string;
+  saved?: boolean;
+  current?: boolean;
+};
 
 const Create = () => {
   const [category, setCategory] = useState<'reel' | 'content'>('content');
@@ -40,10 +79,53 @@ const Create = () => {
   const [addFiles, setAddFiles] = useState(false);
   const [contentIndex, setContentIndex] = useState<number>(0);
   const [aspectRatio, setAspectRatio] = useState<'initial' | number>(1);
+  const [reelData, setReelData] = useState<ReelDetails>({
+    video: '',
+    sound: '',
+    duration: [0, 0],
+    coverPhoto: '',
+  });
+
+  const [sounds, setSounds] = useState<AudioFile[]>([]);
+  const [rawSounds, setRawSounds] = useState<File[] | FileList>(null!);
+  const [savedSounds, setSavedSounds] = useState<AudioFile[]>([]);
+  const [coverUrls, setCoverUrls] = useState<string[]>([]);
+  const [coverIndex, setCoverIndex] = useState<number | 'local' | null>(null);
+  const [localCoverUrl, setLocalCoverUrl] = useState<string>('');
+  const [sliderValues, setSliderValues] = useState<number | number[]>([0, 100]);
+  const [hideVideo, setHideVideo] = useState<boolean>(true);
+  const [currentSound, setCurrentSound] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
   const fileRef = useRef<HTMLInputElement>(null!);
+
+  const videoProps = {
+    src: files.reel,
+    inputRef: fileRef,
+    coverUrls,
+    setCoverUrls,
+    coverIndex,
+    setCoverIndex,
+    localCoverUrl,
+    setLocalCoverUrl,
+    sliderValues,
+    setSliderValues,
+    hideVideo,
+    setHideVideo,
+    currentSound,
+    setCurrentSound,
+  };
+
+  const soundProps = {
+    sounds,
+    setSounds,
+    rawSounds,
+    setRawSounds,
+    savedSounds,
+    setSavedSounds,
+    setReelData,
+  };
 
   useEffect(() => {
     return () => {
@@ -53,21 +135,38 @@ const Create = () => {
 
       if (content.length > 0)
         content.forEach((file) => URL.revokeObjectURL(file.src as string));
+
+      if (sounds.length > 0)
+        sounds.forEach((file) => URL.revokeObjectURL(file.src as string));
+
+      if (localCoverUrl) URL.revokeObjectURL(localCoverUrl);
     };
   }, []);
 
   useEffect(() => {
     if (containerRef.current) {
       if (category === 'reel') {
-        containerRef.current.scrollLeft += containerRef.current.offsetWidth;
+        containerRef.current.style.transform = `translateX(-100%)`;
       } else {
-        containerRef.current.scrollLeft -= containerRef.current.offsetWidth;
+        containerRef.current.style.transform = `translateX(0%)`;
       }
     }
   }, [category]);
 
   useEffect(() => {
     if (contentRef.current) contentRef.current.scrollTop = 0;
+
+    if (stage.reel === 'select') {
+      setSounds([]);
+      setRawSounds(null!);
+      setSavedSounds([]);
+      setCoverUrls([]);
+      setCoverIndex(null);
+      setLocalCoverUrl('');
+      setSliderValues([0, 100]);
+      setHideVideo(true);
+      setCurrentSound(null);
+    }
   }, [stage]);
 
   // Add animation while reading files.
@@ -289,8 +388,14 @@ const Create = () => {
                     Select
                   </button>
                 </div>
+              ) : stage.reel === 'edit' ? (
+                <UploadReel
+                  videoProps={videoProps}
+                  soundProps={soundProps}
+                  setStage={setStage}
+                />
               ) : (
-                <UploadReel src={files.reel} />
+                <UploadReelDetails data={reelData} setStage={setStage} />
               )}
             </div>
           </div>

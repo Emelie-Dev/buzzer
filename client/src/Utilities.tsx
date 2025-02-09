@@ -134,3 +134,18 @@ export const getFilterValue = (currentFileData: FileData) => {
     return filterString;
   }
 };
+
+export const getDurationText = (duration: number): string => {
+  if (!duration) return '00:00';
+
+  if (duration < 60) {
+    return `00:${String(duration).padStart(2, '0')}`;
+  } else if (duration < 3600) {
+    const trunc = Math.trunc(duration / 60);
+    const rem = duration - trunc * 60;
+
+    return `${String(trunc).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+  } else {
+    return `1:00:00`;
+  }
+};

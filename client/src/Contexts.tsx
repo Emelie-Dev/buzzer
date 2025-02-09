@@ -10,6 +10,15 @@ interface LikeObj {
   viewComment: boolean;
 }
 
+type AudioFile = {
+  name: string;
+  duration: string;
+  src: string;
+  id: string;
+  saved?: boolean;
+  current?: boolean;
+};
+
 export const ContentContext = createContext<{
   contentRef: React.MutableRefObject<HTMLDivElement[]>;
   activeVideo: HTMLVideoElement | null;
@@ -17,3 +26,28 @@ export const ContentContext = createContext<{
 }>(null!);
 
 export const LikeContext = createContext<LikeObj>(null!);
+
+export const UploadReelContext = createContext<{
+  sounds: AudioFile[];
+  setSounds: React.Dispatch<React.SetStateAction<AudioFile[]>>;
+  rawSounds: File[] | FileList;
+  setRawSounds: React.Dispatch<React.SetStateAction<FileList | File[]>>;
+  savedSounds: AudioFile[];
+  setSavedSounds: React.Dispatch<React.SetStateAction<AudioFile[]>>;
+  coverUrls: string[];
+  setCoverUrls: React.Dispatch<React.SetStateAction<string[]>>;
+  coverIndex: number | 'local' | null;
+  setCoverIndex: React.Dispatch<React.SetStateAction<number | 'local' | null>>;
+  localCoverUrl: string;
+  setLocalCoverUrl: React.Dispatch<React.SetStateAction<string>>;
+  sliderValues: number | number[];
+  setSliderValues: React.Dispatch<React.SetStateAction<number | number[]>>;
+  src: string | ArrayBuffer | null;
+  setStage: React.Dispatch<
+    React.SetStateAction<{
+      reel: 'select' | 'edit' | 'finish';
+      content: 'select' | 'edit' | 'finish';
+    }>
+  >;
+  fileRef: React.MutableRefObject<HTMLInputElement>;
+}>(null!);

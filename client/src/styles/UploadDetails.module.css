@@ -433,3 +433,103 @@
 .clear-icon:hover {
   color: var(--app-theme-color);
 }
+
+.video-container {
+  width: 500px;
+  height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 5px;
+}
+
+.video {
+  height: 100%;
+  aspect-ratio: 9/16;
+  border-radius: 5px;
+  object-fit: contain;
+  background: black;
+  cursor: pointer;
+}
+
+.progress-input {
+  position: absolute;
+  bottom: 1%;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 17rem;
+  height: 5px;
+  background: gray;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.progress-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.progress-input::-moz-range-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.progress-input2 {
+  height: 6px;
+  opacity: 1;
+}
+
+.progress-input2::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.progress-input2::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.duration-box {
+  position: absolute;
+  color: white;
+  font-family: monospace;
+  bottom: 4%;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 17rem;
+  padding: 0 0.2rem;
+}
+
+.play-icon {
+  position: absolute;
+  fill: white;
+  width: 2.5rem;
+  height: 2.5rem;
+  z-index: 2;
+}
+
+.cover-photo {
+  position: absolute;
+  aspect-ratio: 9/16;
+  border-radius: 5px;
+  object-fit: cover;
+  height: 100%;
+}
+
+.audio {
+  display: none;
+}
