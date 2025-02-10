@@ -37,7 +37,12 @@ const AsideHeader = () => {
         </span>
 
         <ul className={styles['view-list']}>
-          <li className={styles['view-item']}>View profile</li>
+          <li
+            className={styles['view-item']}
+            onClick={() => navigate('/profile')}
+          >
+            View profile
+          </li>
           <li className={styles['view-item']}>View story</li>
           <li className={styles['view-item']}>Switch account</li>
         </ul>

@@ -21,6 +21,8 @@ import { BiMessageDetail } from 'react-icons/bi';
 import { FaRegSquarePlus } from 'react-icons/fa6';
 import { BsPlusSquareFill } from 'react-icons/bs';
 import { IoNotificationsOutline } from 'react-icons/io5';
+import { FaCircleUser } from 'react-icons/fa6';
+import { FaRegCircleUser } from 'react-icons/fa6';
 
 type NavBarProps = {
   page: string;
@@ -410,20 +412,44 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
 
             {page === 'create' && (
               <li
-                className={`${styles['nav-item']} ${
-                  page === 'create' ? styles['active-nav-item'] : ''
-                }`}
+                className={`${styles['nav-item']} ${styles['active-nav-item']}`}
                 onClick={() => navigate('/create')}
               >
-                {page === 'create' ? (
-                  <BsPlusSquareFill
-                    className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
-                  />
-                ) : (
-                  <FaRegSquarePlus className={styles['nav-icon']} />
-                )}
+                <BsPlusSquareFill
+                  className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
+                />
                 Create
               </li>
+            )}
+
+            {page === 'profile' && (
+              <>
+                {/* <li
+                  className={`${styles['nav-item']}`}
+                  onClick={() => navigate('/create')}
+                >
+                  <FaRegSquarePlus className={`${styles['nav-icon']}`} />
+                  Create
+                </li>
+
+                <li
+                  className={`${styles['nav-item']}`}
+                  onClick={() => navigate('/inbox')}
+                >
+                  <BiMessageDetail className={`${styles['nav-icon']}`} />
+                  Inbox
+                </li> */}
+
+                <li
+                  className={`${styles['nav-item']} ${styles['active-nav-item']}`}
+                  onClick={() => navigate('/profile')}
+                >
+                  <FaCircleUser
+                    className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
+                  />
+                  Profile
+                </li>
+              </>
             )}
           </ul>
 
@@ -633,40 +659,44 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
               />{' '}
             </span>
 
-            <span
-              className={`${styles['search-section-box']} ${
-                !showSearch && page === 'create'
-                  ? styles['active-search-box']
-                  : ''
-              }`}
-              onClick={() => navigate('/create')}
-            >
-              <FaRegSquarePlus
-                className={`${styles['search-section-icon']} ${
-                  !showSearch && page === 'create'
-                    ? styles['active-search-icon']
-                    : ''
-                } `}
-              />{' '}
-            </span>
+            {!showSearch && page === 'create' && (
+              <span
+                className={`${styles['search-section-box']} ${styles['active-search-box']}`}
+                onClick={() => navigate('/create')}
+              >
+                <FaRegSquarePlus
+                  className={`${styles['search-section-icon']} ${styles['active-search-icon']} `}
+                />
+              </span>
+            )}
 
-            {pageType === 'small' && (
+            {page === 'inbox' && (
               <>
                 <span
-                  className={`${styles['search-section-box']} ${
-                    !showSearch && page === 'inbox'
-                      ? styles['active-search-box']
-                      : ''
-                  }`}
+                  className={`${styles['search-section-box']} `}
+                  onClick={() => navigate('/create')}
+                >
+                  <FaRegSquarePlus
+                    className={`${styles['search-section-icon']} `}
+                  />
+                </span>
+
+                <span
+                  className={`${styles['search-section-box']} ${styles['active-search-box']}`}
                   onClick={() => navigate('/inbox')}
                 >
                   <BiMessageDetail
-                    className={`${styles['search-section-icon']} ${
-                      !showSearch && page === 'inbox'
-                        ? styles['active-search-icon']
-                        : ''
-                    }`}
-                  />{' '}
+                    className={`${styles['search-section-icon']} ${styles['active-search-icon']}`}
+                  />
+                </span>
+
+                <span
+                  className={`${styles['search-section-box']} `}
+                  onClick={() => navigate('/profile')}
+                >
+                  <FaRegCircleUser
+                    className={`${styles['search-section-icon']} `}
+                  />
                 </span>
               </>
             )}
