@@ -424,7 +424,7 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
 
             {page === 'profile' && (
               <>
-                {/* <li
+                <li
                   className={`${styles['nav-item']}`}
                   onClick={() => navigate('/create')}
                 >
@@ -438,7 +438,7 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                 >
                   <BiMessageDetail className={`${styles['nav-icon']}`} />
                   Inbox
-                </li> */}
+                </li>
 
                 <li
                   className={`${styles['nav-item']} ${styles['active-nav-item']}`}
