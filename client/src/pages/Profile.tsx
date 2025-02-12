@@ -12,6 +12,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { FaCopy } from 'react-icons/fa6';
 import { Arrow } from '../pages/Home';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
+import Engagements from '../components/Engagements';
 
 const Profile = () => {
   const [category, setcategory] = useState<
@@ -25,6 +26,9 @@ const Profile = () => {
     left: false,
     right: true,
   });
+  const [engagementModal, setEngagementModal] = useState<
+    'followers' | 'following' | 'friends' | 'suggested' | null
+  >(null);
 
   const optionsRef = useRef<HTMLDivElement>(null!);
 
@@ -70,14 +74,28 @@ const Profile = () => {
             </div>
 
             <div className={styles['profile-data']}>
-              <span className={`${styles['data-box']} ${styles['data-box2']}`}>
+              <span
+                className={`${styles['data-box']} ${styles['data-box2']}`}
+                onClick={() => setEngagementModal('followers')}
+              >
                 <span className={styles['data-value']}>2000</span>
                 <span className={styles['data-field']}>Followers</span>
               </span>
 
-              <span className={`${styles['data-box']} ${styles['data-box2']}`}>
+              <span
+                className={`${styles['data-box']} ${styles['data-box2']}`}
+                onClick={() => setEngagementModal('following')}
+              >
                 <span className={styles['data-value']}>105</span>
                 <span className={styles['data-field']}>Following</span>
+              </span>
+
+              <span
+                className={`${styles['data-box']} ${styles['data-box2']}`}
+                onClick={() => setEngagementModal('friends')}
+              >
+                <span className={styles['data-value']}>15</span>
+                <span className={styles['data-field']}>Friends</span>
               </span>
 
               <span className={styles['data-box']}>
@@ -334,7 +352,7 @@ const Profile = () => {
               </svg>
 
               <video className={styles.media}>
-                <source src="../../public/assets/images/content/content24.mp4" />
+                <source src="../../assets/images/content/content24.mp4" />
                 Your browser does not support playing video.
               </video>
 
@@ -462,7 +480,7 @@ const Profile = () => {
               </svg>
 
               <video className={styles.media}>
-                <source src="../../public/assets/images/content/content25.mp4" />
+                <source src="../../assets/images/content/content25.mp4" />
                 Your browser does not support playing video.
               </video>
 
@@ -497,12 +515,11 @@ const Profile = () => {
           <div className={styles['edit-container']}>
             <span className={styles['edit-head']}>
               Share Profile
-              <span className={styles['close-icon-box']}>
-                <IoClose
-                  className={styles['close-icon']}
-                  title="Close"
-                  onClick={() => setShareModal(false)}
-                />
+              <span
+                className={styles['close-icon-box']}
+                onClick={() => setShareModal(false)}
+              >
+                <IoClose className={styles['close-icon']} title="Close" />
               </span>
             </span>
 
@@ -541,7 +558,7 @@ const Profile = () => {
               <div className={styles['share-option']}>
                 <img
                   className={styles['option-img']}
-                  src="../../public/assets/images/media/1_Whatsapp2_colored_svg-128.webp"
+                  src="../../assets/images/media/1_Whatsapp2_colored_svg-128.webp"
                 />
                 <span className={styles['share-icon-text']}>Whatsapp</span>
               </div>
@@ -549,7 +566,7 @@ const Profile = () => {
               <div className={styles['share-option']}>
                 <img
                   className={styles['option-img']}
-                  src="../../public/assets/images/media/x-logo-twitter-new-brand-contained-128.webp"
+                  src="../../assets/images/media/x-logo-twitter-new-brand-contained-128.webp"
                 />
                 <span className={styles['share-icon-text']}>X</span>
               </div>
@@ -557,7 +574,7 @@ const Profile = () => {
               <div className={styles['share-option']}>
                 <img
                   className={styles['option-img']}
-                  src="../../public/assets/images/media/1_Instagram_colored_svg_1-128.webp"
+                  src="../../assets/images/media/1_Instagram_colored_svg_1-128.webp"
                 />
                 <span className={styles['share-icon-text']}>Instagram</span>
               </div>
@@ -565,7 +582,7 @@ const Profile = () => {
               <div className={styles['share-option']}>
                 <img
                   className={styles['option-img']}
-                  src="../../public/assets/images/media/Colored_Facebook3_svg-128.webp"
+                  src="../../assets/images/media/Colored_Facebook3_svg-128.webp"
                 />
                 <span className={styles['share-icon-text']}>Facebook</span>
               </div>
@@ -573,7 +590,7 @@ const Profile = () => {
               <div className={styles['share-option']}>
                 <img
                   className={styles['option-img']}
-                  src="../../public/assets/images/media/telegram-64.webp"
+                  src="../../assets/images/media/telegram-64.webp"
                 />
                 <span className={styles['share-icon-text']}>Telegram</span>
               </div>
@@ -581,7 +598,7 @@ const Profile = () => {
               <div className={styles['share-option']}>
                 <img
                   className={styles['option-img']}
-                  src="../../public/assets/images/media/112-gmail_email_mail-64.webp"
+                  src="../../assets/images/media/112-gmail_email_mail-64.webp"
                 />
                 <span className={styles['share-icon-text']}>Email</span>
               </div>
@@ -589,7 +606,7 @@ const Profile = () => {
               <div className={styles['share-option']}>
                 <img
                   className={styles['option-img']}
-                  src="../../public/assets/images/media/social-facebook-messenger-square2-64.webp"
+                  src="../../assets/images/media/social-facebook-messenger-square2-64.webp"
                 />
                 <span className={styles['share-icon-text']}>Messenger</span>
               </div>
@@ -599,7 +616,7 @@ const Profile = () => {
               >
                 <img
                   className={styles['option-img']}
-                  src="../../public/assets/images/media/1_Snapchat_colored_svg-64.webp"
+                  src="../../assets/images/media/1_Snapchat_colored_svg-64.webp"
                 />
                 <span className={styles['share-icon-text']}>Snapchat</span>
               </div>
@@ -615,6 +632,10 @@ const Profile = () => {
             </div>
           </div>
         </section>
+      )}
+
+      {engagementModal && (
+        <Engagements value={engagementModal} setValue={setEngagementModal} />
       )}
     </>
   );
