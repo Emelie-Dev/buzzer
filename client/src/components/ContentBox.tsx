@@ -19,7 +19,7 @@ type ContentBoxProps = {
   contentType: 'following' | 'home' | 'reels';
 };
 
-type CommentData =
+export type CommentData =
   | {
       media: Content[];
       username: string;
