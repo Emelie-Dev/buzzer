@@ -38,7 +38,7 @@ const dataList: DataItem[] = [
 
 const Reels = () => {
   const { activeVideo, setActiveVideo, contentRef } = useScrollHandler();
-  const [activeIndex, setActiveIndex] = useState<number>(0);
+  const setActiveIndex = useState<number>(0)[1];
   const [scrollType, setScrollType] = useState<'up' | 'down' | null>(null);
 
   const mainRef = useRef<HTMLDivElement>(null!);
@@ -87,8 +87,6 @@ const Reels = () => {
         }
       } else setScrollType(null);
     };
-
-  console.log(activeIndex);
 
   return (
     <>
@@ -173,7 +171,7 @@ const Reels = () => {
         </section>
 
         <section className={styles.aside}>
-          <AsideHeader />
+          <AsideHeader activeVideo={activeVideo} />
 
           <div className={styles['pinned-videos-container']}>
             <span className={styles['pinned-videos-text']}>Pinned reels</span>

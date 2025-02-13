@@ -3,6 +3,7 @@ import { IoClose } from 'react-icons/io5';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import StoryItem from './StoryItem';
 import { StoryContent } from './StoryItem';
+import ReactDOM from 'react-dom';
 
 export interface Story {
   name: string;
@@ -262,6 +263,8 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
 
   const carouselRef = useRef<HTMLDivElement>(null!);
 
+  const target = document.getElementById('stories-portal') || document.body;
+
   useEffect(() => {
     moveToStory(currentIndex, null, null, null, 'initial')();
 
@@ -307,7 +310,7 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
     []
   );
 
-  return (
+  return ReactDOM.createPortal(
     <section className={styles.section}>
       <span
         className={styles['close-icon-box']}
@@ -335,7 +338,8 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
 
         <article className={styles['void-next-story2']}></article>
       </div>
-    </section>
+    </section>,
+    target
   );
 };
 

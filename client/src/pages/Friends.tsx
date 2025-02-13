@@ -432,7 +432,7 @@ const Friends = () => {
         </section>
 
         <section className={styles.aside}>
-          <AsideHeader />
+          <AsideHeader activeVideo={activeVideo} />
 
           <div className={styles['friends-request-container']}>
             <span className={styles['friends-request-text']}>

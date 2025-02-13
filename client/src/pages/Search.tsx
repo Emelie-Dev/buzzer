@@ -7,9 +7,13 @@ import { FaPlay } from 'react-icons/fa6';
 import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
 import { useNavigate } from 'react-router-dom';
+import StoryModal from '../components/StoryModal';
+import SwitchAccount from '../components/SwitchAccount';
 
 const Search = () => {
   const [category, setCategory] = useState<'all' | 'users' | 'contents'>('all');
+  const [viewStory, setViewStory] = useState<boolean>(false);
+  const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -82,8 +86,18 @@ const Search = () => {
                 >
                   View profile
                 </li>
-                <li className={styles['view-item']}>View story</li>
-                <li className={styles['view-item']}>Switch account</li>
+                <li
+                  className={styles['view-item']}
+                  onClick={() => setViewStory(true)}
+                >
+                  View story
+                </li>
+                <li
+                  className={styles['view-item']}
+                  onClick={() => setSwitchAccount(true)}
+                >
+                  Switch account
+                </li>
               </ul>
             </div>
           </div>
@@ -762,6 +776,10 @@ const Search = () => {
           </div>
         )}
       </section>
+
+      {viewStory && <StoryModal setViewStory={setViewStory} itemIndex={0} />}
+
+      {switchAccount && <SwitchAccount setSwitchAccount={setSwitchAccount} />}
     </>
   );
 };

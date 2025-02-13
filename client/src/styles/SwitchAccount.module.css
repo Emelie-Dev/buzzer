@@ -1,0 +1,26 @@
+.section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  min-height: 100vh;
+  z-index: 6;
+  overflow: auto;
+  animation: showModal 0.5s ease-in-out 0s 1 normal both;
+  display: grid;
+  grid-template-columns: auto;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Animations */
+
+@keyframes showModal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

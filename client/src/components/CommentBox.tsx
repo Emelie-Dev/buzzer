@@ -12,7 +12,6 @@ import { IoClose } from 'react-icons/io5';
 import { FaArrowUp } from 'react-icons/fa';
 import Carousel from './Carousel';
 import { ContentContext, LikeContext } from '../Contexts';
-import {} from 'react';
 
 type CommentBoxProps = {
   data:

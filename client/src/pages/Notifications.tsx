@@ -111,7 +111,7 @@ const Notifications = () => {
         </section>
 
         <section className={styles.aside}>
-          <AsideHeader />
+          <AsideHeader activeVideo={null} />
 
           <div className={styles['profile-views-container']}>
             <span className={styles['profile-views-text']}>Profile Views</span>

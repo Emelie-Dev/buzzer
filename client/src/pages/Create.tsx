@@ -402,7 +402,7 @@ const Create = () => {
         </section>
 
         <section className={styles.aside}>
-          <AsideHeader />
+          <AsideHeader activeVideo={null} />
 
           <div className={styles['tips-container']}>
             <span className={styles['tips-text']}>Upload Guidelines</span>

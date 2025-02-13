@@ -308,7 +308,7 @@ const Home = () => {
         </section>
 
         <section className={styles.aside}>
-          <AsideHeader />
+          <AsideHeader activeVideo={activeVideo} />
 
           <div className={styles['suggested-container']}>
             <span className={styles['suggested-text']}>Suggested for you</span>
