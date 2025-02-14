@@ -9,9 +9,143 @@
   overflow: auto;
   animation: showModal 0.5s ease-in-out 0s 1 normal both;
   display: grid;
-  grid-template-columns: auto;
+  grid-template-columns: 35%;
   justify-content: center;
-  padding: 1rem;
+  align-content: center;
+}
+
+.container {
+  background: white;
+  border-radius: 5px;
+  padding: 1.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.head {
+  font-family: appFont;
+  font-size: 1.2rem;
+  margin: auto;
+}
+
+.close-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0.2rem;
+}
+
+.close-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.close-icon-box:hover {
+  color: white;
+  background: var(--app-theme-color);
+}
+
+.accounts-container {
+  margin-top: 2rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.accounts {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+  padding: 0.5rem;
+}
+
+.accounts-img {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.names-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 1rem;
+  overflow: hidden;
+  margin-right: 1rem;
+}
+
+.user-name {
+  font-family: appFontMedium;
+  font-size: 1.05rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.user-handle {
+  color: gray;
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+  margin-top: 0.2rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.check {
+  margin-left: auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: var(--app-theme-color);
+  flex-shrink: 0;
+}
+
+.accounts:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.add-account-box {
+  display: flex;
+  align-items: center;
+  margin: 0.5rem 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.add-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem;
+  border: 2px solid var(--app-theme-color);
+  border-radius: 50%;
+}
+
+.add-icon {
+  width: 2rem;
+  height: 2rem;
+  fill: var(--app-theme-color);
+}
+
+.add-text {
+  font-family: appFontMedium;
+  margin-left: 1rem;
+  font-size: 1.1rem;
+}
+
+.add-account-box:hover {
+  opacity: 0.8;
 }
 
 /* Animations */
