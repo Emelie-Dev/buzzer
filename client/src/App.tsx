@@ -10,6 +10,7 @@ import Notifications from './pages/Notifications';
 import Inbox from './pages/Inbox';
 import Create from './pages/Create';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/create" element={<Create />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </>
   );

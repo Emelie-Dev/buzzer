@@ -1,0 +1,20 @@
+.main {
+  overflow: hidden;
+  margin-left: 98px;
+  margin-left: 18%;
+  display: grid;
+  grid-template-columns: 30% 70%;
+}
+
+.left-section {
+  border-right: 1px solid rgb(128, 128, 128, 0.3);
+  height: 100vh;
+  overflow: auto;
+  padding: 2rem 1.5rem;
+}
+
+.left-section-head {
+  margin: 0;
+  font-family: appFont;
+  font-size: 1.5rem;
+}

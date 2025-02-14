@@ -1,15 +1,21 @@
-.nav {
+.nav-section {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
   border-right: 1px solid rgb(128, 128, 128, 0.3);
   width: 18%;
+  padding: 0;
+  margin: 0;
+}
+
+.nav {
   margin: 0;
   padding: 1rem;
   display: flex;
   flex-direction: column;
   overflow: auto;
+  height: 100%;
 }
 
 .hide-nav {
@@ -73,7 +79,10 @@
 .more-div {
   margin-top: auto;
   margin-bottom: 1rem;
-  position: relative;
+}
+
+.search-more-div {
+  padding-top: 1rem;
 }
 
 .more-icon-box {
@@ -137,7 +146,7 @@
 
 .more-list {
   position: absolute;
-  bottom: 4rem;
+  bottom: 6rem;
   z-index: 2;
   background: white;
   box-shadow: 1px 1px 10px -5px black;
@@ -207,6 +216,7 @@
   align-items: center;
   padding: 2rem 0.5rem 0;
   border-right: 1px solid rgb(128, 128, 128, 0.3);
+  overflow: auto;
 }
 
 .app-section-box {
