@@ -26,4 +26,21 @@ Pages =>
   - Fix active video when exiting modals from transparent background ✔
   - Remeber to revoke object urls after file upload.
   - Pause active video for all modals.
+  - Create analytics page
+
+
+
+
+
+General - display, chat , privacy.
+
+Account- profile, password, delete or deactivate , 
+Security - security alerts, manage devices, 2-step
+
+Content- notifications, analytics, time management, interactions.
+
+
+About- terms and policies, report a problem
+
+Authentication- switch account, logout
 

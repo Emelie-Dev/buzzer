@@ -423,7 +423,7 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                 </li>
               )}
 
-              {page === 'profile' && (
+              {(page === 'profile' || page === 'settings') && (
                 <>
                   <li
                     className={`${styles['nav-item']}`}
@@ -442,12 +442,18 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                   </li>
 
                   <li
-                    className={`${styles['nav-item']} ${styles['active-nav-item']}`}
+                    className={`${styles['nav-item']} ${
+                      page === 'profile' ? styles['active-nav-item'] : ''
+                    }`}
                     onClick={() => navigate('/profile')}
                   >
-                    <FaCircleUser
-                      className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
-                    />
+                    {page === 'profile' ? (
+                      <FaCircleUser
+                        className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
+                      />
+                    ) : (
+                      <FaRegCircleUser className={styles['nav-icon']} />
+                    )}
                     Profile
                   </li>
                 </>

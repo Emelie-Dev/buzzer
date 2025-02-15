@@ -10,11 +10,52 @@
   border-right: 1px solid rgb(128, 128, 128, 0.3);
   height: 100vh;
   overflow: auto;
-  padding: 2rem 1.5rem;
+  padding: 2rem 1rem;
 }
 
 .left-section-head {
-  margin: 0;
+  margin: 0 0 1.5rem;
   font-family: appFont;
   font-size: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.category {
+  margin-bottom: 0.5rem;
+}
+
+.category-head {
+  display: flex;
+  font-family: appFontMedium;
+  font-size: 1.1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.category-list {
+  margin: 0;
+  padding: 0 0.5rem;
+  list-style-type: none;
+}
+
+.category-item {
+  font-family: appFont;
+  font-size: 0.95rem;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.category-item:hover,
+.general-head:hover {
+  color: var(--app-theme-color);
+}
+
+.current-category {
+  width: auto;
+  color: var(--app-theme-color);
+  background: rgb(128, 128, 128, 0.2);
 }
