@@ -27,6 +27,7 @@ Pages =>
   - Remeber to revoke object urls after file upload.
   - Pause active video for all modals.
   - Create analytics page
+  - Show email in proile page
 
 
 

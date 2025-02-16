@@ -58,4 +58,11 @@
   width: auto;
   color: var(--app-theme-color);
   background: rgb(128, 128, 128, 0.2);
+  font-family: appFontMedium;
+}
+
+.right-section {
+  height: 100vh;
+  padding: 2rem 1.5rem;
+  overflow: auto;
 }

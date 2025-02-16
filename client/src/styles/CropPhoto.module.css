@@ -1,0 +1,90 @@
+.section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  height: 100%;
+  z-index: 6;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: auto;
+  justify-content: center;
+  align-content: center;
+  animation: showModal 0.5s ease-in-out 0s 1 normal both;
+}
+
+.container {
+  background: white;
+  border-radius: 5px;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.head {
+  font-family: appFont;
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.close-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0.2rem;
+  margin-left: 1rem;
+}
+
+.close-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.close-icon-box:hover {
+  color: white;
+  background: var(--app-theme-color);
+}
+
+.btn-div {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.done-btn {
+  background: var(--app-theme-color);
+  outline: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  font-family: appFont;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.done-btn:hover {
+  opacity: 0.8;
+}
+
+.avatar-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  width: 500px;
+}

@@ -105,7 +105,7 @@ const Profile = () => {
     right: true,
   });
   const [engagementModal, setEngagementModal] = useState<
-    'followers' | 'following' | 'friends' | 'suggested' | null
+    'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
   >(null);
   const [viewComment, setViewComment] = useState<boolean>(false);
   const [activeVideo, setActiveVideo] = useState<HTMLVideoElement | null>(null);

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Settings.module.css';
+import GeneralSettings from '../components/GeneralSettings';
+import AccountSettings from '../components/AccountSettings';
 
 const Settings = () => {
-  const category = useState<string>('general')[0];
+  const [category, setCategory] = useState<string>('general');
 
   return (
     <>
@@ -19,6 +21,7 @@ const Settings = () => {
                 className={`${styles['category-head']} ${
                   styles['general-head']
                 } ${category === 'general' ? styles['current-category'] : ''}`}
+                onClick={() => setCategory('general')}
               >
                 General
               </span>
@@ -28,7 +31,14 @@ const Settings = () => {
               <span className={styles['category-head']}>Account</span>
 
               <ul className={styles['category-list']}>
-                <li className={styles['category-item']}>Edit profile</li>
+                <li
+                  className={`${styles['category-item']} ${
+                    category === 'profile' ? styles['current-category'] : ''
+                  }`}
+                  onClick={() => setCategory('profile')}
+                >
+                  Edit profile
+                </li>
                 <li className={styles['category-item']}>Change password</li>
                 <li className={styles['category-item']}>Deactivate account </li>
                 <li className={styles['category-item']}>Delete account </li>
@@ -73,6 +83,11 @@ const Settings = () => {
               </ul>
             </div>
           </div>
+        </section>
+
+        <section className={styles['right-section']}>
+          {category === 'general' && <GeneralSettings />}
+          {category === 'profile' && <AccountSettings category={category} />}
         </section>
       </section>
     </>
