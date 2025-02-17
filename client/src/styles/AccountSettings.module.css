@@ -3,7 +3,7 @@
 }
 
 .section-head {
-  margin: 0 0 1rem;
+  margin: 0 0 1.5rem;
   padding: 0;
   font-family: appFont;
   font-size: 1.2rem;
@@ -177,4 +177,201 @@
 
 .file-input {
   display: none;
+}
+
+.criteria-container {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.criteria-box {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.criteria-label {
+  font-size: 0.95rem;
+  font-family: appFont;
+}
+
+.criteria-checkbox {
+  flex-shrink: 0;
+  outline: none;
+  margin-right: 0.5rem;
+  accent-color: var(--app-theme-color);
+  pointer-events: none;
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.input-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  border-radius: 8px;
+  padding: 0.7rem;
+  width: 80%;
+}
+
+.password {
+  outline: none;
+  border: none;
+  background: none;
+  font-family: appFont;
+  font-size: 1rem;
+  width: 100%;
+  margin-right: 0.7rem;
+}
+
+.input-box:focus-within {
+  border: 1px solid var(--app-theme-color);
+}
+
+.eye-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: var(--app-theme-color);
+  margin-left: auto;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.verification-text {
+  display: block;
+  font-family: appFont;
+  font-size: 0.95rem;
+}
+
+.verification-box {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2rem;
+}
+
+.resend-box {
+  display: flex;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.resend-text {
+  font-family: appFontMedium;
+  color: var(--app-theme-color);
+  cursor: pointer;
+}
+
+.resend-text:hover {
+  text-decoration: underline;
+}
+
+.resend-time {
+  font-family: appFont;
+  color: gray;
+  font-weight: 600;
+  margin-left: 3rem;
+  font-size: 0.9rem;
+}
+
+.verification-input {
+  width: 18rem;
+  outline: none;
+  border: none;
+  font-family: appFontMedium;
+  font-size: 1.1rem;
+  letter-spacing: 2rem;
+  padding: 0 0.5rem;
+  border-bottom: 1px solid var(--app-theme-color);
+  border-radius: 5px;
+}
+
+.info-div {
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem;
+}
+
+.info-head {
+  font-family: appFontMedium;
+  font-size: 1.1rem;
+}
+
+.info-list {
+  margin: 1rem 0 0;
+}
+
+.info-item {
+  font-family: appFont;
+  margin-bottom: 0.5rem;
+}
+
+.disable-password-box {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2rem;
+}
+
+.disable-password-text {
+  font-family: appFontMedium;
+  margin-bottom: 1rem;
+}
+
+.disable-btn-div {
+  display: flex;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.disable-btn {
+  background: var(--app-theme-color);
+  outline: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  font-family: appFont;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.disable-btn:hover,
+.delete-btn:hover,
+.cancel-btn:hover {
+  opacity: 0.8;
+}
+
+.disable-category {
+  padding: 0 1rem;
+}
+
+.account-btn-div {
+  display: flex;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.cancel-btn {
+  background: var(--app-theme-color);
+  outline: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  font-family: appFont;
+  border-radius: 5px;
+  font-size: 1rem;
+  margin-right: 1.5rem;
+}
+
+.delete-btn {
+  background: red;
+  outline: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  font-family: appFont;
+  border-radius: 5px;
+  font-size: 1rem;
 }

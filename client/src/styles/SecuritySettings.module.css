@@ -1,0 +1,153 @@
+.section {
+  width: 100%;
+}
+
+.section-head {
+  margin: 0 0 1.5rem;
+  padding: 0;
+  font-family: appFont;
+  font-size: 1.2rem;
+}
+
+.alerts-container {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0.5rem;
+}
+
+.alert {
+  display: flex;
+  flex-direction: column;
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.3rem;
+  word-wrap: break-word;
+}
+
+.info {
+  border-left: 5px solid #28a745;
+  background: #e3fcef;
+}
+
+.warning {
+  background: #fff4e5;
+  border-left: 5px solid #ff9800;
+}
+
+.critical {
+  background: #fdecea;
+  border-left: 5px solid #d32f2f;
+}
+
+.alert-message {
+  font-family: appFont;
+  font-size: 0.95rem;
+}
+
+.btn-div {
+  display: flex;
+  align-items: center;
+  margin-top: 0.7rem;
+}
+
+.btn {
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  color: white;
+  border-radius: 5px;
+  font-family: appFont;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+.time {
+  font-family: appFontMedium;
+  color: gray;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+.current-device {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0.5rem;
+}
+
+.current-device-text {
+  font-family: appFontMedium;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+}
+
+.device {
+  display: flex;
+  align-items: flex-start;
+  width: 75%;
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.device-icon {
+  fill: gray;
+  width: 1.2rem;
+  height: 1.2rem;
+  flex-shrink: 0;
+  transform: translateY(4px);
+}
+
+.device-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin: 0 1rem;
+  overflow: hidden;
+}
+
+.device-name {
+  font-family: appFontMedium;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.login-method {
+  font-family: appFont;
+  margin-top: 0.2rem;
+}
+
+.login-time {
+  font-family: appFont;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.remove-icon {
+  fill: gray;
+  margin-left: auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.remove-icon:hover {
+  fill: var(--app-theme-color);
+}
+
+.other-devices {
+  margin-top: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.devices-container {
+  display: flex;
+  flex-direction: column;
+}

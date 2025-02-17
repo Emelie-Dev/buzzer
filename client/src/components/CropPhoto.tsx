@@ -42,7 +42,15 @@ const CropPhoto = ({ src, setCropPhoto }: CropPhotoProps) => {
         </div>
 
         <div className={styles['btn-div']}>
-          <button className={styles['done-btn']}>Done</button>
+          <button
+            className={styles['done-btn']}
+            onClick={() => {
+              URL.revokeObjectURL(src);
+              setCropPhoto({ value: false, src: '' });
+            }}
+          >
+            Done
+          </button>
         </div>
       </div>
     </section>
