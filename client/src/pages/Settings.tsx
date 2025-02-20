@@ -5,15 +5,19 @@ import GeneralSettings from '../components/GeneralSettings';
 import AccountSettings from '../components/AccountSettings';
 import SecuritySettings from '../components/SecuritySettings';
 import ContentSettings from '../components/ContentSettings';
+import SupportSettings from '../components/SupportSettings';
+import SwitchAccount from '../components/SwitchAccount';
 
 const Settings = () => {
   const [category, setCategory] = useState<string>('general');
+  const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const sectionRef = useRef<HTMLDivElement>(null!);
 
   const accountCategories = ['profile', 'password', 'deactivate', 'delete'];
   const settingCategories = ['alerts', 'devices'];
-  const contentCategories = ['notifications'];
+  const contentCategories = ['notifications', 'management'];
+  const supportCategories = ['support', 'info'];
 
   useEffect(() => {
     if (sectionRef.current) sectionRef.current.scrollTop = 0;
@@ -116,8 +120,14 @@ const Settings = () => {
                 >
                   Notifications
                 </li>
-                <li className={styles['category-item']}>Time management</li>
-                <li className={styles['category-item']}>Interactions</li>
+                <li
+                  className={`${styles['category-item']} ${
+                    category === 'management' ? styles['current-category'] : ''
+                  }`}
+                  onClick={() => setCategory('management')}
+                >
+                  Time management
+                </li>
               </ul>
             </div>
 
@@ -125,8 +135,22 @@ const Settings = () => {
               <span className={styles['category-head']}>Info & Support</span>
 
               <ul className={styles['category-list']}>
-                <li className={styles['category-item']}>Terms and policies</li>
-                <li className={styles['category-item']}>Report a problem</li>
+                <li
+                  className={`${styles['category-item']} ${
+                    category === 'info' ? styles['current-category'] : ''
+                  }`}
+                  onClick={() => setCategory('info')}
+                >
+                  Terms and policies
+                </li>
+                <li
+                  className={`${styles['category-item']} ${
+                    category === 'support' ? styles['current-category'] : ''
+                  }`}
+                  onClick={() => setCategory('support')}
+                >
+                  Report a problem
+                </li>
               </ul>
             </div>
 
@@ -134,7 +158,12 @@ const Settings = () => {
               <span className={styles['category-head']}>Authentication</span>
 
               <ul className={styles['category-list']}>
-                <li className={styles['category-item']}>Switch account</li>
+                <li
+                  className={styles['category-item']}
+                  onClick={() => setSwitchAccount(true)}
+                >
+                  Switch account
+                </li>
                 <li className={styles['category-item']}>Log out</li>
               </ul>
             </div>
@@ -155,8 +184,14 @@ const Settings = () => {
           {contentCategories.includes(category) && (
             <ContentSettings category={category} />
           )}
+
+          {supportCategories.includes(category) && (
+            <SupportSettings category={category} />
+          )}
         </section>
       </section>
+
+      {switchAccount && <SwitchAccount setSwitchAccount={setSwitchAccount} />}
     </>
   );
 };
