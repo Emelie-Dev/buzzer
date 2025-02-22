@@ -15,6 +15,8 @@ import {
   Legend,
   BarElement,
 } from 'chart.js';
+import { monthLabels } from '../Utilities';
+import crosshairPlugin from 'chartjs-plugin-crosshair';
 
 type ContentSettingsProps = {
   category: string;
@@ -29,7 +31,8 @@ ChartJS.register(
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  crosshairPlugin
 );
 
 const ContentSettings = ({ category }: ContentSettingsProps) => {
@@ -230,21 +233,6 @@ const TimeManagement = () => {
     },
   ];
 
-  const monthLabels = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
   const timeSpent = [30, 240, 270, 130, 480, 420, 60];
 
   const handleDays = (index: number) => () => {
@@ -357,6 +345,21 @@ const TimeManagement = () => {
     plugins: {
       legend: {
         display: false,
+      },
+      crosshair: {
+        line: {
+          color: 'transparent', // Crosshair line color
+          width: 0, // Crosshair line width
+        },
+        sync: {
+          enabled: false, // Disable syncing with other charts
+        },
+        zoom: {
+          enabled: false, // Disable zooming with the crosshair
+        },
+        snap: {
+          enabled: true, // Enable snapping to data points
+        },
       },
     },
     onHover: (event: ChartEvent, chartElement: ActiveElement[]) => {

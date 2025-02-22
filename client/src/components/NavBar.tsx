@@ -10,7 +10,7 @@ import {
   IoSearchSharp,
 } from 'react-icons/io5';
 import { IoMdNotificationsOutline } from 'react-icons/io';
-import { BiMenuAltLeft, BiBookmark } from 'react-icons/bi';
+import { BiMenuAltLeft } from 'react-icons/bi';
 import { MdOutlineHistory, MdOutlineLightMode } from 'react-icons/md';
 import { FiLogOut } from 'react-icons/fi';
 import { useEffect, useRef, useState } from 'react';
@@ -23,6 +23,7 @@ import { BsPlusSquareFill } from 'react-icons/bs';
 import { IoNotificationsOutline } from 'react-icons/io5';
 import { FaCircleUser } from 'react-icons/fa6';
 import { FaRegCircleUser } from 'react-icons/fa6';
+import { TbBrandGoogleAnalytics } from 'react-icons/tb';
 
 type NavBarProps = {
   page: string;
@@ -423,6 +424,18 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                 </li>
               )}
 
+              {page === 'analytics' && (
+                <li
+                  className={`${styles['nav-item']} ${styles['active-nav-item']}`}
+                  onClick={() => navigate('/analytics')}
+                >
+                  <TbBrandGoogleAnalytics
+                    className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
+                  />
+                  Analytics
+                </li>
+              )}
+
               {(page === 'profile' || page === 'settings') && (
                 <>
                   <li
@@ -470,9 +483,14 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                     <IoSettingsOutline className={styles['more-item-icon']} />
                     Settings
                   </li>
-                  <li className={styles['more-item']}>
-                    <BiBookmark className={styles['more-item-icon']} />
-                    Saved
+                  <li
+                    className={styles['more-item']}
+                    onClick={() => navigate('/analytics')}
+                  >
+                    <TbBrandGoogleAnalytics
+                      className={styles['more-item-icon']}
+                    />
+                    Analytics
                   </li>
                   <li className={styles['more-item']}>
                     <MdOutlineHistory className={styles['more-item-icon']} />
@@ -732,9 +750,14 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                     <IoSettingsOutline className={styles['more-item-icon']} />
                     Settings
                   </li>
-                  <li className={styles['more-item']}>
-                    <BiBookmark className={styles['more-item-icon']} />
-                    Saved
+                  <li
+                    className={styles['more-item']}
+                    onClick={() => navigate('/analytics')}
+                  >
+                    <TbBrandGoogleAnalytics
+                      className={styles['more-item-icon']}
+                    />
+                    Analytics
                   </li>
                   <li className={styles['more-item']}>
                     <MdOutlineHistory className={styles['more-item-icon']} />

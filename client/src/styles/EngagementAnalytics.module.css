@@ -1,0 +1,179 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2rem;
+}
+
+.main-header {
+  display: grid;
+  grid-template-columns: 20% 20% 20% 20% 20%;
+  border-left: 1px solid rgba(128, 128, 128, 0.3);
+  border-right: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 5px;
+  overflow: auto;
+  width: 100%;
+}
+
+.category {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  cursor: pointer;
+  border-right: 1px solid rgba(128, 128, 128, 0.3);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 5px 5px 0 0;
+  border-top: 3px solid transparent;
+}
+
+.category:first-child {
+  border-bottom-left-radius: 5px;
+}
+
+.category:last-child {
+  border-bottom-right-radius: 5px;
+  border-right: none;
+}
+
+.category:hover {
+  border-top: 3px solid rgba(128, 128, 128, 0.3);
+}
+
+.current-category {
+  border-top: 3px solid var(--app-theme-color) !important;
+}
+
+.category-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-name {
+  font-family: appFontMedium;
+  white-space: nowrap;
+}
+
+.category-value {
+  font-family: appFontSemi;
+  font-size: 1.3rem;
+  margin-top: 0.3rem;
+}
+
+.category-percentage {
+  color: green;
+  font-family: appFontMedium;
+  margin-top: 0.3rem;
+  font-size: 0.95rem;
+}
+
+.category-percentage2 {
+  color: red;
+  font-family: appFontMedium;
+  margin-top: 0.3rem;
+  font-size: 0.95rem;
+}
+
+.category-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  fill: green;
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
+.category-icon2 {
+  width: 2.5rem;
+  height: 2.5rem;
+  fill: red;
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
+.period-box {
+  margin-top: 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.select-box {
+  display: flex;
+  align-items: center;
+}
+
+.period-text {
+  font-family: appFontMedium;
+}
+
+.period-select {
+  outline: none;
+  border: 2px solid var(--app-theme-color);
+  padding: 0.2rem;
+  font-family: appFontMedium;
+  border-radius: 5px;
+  margin-left: 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.custom-period-div {
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+.custom-period-box {
+  display: flex;
+  align-items: center;
+}
+
+.custom-period-box:nth-child(2) {
+  margin-left: 2rem;
+}
+
+.period-input {
+  outline: none;
+  border: 2px solid var(--app-theme-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.period-btn {
+  outline: none;
+  border: none;
+  background: var(--app-theme-color);
+  color: white;
+  border-radius: 5px;
+  font-family: appFont;
+  cursor: pointer;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.9rem;
+  margin-left: 3rem;
+}
+
+.period-btn:hover {
+  opacity: 0.8;
+}
+
+.custom-date-box {
+  display: flex;
+  align-items: center;
+  margin-left: 1.5rem;
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+}
+
+.disable-btn {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.graph-box {
+  display: flex;
+  align-items: center;
+  margin: 2rem 0;
+  padding: 0 1rem;
+}

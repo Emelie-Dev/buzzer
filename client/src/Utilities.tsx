@@ -63,6 +63,21 @@ const filters = [
   { name: 'Monochrome Bliss', filter: 'grayscale(1) brightness(1.1)' },
 ];
 
+export const monthLabels = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
 const getAdjustmentsValue = (currentFileData: FileData) => {
   const adjustments = { ...currentFileData.adjustments };
 

@@ -11,6 +11,7 @@ import Inbox from './pages/Inbox';
 import Create from './pages/Create';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import Analytics from './pages/Analytics';
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
         <Route path="/create" element={<Create />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/analytics" element={<Analytics />} />
       </Routes>
     </>
   );
