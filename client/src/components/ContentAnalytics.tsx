@@ -1,5 +1,5 @@
 const ContentAnalytics = () => {
-  return <section>ContentAnalytics</section>;
+  return <section>ContentAnalyticsmm</section>;
 };
 
 export default ContentAnalytics;
