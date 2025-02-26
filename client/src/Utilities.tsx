@@ -164,3 +164,11 @@ export const getDurationText = (duration: number): string => {
     return `1:00:00`;
   }
 };
+
+export const getDate = (value: string) => {
+  const date = new Date(value);
+
+  return `${
+    monthLabels[date.getMonth()]
+  } ${date.getDate()}, ${date.getFullYear()}`;
+};

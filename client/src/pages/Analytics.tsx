@@ -8,6 +8,7 @@ import StoryModal from '../components/StoryModal';
 import SwitchAccount from '../components/SwitchAccount';
 import EngagementAnalytics from '../components/EngagementAnalytics';
 import ContentAnalytics from '../components/ContentAnalytics';
+import FollowersAnalytics from '../components/FollowersAnalytics';
 
 const Settings = () => {
   const [category, setCategory] = useState<
@@ -107,7 +108,7 @@ const Settings = () => {
         ) : category === 'Content' ? (
           <ContentAnalytics />
         ) : (
-          ''
+          <FollowersAnalytics />
         )}
       </section>
 
