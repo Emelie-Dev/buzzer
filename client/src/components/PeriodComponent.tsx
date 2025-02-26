@@ -67,7 +67,7 @@ export const PeriodComponent = () => {
               setPeriod(e.target.value);
             }}
           >
-            <option value={'all'}>All</option>
+            <option value={'all'}>All Time</option>
             <option value={'1y'}>1y</option>
             <option value={'1m'}>1m</option>
             <option value={'1w'}>1w</option>

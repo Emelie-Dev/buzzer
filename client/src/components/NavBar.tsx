@@ -436,6 +436,18 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                 </li>
               )}
 
+              {page === 'history' && (
+                <li
+                  className={`${styles['nav-item']} ${styles['active-nav-item']}`}
+                  onClick={() => navigate('/analytics')}
+                >
+                  <MdOutlineHistory
+                    className={`${styles['nav-icon']} ${styles['active-nav-icon']}`}
+                  />
+                  History
+                </li>
+              )}
+
               {(page === 'profile' || page === 'settings') && (
                 <>
                   <li
@@ -492,13 +504,23 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                     />
                     Analytics
                   </li>
-                  <li className={styles['more-item']}>
+                  <li
+                    className={styles['more-item']}
+                    onClick={() => navigate('/history')}
+                  >
                     <MdOutlineHistory className={styles['more-item-icon']} />
                     History
                   </li>
-                  <li className={styles['more-item']}>
+                  <li
+                    className={`${styles['more-item']} ${styles['apperance-item']}`}
+                  >
                     <MdOutlineLightMode className={styles['more-item-icon']} />{' '}
                     Change appearance
+                    <select className={styles['appearance-select']}>
+                      <option>Light</option>
+                      <option>Dark</option>
+                      <option>Device default</option>
+                    </select>
                   </li>
                   <hr className={styles['logout-line']} />
                   <li className={styles['more-item']}>
@@ -759,13 +781,23 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                     />
                     Analytics
                   </li>
-                  <li className={styles['more-item']}>
+                  <li
+                    className={styles['more-item']}
+                    onClick={() => navigate('/history')}
+                  >
                     <MdOutlineHistory className={styles['more-item-icon']} />
                     History
                   </li>
-                  <li className={styles['more-item']}>
+                  <li
+                    className={`${styles['more-item']}  ${styles['apperance-item']}`}
+                  >
                     <MdOutlineLightMode className={styles['more-item-icon']} />{' '}
                     Change appearance
+                    <select className={styles['appearance-select']}>
+                      <option>Light</option>
+                      <option>Dark</option>
+                      <option>Device default</option>
+                    </select>
                   </li>
                   <hr className={styles['logout-line']} />
                   <li className={styles['more-item']}>

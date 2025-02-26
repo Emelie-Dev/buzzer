@@ -40,7 +40,7 @@ const ContentAnalytics = () => {
                 <div className={styles['content-box']}>
                   <video className={styles.media}>
                     <source
-                      src={'../../public/assets/images/content/content25.mp4'}
+                      src={'../../assets/images/content/content25.mp4'}
                       type="video/mp4"
                     />
                     Your browser does not support playing video.

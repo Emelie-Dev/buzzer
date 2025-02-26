@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Settings.module.css';
 import GeneralSettings from '../components/GeneralSettings';
@@ -7,9 +7,13 @@ import SecuritySettings from '../components/SecuritySettings';
 import ContentSettings from '../components/ContentSettings';
 import SupportSettings from '../components/SupportSettings';
 import SwitchAccount from '../components/SwitchAccount';
+import { GeneralContext } from '../Contexts';
 
 const Settings = () => {
-  const [category, setCategory] = useState<string>('general');
+  const { settingsCategory } = useContext(GeneralContext);
+  const [category, setCategory] = useState<string>(
+    settingsCategory.length > 0 ? settingsCategory : 'general'
+  );
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const sectionRef = useRef<HTMLDivElement>(null!);

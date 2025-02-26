@@ -4,7 +4,7 @@ import { RiGitRepositoryPrivateLine } from 'react-icons/ri';
 import { HiOutlineBookmark } from 'react-icons/hi';
 import { FiHeart } from 'react-icons/fi';
 import { MdOutlineGridOn } from 'react-icons/md';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { FaPlay } from 'react-icons/fa6';
 import { FaHeart, FaCommentDots } from 'react-icons/fa';
 import { IoClose } from 'react-icons/io5';
@@ -15,9 +15,10 @@ import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import Engagements from '../components/Engagements';
 import CommentBox from '../components/CommentBox';
 import { CommentData } from '../components/ContentBox';
-import { ContentContext, LikeContext } from '../Contexts';
+import { ContentContext, GeneralContext, LikeContext } from '../Contexts';
 import { Content } from '../components/CarouselItem';
 import ShareMedia from '../components/ShareMedia';
+import { useNavigate } from 'react-router-dom';
 
 const data: Content[] = [
   {
@@ -111,6 +112,8 @@ const Profile = () => {
   const [activeVideo, setActiveVideo] = useState<HTMLVideoElement | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(null!);
 
+  const { setSettingsCategory } = useContext(GeneralContext);
+
   const setShowMenu = useState<boolean>(false)[1];
   const setHideMenu = useState<boolean>(true)[1];
   const isFollowing = useState<boolean>(false)[0];
@@ -123,6 +126,8 @@ const Profile = () => {
   const reelMenuRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement[]>([]);
   const inputRef = useRef<HTMLInputElement>(null!);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (like) {
@@ -173,7 +178,15 @@ const Profile = () => {
             <span className={styles['user-handle']}>josephlouis_100</span>
 
             <div className={styles['btn-div']}>
-              <button className={styles['edit-btn']}>Edit Profile</button>
+              <button
+                className={styles['edit-btn']}
+                onClick={() => {
+                  setSettingsCategory('profile');
+                  navigate('/settings');
+                }}
+              >
+                Edit Profile
+              </button>
               <button
                 className={styles['share-btn']}
                 onClick={() => setShareModal(true)}
