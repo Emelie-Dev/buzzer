@@ -59,7 +59,7 @@
 .category-container {
   width: 100%;
   display: grid;
-  grid-template-columns: 100% 100%;
+  grid-template-columns: 100% 100% 100%;
   align-items: start;
   transition: transform 0.25s ease;
   scroll-behavior: smooth;

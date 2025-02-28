@@ -10,7 +10,7 @@ import SwitchAccount from '../components/SwitchAccount';
 import { GeneralContext } from '../Contexts';
 
 const Settings = () => {
-  const { settingsCategory } = useContext(GeneralContext);
+  const { settingsCategory, setSettingsCategory } = useContext(GeneralContext);
   const [category, setCategory] = useState<string>(
     settingsCategory.length > 0 ? settingsCategory : 'general'
   );
@@ -22,6 +22,12 @@ const Settings = () => {
   const settingCategories = ['alerts', 'devices'];
   const contentCategories = ['notifications', 'management'];
   const supportCategories = ['support', 'info'];
+
+  useEffect(() => {
+    return () => {
+      setSettingsCategory('general');
+    };
+  }, []);
 
   useEffect(() => {
     if (sectionRef.current) sectionRef.current.scrollTop = 0;

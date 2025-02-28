@@ -18,11 +18,19 @@ import { useState } from 'react';
 
 const App = () => {
   const [settingsCategory, setSettingsCategory] = useState('');
+  const [createCategory, setCreateCategory] = useState<
+    'reel' | 'content' | 'story'
+  >('content');
 
   return (
     <>
       <GeneralContext.Provider
-        value={{ settingsCategory, setSettingsCategory }}
+        value={{
+          settingsCategory,
+          setSettingsCategory,
+          createCategory,
+          setCreateCategory,
+        }}
       >
         <Routes>
           <Route path="/auth" element={<Auth />} />

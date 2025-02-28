@@ -266,6 +266,10 @@
   justify-content: space-between;
 }
 
+.story-imgs-div {
+  margin: auto;
+}
+
 .imgs::-webkit-scrollbar {
   display: none;
 }
@@ -568,4 +572,80 @@
   user-select: none;
   width: 500px;
   height: 500px;
+}
+
+.sound-div {
+  margin: 0;
+  padding: 1.5rem;
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.sound-box {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.sound-box:hover,
+.active-sound {
+  color: var(--app-theme-color);
+}
+
+.sound-name {
+  font-family: appFontMedium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1rem;
+}
+
+.sound-duration {
+  font-family: appFont;
+  font-size: 0.95rem;
+  margin-top: 0.1rem;
+}
+
+.sound-btn-div {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.sound-btn {
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  cursor: pointer;
+  color: white;
+  font-family: appFont;
+  font-size: 0.9rem;
+  padding: 0.7rem;
+  border-radius: 5px;
+  transition: opacity 0.2s;
+}
+
+.remove-btn {
+  border: none;
+  outline: none;
+  background: red;
+  cursor: pointer;
+  color: white;
+  font-family: appFont;
+  font-size: 0.9rem;
+  padding: 0.7rem;
+  border-radius: 5px;
+  transition: opacity 0.2s;
+  margin-left: 1rem;
+}
+
+.sound-btn:hover,
+.remove-btn:hover {
+  opacity: 0.9;
+}
+
+.hide-sound {
+  display: none;
 }

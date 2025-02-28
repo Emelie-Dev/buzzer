@@ -55,4 +55,8 @@ export const UploadReelContext = createContext<{
 export const GeneralContext = createContext<{
   settingsCategory: string;
   setSettingsCategory: React.Dispatch<React.SetStateAction<string>>;
+  createCategory: 'reel' | 'content' | 'story';
+  setCreateCategory: React.Dispatch<
+    React.SetStateAction<'reel' | 'content' | 'story'>
+  >;
 }>(null!);
