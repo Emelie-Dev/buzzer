@@ -429,15 +429,23 @@
   fill: var(--app-theme-color);
 }
 
-.mark-box {
+.media-edit-container {
   position: absolute;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  top: 1.5%;
+  z-index: 2;
+  padding: 0.2rem 0.8rem;
+}
+
+.mark-box {
   width: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  top: 1.5%;
-  z-index: 2;
-  padding: 0.2rem 0.8rem;
 }
 
 .mark-icon-box {
@@ -648,4 +656,54 @@
 
 .hide-sound {
   display: none;
+}
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+}
+
+.settings-box {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.settings-box2 {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.settings-box-head {
+  font-family: appFontMedium;
+  font-size: 1.05rem;
+}
+
+.settings-box-label {
+  font-family: appFontMedium;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.accessibility-select {
+  outline: none;
+  border: 2px solid var(--app-theme-color);
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  font-family: appFont;
+  font-size: 0.95rem;
+}
+
+.settings-checkbox {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--app-theme-color);
+  margin-right: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
 }

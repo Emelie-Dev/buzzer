@@ -307,8 +307,10 @@ const UploadCarousel = ({
   }, [editCategory]);
 
   useEffect(() => {
-    if (playStorySound) storySoundRef.current.play();
-    else storySoundRef.current.pause();
+    if (uploadType === 'story') {
+      if (playStorySound) storySoundRef.current.play();
+      else storySoundRef.current.pause();
+    }
   }, [playStorySound]);
 
   const handleSmallImgsScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -532,34 +534,36 @@ const UploadCarousel = ({
             </span>
           )}
 
-          <div className={styles['mark-box']}>
-            <span
-              className={`${styles['mark-icon-box']} ${
-                !cropImage ? styles['hide-visibility'] : ''
-              }`}
-              onClick={() => setCropImage(false)}
-              title="Cancel"
-            >
-              <IoClose className={styles['mark-icon']} />
-            </span>
-
-            {cropImage ? (
+          <div className={styles['media-edit-container']}>
+            <div className={styles['mark-box']}>
               <span
-                className={styles['mark-icon-box']}
+                className={`${styles['mark-icon-box']} ${
+                  !cropImage ? styles['hide-visibility'] : ''
+                }`}
                 onClick={() => setCropImage(false)}
-                title="Done"
+                title="Cancel"
               >
-                <IoCheckmarkSharp className={styles['mark-icon']} />
+                <IoClose className={styles['mark-icon']} />
               </span>
-            ) : (
-              <span
-                className={styles['mark-icon-box']}
-                onClick={() => setCropImage(true)}
-                title="Crop"
-              >
-                <IoMdCrop className={styles['mark-icon']} />
-              </span>
-            )}
+
+              {cropImage ? (
+                <span
+                  className={styles['mark-icon-box']}
+                  onClick={() => setCropImage(false)}
+                  title="Done"
+                >
+                  <IoCheckmarkSharp className={styles['mark-icon']} />
+                </span>
+              ) : (
+                <span
+                  className={styles['mark-icon-box']}
+                  onClick={() => setCropImage(true)}
+                  title="Crop"
+                >
+                  <IoMdCrop className={styles['mark-icon']} />
+                </span>
+              )}
+            </div>
           </div>
 
           {files.length &&
@@ -1098,6 +1102,31 @@ const UploadCarousel = ({
           </div>
         </div>
       </div>
+
+      {uploadType === 'story' && (
+        <div className={styles['settings-container']}>
+          <div className={styles['settings-box']}>
+            <span className={styles['settings-box-head']}>Accessibility:</span>
+            <select className={styles['accessibility-select']}>
+              <option value={'everyone'}>Everyone</option>
+              <option value={'friends'}>Friends</option>
+              <option value={'only-you'}>Only you</option>
+            </select>
+          </div>
+
+          <div className={styles['settings-box2']}>
+            <input
+              type="checkbox"
+              id="comments2"
+              className={styles['settings-checkbox']}
+            />
+
+            <label className={styles['settings-box-label']} htmlFor="comments2">
+              Disable comments
+            </label>
+          </div>
+        </div>
+      )}
 
       <div className={styles['next-btn-div']}>
         <button

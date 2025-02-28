@@ -360,6 +360,7 @@
   accent-color: var(--app-theme-color);
   margin-right: 1rem;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .post-btn-div {
