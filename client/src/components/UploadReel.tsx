@@ -21,6 +21,7 @@ type UploadReelProps = {
     React.SetStateAction<{
       reel: 'select' | 'edit' | 'finish';
       content: 'select' | 'edit' | 'finish';
+      story: 'select' | 'edit' | 'finish';
     }>
   >;
 };

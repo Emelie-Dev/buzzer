@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Home.module.css';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
-import { ContentContext } from '../Contexts';
+import { ContentContext, GeneralContext } from '../Contexts';
 import StoryModal from '../components/StoryModal';
 import { DataItem } from './Following';
 import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
 import { GoPlus } from 'react-icons/go';
+import { useNavigate } from 'react-router-dom';
 
 export interface User {
   name: string;
@@ -208,8 +209,11 @@ const Home = () => {
 
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
+  const { setCreateCategory } = useContext(GeneralContext);
 
   const storyRef = useRef<HTMLDivElement>(null!);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     scrollHandler();
@@ -251,7 +255,13 @@ const Home = () => {
               <MdKeyboardArrowLeft className={styles['left-arrow']} />
             </span>
 
-            <article className={`${styles.user} ${styles['owner']}`}>
+            <article
+              className={`${styles.user}`}
+              onClick={() => {
+                setCreateCategory('story');
+                navigate('/create');
+              }}
+            >
               <span className={styles['add-story']}>
                 <span className={styles['add-story-box']}>
                   <GoPlus className={styles['add-story-icon']} />

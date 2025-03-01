@@ -51,3 +51,12 @@ export const UploadReelContext = createContext<{
   >;
   fileRef: React.MutableRefObject<HTMLInputElement>;
 }>(null!);
+
+export const GeneralContext = createContext<{
+  settingsCategory: string;
+  setSettingsCategory: React.Dispatch<React.SetStateAction<string>>;
+  createCategory: 'reel' | 'content' | 'story';
+  setCreateCategory: React.Dispatch<
+    React.SetStateAction<'reel' | 'content' | 'story'>
+  >;
+}>(null!);

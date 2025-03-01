@@ -266,6 +266,10 @@
   justify-content: space-between;
 }
 
+.story-imgs-div {
+  margin: auto;
+}
+
 .imgs::-webkit-scrollbar {
   display: none;
 }
@@ -425,15 +429,23 @@
   fill: var(--app-theme-color);
 }
 
-.mark-box {
+.media-edit-container {
   position: absolute;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  top: 1.5%;
+  z-index: 2;
+  padding: 0.2rem 0.8rem;
+}
+
+.mark-box {
   width: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  top: 1.5%;
-  z-index: 2;
-  padding: 0.2rem 0.8rem;
 }
 
 .mark-icon-box {
@@ -568,4 +580,130 @@
   user-select: none;
   width: 500px;
   height: 500px;
+}
+
+.sound-div {
+  margin: 0;
+  padding: 1.5rem;
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.sound-box {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.sound-box:hover,
+.active-sound {
+  color: var(--app-theme-color);
+}
+
+.sound-name {
+  font-family: appFontMedium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1rem;
+}
+
+.sound-duration {
+  font-family: appFont;
+  font-size: 0.95rem;
+  margin-top: 0.1rem;
+}
+
+.sound-btn-div {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.sound-btn {
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  cursor: pointer;
+  color: white;
+  font-family: appFont;
+  font-size: 0.9rem;
+  padding: 0.7rem;
+  border-radius: 5px;
+  transition: opacity 0.2s;
+}
+
+.remove-btn {
+  border: none;
+  outline: none;
+  background: red;
+  cursor: pointer;
+  color: white;
+  font-family: appFont;
+  font-size: 0.9rem;
+  padding: 0.7rem;
+  border-radius: 5px;
+  transition: opacity 0.2s;
+  margin-left: 1rem;
+}
+
+.sound-btn:hover,
+.remove-btn:hover {
+  opacity: 0.9;
+}
+
+.hide-sound {
+  display: none;
+}
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+}
+
+.settings-box {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.settings-box2 {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.settings-box-head {
+  font-family: appFontMedium;
+  font-size: 1.05rem;
+}
+
+.settings-box-label {
+  font-family: appFontMedium;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.accessibility-select {
+  outline: none;
+  border: 2px solid var(--app-theme-color);
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  font-family: appFont;
+  font-size: 0.95rem;
+}
+
+.settings-checkbox {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--app-theme-color);
+  margin-right: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
 }

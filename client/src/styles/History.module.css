@@ -1,0 +1,172 @@
+.section {
+  margin-left: 18%;
+  width: 82%;
+  padding: 2rem;
+  padding-top: 0;
+}
+
+.section-header {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.head {
+  margin: 0;
+  font-family: appFont;
+  transform: translateY(-10px);
+}
+
+.period-box {
+  margin-top: 2rem;
+}
+
+.category-container {
+  margin: 1.5rem 0;
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-head {
+  font-family: appFontMedium;
+  font-size: 1.1rem;
+}
+
+.category-div {
+  display: grid;
+  grid-template-columns: 19% 19% 19% 19% 19%;
+  justify-content: center;
+  padding: 0 0.5rem;
+  column-gap: 0.7rem;
+  row-gap: 0.7rem;
+  margin: 1rem 0 2rem;
+}
+
+.category-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.25s;
+}
+
+.media {
+  width: 100%;
+  aspect-ratio: 5/4;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.details-box {
+  position: absolute;
+  bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 0.5rem;
+}
+
+.reel-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.view-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  font-family: appFontMedium;
+  font-size: 0.85rem;
+  border-radius: 5px;
+  padding: 0.3rem;
+  color: white;
+}
+
+.view-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  margin-right: 0.3rem;
+}
+
+.checkbox {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  outline: none;
+  accent-color: var(--app-theme-color);
+  z-index: 2;
+  cursor: pointer;
+  display: none;
+}
+
+.category-box:hover {
+  opacity: 0.85;
+}
+
+.category-box:hover .checkbox {
+  display: inline;
+}
+
+.select-div {
+  margin-top: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.select-text {
+  font-family: appFontMedium;
+  font-size: 1.05rem;
+}
+
+.btn-div {
+  display: flex;
+  align-items: center;
+}
+
+.cancel-btn {
+  background: var(--app-theme-color);
+  outline: none;
+  border: none;
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  font-family: appFontMedium;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.delete-btn {
+  background: red;
+  outline: none;
+  border: none;
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  font-family: appFontMedium;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  transition: opacity 0.2s;
+}
+
+.cancel-btn:hover,
+.delete-btn:hover {
+  opacity: 0.8;
+}

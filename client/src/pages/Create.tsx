@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Create.module.css';
 import { FaPhotoVideo } from 'react-icons/fa';
@@ -10,6 +10,7 @@ import UploadReel from '../components/UploadReel';
 import UploadReelDetails, {
   ReelDetails,
 } from '../components/UploadReelDetails';
+import { GeneralContext } from '../Contexts';
 
 export interface Content {
   src: string | ArrayBuffer | null;
@@ -23,6 +24,12 @@ export interface Content {
     saturate: number;
     sepia: number;
   };
+}
+
+export interface StoryData {
+  src: string | ArrayBuffer | null;
+  type: 'image' | 'video' | null;
+  filter: string;
 }
 
 export interface videoData {
@@ -62,20 +69,28 @@ export type AudioFile = {
 };
 
 const Create = () => {
-  const [category, setCategory] = useState<'reel' | 'content'>('content');
+  const { createCategory = 'content', setCreateCategory } =
+    useContext(GeneralContext);
+  const [category, setCategory] = useState<'reel' | 'content' | 'story'>(
+    createCategory
+  );
   const [stage, setStage] = useState<{
     reel: 'select' | 'edit' | 'finish';
     content: 'select' | 'edit' | 'finish';
+    story: 'select' | 'edit' | 'finish';
   }>({
     reel: 'select',
     content: 'select',
+    story: 'select',
   });
   const [files, setFiles] = useState<{
     content: Content[];
     reel: string | ArrayBuffer | null;
-  }>({ content: [], reel: null });
-  const [rawFiles, setRawFiles] = useState<File[] | FileList>(null!);
-  const [rawReelFile, setRawReelFile] = useState<File>(null!);
+    story: StoryData[];
+  }>({ content: [], reel: null, story: [] });
+  const setRawFiles = useState<File[] | FileList>(null!)[1];
+  const setRawReelFile = useState<File>(null!)[1];
+  const setRawStoryFiles = useState<File[] | FileList>(null!)[1];
   const [addFiles, setAddFiles] = useState(false);
   const [contentIndex, setContentIndex] = useState<number>(0);
   const [aspectRatio, setAspectRatio] = useState<'initial' | number>(1);
@@ -129,6 +144,8 @@ const Create = () => {
 
   useEffect(() => {
     return () => {
+      setCreateCategory('content');
+
       const { content, reel } = files;
 
       if (reel) URL.revokeObjectURL(reel as string);
@@ -147,8 +164,10 @@ const Create = () => {
     if (containerRef.current) {
       if (category === 'reel') {
         containerRef.current.style.transform = `translateX(-100%)`;
-      } else {
+      } else if (category === 'content') {
         containerRef.current.style.transform = `translateX(0%)`;
+      } else {
+        containerRef.current.style.transform = `translateX(-200%)`;
       }
     }
   }, [category]);
@@ -190,7 +209,7 @@ const Create = () => {
 
         try {
           const results = await Promise.all(promises);
-          results.forEach((result) => filesData.push(result));
+          results.forEach((result) => filesData.push(result as Content));
         } catch (error) {
           filesData.forEach((data) => URL.revokeObjectURL(data.src as string));
           e.target.files = new DataTransfer().files;
@@ -211,10 +230,9 @@ const Create = () => {
           } else return { ...prevFiles, content: filesData };
         });
       } else {
-        console.log(rawFiles);
         return;
       }
-    } else {
+    } else if (category === 'reel') {
       const uploadFile = e.target.files && e.target.files[0];
 
       if (uploadFile) {
@@ -224,7 +242,6 @@ const Create = () => {
           setFiles((prevFiles) => ({ ...prevFiles, reel: result.src }));
           e.target.files = new DataTransfer().files;
         } catch (err) {
-          console.log(rawReelFile);
           e.target.files = new DataTransfer().files;
           return alert(err);
         }
@@ -232,12 +249,59 @@ const Create = () => {
         setCategory('content');
         setTimeout(() => setCategory('reel'), 0);
       } else return;
+    } else {
+      const uploadFiles = e.target.files;
+
+      if (uploadFiles && uploadFiles.length > 0) {
+        const filesData: StoryData[] = [];
+
+        const uploadLength = addFiles ? 10 - files.story.length : 10;
+
+        // Handle error
+        if (uploadFiles.length > uploadLength) {
+          e.target.files = new DataTransfer().files;
+          return;
+        }
+
+        const promises = [...uploadFiles].map((file) =>
+          isFileValid(file, false, true)
+        );
+
+        try {
+          const results = await Promise.all(promises);
+          results.forEach((result) => filesData.push(result as StoryData));
+        } catch (error) {
+          filesData.forEach((data) => URL.revokeObjectURL(data.src as string));
+          e.target.files = new DataTransfer().files;
+          return alert(error);
+        }
+
+        e.target.files = new DataTransfer().files;
+
+        setRawStoryFiles((prevFiles) => {
+          if (addFiles) return [...prevFiles, ...uploadFiles];
+          else return uploadFiles;
+        });
+        setFiles((prevFiles) => {
+          if (addFiles) {
+            return {
+              ...prevFiles,
+              story: [...prevFiles.story, ...filesData],
+            };
+          } else return { ...prevFiles, story: filesData };
+        });
+      } else return;
     }
 
     setStage({ ...stage, [category]: 'edit' });
+    setAddFiles(false);
   };
 
-  const isFileValid = (file: File, reel?: boolean): Promise<Content> => {
+  const isFileValid = (
+    file: File,
+    reel?: boolean,
+    story?: boolean
+  ): Promise<Content | StoryData> => {
     return new Promise((resolve, reject) => {
       const type = file.type.includes('image')
         ? 'image'
@@ -250,7 +314,7 @@ const Create = () => {
       } else if (type === 'video') {
         const fileURL = URL.createObjectURL(file);
         const video = document.createElement('video');
-        const maxDuration = reel ? 3600 : 60;
+        const maxDuration = reel ? 3600 : story ? 300 : 60;
 
         video.src = fileURL; // Set the source of the media element
         video.preload = 'metadata'; // Load only metadata (not the entire file)
@@ -259,38 +323,55 @@ const Create = () => {
           if (video.duration > maxDuration) {
             reject('Duration Error');
           } else {
-            resolve({
-              src: fileURL,
-              type,
-              filter: 'Original',
-              adjustments: {
-                brightness: 0,
-                contrast: 0,
-                grayscale: 0,
-                'hue-rotate': 0,
-                saturate: 0,
-                sepia: 0,
-              },
-            });
+            if (story) {
+              resolve({
+                src: fileURL,
+                type,
+                filter: 'Original',
+              });
+            } else {
+              resolve({
+                src: fileURL,
+                type,
+                filter: 'Original',
+                adjustments: {
+                  brightness: 0,
+                  contrast: 0,
+                  grayscale: 0,
+                  'hue-rotate': 0,
+                  saturate: 0,
+                  sepia: 0,
+                },
+              });
+            }
           }
         };
 
         video.onerror = () => reject('Video Error');
       } else {
         const fileURL = URL.createObjectURL(file);
-        resolve({
-          src: fileURL,
-          type,
-          filter: 'Original',
-          adjustments: {
-            brightness: 0,
-            contrast: 0,
-            grayscale: 0,
-            'hue-rotate': 0,
-            saturate: 0,
-            sepia: 0,
-          },
-        });
+
+        if (story) {
+          resolve({
+            src: fileURL,
+            type,
+            filter: 'Original',
+          });
+        } else {
+          resolve({
+            src: fileURL,
+            type,
+            filter: 'Original',
+            adjustments: {
+              brightness: 0,
+              contrast: 0,
+              grayscale: 0,
+              'hue-rotate': 0,
+              saturate: 0,
+              sepia: 0,
+            },
+          });
+        }
       }
     });
   };
@@ -322,14 +403,26 @@ const Create = () => {
             >
               Reel
             </li>
+            <li
+              className={`${styles['type-item']} ${
+                category === 'story' ? styles['active-item'] : ''
+              }`}
+              onClick={() => setCategory('story')}
+            >
+              Story
+            </li>
           </ul>
 
           <input
             className={styles['file-input']}
             type="file"
             ref={fileRef}
-            accept={category === 'content' ? 'video/*,image/*' : 'video/*'}
-            multiple={category === 'content'}
+            accept={
+              category === 'content' || category === 'story'
+                ? 'video/*,image/*'
+                : 'video/*'
+            }
+            multiple={category === 'content' || category === 'story'}
             onChange={handleFileUpload}
           />
 
@@ -351,16 +444,19 @@ const Create = () => {
                 </div>
               ) : stage.content === 'edit' ? (
                 <UploadCarousel
-                  files={files.content}
+                  uploadType="content"
+                  setFiles={setFiles}
+                  setStage={setStage}
                   setAddFiles={setAddFiles}
                   fileRef={fileRef}
-                  setFiles={setFiles}
-                  setRawFiles={setRawFiles}
-                  setStage={setStage}
-                  contentIndex={contentIndex}
-                  setContentIndex={setContentIndex}
-                  aspectRatio={aspectRatio}
-                  setAspectRatio={setAspectRatio}
+                  uploadProps={{
+                    files: files.content,
+                    setRawFiles,
+                    contentIndex,
+                    setContentIndex,
+                    aspectRatio,
+                    setAspectRatio,
+                  }}
                 />
               ) : (
                 <UploadDetails
@@ -396,6 +492,37 @@ const Create = () => {
                 />
               ) : (
                 <UploadReelDetails data={reelData} setStage={setStage} />
+              )}
+            </div>
+
+            <div className={styles['category-div']}>
+              {stage.story === 'select' ? (
+                <div className={styles['upload-div']}>
+                  <FaPhotoVideo className={styles['content-icon']} />
+                  <span className={styles['upload-text']}>
+                    Select the photos and videos you want to post
+                  </span>
+                  <button
+                    className={styles['select-btn']}
+                    onClick={() => fileRef.current.click()}
+                  >
+                    Select
+                  </button>
+                </div>
+              ) : stage.story === 'edit' ? (
+                <UploadCarousel
+                  uploadType="story"
+                  setFiles={setFiles}
+                  setStage={setStage}
+                  setAddFiles={setAddFiles}
+                  fileRef={fileRef}
+                  uploadProps={{
+                    storyFiles: files.story,
+                    setRawStoryFiles,
+                  }}
+                />
+              ) : (
+                ''
               )}
             </div>
           </div>

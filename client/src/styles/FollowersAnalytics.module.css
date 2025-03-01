@@ -1,0 +1,44 @@
+.section {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem;
+}
+
+.data-box {
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.data-name {
+  font-family: appFontMedium;
+  font-size: 1.05rem;
+}
+
+.data-value {
+  font-family: appFont;
+  margin-left: 0.5rem;
+}
+
+.data-box2 {
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  margin-bottom: 1rem;
+  justify-content: space-between;
+}
+
+.graph-box {
+  display: flex;
+  align-items: center;
+  margin: 2rem 0;
+  padding: 0 1rem;
+}

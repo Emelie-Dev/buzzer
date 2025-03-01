@@ -1,53 +1,214 @@
-/* Container styles */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  color: #333;
+.section {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Header styles */
-.content-header {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 20px;
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem;
+}
+
+.select-box {
+  display: flex;
+  align-items: center;
+}
+
+.period-text {
+  font-family: appFontMedium;
+}
+
+.period-select {
+  outline: none;
+  border: 2px solid var(--app-theme-color);
+  padding: 0.2rem;
+  font-family: appFontMedium;
+  border-radius: 5px;
+  margin-left: 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.table {
+  width: 100%;
+  margin: 2.5rem 0;
+  border-collapse: collapse;
+}
+
+.table td {
+  padding: 1rem 0;
+}
+
+.table-head {
+  font-family: appFontMedium;
+  font-weight: 500;
+  color: gray;
+  font-size: 1.05rem;
+  text-align: center;
+  background: var(--app-theme-color);
+  color: white;
+  padding: 0.7rem 1rem;
+}
+
+.table-head:first-child {
+  border-radius: 5px 0 0 5px;
+}
+
+.table-head:last-child {
+  border-radius: 0 5px 5px 0;
+}
+
+.content-index {
+  font-family: appFontSemi;
   text-align: center;
 }
 
-/* Grid layout for cards */
-.content-grid {
+.content-data {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  align-items: center;
+}
+
+.content-box {
+  max-width: 60%;
+  display: flex;
+  align-items: center;
+}
+
+.media {
+  width: 4rem;
+  height: 5rem;
+  object-fit: cover;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.media:hover {
+  opacity: 0.8;
+}
+
+.content-description {
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+  margin-left: 1.5rem;
+}
+
+.content-value,
+.content-date {
+  font-family: appFontMedium;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.content-action {
+  text-align: center;
+}
+
+.view-btn {
+  outline: none;
+  background: rgba(168, 85, 247, 0.2);
+  border: none;
+  padding: 0.5rem 1rem;
+  font-family: appFontMedium;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.data-section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  min-height: 100vh;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 35%;
+  justify-content: center;
+  align-content: center;
+  overflow: auto;
+  animation: showModal 0.5s ease-in-out 0s 1 normal both;
+}
+
+.data-container {
+  background: white;
+  border-radius: 8px;
+  position: relative;
+  padding: 1.5rem;
+  overflow: auto;
+  max-height: 100vh;
+}
+
+.container-header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
 }
 
-/* Card styles */
-.content-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-  flex: 1;
-  min-width: 280px;
+.container-head {
+  font-family: appFontMedium;
+  font-weight: 500;
+  margin: 0;
+  font-size: 1.3rem;
+  margin: auto;
 }
 
-/* Card title and text */
-.card-title {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+.close-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
 }
 
-.card-text {
-  font-size: 1rem;
-  margin-bottom: 10px;
+.close-icon:hover {
+  fill: var(--app-theme-color);
+  flex-shrink: 0;
 }
 
-/* List styling inside cards */
-.card-list {
-  list-style-type: disc;
-  margin-left: 20px;
-  padding-left: 0;
+.table-div {
+  margin: 2rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--app-theme-color);
+  border-radius: 5px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  font-family: appFontMedium;
+  font-weight: 500;
+  font-size: 1.05rem;
+  text-align: left;
+  padding: 1rem;
+}
+
+.data-table td {
+  font-family: appFont;
+  text-align: left;
+}
+
+.data-table tr:nth-child(odd) {
+  background: rgba(168, 85, 247, 0.15);
+}
+
+.data-text {
+  font-family: appFont;
+  margin: 0 1rem 1rem;
+}
+
+/* Animations */
+
+@keyframes showModal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

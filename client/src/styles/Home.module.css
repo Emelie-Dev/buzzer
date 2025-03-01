@@ -32,11 +32,12 @@
   -ms-overflow-style: none;
   scroll-behavior: smooth;
   position: relative;
-  padding: 0 0;
+  padding: 0;
   padding-right: 0.1rem;
   margin: 0 1rem;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .owner {
@@ -264,4 +265,94 @@
 
 .suggested-user:hover {
   background: rgba(168, 85, 247, 0.2);
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1300px) {
+  .content-container {
+    padding: 0 3rem;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .main {
+    grid-template-columns: 100%;
+    margin-left: 22%;
+  }
+
+  .aside {
+    display: none;
+  }
+
+  .main-container {
+    padding: 1.5rem 5rem 2rem;
+    border-right: none;
+  }
+
+  .content-container {
+    padding: 0 4rem;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .main-container {
+    padding: 1.5rem 4rem 2rem;
+  }
+
+  .content-container {
+    padding: 0 3rem;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .main {
+    margin-left: 25%;
+  }
+
+  .main-container {
+    padding: 1.5rem 2rem 2rem;
+  }
+
+  .content-container {
+    padding: 0 2rem;
+  }
+
+  .left-arrow-box {
+    left: 16%;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .main {
+    margin-left: 98px;
+  }
+
+  .main-container {
+    padding: 1.5rem 3rem 2rem;
+  }
+
+  .content-container {
+    padding: 0 3rem;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .main-container {
+    padding: 1.5rem 2rem 2rem;
+  }
+
+  .content-container {
+    padding: 0 2rem;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .main-container {
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .content-container {
+    padding: 0 1rem;
+  }
 }
