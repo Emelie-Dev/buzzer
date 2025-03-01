@@ -7,6 +7,7 @@
   width: 18%;
   padding: 0;
   margin: 0;
+  z-index: 5;
 }
 
 .nav {
@@ -619,5 +620,19 @@
   }
   to {
     opacity: 0;
+  }
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1200px) {
+  .nav-section {
+    width: 22%;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .nav-section {
+    width: 25%;
   }
 }

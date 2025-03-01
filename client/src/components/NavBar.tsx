@@ -31,9 +31,12 @@ type NavBarProps = {
 };
 
 const NavBar = ({ page, editStage }: NavBarProps) => {
-  const pageType = ['inbox', editStage ? 'create' : ''].includes(page)
-    ? 'small'
-    : 'wide';
+  const [isMediumSize, setIsMediumSize] = useState<boolean>(false);
+
+  const pageType =
+    ['inbox', editStage ? 'create' : ''].includes(page) || isMediumSize
+      ? 'small'
+      : 'wide';
 
   const [showMore, setShowMore] = useState<boolean>(false);
   const [showMore2, setShowMore2] = useState<boolean>(false);
@@ -50,6 +53,21 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
   const navRef = useRef<HTMLDivElement>(null!);
   const searchInputRef = useRef<HTMLInputElement>(null!);
   const searchContainerRef = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => {
+    const resizeHandler = () => {
+      const mediumSize = window.matchMedia('(max-width: 900px)').matches;
+      setIsMediumSize(mediumSize);
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
+  }, []);
 
   useEffect(() => {
     const clickHandler = (e: Event) => {
