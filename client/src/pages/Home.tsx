@@ -11,6 +11,8 @@ import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
 import { GoPlus } from 'react-icons/go';
 import { useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 export interface User {
   name: string;
@@ -241,11 +243,9 @@ const Home = () => {
 
       <section className={styles.main}>
         <section className={styles['main-container']} onScroll={scrollHandler}>
-          <div
-            className={styles['stories-container']}
-            ref={storyRef}
-            onScroll={handleScroll}
-          >
+          <Header />
+
+          <div className={styles['scroll-div']}>
             <span
               className={`${styles['left-arrow-box']} ${
                 !showArrow.left ? styles['hide-icon'] : ''
@@ -255,49 +255,55 @@ const Home = () => {
               <MdKeyboardArrowLeft className={styles['left-arrow']} />
             </span>
 
-            <article
-              className={`${styles.user}`}
-              onClick={() => {
-                setCreateCategory('story');
-                navigate('/create');
-              }}
+            <div
+              className={styles['stories-container']}
+              ref={storyRef}
+              onScroll={handleScroll}
             >
-              <span className={styles['add-story']}>
-                <span className={styles['add-story-box']}>
-                  <GoPlus className={styles['add-story-icon']} />
-                </span>
-              </span>
-
-              <span
-                className={`${styles['user-name']} ${styles['owner-name']}`}
-              >
-                Your Story
-              </span>
-            </article>
-
-            {users.map(({ name }, index) => (
               <article
-                key={index}
-                className={styles.user}
+                className={`${styles.user}`}
                 onClick={() => {
-                  setStoryIndex(index);
-                  setViewStory(true);
+                  setCreateCategory('story');
+                  navigate('/create');
                 }}
               >
-                <span className={styles['user-pics-box']}>
-                  <img
-                    src={`../../assets/images/users/user${index + 1}.jpeg`}
-                    alt={name}
-                    className={styles['user-pics']}
-                  />
+                <span className={styles['add-story']}>
+                  <span className={styles['add-story-box']}>
+                    <GoPlus className={styles['add-story-icon']} />
+                  </span>
                 </span>
 
-                <span className={styles['user-name']}>{name}</span>
+                <span
+                  className={`${styles['user-name']} ${styles['owner-name']}`}
+                >
+                  Your Story
+                </span>
               </article>
-            ))}
+
+              {users.map(({ name }, index) => (
+                <article
+                  key={index}
+                  className={styles.user}
+                  onClick={() => {
+                    setStoryIndex(index);
+                    setViewStory(true);
+                  }}
+                >
+                  <span className={styles['user-pics-box']}>
+                    <img
+                      src={`../../assets/images/users/user${index + 1}.jpeg`}
+                      alt={name}
+                      className={styles['user-pics']}
+                    />
+                  </span>
+
+                  <span className={styles['user-name']}>{name}</span>
+                </article>
+              ))}
+            </div>
 
             <span
-              className={`${styles['right-arrow-box']} ${
+              className={`${styles['right-arrow-box']}  ${
                 !showArrow.right ? styles['hide-icon'] : ''
               }`}
               onClick={() => (storyRef.current.scrollLeft += 300)}
@@ -315,6 +321,8 @@ const Home = () => {
               ))}
             </div>
           </ContentContext.Provider>
+
+          <Footer page={'home'} />
         </section>
 
         <section className={styles.aside}>

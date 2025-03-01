@@ -59,4 +59,6 @@ export const GeneralContext = createContext<{
   setCreateCategory: React.Dispatch<
     React.SetStateAction<'reel' | 'content' | 'story'>
   >;
+  scrollingUp: boolean | null;
+  setScrollingUp: React.Dispatch<React.SetStateAction<boolean | null>>;
 }>(null!);

@@ -30,8 +30,10 @@ type NavBarProps = {
   editStage?: boolean;
 };
 
+const mediumSize = window.matchMedia('(max-width: 900px)').matches;
+
 const NavBar = ({ page, editStage }: NavBarProps) => {
-  const [isMediumSize, setIsMediumSize] = useState<boolean>(false);
+  const [isMediumSize, setIsMediumSize] = useState<boolean>(mediumSize);
 
   const pageType =
     ['inbox', editStage ? 'create' : ''].includes(page) || isMediumSize

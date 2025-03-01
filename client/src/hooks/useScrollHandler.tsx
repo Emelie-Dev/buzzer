@@ -1,7 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
+import { GeneralContext } from '../Contexts';
 
 const useScrollHandler = () => {
   const [activeVideo, setActiveVideo] = useState<HTMLVideoElement | null>(null);
+  const [prevTop, setPrevTop] = useState<number>(0);
+
+  const { setScrollingUp } = useContext(GeneralContext);
 
   const contentRef = useRef<HTMLDivElement[]>([]);
 
@@ -23,7 +27,9 @@ const useScrollHandler = () => {
     };
   }, [activeVideo]);
 
-  const scrollHandler = () => {
+  const scrollHandler = (e?: React.UIEvent<HTMLElement, UIEvent>) => {
+    const target = e && (e.target as HTMLDivElement);
+
     const videos = contentRef.current;
     const deviceHeight = window.innerHeight;
 
@@ -59,6 +65,17 @@ const useScrollHandler = () => {
     });
 
     if (activeVideos.length === 0) setActiveVideo(null);
+
+    if (target) {
+      setScrollingUp(
+        target.scrollTop - prevTop < 0
+          ? true
+          : target.scrollTop < 200
+          ? null
+          : false
+      );
+      setPrevTop(target.scrollTop);
+    }
   };
 
   return { activeVideo, setActiveVideo, contentRef, scrollHandler };

@@ -636,3 +636,9 @@
     width: 25%;
   }
 }
+
+@media screen and (max-width: 600px) {
+  .search-section {
+    display: none;
+  }
+}

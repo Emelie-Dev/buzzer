@@ -21,6 +21,12 @@
   overflow: auto;
 }
 
+.scroll-div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .stories-container::-webkit-scrollbar {
   display: none;
 }
@@ -31,13 +37,9 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   scroll-behavior: smooth;
-  position: relative;
-  padding: 0;
-  padding-right: 0.1rem;
   margin: 0 1rem;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
 .owner {
@@ -123,11 +125,11 @@
 }
 
 .left-arrow-box {
+  align-self: flex-start;
   z-index: 2;
   position: sticky;
-  align-self: flex-start;
-  top: 20%;
-  left: 14%;
+  left: 10%;
+  top: 3%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -142,8 +144,8 @@
   z-index: 2;
   position: sticky;
   align-self: flex-start;
-  top: 20%;
-  right: 1.5%;
+  right: 10%;
+  top: 3%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -317,15 +319,11 @@
   .content-container {
     padding: 0 2rem;
   }
-
-  .left-arrow-box {
-    left: 16%;
-  }
 }
 
 @media screen and (max-width: 900px) {
   .main {
-    margin-left: 98px;
+    margin-left: 81px;
   }
 
   .main-container {
@@ -349,10 +347,33 @@
 
 @media screen and (max-width: 700px) {
   .main-container {
-    padding: 1.5rem 1rem 2rem;
+    padding: 1.5rem 0rem 2rem;
   }
 
   .content-container {
-    padding: 0 1rem;
+    padding: 0 3rem;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .main {
+    margin-left: 0;
+  }
+
+  .main-container {
+    padding: 0;
+  }
+
+  .stories-container {
+    margin: 0.5rem 1.5rem 0;
+  }
+
+  .content-container {
+    padding: 0 1.5rem;
+  }
+
+  .left-arrow-box,
+  .right-arrow-box {
+    display: none;
   }
 }

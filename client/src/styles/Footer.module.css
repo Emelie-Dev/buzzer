@@ -1,0 +1,81 @@
+.footer {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-top: 1px solid rgba(128, 128, 128, 0.3);
+  padding: 0;
+  margin: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+
+.footer-list {
+  display: grid;
+  grid-template-columns: 20% 20% 20% 20% 20%;
+  justify-content: space-between;
+  list-style-type: none;
+  margin: 0;
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+}
+
+.footer-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  cursor: pointer;
+  color: var(--app-theme-color);
+  font-family: appFont;
+  font-size: 0.85rem;
+}
+
+.item-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  margin-bottom: 0.2rem;
+  flex-shrink: 0;
+}
+
+.path,
+.active-icon {
+  fill: var(--app-theme-color);
+}
+
+.active-item {
+  font-family: appFontSemi;
+}
+
+.profile-img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 0.2rem;
+  flex-shrink: 0;
+}
+
+.active-profile {
+  border: 2px solid var(--app-theme-color);
+}
+
+.create-icon {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+}
+
+/* Media Queries */
+
+@media screen and (min-width: 601px) {
+  .footer {
+    display: none;
+  }
+}

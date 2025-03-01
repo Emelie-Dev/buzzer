@@ -21,6 +21,7 @@ const App = () => {
   const [createCategory, setCreateCategory] = useState<
     'reel' | 'content' | 'story'
   >('content');
+  const [scrollingUp, setScrollingUp] = useState<boolean | null>(null);
 
   return (
     <>
@@ -30,6 +31,8 @@ const App = () => {
           setSettingsCategory,
           createCategory,
           setCreateCategory,
+          scrollingUp,
+          setScrollingUp,
         }}
       >
         <Routes>
