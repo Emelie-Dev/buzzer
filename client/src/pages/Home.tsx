@@ -256,7 +256,7 @@ const Home = () => {
             </span>
 
             <article
-              className={`${styles.user} ${styles.owner}`}
+              className={`${styles.user}`}
               onClick={() => {
                 setCreateCategory('story');
                 navigate('/create');
