@@ -5,15 +5,17 @@
   border-top: 1px solid rgba(128, 128, 128, 0.3);
   padding: 0;
   margin: 0;
-  position: sticky;
+  position: fixed;
   bottom: 0;
   z-index: 5;
+  width: 100%;
 }
 
 .footer-list {
   display: grid;
   grid-template-columns: 20% 20% 20% 20% 20%;
   justify-content: space-between;
+  align-content: space-between;
   list-style-type: none;
   margin: 0;
   width: 100%;
@@ -22,35 +24,39 @@
 
 .footer-item {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: space-around;
 }
 
 .item-box {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   flex-direction: column;
   cursor: pointer;
-  color: var(--app-theme-color);
   font-family: appFont;
   font-size: 0.85rem;
+  color: black;
 }
 
 .item-icon {
   width: 1.4rem;
   height: 1.4rem;
-  margin-bottom: 0.2rem;
   flex-shrink: 0;
+  margin: auto;
 }
 
-.path,
+.path {
+  fill: black;
+}
+
 .active-icon {
   fill: var(--app-theme-color);
 }
 
 .active-item {
   font-family: appFontSemi;
+  color: var(--app-theme-color);
 }
 
 .profile-img {
@@ -58,7 +64,6 @@
   height: 2rem;
   object-fit: cover;
   border-radius: 50%;
-  margin-bottom: 0.2rem;
   flex-shrink: 0;
 }
 
@@ -70,6 +75,7 @@
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
+  margin: auto;
 }
 
 /* Media Queries */
@@ -77,5 +83,60 @@
 @media screen and (min-width: 601px) {
   .footer {
     display: none;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .footer-list {
+    padding: 0.3rem 0;
+  }
+
+  .item-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .create-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+    flex-shrink: 0;
+    margin: auto;
+  }
+
+  .profile-img {
+    width: 1.8rem;
+    height: 1.8rem;
+    object-fit: cover;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .item-box {
+    font-size: 0.8rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .footer-list {
+    padding: 0.3rem 0;
+  }
+
+  .item-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .create-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .profile-img {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .item-box {
+    font-size: 0.75rem;
   }
 }

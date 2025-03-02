@@ -61,4 +61,6 @@ export const GeneralContext = createContext<{
   >;
   scrollingUp: boolean | null;
   setScrollingUp: React.Dispatch<React.SetStateAction<boolean | null>>;
+  showSearchPage: boolean;
+  setShowSearchPage: React.Dispatch<React.SetStateAction<boolean>>;
 }>(null!);

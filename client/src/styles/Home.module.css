@@ -361,11 +361,11 @@
   }
 
   .main-container {
-    padding: 0;
+    padding: 0 0 4rem;
   }
 
   .stories-container {
-    margin: 0.5rem 1.5rem 0;
+    margin: 1rem 1.5rem 0;
   }
 
   .content-container {
@@ -375,5 +375,18 @@
   .left-arrow-box,
   .right-arrow-box {
     display: none;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .stories-container {
+    margin: 1rem 1rem 0;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .stories-container {
+    margin: 1rem 0 0;
+    padding: 0 1rem;
   }
 }

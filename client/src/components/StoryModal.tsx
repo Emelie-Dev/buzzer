@@ -286,7 +286,7 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
           if (storyItemIndex === contentLength) {
             setCurrentIndex(index);
             carouselRef.current.scrollLeft =
-              index * (carouselRef.current.offsetWidth * 0.4 - 80);
+              index * (carouselRef.current.offsetWidth * 0.3 + 96);
           } else {
             if (setContentIndex) setContentIndex((prev) => prev + 1);
           }
@@ -295,7 +295,7 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
           if (storyItemIndex === 0) {
             setCurrentIndex(index);
             carouselRef.current.scrollLeft =
-              index * (carouselRef.current.offsetWidth * 0.4 - 80);
+              index * (carouselRef.current.offsetWidth * 0.3 + 96);
           } else {
             if (setContentIndex) setContentIndex((prev) => prev - 1);
           }
@@ -304,7 +304,7 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
 
           setCurrentIndex(index);
           carouselRef.current.scrollLeft =
-            index * (carouselRef.current.offsetWidth * 0.4 - 80);
+            index * Math.round(carouselRef.current.offsetWidth * 0.3);
         }
       },
     []
@@ -321,7 +321,7 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
       </span>
 
       <div className={styles['story-container']} ref={carouselRef}>
-        <article className={styles['void-next-story']}></article>
+        <article className={styles['void-next-story']}>m</article>
 
         {stories.map((data, index) => (
           <StoryItem
@@ -336,7 +336,7 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
           />
         ))}
 
-        <article className={styles['void-next-story2']}></article>
+        <article className={styles['void-next-story2']}>m</article>
       </div>
     </section>,
     target

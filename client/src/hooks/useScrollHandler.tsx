@@ -70,7 +70,7 @@ const useScrollHandler = () => {
       setScrollingUp(
         target.scrollTop - prevTop < 0
           ? true
-          : target.scrollTop < 200
+          : target.scrollTop < 208
           ? null
           : false
       );

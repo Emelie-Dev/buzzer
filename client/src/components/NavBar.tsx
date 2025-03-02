@@ -13,7 +13,7 @@ import { IoMdNotificationsOutline } from 'react-icons/io';
 import { BiMenuAltLeft } from 'react-icons/bi';
 import { MdOutlineHistory, MdOutlineLightMode } from 'react-icons/md';
 import { FiLogOut } from 'react-icons/fi';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { AiFillClockCircle } from 'react-icons/ai';
 import { HiTrendingUp } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +24,8 @@ import { IoNotificationsOutline } from 'react-icons/io5';
 import { FaCircleUser } from 'react-icons/fa6';
 import { FaRegCircleUser } from 'react-icons/fa6';
 import { TbBrandGoogleAnalytics } from 'react-icons/tb';
+import { IoArrowBack } from 'react-icons/io5';
+import { GeneralContext } from '../Contexts';
 
 type NavBarProps = {
   page: string;
@@ -45,6 +47,11 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
   const [moreTrends, setMoreTrends] = useState<boolean>(false);
+  const [mediaQueries, setMediaQueries] = useState<{ first: boolean }>({
+    first: false,
+  });
+
+  const { showSearchPage, setShowSearchPage } = useContext(GeneralContext);
 
   const navigate = useNavigate();
 
@@ -60,6 +67,10 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
     const resizeHandler = () => {
       const mediumSize = window.matchMedia('(max-width: 900px)').matches;
       setIsMediumSize(mediumSize);
+
+      const firstSize = window.matchMedia('(max-width: 1200px)').matches;
+
+      setMediaQueries({ ...mediaQueries, first: firstSize });
     };
 
     resizeHandler();
@@ -468,7 +479,9 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                 </li>
               )}
 
-              {(page === 'profile' || page === 'settings') && (
+              {(page === 'profile' ||
+                page === 'settings' ||
+                mediaQueries.first) && (
                 <>
                   <li
                     className={`${styles['nav-item']}`}
@@ -570,307 +583,323 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
 
       {(pageType === 'small' || showSearch) && (
         <section
-          className={`${styles['search-section']}`}
+          className={`${styles['search-section']} ${
+            showSearchPage ? styles['show-search-page'] : ''
+          }`}
           ref={searchSectionRef}
         >
-          <div className={styles['icons-container']}>
-            <span
-              className={`${styles['app-section-box']} ${
-                pageType === 'wide' ? styles['app-section-box2'] : ''
-              }`}
-            >
-              {' '}
-              <img
-                src="../../assets/logo.png"
-                alt="Buzzer Logo"
-                className={styles['app-logo']}
-              />
-            </span>
-
-            <span
-              className={styles['search-section-box']}
-              onClick={() => navigate('/home')}
-            >
-              <svg
-                className={styles['search-section-icon']}
-                x="0px"
-                y="0px"
-                width="100"
-                height="100"
-                viewBox="0 0 24 24"
-              >
-                <path d="M 12 2.0996094 L 1 12 L 4 12 L 4 21 L 11 21 L 11 15 L 13 15 L 13 21 L 20 21 L 20 12 L 23 12 L 12 2.0996094 z M 12 4.7910156 L 18 10.191406 L 18 11 L 18 19 L 15 19 L 15 13 L 9 13 L 9 19 L 6 19 L 6 10.191406 L 12 4.7910156 z"></path>
-              </svg>
-            </span>
-
-            <span
-              className={`${styles['search-section-box']} ${
-                showSearch ? styles['active-search-box'] : ''
-              }`}
-              onClick={() => setShowSearch(true)}
-            >
-              <svg
-                className={`${styles['search-section-icon']} ${
-                  showSearch ? styles['active-search-icon'] : ''
-                } `}
-                x="0px"
-                y="0px"
-                width="100"
-                height="100"
-                viewBox="0 0 50 50"
-              >
-                <path d="M 21 3 C 11.601563 3 4 10.601563 4 20 C 4 29.398438 11.601563 37 21 37 C 24.355469 37 27.460938 36.015625 30.09375 34.34375 L 42.375 46.625 L 46.625 42.375 L 34.5 30.28125 C 36.679688 27.421875 38 23.878906 38 20 C 38 10.601563 30.398438 3 21 3 Z M 21 7 C 28.199219 7 34 12.800781 34 20 C 34 27.199219 28.199219 33 21 33 C 13.800781 33 8 27.199219 8 20 C 8 12.800781 13.800781 7 21 7 Z"></path>
-              </svg>
-            </span>
-
-            <span
-              className={styles['search-section-box']}
-              onClick={() => navigate('/following')}
-            >
-              <LuUserCheck className={styles['search-section-icon2']} />
-            </span>
-
-            <span
-              className={styles['search-section-box']}
-              onClick={() => navigate('/friends')}
-            >
-              <IoPeopleOutline className={styles['search-section-icon']} />
-            </span>
-
-            <span
-              className={styles['search-section-box']}
-              onClick={() => navigate('/reels')}
-            >
-              <svg
-                className={styles['search-section-icon']}
-                version="1.1"
-                viewBox="0 0 100 100"
-              >
-                <defs></defs>
-                <g
-                  style={{
-                    stroke: 'none',
-                    strokeWidth: 0,
-                    strokeDasharray: 'none',
-                    strokeLinecap: 'butt',
-                    strokeLinejoin: 'miter',
-                    strokeMiterlimit: 10,
-                    fill: 'none',
-                    fillRule: 'nonzero',
-                    opacity: 1,
-                    transform:
-                      'translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)}',
-                  }}
-                >
-                  <linearGradient
-                    id="SVGID_44"
-                    gradientUnits="userSpaceOnUse"
-                    x1="20.9489"
-                    y1="70.2584"
-                    x2="72.2486"
-                    y2="16.3831"
-                  >
-                    <stop offset="0%" className={styles.stopTag} />
-                    <stop offset="50%" className={styles.stopTag} />
-                    <stop offset="100%" className={styles.stopTag} />
-                  </linearGradient>
-                  <path
-                    d="M 61.692 0.878 H 28.307 C 12.699 0.878 0 13.577 0 29.186 v 31.629 c 0 15.608 12.699 28.307 28.307 28.307 h 33.385 C 77.301 89.121 90 76.423 90 60.814 V 29.186 C 90 13.577 77.301 0.878 61.692 0.878 z M 81.6 25.186 H 67.854 L 58.78 8.878 h 2.912 C 71.52 8.878 79.737 15.898 81.6 25.186 z M 39.888 25.186 L 30.815 8.878 h 18.811 l 9.073 16.307 H 39.888 z M 22.186 9.825 l 8.546 15.36 H 8.4 C 9.859 17.913 15.213 12.035 22.186 9.825 z M 61.692 81.121 H 28.307 C 17.11 81.121 8 72.012 8 60.814 V 33.186 h 74 v 27.629 C 82 72.012 72.89 81.121 61.692 81.121 z"
-                    style={{
-                      stroke: 'none',
-                      strokeWidth: 1,
-                      strokeDasharray: 'none',
-                      strokeLinecap: 'butt',
-                      strokeLinejoin: 'miter',
-                      strokeMiterlimit: 10,
-                      fillRule: 'nonzero',
-                      opacity: 1,
-                      transform: ' matrix(1 0 0 1 0 0) ',
-                    }}
-                    className={styles['reel-svg-path']}
-                    strokeLinecap="round"
-                  />
-                  <linearGradient
-                    id="SVGID_45"
-                    gradientUnits="userSpaceOnUse"
-                    x1="24.1901"
-                    y1="73.3447"
-                    x2="75.4898"
-                    y2="19.4693"
-                  >
-                    <stop offset="0%" className={styles.stopTag} />
-                    <stop offset="50%" className={styles.stopTag} />
-                    <stop offset="100%" className={styles.stopTag} />
-                  </linearGradient>
-                  <path
-                    d="M 56.367 51.97 l -17.41 -9.305 c -2.366 -1.265 -5.227 0.45 -5.227 3.133 v 18.611 c 0 2.683 2.861 4.398 5.227 3.133 l 17.41 -9.305 C 58.871 56.898 58.871 53.309 56.367 51.97 z"
-                    style={{
-                      stroke: 'none',
-                      strokeWidth: 1,
-                      strokeDasharray: 'none',
-                      strokeLinecap: 'butt',
-                      strokeLinejoin: 'miter',
-                      strokeMiterlimit: 10,
-                      fillRule: 'nonzero',
-                      opacity: 1,
-                      transform: ' matrix(1 0 0 1 0 0) ',
-                    }}
-                    className={styles['reel-svg-path']}
-                    strokeLinecap="round"
-                  />
-                </g>
-              </svg>
-            </span>
-
-            <span
-              className={styles['search-section-box']}
-              onClick={() => navigate('/notifications')}
-            >
-              <IoMdNotificationsOutline
-                className={styles['search-section-icon']}
-              />{' '}
-            </span>
-
-            {!showSearch && page === 'create' && (
+          {!showSearchPage && (
+            <div className={styles['icons-container']}>
               <span
-                className={`${styles['search-section-box']} ${styles['active-search-box']}`}
-                onClick={() => navigate('/create')}
+                className={`${styles['app-section-box']} ${
+                  pageType === 'wide' ? styles['app-section-box2'] : ''
+                }`}
               >
-                <FaRegSquarePlus
-                  className={`${styles['search-section-icon']} ${styles['active-search-icon']} `}
+                {' '}
+                <img
+                  src="../../assets/logo.png"
+                  alt="Buzzer Logo"
+                  className={styles['app-logo']}
                 />
               </span>
-            )}
 
-            {page === 'inbox' && (
-              <>
+              <span
+                className={styles['search-section-box']}
+                onClick={() => navigate('/home')}
+              >
+                <svg
+                  className={styles['search-section-icon']}
+                  x="0px"
+                  y="0px"
+                  width="100"
+                  height="100"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M 12 2.0996094 L 1 12 L 4 12 L 4 21 L 11 21 L 11 15 L 13 15 L 13 21 L 20 21 L 20 12 L 23 12 L 12 2.0996094 z M 12 4.7910156 L 18 10.191406 L 18 11 L 18 19 L 15 19 L 15 13 L 9 13 L 9 19 L 6 19 L 6 10.191406 L 12 4.7910156 z"></path>
+                </svg>
+              </span>
+
+              <span
+                className={`${styles['search-section-box']} ${
+                  showSearch ? styles['active-search-box'] : ''
+                }`}
+                onClick={() => setShowSearch(true)}
+              >
+                <svg
+                  className={`${styles['search-section-icon']} ${
+                    showSearch ? styles['active-search-icon'] : ''
+                  } `}
+                  x="0px"
+                  y="0px"
+                  width="100"
+                  height="100"
+                  viewBox="0 0 50 50"
+                >
+                  <path d="M 21 3 C 11.601563 3 4 10.601563 4 20 C 4 29.398438 11.601563 37 21 37 C 24.355469 37 27.460938 36.015625 30.09375 34.34375 L 42.375 46.625 L 46.625 42.375 L 34.5 30.28125 C 36.679688 27.421875 38 23.878906 38 20 C 38 10.601563 30.398438 3 21 3 Z M 21 7 C 28.199219 7 34 12.800781 34 20 C 34 27.199219 28.199219 33 21 33 C 13.800781 33 8 27.199219 8 20 C 8 12.800781 13.800781 7 21 7 Z"></path>
+                </svg>
+              </span>
+
+              <span
+                className={styles['search-section-box']}
+                onClick={() => navigate('/following')}
+              >
+                <LuUserCheck className={styles['search-section-icon2']} />
+              </span>
+
+              <span
+                className={styles['search-section-box']}
+                onClick={() => navigate('/friends')}
+              >
+                <IoPeopleOutline className={styles['search-section-icon']} />
+              </span>
+
+              <span
+                className={styles['search-section-box']}
+                onClick={() => navigate('/reels')}
+              >
+                <svg
+                  className={styles['search-section-icon']}
+                  version="1.1"
+                  viewBox="0 0 100 100"
+                >
+                  <defs></defs>
+                  <g
+                    style={{
+                      stroke: 'none',
+                      strokeWidth: 0,
+                      strokeDasharray: 'none',
+                      strokeLinecap: 'butt',
+                      strokeLinejoin: 'miter',
+                      strokeMiterlimit: 10,
+                      fill: 'none',
+                      fillRule: 'nonzero',
+                      opacity: 1,
+                      transform:
+                        'translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)}',
+                    }}
+                  >
+                    <linearGradient
+                      id="SVGID_44"
+                      gradientUnits="userSpaceOnUse"
+                      x1="20.9489"
+                      y1="70.2584"
+                      x2="72.2486"
+                      y2="16.3831"
+                    >
+                      <stop offset="0%" className={styles.stopTag} />
+                      <stop offset="50%" className={styles.stopTag} />
+                      <stop offset="100%" className={styles.stopTag} />
+                    </linearGradient>
+                    <path
+                      d="M 61.692 0.878 H 28.307 C 12.699 0.878 0 13.577 0 29.186 v 31.629 c 0 15.608 12.699 28.307 28.307 28.307 h 33.385 C 77.301 89.121 90 76.423 90 60.814 V 29.186 C 90 13.577 77.301 0.878 61.692 0.878 z M 81.6 25.186 H 67.854 L 58.78 8.878 h 2.912 C 71.52 8.878 79.737 15.898 81.6 25.186 z M 39.888 25.186 L 30.815 8.878 h 18.811 l 9.073 16.307 H 39.888 z M 22.186 9.825 l 8.546 15.36 H 8.4 C 9.859 17.913 15.213 12.035 22.186 9.825 z M 61.692 81.121 H 28.307 C 17.11 81.121 8 72.012 8 60.814 V 33.186 h 74 v 27.629 C 82 72.012 72.89 81.121 61.692 81.121 z"
+                      style={{
+                        stroke: 'none',
+                        strokeWidth: 1,
+                        strokeDasharray: 'none',
+                        strokeLinecap: 'butt',
+                        strokeLinejoin: 'miter',
+                        strokeMiterlimit: 10,
+                        fillRule: 'nonzero',
+                        opacity: 1,
+                        transform: ' matrix(1 0 0 1 0 0) ',
+                      }}
+                      className={styles['reel-svg-path']}
+                      strokeLinecap="round"
+                    />
+                    <linearGradient
+                      id="SVGID_45"
+                      gradientUnits="userSpaceOnUse"
+                      x1="24.1901"
+                      y1="73.3447"
+                      x2="75.4898"
+                      y2="19.4693"
+                    >
+                      <stop offset="0%" className={styles.stopTag} />
+                      <stop offset="50%" className={styles.stopTag} />
+                      <stop offset="100%" className={styles.stopTag} />
+                    </linearGradient>
+                    <path
+                      d="M 56.367 51.97 l -17.41 -9.305 c -2.366 -1.265 -5.227 0.45 -5.227 3.133 v 18.611 c 0 2.683 2.861 4.398 5.227 3.133 l 17.41 -9.305 C 58.871 56.898 58.871 53.309 56.367 51.97 z"
+                      style={{
+                        stroke: 'none',
+                        strokeWidth: 1,
+                        strokeDasharray: 'none',
+                        strokeLinecap: 'butt',
+                        strokeLinejoin: 'miter',
+                        strokeMiterlimit: 10,
+                        fillRule: 'nonzero',
+                        opacity: 1,
+                        transform: ' matrix(1 0 0 1 0 0) ',
+                      }}
+                      className={styles['reel-svg-path']}
+                      strokeLinecap="round"
+                    />
+                  </g>
+                </svg>
+              </span>
+
+              <span
+                className={styles['search-section-box']}
+                onClick={() => navigate('/notifications')}
+              >
+                <IoMdNotificationsOutline
+                  className={styles['search-section-icon']}
+                />{' '}
+              </span>
+
+              {!showSearch && page === 'create' && (
                 <span
-                  className={`${styles['search-section-box']} `}
+                  className={`${styles['search-section-box']} ${styles['active-search-box']}`}
                   onClick={() => navigate('/create')}
                 >
                   <FaRegSquarePlus
-                    className={`${styles['search-section-icon']} `}
+                    className={`${styles['search-section-icon']} ${styles['active-search-icon']} `}
                   />
                 </span>
+              )}
+
+              {(page === 'inbox' || mediaQueries.first) && (
+                <>
+                  <span
+                    className={`${styles['search-section-box']} `}
+                    onClick={() => navigate('/create')}
+                  >
+                    <FaRegSquarePlus
+                      className={`${styles['search-section-icon']} `}
+                    />
+                  </span>
+
+                  <span
+                    className={`${styles['search-section-box']} ${
+                      page === 'inbox' ? styles['active-search-box'] : ''
+                    }`}
+                    onClick={() => navigate('/inbox')}
+                  >
+                    <BiMessageDetail
+                      className={`${styles['search-section-icon']} ${
+                        page === 'inbox' ? styles['active-search-icon'] : ''
+                      }`}
+                    />
+                  </span>
+
+                  <span
+                    className={`${styles['search-section-box']} `}
+                    onClick={() => navigate('/profile')}
+                  >
+                    <FaRegCircleUser
+                      className={`${styles['search-section-icon']} `}
+                    />
+                  </span>
+                </>
+              )}
+
+              <div
+                className={`${styles['more-div']} ${styles['search-more-div']}`}
+                ref={boxRef2}
+              >
+                {showMore2 && (
+                  <ul
+                    className={`${styles['more-list']} ${styles['search-more-list']}`}
+                  >
+                    <li
+                      className={styles['more-item']}
+                      onClick={() => navigate('/settings')}
+                    >
+                      <IoSettingsOutline className={styles['more-item-icon']} />
+                      Settings
+                    </li>
+                    <li
+                      className={styles['more-item']}
+                      onClick={() => navigate('/analytics')}
+                    >
+                      <TbBrandGoogleAnalytics
+                        className={styles['more-item-icon']}
+                      />
+                      Analytics
+                    </li>
+                    <li
+                      className={styles['more-item']}
+                      onClick={() => navigate('/history')}
+                    >
+                      <MdOutlineHistory className={styles['more-item-icon']} />
+                      History
+                    </li>
+                    <li
+                      className={`${styles['more-item']}  ${styles['apperance-item']}`}
+                    >
+                      <MdOutlineLightMode
+                        className={styles['more-item-icon']}
+                      />{' '}
+                      Change appearance
+                      <select className={styles['appearance-select']}>
+                        <option>Light</option>
+                        <option>Dark</option>
+                        <option>Device default</option>
+                      </select>
+                    </li>
+                    <hr className={styles['logout-line']} />
+                    <li className={styles['more-item']}>
+                      <FiLogOut className={styles['more-item-icon']} />
+                      Log out
+                    </li>
+                  </ul>
+                )}
 
                 <span
-                  className={`${styles['search-section-box']} ${
-                    page === 'inbox' ? styles['active-search-box'] : ''
+                  className={`${styles['search-more-box']} ${
+                    showMore2 ? styles['active-menu'] : ''
                   }`}
-                  onClick={() => navigate('/inbox')}
+                  onClick={() => setShowMore2(!showMore2)}
                 >
-                  <BiMessageDetail
-                    className={`${styles['search-section-icon']} ${
-                      page === 'inbox' ? styles['active-search-icon'] : ''
+                  <BiMenuAltLeft
+                    className={`${styles['search-more-icon']}  ${
+                      showMore2 ? styles['active-icon'] : ''
                     }`}
                   />
                 </span>
-
-                <span
-                  className={`${styles['search-section-box']} `}
-                  onClick={() => navigate('/profile')}
-                >
-                  <FaRegCircleUser
-                    className={`${styles['search-section-icon']} `}
-                  />
-                </span>
-              </>
-            )}
-
-            <div
-              className={`${styles['more-div']} ${styles['search-more-div']}`}
-              ref={boxRef2}
-            >
-              {showMore2 && (
-                <ul
-                  className={`${styles['more-list']} ${styles['search-more-list']}`}
-                >
-                  <li
-                    className={styles['more-item']}
-                    onClick={() => navigate('/settings')}
-                  >
-                    <IoSettingsOutline className={styles['more-item-icon']} />
-                    Settings
-                  </li>
-                  <li
-                    className={styles['more-item']}
-                    onClick={() => navigate('/analytics')}
-                  >
-                    <TbBrandGoogleAnalytics
-                      className={styles['more-item-icon']}
-                    />
-                    Analytics
-                  </li>
-                  <li
-                    className={styles['more-item']}
-                    onClick={() => navigate('/history')}
-                  >
-                    <MdOutlineHistory className={styles['more-item-icon']} />
-                    History
-                  </li>
-                  <li
-                    className={`${styles['more-item']}  ${styles['apperance-item']}`}
-                  >
-                    <MdOutlineLightMode className={styles['more-item-icon']} />{' '}
-                    Change appearance
-                    <select className={styles['appearance-select']}>
-                      <option>Light</option>
-                      <option>Dark</option>
-                      <option>Device default</option>
-                    </select>
-                  </li>
-                  <hr className={styles['logout-line']} />
-                  <li className={styles['more-item']}>
-                    <FiLogOut className={styles['more-item-icon']} />
-                    Log out
-                  </li>
-                </ul>
-              )}
-
-              <span
-                className={`${styles['search-more-box']} ${
-                  showMore2 ? styles['active-menu'] : ''
-                }`}
-                onClick={() => setShowMore2(!showMore2)}
-              >
-                <BiMenuAltLeft
-                  className={`${styles['search-more-icon']}  ${
-                    showMore2 ? styles['active-icon'] : ''
-                  }`}
-                />
-              </span>
+              </div>
             </div>
-          </div>
+          )}
 
-          {showSearch && (
+          {(showSearch || showSearchPage) && (
             <div
               className={styles['search-container']}
               onAnimationEnd={() => searchInputRef.current.focus()}
               ref={searchContainerRef}
             >
-              <span className={styles['search-head']}>Search</span>
+              {!showSearchPage && (
+                <span className={styles['search-head']}>Search</span>
+              )}
 
-              <div className={styles['search-box']}>
-                <IoSearchSharp className={styles['search-icon']} />
-                <input
-                  type="text"
-                  className={styles['search-input']}
-                  placeholder="Search"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  ref={searchInputRef}
-                />
+              <div className={styles['show-search-div']}>
+                {showSearchPage && (
+                  <IoArrowBack
+                    className={styles['back-icon']}
+                    onClick={() => setShowSearchPage(false)}
+                  />
+                )}
+                <div className={styles['search-box']}>
+                  <IoSearchSharp className={styles['search-icon']} />
+                  <input
+                    type="text"
+                    className={styles['search-input']}
+                    placeholder="Search"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    ref={searchInputRef}
+                  />
 
-                <IoClose
-                  className={`${styles['close-search-icon']} ${
-                    searchText.trim().length < 1 ? styles['hide-search'] : ''
-                  }`}
-                  title="Clear"
-                  onClick={() => {
-                    setSearchText('');
-                    searchInputRef.current.focus();
-                  }}
-                />
+                  <IoClose
+                    className={`${styles['close-search-icon']} ${
+                      searchText.trim().length < 1 ? styles['hide-search'] : ''
+                    }`}
+                    title="Clear"
+                    onClick={() => {
+                      setSearchText('');
+                      searchInputRef.current.focus();
+                    }}
+                  />
+                </div>
               </div>
 
               {searchText.trim().length > 0 ? (

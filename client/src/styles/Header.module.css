@@ -5,7 +5,7 @@
   padding: 1rem;
   background: white;
   top: 0;
-  z-index: 5;
+  z-index: 4;
 }
 
 .left-box {
@@ -111,6 +111,7 @@
   height: 1.8rem;
   fill: var(--app-theme-color);
   flex-shrink: 0;
+  fill: black;
 }
 
 .inbox-length {
