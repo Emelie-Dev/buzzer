@@ -584,7 +584,7 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
       {(pageType === 'small' || showSearch) && (
         <section
           className={`${styles['search-section']} ${
-            showSearchPage === 'show' ? styles['show-search-page'] : ''
+            showSearchPage ? styles['show-search-page'] : ''
           }`}
           ref={searchSectionRef}
         >
