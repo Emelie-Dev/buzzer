@@ -200,6 +200,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  background: green;
 }
 
 .next-content-div {

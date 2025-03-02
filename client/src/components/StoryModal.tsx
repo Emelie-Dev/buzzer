@@ -304,7 +304,7 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
 
           setCurrentIndex(index);
           carouselRef.current.scrollLeft =
-            index * Math.round(carouselRef.current.offsetWidth * 0.3);
+            index * Math.round(carouselRef.current.offsetWidth * 0.3 + 67);
         }
       },
     []

@@ -22,15 +22,13 @@ const App = () => {
     'reel' | 'content' | 'story'
   >('content');
   const [scrollingUp, setScrollingUp] = useState<boolean | null>(null);
-  const [showSearchPage, setShowSearchPage] = useState<boolean>(false);
+  const [showSearchPage, setShowSearchPage] = useState<boolean | 'show'>(false);
 
   useEffect(() => {
     const resizeHandler = () => {
       const smallSize = window.matchMedia('(max-width: 600px)').matches;
       setShowSearchPage(smallSize);
     };
-
-    resizeHandler();
 
     window.addEventListener('resize', resizeHandler);
 
