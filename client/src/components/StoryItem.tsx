@@ -11,7 +11,7 @@ import { FaRegHeart } from 'react-icons/fa';
 import { AiOutlineSend } from 'react-icons/ai';
 import { useEffect, useRef, useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
-import { Story } from './StoryModal';
+import { Story, VoidStory } from './StoryModal';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 
 export interface StoryContent {
@@ -21,11 +21,10 @@ export interface StoryContent {
 
 type StoryItemProps = {
   active: boolean;
-  data: Story;
+  data: Story | { value: null };
   itemIndex: number;
-  isOperative: boolean;
+  currentIndex: number;
   totalLength: number;
-  storyIndex: number;
   moveToStory: (
     index: number,
     storyItemIndex: number | null,
@@ -33,18 +32,18 @@ type StoryItemProps = {
     setContentIndex: React.Dispatch<React.SetStateAction<number>> | null,
     type: 'initial' | 'next' | 'prev' | 'jump'
   ) => () => void;
+  switchType: 'front' | 'back' | 'none';
 };
 
 const StoryItem = ({
   active,
   data,
   itemIndex,
-  storyIndex,
-  isOperative,
-  totalLength,
+  currentIndex,
   moveToStory,
+  switchType,
 }: StoryItemProps) => {
-  const { name, time, content } = data;
+  const { name, time, content } = data as Story;
 
   const [like, setLike] = useState<boolean>(false);
   const [showMenu, setShowMenu] = useState<boolean>(false);
@@ -64,12 +63,51 @@ const StoryItem = ({
   const progressRef = useRef<HTMLSpanElement>(null!);
 
   useEffect(() => {
-    if (itemRef.current) {
-      if (isOperative) {
-        itemRef.current.style.animationDuration = '0.3s';
+    if (active) {
+      switch (switchType) {
+        case 'back':
+          itemRef.current.animate(
+            {
+              transform: [
+                'scale(0.5) translateX(-100%)',
+                'scale(1) translateX(0%)',
+              ],
+            },
+            {
+              fill: 'both',
+              duration: 250,
+            }
+          );
+          break;
+
+        case 'front':
+          itemRef.current.animate(
+            {
+              transform: [
+                'scale(0.5) translateX(100%)',
+                'scale(1) translateX(0%)',
+              ],
+            },
+            {
+              fill: 'both',
+              duration: 250,
+            }
+          );
+          break;
+
+        default:
+          itemRef.current.animate(
+            {
+              transform: ['scale(0.5)', 'scale(1)'],
+            },
+            {
+              fill: 'both',
+              duration: 250,
+            }
+          );
       }
     }
-  });
+  }, [currentIndex]);
 
   useEffect(() => {
     const clickHandler = (e: Event) => {
@@ -116,17 +154,20 @@ const StoryItem = ({
 
   useEffect(() => {
     setLoading(true);
-    if (content[contentIndex].type === 'video') {
-      if (videoRef.current)
-        videoRef.current.src = `../../assets/images/content/${content[contentIndex].src}.mp4`;
-    }
 
-    setPause(false);
-    setDuration(() => {
-      if (content[contentIndex].type === 'image') return 7;
-      else return 0;
-    });
-  }, [contentIndex, storyIndex, content]);
+    if ((data as Story).name) {
+      if (content[contentIndex].type === 'video') {
+        if (videoRef.current)
+          videoRef.current.src = `../../assets/images/content/${content[contentIndex].src}.mp4`;
+      }
+
+      setPause(false);
+      setDuration(() => {
+        if (content[contentIndex].type === 'image') return 7;
+        else return 0;
+      });
+    }
+  }, [contentIndex, content]);
 
   useEffect(() => {
     if (progressRef.current) {
@@ -159,22 +200,22 @@ const StoryItem = ({
     }
   };
 
-  return active ? (
+  return (data as VoidStory).value === null ? (
+    <article className={styles['void-next-story']}></article>
+  ) : active ? (
     <article className={styles['current-story']} ref={itemRef}>
-      {!(itemIndex === 0 && contentIndex === 0) && (
-        <span
-          className={styles['left-arrow-box']}
-          onClick={moveToStory(
-            itemIndex - 1,
-            contentIndex,
-            content.length - 1,
-            setContentIndex,
-            'prev'
-          )}
-        >
-          <MdKeyboardArrowLeft className={styles['left-arrow']} />
-        </span>
-      )}
+      <span
+        className={styles['left-arrow-box']}
+        onClick={moveToStory(
+          itemIndex - 1,
+          contentIndex,
+          content.length - 1,
+          setContentIndex,
+          'prev'
+        )}
+      >
+        <MdKeyboardArrowLeft className={styles['left-arrow']} />
+      </span>
 
       <div className={styles['line-container']}>
         {content.map((item, index) => (
@@ -197,7 +238,6 @@ const StoryItem = ({
           </span>
         ))}
       </div>
-
       <div className={styles['details-box']}>
         <div className={styles['story-details']}>
           <span className={styles['name-box']}>
@@ -261,7 +301,6 @@ const StoryItem = ({
           </div>
         </div>
       </div>
-
       <div className={styles['content-div']}>
         {content[contentIndex].type === 'image' ? (
           <img
@@ -319,7 +358,6 @@ const StoryItem = ({
           ''
         )}
       </div>
-
       <div className={styles['reply-div']}>
         <input
           className={styles['reply-input']}
@@ -342,29 +380,22 @@ const StoryItem = ({
         <AiOutlineSend className={styles['send-icon']} />
       </div>
 
-      {!(
-        itemIndex === totalLength - 1 && contentIndex === content.length - 1
-      ) && (
-        <span
-          className={styles['right-arrow-box']}
-          onClick={moveToStory(
-            itemIndex + 1,
-            contentIndex,
-            content.length - 1,
-            setContentIndex,
-            'next'
-          )}
-        >
-          <MdKeyboardArrowRight className={styles['right-arrow']} />
-        </span>
-      )}
+      <span
+        className={styles['right-arrow-box']}
+        onClick={moveToStory(
+          itemIndex + 1,
+          contentIndex,
+          content.length - 1,
+          setContentIndex,
+          'next'
+        )}
+      >
+        <MdKeyboardArrowRight className={styles['right-arrow']} />
+      </span>
     </article>
   ) : (
     <article className={styles['next-story']}>
-      <div
-        className={styles['next-content-div']}
-        onClick={moveToStory(itemIndex, null, null, null, 'jump')}
-      >
+      <div className={styles['next-content-div']}>
         {content[0].type === 'image' ? (
           <img
             className={styles['next-content']}

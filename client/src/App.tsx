@@ -23,14 +23,14 @@ const App = () => {
   >('content');
   const [scrollingUp, setScrollingUp] = useState<boolean | null>(null);
   const [showSearchPage, setShowSearchPage] = useState<boolean>(false);
-  const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
+  const [screenWidth, setScreenWidth] = useState<number>(0);
 
   useEffect(() => {
     const resizeHandler = () => {
       const smallSize = window.matchMedia('(max-width: 600px)').matches;
-      if (window.innerWidth !== screenWidth) {
-        setShowSearchPage(smallSize);
-      }
+      setShowSearchPage(
+        window.innerWidth !== screenWidth ? smallSize : showSearchPage
+      );
       setScreenWidth(window.innerWidth);
     };
 

@@ -9,14 +9,20 @@ export interface Story {
   name: string;
   content: StoryContent[];
   time: string;
+  index: number;
 }
+
+export type VoidStory = {
+  value: null;
+};
 
 type StoryModalProps = {
   setViewStory: React.Dispatch<React.SetStateAction<boolean>>;
   itemIndex: number;
 };
 
-const stories: Story[] = [
+const stories: (Story | { value: null })[] = [
+  { value: null },
   {
     name: 'userOne',
     content: [
@@ -29,8 +35,10 @@ const stories: Story[] = [
       { type: 'image', src: 'content14' },
     ],
     time: '23 seconds ago',
+    index: 0,
   },
   {
+    index: 1,
     name: 'coolGuy',
     content: [
       { type: 'image', src: 'content8' },
@@ -42,6 +50,7 @@ const stories: Story[] = [
     time: '12 hours ago',
   },
   {
+    index: 2,
     name: 'happy123',
     content: [
       { type: 'image', src: 'content7' },
@@ -55,6 +64,7 @@ const stories: Story[] = [
     time: '19 seconds ago',
   },
   {
+    index: 3,
     name: 'sunshineGirl',
     content: [
       { type: 'image', src: 'content16' },
@@ -63,6 +73,7 @@ const stories: Story[] = [
     time: '17 hours ago',
   },
   {
+    index: 4,
     name: 'codeMaster',
     content: [
       { type: 'image', src: 'content15' },
@@ -78,6 +89,7 @@ const stories: Story[] = [
     time: '13 hours ago',
   },
   {
+    index: 5,
     name: 'skyWalker',
     content: [
       { type: 'image', src: 'content5' },
@@ -91,6 +103,7 @@ const stories: Story[] = [
     time: '15 hours ago',
   },
   {
+    index: 6,
     name: 'theArtist',
     content: [
       { type: 'video', src: 'content24' },
@@ -107,6 +120,7 @@ const stories: Story[] = [
     time: '12 hours ago',
   },
   {
+    index: 7,
     name: 'jungleKing',
     content: [
       { type: 'video', src: 'content21' },
@@ -115,6 +129,7 @@ const stories: Story[] = [
     time: '17 hours ago',
   },
   {
+    index: 8,
     name: 'dreamer_98',
     content: [
       { type: 'video', src: 'content25' },
@@ -130,11 +145,13 @@ const stories: Story[] = [
     time: '12 minutes ago',
   },
   {
+    index: 9,
     name: 'techieDude',
     content: [{ type: 'video', src: 'content24' }],
     time: '20 hours ago',
   },
   {
+    index: 10,
     name: 'cityExplorer',
     content: [
       { type: 'video', src: 'content21' },
@@ -144,6 +161,7 @@ const stories: Story[] = [
     time: '15 minutes ago',
   },
   {
+    index: 11,
     name: 'natureLover',
     content: [
       { type: 'image', src: 'content19' },
@@ -158,6 +176,7 @@ const stories: Story[] = [
     time: '13 seconds ago',
   },
   {
+    index: 12,
     name: 'mountainView',
     content: [
       { type: 'image', src: 'content15' },
@@ -168,6 +187,7 @@ const stories: Story[] = [
     time: '22 hours ago',
   },
   {
+    index: 13,
     name: 'coffeeAddict',
     content: [
       { type: 'image', src: 'content10' },
@@ -182,6 +202,7 @@ const stories: Story[] = [
     time: '18 minutes ago',
   },
   {
+    index: 14,
     name: 'chefTom',
     content: [
       { type: 'image', src: 'content8' },
@@ -198,6 +219,7 @@ const stories: Story[] = [
     time: '15 seconds ago',
   },
   {
+    index: 15,
     name: 'oceanWave',
     content: [
       { type: 'video', src: 'content21' },
@@ -207,6 +229,7 @@ const stories: Story[] = [
     time: '6 seconds ago',
   },
   {
+    index: 16,
     name: 'bookworm101',
     content: [
       { type: 'video', src: 'content6' },
@@ -220,6 +243,7 @@ const stories: Story[] = [
     time: '17 seconds ago',
   },
   {
+    index: 17,
     name: 'fastRunner',
     content: [
       { type: 'image', src: 'content22' },
@@ -232,6 +256,7 @@ const stories: Story[] = [
     time: '17 minutes ago',
   },
   {
+    index: 18,
     name: 'digitalNomad',
     content: [
       { type: 'video', src: 'content24' },
@@ -245,6 +270,7 @@ const stories: Story[] = [
     time: '6 seconds ago',
   },
   {
+    index: 19,
     name: 'starGazer',
     content: [
       { type: 'image', src: 'content2' },
@@ -255,18 +281,21 @@ const stories: Story[] = [
     ],
     time: '20 hours ago',
   },
+  { value: null },
 ];
 
 const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
   const [currentIndex, setCurrentIndex] = useState<number>(itemIndex);
-  const [isOperative, setIsOperative] = useState<boolean>(false);
+  const [swicthType, setSwitchType] = useState<'front' | 'back' | 'none'>(
+    'none'
+  );
 
   const carouselRef = useRef<HTMLDivElement>(null!);
 
   const target = document.getElementById('stories-portal') || document.body;
 
   useEffect(() => {
-    moveToStory(currentIndex, null, null, null, 'initial')();
+    moveToStory(currentIndex, null, null, null, 'jump')();
 
     if (carouselRef.current)
       carouselRef.current.style.scrollBehavior = 'smooth';
@@ -282,29 +311,21 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
       ) =>
       () => {
         if (type === 'next') {
-          setIsOperative(true);
           if (storyItemIndex === contentLength) {
             setCurrentIndex(index);
-            carouselRef.current.scrollLeft =
-              index * (carouselRef.current.offsetWidth * 0.3 + 96);
+            setSwitchType('front');
           } else {
             if (setContentIndex) setContentIndex((prev) => prev + 1);
           }
         } else if (type === 'prev') {
-          setIsOperative(true);
           if (storyItemIndex === 0) {
             setCurrentIndex(index);
-            carouselRef.current.scrollLeft =
-              index * (carouselRef.current.offsetWidth * 0.3 + 96);
+            setSwitchType('back');
           } else {
             if (setContentIndex) setContentIndex((prev) => prev - 1);
           }
         } else {
-          if (type === 'jump') setIsOperative(true);
-
-          setCurrentIndex(index);
-          carouselRef.current.scrollLeft =
-            index * Math.round(carouselRef.current.offsetWidth * 0.3 + 67);
+          if (type === 'jump') setCurrentIndex(index);
         }
       },
     []
@@ -321,22 +342,18 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
       </span>
 
       <div className={styles['story-container']} ref={carouselRef}>
-        <article className={styles['void-next-story']}>m</article>
-
-        {stories.map((data, index) => (
+        {stories.slice(currentIndex, currentIndex + 3).map((data, index) => (
           <StoryItem
             key={index}
-            itemIndex={index}
-            active={currentIndex === index}
-            storyIndex={currentIndex}
-            isOperative={isOperative}
+            itemIndex={(data as Story).index}
+            active={index === 1}
             moveToStory={moveToStory}
             totalLength={stories.length}
             data={data}
+            currentIndex={currentIndex}
+            switchType={swicthType}
           />
         ))}
-
-        <article className={styles['void-next-story2']}>m</article>
       </div>
     </section>,
     target
