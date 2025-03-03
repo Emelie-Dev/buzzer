@@ -26,7 +26,7 @@ const App = () => {
   useEffect(() => {
     const resizeHandler = () => {
       const smallSize = window.matchMedia('(max-width: 600px)').matches;
-      setShowSearchPage(smallSize);
+      setShowSearchPage(smallSize ? showSearchPage : false);
     };
 
     resizeHandler();
