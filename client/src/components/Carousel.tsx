@@ -121,7 +121,6 @@ const Carousel = ({
             carouselRef.current.style.transform = `translateX(${
               -(contentIndex + swipedWidth / width) * 100
             }%)`;
-            touchEndX.current = swipedWidth / width;
             touchMoveType.current = 'next';
           }
         } else {
@@ -129,12 +128,13 @@ const Carousel = ({
             carouselRef.current.style.transform = `translateX(${
               -(contentIndex - swipedWidth / width) * 100
             }%)`;
-            touchEndX.current = swipedWidth / width;
             touchMoveType.current = 'prev';
           }
+
+          touchEndX.current = swipedWidth;
         }
       } else {
-        if (touchEndX.current > 0.5) {
+        if (touchEndX.current > 100) {
           if (touchMoveType.current === 'next') {
             if (contentIndex < data.length - 1) changeMedia('next')();
           } else {
@@ -146,9 +146,9 @@ const Carousel = ({
           }%)`;
         }
 
-        // touchStartX.current = 0;
-        // touchEndX.current = 0;
-        // touchMoveType.current = '';
+        touchStartX.current = 0;
+        touchEndX.current = 0;
+        touchMoveType.current = '';
       }
     };
 
