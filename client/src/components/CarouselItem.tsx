@@ -27,9 +27,9 @@ type CarouselItemProps = {
   description?: string;
   name?: string;
   time?: string;
-  carouselRef: React.MutableRefObject<HTMLDivElement>;
-  setContentIndex: React.Dispatch<React.SetStateAction<number>>;
-  dotRef: React.MutableRefObject<HTMLSpanElement>;
+  carouselRef?: React.MutableRefObject<HTMLDivElement>;
+  setContentIndex?: React.Dispatch<React.SetStateAction<number>>;
+  dotRef?: React.MutableRefObject<HTMLSpanElement>;
 };
 
 const CarouselItem = ({
@@ -354,36 +354,38 @@ const CarouselItem = ({
     (e: React.TouchEvent<HTMLDivElement>) => {
       const width = (e.target as HTMLDivElement).offsetWidth;
 
-      if (type === 'start') {
-        touchStartX.current = e.touches[0].clientX;
-      } else if (type === 'move') {
-        const swipedWidth = Math.min(
-          Math.abs(e.touches[0].clientX - touchStartX.current),
-          width
-        );
+      if (setContentIndex && carouselRef && dotRef) {
+        if (type === 'start') {
+          touchStartX.current = e.touches[0].clientX;
+        } else if (type === 'move') {
+          const swipedWidth = Math.min(
+            Math.abs(e.touches[0].clientX - touchStartX.current),
+            width
+          );
 
-        if (e.touches[0].clientX - touchStartX.current < 0) {
-          carouselRef.current.style.transform = `translateX(${
-            -(itemIndex + 1) * 100 * (swipedWidth / width)
-          }%)`;
-          touchEndX.current = swipedWidth / width;
-          touchMoveType.current = 'next';
-        }
-      } else {
-        if (touchEndX.current > 0.5) {
-          if (touchMoveType.current === 'next') {
-            setContentIndex((prev) => prev + 1);
-
+          if (e.touches[0].clientX - touchStartX.current < 0) {
             carouselRef.current.style.transform = `translateX(${
-              -(itemIndex + 1) * 100
+              -(itemIndex + 1) * 100 * (swipedWidth / width)
             }%)`;
-
-            if (contentIndex > 6) dotRef.current.scrollLeft += 10;
+            touchEndX.current = swipedWidth / width;
+            touchMoveType.current = 'next';
           }
         } else {
-          carouselRef.current.style.transform = `translateX(${
-            -itemIndex * 100
-          }%)`;
+          if (touchEndX.current > 0.5) {
+            if (touchMoveType.current === 'next') {
+              setContentIndex((prev) => prev + 1);
+
+              carouselRef.current.style.transform = `translateX(${
+                -(itemIndex + 1) * 100
+              }%)`;
+
+              if (contentIndex > 6) dotRef.current.scrollLeft += 10;
+            }
+          } else {
+            carouselRef.current.style.transform = `translateX(${
+              -itemIndex * 100
+            }%)`;
+          }
         }
       }
     };
