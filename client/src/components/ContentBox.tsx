@@ -21,7 +21,7 @@ import ContentItem from './ContentItem';
 type ContentBoxProps = {
   data: DataItem;
   contentType: 'following' | 'home' | 'reels';
-  setShowMobileMenu: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowMobileMenu?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export type CommentData =
