@@ -47,8 +47,12 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
   const [moreTrends, setMoreTrends] = useState<boolean>(false);
-  const [mediaQueries, setMediaQueries] = useState<{ first: boolean }>({
+  const [mediaQueries, setMediaQueries] = useState<{
+    first: boolean;
+    second: boolean;
+  }>({
     first: false,
+    second: false,
   });
 
   const { showSearchPage, setShowSearchPage } = useContext(GeneralContext);
@@ -69,8 +73,13 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
       setIsMediumSize(mediumSize);
 
       const firstSize = window.matchMedia('(max-width: 1200px)').matches;
+      const secondSize = window.matchMedia('(max-width: 600px)').matches;
 
-      setMediaQueries({ ...mediaQueries, first: firstSize });
+      setMediaQueries({
+        ...mediaQueries,
+        first: firstSize,
+        second: secondSize,
+      });
     };
 
     resizeHandler();
@@ -136,6 +145,7 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
           animation.onfinish = () => {
             setShowSearch(false);
             setSearchText('');
+            setShowSearchPage(false);
           };
         }
       }
@@ -584,11 +594,11 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
       {(pageType === 'small' || showSearch) && (
         <section
           className={`${styles['search-section']} ${
-            showSearchPage === 'show' ? styles['show-search-page'] : ''
+            showSearchPage ? styles['show-search-page'] : ''
           }`}
           ref={searchSectionRef}
         >
-          {!showSearchPage && (
+          {(!showSearchPage || !mediaQueries.second) && (
             <div className={styles['icons-container']}>
               <span
                 className={`${styles['app-section-box']} ${
@@ -867,7 +877,7 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
               onAnimationEnd={() => searchInputRef.current.focus()}
               ref={searchContainerRef}
             >
-              {!showSearchPage && (
+              {(!showSearchPage || !mediaQueries.second) && (
                 <span className={styles['search-head']}>Search</span>
               )}
 

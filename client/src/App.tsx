@@ -14,7 +14,7 @@ import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
 import History from './pages/History';
 import { GeneralContext } from './Contexts';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const App = () => {
   const [settingsCategory, setSettingsCategory] = useState('');
@@ -22,20 +22,7 @@ const App = () => {
     'reel' | 'content' | 'story'
   >('content');
   const [scrollingUp, setScrollingUp] = useState<boolean | null>(null);
-  const [showSearchPage, setShowSearchPage] = useState<boolean | 'show'>(false);
-  useEffect(() => {
-    const resizeHandler = () => {
-      const smallSize = window.matchMedia('(max-width: 600px)').matches;
-      setShowSearchPage(smallSize ? showSearchPage : false);
-    };
-
-    resizeHandler();
-    window.addEventListener('resize', resizeHandler);
-
-    return () => {
-      window.removeEventListener('resize', resizeHandler);
-    };
-  }, []);
+  const [showSearchPage, setShowSearchPage] = useState<boolean>(false);
 
   return (
     <>
