@@ -382,11 +382,19 @@
   .stories-container {
     margin: 1rem 1rem 0;
   }
+
+  .content-container {
+    padding: 0 1rem;
+  }
 }
 
 @media screen and (max-width: 400px) {
   .stories-container {
     margin: 1rem 0 0;
     padding: 0 1rem;
+  }
+
+  .content-container {
+    padding: 0;
   }
 }

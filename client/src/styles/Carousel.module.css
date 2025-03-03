@@ -163,3 +163,11 @@
     transform: rotate(1turn);
   }
 }
+
+/* Media Queries */
+
+@media screen and (max-width: 400px) {
+  .carousel {
+    border-radius: 0;
+  }
+}

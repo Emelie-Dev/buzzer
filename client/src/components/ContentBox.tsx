@@ -391,6 +391,29 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
               <span className={styles['menu-text']}>217</span>
             </div>
           </div>
+
+          <div className={styles['small-menu-container']}>
+            <span className={styles['small-details-box']}>
+              <FaHeart className={styles['small-details-icon']} />
+
+              <span className={styles['small-details-value']}>21K</span>
+            </span>
+            <span className={styles['small-details-box']}>
+              <FaCommentDots className={styles['small-details-icon']} />
+
+              <span className={styles['small-details-value']}>2345</span>
+            </span>
+            <span className={styles['small-details-box']}>
+              <IoBookmark className={styles['small-details-icon']} />
+
+              <span className={styles['small-details-value']}>954</span>
+            </span>
+            <span className={styles['small-details-box']}>
+              <FaShare className={styles['small-details-icon']} />
+
+              <span className={styles['small-details-value']}>217</span>
+            </span>
+          </div>
         </div>
 
         {contentType !== 'reels' && description && (
