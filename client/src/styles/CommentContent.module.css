@@ -243,3 +243,41 @@
 .sub-comment-box:hover .sub-comment-menu-box {
   visibility: visible;
 }
+
+/* Media Queries */
+
+@media screen and (max-width: 1100px) {
+  .comment-box {
+    padding: 0 1rem;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .comment-box {
+    padding: 0 0.7rem;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .comment-box {
+    padding: 0 0.5rem;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .comment-box {
+    padding: 0 1.5rem;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .comment-box {
+    padding: 0 1rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .comment-box {
+    padding: 0 0.7rem;
+  }
+}

@@ -464,7 +464,6 @@ const CommentBox = ({
 
               <span className={styles['menu-text']}>21K</span>
             </div>
-
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -475,7 +474,6 @@ const CommentBox = ({
               </span>
               <span className={styles['menu-text']}>2345</span>
             </div>
-
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
