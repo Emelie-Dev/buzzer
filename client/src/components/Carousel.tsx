@@ -146,9 +146,9 @@ const Carousel = ({
           }%)`;
         }
 
-        touchStartX.current = 0;
-        touchEndX.current = 0;
-        touchMoveType.current = '';
+        // touchStartX.current = 0;
+        // touchEndX.current = 0;
+        // touchMoveType.current = '';
       }
     };
 
