@@ -129,7 +129,6 @@
 .content-box {
   display: flex;
   max-height: 85vh;
-  min-height: 380px;
 }
 
 .reels-content-box {
@@ -304,4 +303,28 @@
 
 .show-more {
   display: block;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 600px) {
+  .content-box {
+    max-height: calc(85vh - 3.9rem);
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .content-box {
+    position: relative;
+  }
+
+  .carousel-container {
+    width: 100%;
+    position: relative;
+  }
+
+  .menu-container {
+    position: absolute;
+    right: 0;
+  }
 }
