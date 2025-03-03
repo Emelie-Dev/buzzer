@@ -281,6 +281,16 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
         type: 'initial' | 'next' | 'prev' | 'jump'
       ) =>
       () => {
+        const ratio = window.matchMedia('(max-width: 900px)').matches
+          ? 0.265
+          : window.matchMedia('(max-width: 1000px)').matches
+          ? 0.285
+          : window.matchMedia('(max-width: 1100px)').matches
+          ? 0.31
+          : window.matchMedia('(max-width: 1200px)').matches
+          ? 0.3345
+          : 0.35;
+
         if (type === 'next') {
           setIsOperative(true);
           if (storyItemIndex === contentLength) {
@@ -304,7 +314,7 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
 
           setCurrentIndex(index);
           carouselRef.current.scrollLeft =
-            index * Math.round(carouselRef.current.offsetWidth * 0.3 + 67);
+            index * Math.round(carouselRef.current.offsetWidth * ratio);
         }
       },
     []
