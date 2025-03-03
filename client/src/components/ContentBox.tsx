@@ -1,5 +1,9 @@
 import { BsDot } from 'react-icons/bs';
-import { HiOutlineDotsHorizontal, HiPlus } from 'react-icons/hi';
+import {
+  HiOutlineDotsHorizontal,
+  HiPlus,
+  HiOutlineDotsVertical,
+} from 'react-icons/hi';
 import Carousel from '../components/Carousel';
 import { FaHeart, FaCommentDots, FaShare } from 'react-icons/fa';
 import { IoBookmark } from 'react-icons/io5';
@@ -17,6 +21,7 @@ import ContentItem from './ContentItem';
 type ContentBoxProps = {
   data: DataItem;
   contentType: 'following' | 'home' | 'reels';
+  setShowMobileMenu: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export type CommentData =
@@ -37,7 +42,11 @@ export type CommentData =
       type: 'image' | 'video';
     };
 
-const ContentBox = ({ data, contentType }: ContentBoxProps) => {
+const ContentBox = ({
+  data,
+  contentType,
+  setShowMobileMenu,
+}: ContentBoxProps) => {
   const { media, description, username, name, time, photo, aspectRatio, type } =
     data;
 
@@ -209,6 +218,13 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
                   setShowMenu(!showMenu);
                   setHideMenu(false);
                 }}
+              />
+
+              <HiOutlineDotsVertical
+                className={`${styles['content-menu2']} ${
+                  showMenu ? styles['active-menu'] : ''
+                }`}
+                onClick={() => setShowMobileMenu(true)}
               />
 
               {!hideMenu && (
@@ -393,22 +409,63 @@ const ContentBox = ({ data, contentType }: ContentBoxProps) => {
           </div>
 
           <div className={styles['small-menu-container']}>
-            <span className={styles['small-details-box']}>
-              <FaHeart className={styles['small-details-icon']} />
+            <span
+              className={styles['small-details-box']}
+              onClick={() => {
+                setLike(!like);
+                setHideLike(like === true ? true : false);
+              }}
+            >
+              {!hideLike ? (
+                <img
+                  src="../../assets/images/Animation - 1731349965809.gif"
+                  className={styles['like-icon']}
+                />
+              ) : (
+                <FaHeart
+                  className={`${styles['small-details-icon']} ${
+                    like ? styles['red-icon'] : ''
+                  }`}
+                  title="Like"
+                />
+              )}
 
               <span className={styles['small-details-value']}>21K</span>
             </span>
-            <span className={styles['small-details-box']}>
+
+            <span
+              className={styles['small-details-box']}
+              onClick={() => {
+                activeVideo?.pause();
+                setActiveVideo(null);
+                setViewComment(true);
+              }}
+            >
               <FaCommentDots className={styles['small-details-icon']} />
 
               <span className={styles['small-details-value']}>2345</span>
             </span>
-            <span className={styles['small-details-box']}>
-              <IoBookmark className={styles['small-details-icon']} />
+
+            <span
+              className={styles['small-details-box']}
+              onClick={() => setSaved(!saved)}
+            >
+              <IoBookmark
+                className={`${styles['small-details-icon']} ${
+                  saved ? styles['saved-icon'] : ''
+                }`}
+              />
 
               <span className={styles['small-details-value']}>954</span>
             </span>
-            <span className={styles['small-details-box']}>
+
+            <span
+              className={styles['small-details-box']}
+              onClick={() => {
+                activeVideo?.pause();
+                setShareMedia(true);
+              }}
+            >
               <FaShare className={styles['small-details-icon']} />
 
               <span className={styles['small-details-value']}>217</span>

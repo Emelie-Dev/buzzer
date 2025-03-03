@@ -1,0 +1,51 @@
+.section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.1);
+  width: 100vw;
+  height: 100vh;
+  z-index: 6;
+  grid-template-columns: 100%;
+  justify-content: center;
+  align-content: end;
+  display: none;
+}
+
+.menu-list {
+  background: white;
+  border-radius: 10px;
+  list-style-type: none;
+  margin: 0;
+  padding: 0.5rem;
+  font-family: appFont;
+}
+
+.menu-item {
+  text-align: center;
+  white-space: nowrap;
+  padding: 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  color: var(--app-theme-color);
+  font-weight: 600;
+}
+
+.menu-red {
+  color: red !important;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 600px) {
+  .section {
+    display: grid;
+  }
+}

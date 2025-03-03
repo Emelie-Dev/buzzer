@@ -13,6 +13,7 @@ import { GoPlus } from 'react-icons/go';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import MobileMenu from '../components/MobileMenu';
 
 export interface User {
   name: string;
@@ -208,6 +209,7 @@ const Home = () => {
   });
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [storyIndex, setStoryIndex] = useState<number>(0);
+  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
 
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
@@ -317,7 +319,12 @@ const Home = () => {
           >
             <div className={styles['content-container']}>
               {dataList.map((data, index) => (
-                <ContentBox key={index} data={data} contentType="home" />
+                <ContentBox
+                  key={index}
+                  data={data}
+                  contentType="home"
+                  setShowMobileMenu={setShowMobileMenu}
+                />
               ))}
             </div>
           </ContentContext.Provider>
@@ -473,6 +480,13 @@ const Home = () => {
           </div>
         </section>
       </section>
+
+      {showMobileMenu && (
+        <MobileMenu
+          showMobileMenu={showMobileMenu}
+          setShowMobileMenu={setShowMobileMenu}
+        />
+      )}
     </>
   );
 };
