@@ -148,11 +148,14 @@ const Carousel = ({
             viewType={viewType}
             itemIndex={index}
             contentIndex={contentIndex}
+            setContentIndex={setContentIndex}
             aspectRatio={aspectRatio}
             hideData={hideData}
             setHideData={setHideData}
             contentType="carousel"
             description={''}
+            carouselRef={carouselRef}
+            dotRef={dotRef}
           />
         ))}
       </div>

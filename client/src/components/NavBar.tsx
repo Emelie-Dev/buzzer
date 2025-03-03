@@ -885,7 +885,11 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                 {showSearchPage && (
                   <IoArrowBack
                     className={styles['back-icon']}
-                    onClick={() => setShowSearchPage(false)}
+                    onClick={() => {
+                      setShowSearch(false);
+                      setSearchText('');
+                      setShowSearchPage(false);
+                    }}
                   />
                 )}
                 <div className={styles['search-box']}>
