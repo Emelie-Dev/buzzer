@@ -120,3 +120,25 @@
     width: calc(26.5% - 3rem);
   }
 }
+
+@media screen and (max-width: 800px) {
+  .void-next-story {
+    display: none;
+  }
+
+  .void-next-story2 {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .close-icon-box {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .section {
+    padding: 0;
+  }
+}

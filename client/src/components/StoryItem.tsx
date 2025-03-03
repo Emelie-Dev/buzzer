@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
 import { Story } from './StoryModal';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
+import { IoClose } from 'react-icons/io5';
 
 export interface StoryContent {
   type: 'image' | 'video';
@@ -33,6 +34,7 @@ type StoryItemProps = {
     setContentIndex: React.Dispatch<React.SetStateAction<number>> | null,
     type: 'initial' | 'next' | 'prev' | 'jump'
   ) => () => void;
+  setViewStory: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const StoryItem = ({
@@ -43,6 +45,7 @@ const StoryItem = ({
   isOperative,
   totalLength,
   moveToStory,
+  setViewStory,
 }: StoryItemProps) => {
   const { name, time, content } = data;
 
@@ -62,6 +65,9 @@ const StoryItem = ({
   const listRef = useRef<HTMLUListElement>(null!);
   const videoRef = useRef<HTMLVideoElement>(null!);
   const progressRef = useRef<HTMLSpanElement>(null!);
+
+  const touchStartX = useRef(0);
+  const threshold = 100;
 
   useEffect(() => {
     if (itemRef.current) {
@@ -159,6 +165,66 @@ const StoryItem = ({
     }
   };
 
+  const handleVideoOnMobile =
+    (type: 'start' | 'end') => (e: React.TouchEvent<HTMLDivElement>) => {
+      const isMobileDevice = window.matchMedia('(max-width: 500px)').matches;
+      const isMobileDevice2 = window.matchMedia('(max-width: 800px)').matches;
+
+      if (isMobileDevice) {
+        if (content[contentIndex].type === 'video') {
+          if (type === 'start') setPause(true);
+          else setPause(false);
+        }
+      }
+
+      if (isMobileDevice2) {
+        if (type === 'start') {
+          touchStartX.current = e.touches[0].clientX;
+        } else {
+          const touchEndX = e.changedTouches[0].clientX;
+          const diffX = touchEndX - touchStartX.current;
+
+          if (Math.abs(diffX) > threshold) {
+            if (diffX > 0) {
+              if (itemIndex !== 0)
+                moveToStory(itemIndex - 1, null, null, null, 'jump')();
+            } else {
+              if (itemIndex !== totalLength - 1)
+                moveToStory(itemIndex + 1, null, null, null, 'jump')();
+            }
+          }
+        }
+      }
+    };
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    const isMobileDevice = window.matchMedia('(max-width: 800px)').matches;
+
+    if (isMobileDevice) {
+      const target = e.target as HTMLDivElement;
+      const pos = e.nativeEvent.offsetX;
+      const center = target.offsetWidth / 2;
+
+      if (pos > center) {
+        moveToStory(
+          itemIndex + 1,
+          contentIndex,
+          content.length - 1,
+          setContentIndex,
+          'next'
+        )();
+      } else {
+        moveToStory(
+          itemIndex - 1,
+          contentIndex,
+          content.length - 1,
+          setContentIndex,
+          'prev'
+        )();
+      }
+    }
+  };
+
   return active ? (
     <article className={styles['current-story']} ref={itemRef}>
       {!(itemIndex === 0 && contentIndex === 0) && (
@@ -176,170 +242,184 @@ const StoryItem = ({
         </span>
       )}
 
-      <div className={styles['line-container']}>
-        {content.map((item, index) => (
-          <span key={`${index}-${item.type}`} className={styles['line-box']}>
-            <span
-              className={`${styles['line-item']} ${
-                index < contentIndex ? styles['viewed-item'] : ''
-              } ${index === contentIndex ? styles['current-viewed-item'] : ''}`}
-              ref={index === contentIndex ? progressRef : null}
-              onAnimationEnd={moveToStory(
-                itemIndex + 1,
-                contentIndex,
-                content.length - 1,
-                setContentIndex,
-                'next'
-              )}
-            >
-              &nbsp;
+      <div
+        className={styles['current-story-div']}
+        onTouchStart={handleVideoOnMobile('start')}
+        onTouchEnd={handleVideoOnMobile('end')}
+        onClick={handleClick}
+      >
+        <div className={styles['line-container']}>
+          {content.map((item, index) => (
+            <span key={`${index}-${item.type}`} className={styles['line-box']}>
+              <span
+                className={`${styles['line-item']} ${
+                  index < contentIndex ? styles['viewed-item'] : ''
+                } ${
+                  index === contentIndex ? styles['current-viewed-item'] : ''
+                }`}
+                ref={index === contentIndex ? progressRef : null}
+                onAnimationEnd={moveToStory(
+                  itemIndex + 1,
+                  contentIndex,
+                  content.length - 1,
+                  setContentIndex,
+                  'next'
+                )}
+              >
+                &nbsp;
+              </span>
             </span>
-          </span>
-        ))}
-      </div>
-
-      <div className={styles['details-box']}>
-        <div className={styles['story-details']}>
-          <span className={styles['name-box']}>
-            <img
-              className={styles['user-pic']}
-              src={`../../assets/images/users/user${itemIndex + 1}.jpeg`}
-            />
-            <span className={styles['user-name']}>{name}</span>
-          </span>
-          <BsDot className={styles.dot} />
-          <time className={styles['time-sent']}>{getTime()}</time>
+          ))}
         </div>
 
-        <div className={styles['menu-details']}>
-          {content[contentIndex].type === 'video' && (
-            <>
-              {mute ? (
-                <BiSolidVolumeMute
-                  className={styles['mute-icon']}
-                  onClick={() => setMute(false)}
-                />
-              ) : (
-                <BiSolidVolumeFull
-                  className={styles['mute-icon']}
-                  onClick={() => setMute(true)}
-                />
-              )}
-            </>
-          )}
+        <div className={styles['details-box']}>
+          <div className={styles['story-details']}>
+            <span className={styles['name-box']}>
+              <img
+                className={styles['user-pic']}
+                src={`../../assets/images/users/user${itemIndex + 1}.jpeg`}
+              />
+              <span className={styles['user-name']}>{name}</span>
+            </span>
+            <BsDot className={styles.dot} />
+            <time className={styles['time-sent']}>{getTime()}</time>
+          </div>
 
-          {pause ? (
-            <FaPlay
-              className={styles['pause-icon']}
-              onClick={() => setPause(false)}
-            />
-          ) : (
-            <FaPause
-              className={styles['pause-icon']}
-              onClick={() => setPause(true)}
-            />
-          )}
-
-          <div className={styles['menu-div']} ref={menuRef}>
-            <HiDotsHorizontal
-              className={`${styles['menu-icon']} ${
-                showMenu ? styles['active-menu'] : ''
-              }`}
-              onClick={() => {
-                setShowMenu(!showMenu);
-                setHideMenu(false);
-              }}
-            />
-
-            {!hideMenu && (
-              <ul className={styles['menu-list']} ref={listRef}>
-                <li className={styles['menu-item']}>Follow</li>
-                <li className={styles['menu-item']}>Report</li>
-                <li className={styles['menu-item']}>Hide story</li>
-              </ul>
+          <div className={styles['menu-details']}>
+            {content[contentIndex].type === 'video' && (
+              <>
+                {mute ? (
+                  <BiSolidVolumeMute
+                    className={styles['mute-icon']}
+                    onClick={() => setMute(false)}
+                  />
+                ) : (
+                  <BiSolidVolumeFull
+                    className={styles['mute-icon']}
+                    onClick={() => setMute(true)}
+                  />
+                )}
+              </>
             )}
+
+            {pause ? (
+              <FaPlay
+                className={styles['pause-icon']}
+                onClick={() => setPause(false)}
+              />
+            ) : (
+              <FaPause
+                className={styles['pause-icon']}
+                onClick={() => setPause(true)}
+              />
+            )}
+
+            <div className={styles['menu-div']} ref={menuRef}>
+              <HiDotsHorizontal
+                className={`${styles['menu-icon']} ${
+                  showMenu ? styles['active-menu'] : ''
+                }`}
+                onClick={() => {
+                  setShowMenu(!showMenu);
+                  setHideMenu(false);
+                }}
+              />
+
+              {!hideMenu && (
+                <ul className={styles['menu-list']} ref={listRef}>
+                  <li className={styles['menu-item']}>Follow</li>
+                  <li className={styles['menu-item']}>Report</li>
+                  <li className={styles['menu-item']}>Hide story</li>
+                </ul>
+              )}
+            </div>
+
+            <IoClose
+              className={styles['close-icon']}
+              onClick={() => setViewStory(false)}
+            />
           </div>
         </div>
-      </div>
 
-      <div className={styles['content-div']}>
-        {content[contentIndex].type === 'image' ? (
-          <img
-            className={`${styles.content} ${
-              loading ? styles['hide-item'] : ''
-            }`}
-            src={`../../assets/images/content/${content[contentIndex].src}.jpeg`}
-            onLoad={() => setLoading(false)}
-            onError={() => setLoading('error')}
-            onAbort={() => setLoading('error')}
-          />
-        ) : (
-          <video
-            className={`${styles.content} ${
-              loading ? styles['hide-item'] : ''
-            }`}
-            ref={videoRef}
-            autoPlay
-            muted={mute}
-            onLoadedMetadata={handleVideoDuration}
-            onCanPlay={() => setLoading(false)}
-            onError={() => setLoading('error')}
-            onAbort={() => setLoading('error')}
-            onEmptied={() => setLoading('notfound')}
-            onStalled={() => setLoading('empty')}
-          >
-            <source
-              src={`../../assets/images/content/${content[contentIndex].src}.mp4`}
-              type="video/mp4"
+        <div className={styles['content-div']}>
+          {content[contentIndex].type === 'image' ? (
+            <img
+              className={`${styles.content} ${
+                loading ? styles['hide-item'] : ''
+              }`}
+              src={`../../assets/images/content/${content[contentIndex].src}.jpeg`}
+              onLoad={() => setLoading(false)}
+              onError={() => setLoading('error')}
+              onAbort={() => setLoading('error')}
             />
-            Your browser does not support playing video.
-          </video>
-        )}
+          ) : (
+            <video
+              className={`${styles.content} ${
+                loading ? styles['hide-item'] : ''
+              }`}
+              ref={videoRef}
+              autoPlay
+              muted={mute}
+              onLoadedMetadata={handleVideoDuration}
+              onCanPlay={() => setLoading(false)}
+              onError={() => setLoading('error')}
+              onAbort={() => setLoading('error')}
+              onEmptied={() => setLoading('notfound')}
+              onStalled={() => setLoading('empty')}
+            >
+              <source
+                src={`../../assets/images/content/${content[contentIndex].src}.mp4`}
+                type="video/mp4"
+              />
+              Your browser does not support playing video.
+            </video>
+          )}
 
-        {loading === true ? (
-          <div className={styles.loader}></div>
-        ) : loading === 'error' ? (
-          <span className={styles['error-box']}>
-            <BiSolidErrorAlt className={styles['error-icon']} />
-            An error occured while loading media.
-          </span>
-        ) : loading === 'empty' ? (
-          <span className={styles['error-box']}>
-            <BiSolidErrorAlt className={styles['error-icon']} />
-            Unable to load media.
-          </span>
-        ) : loading === 'notfound' &&
-          videoRef.current.src ===
-            `../../assets/images/content/${content[contentIndex].src}.mp4` ? (
-          <span className={styles['error-box']}>
-            <BiSolidErrorAlt className={styles['error-icon']} />
-            This media no longer exists.
-          </span>
-        ) : (
-          ''
-        )}
-      </div>
+          {loading === true ? (
+            <div className={styles.loader}></div>
+          ) : loading === 'error' ? (
+            <span className={styles['error-box']}>
+              <BiSolidErrorAlt className={styles['error-icon']} />
+              An error occured while loading media.
+            </span>
+          ) : loading === 'empty' ? (
+            <span className={styles['error-box']}>
+              <BiSolidErrorAlt className={styles['error-icon']} />
+              Unable to load media.
+            </span>
+          ) : loading === 'notfound' &&
+            videoRef.current.src ===
+              `../../assets/images/content/${content[contentIndex].src}.mp4` ? (
+            <span className={styles['error-box']}>
+              <BiSolidErrorAlt className={styles['error-icon']} />
+              This media no longer exists.
+            </span>
+          ) : (
+            ''
+          )}
+        </div>
 
-      <div className={styles['reply-div']}>
-        <input
-          className={styles['reply-input']}
-          type="text"
-          placeholder="Reply privately...."
-        />
-
-        {like ? (
-          <FaHeart
-            className={styles['like-icon2']}
-            onClick={() => setLike(false)}
+        <div className={styles['reply-div']}>
+          <input
+            className={styles['reply-input']}
+            type="text"
+            placeholder="Reply privately...."
           />
-        ) : (
-          <FaRegHeart
-            className={styles['like-icon']}
-            onClick={() => setLike(true)}
-          />
-        )}
 
-        <AiOutlineSend className={styles['send-icon']} />
+          {like ? (
+            <FaHeart
+              className={styles['like-icon2']}
+              onClick={() => setLike(false)}
+            />
+          ) : (
+            <FaRegHeart
+              className={styles['like-icon']}
+              onClick={() => setLike(true)}
+            />
+          )}
+
+          <AiOutlineSend className={styles['send-icon']} />
+        </div>
       </div>
 
       {!(

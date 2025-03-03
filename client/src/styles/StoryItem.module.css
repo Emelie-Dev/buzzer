@@ -4,14 +4,26 @@
   height: calc(100vh - 2rem);
   background: black;
   color: white;
-  border-radius: 8px;
   display: flex;
-  flex-direction: column;
+  border-radius: 8px;
+  justify-content: center;
   align-items: center;
   padding: 0;
   flex-shrink: 0;
   animation: showStory 0s ease 0s 1 normal both;
   user-select: none;
+}
+
+.current-story-div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .line-container {
@@ -59,7 +71,7 @@
   width: 100%;
   margin-top: 2rem;
   padding: 0 1rem;
-  z-index: 1;
+  z-index: 3;
 }
 
 .story-details {
@@ -406,6 +418,17 @@
   flex-shrink: 0;
 }
 
+.close-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  cursor: pointer;
+  display: none;
+}
+
+.close-icon:hover {
+  color: var(--app-theme-color);
+}
+
 /* Animation */
 
 @keyframes showStory {
@@ -477,6 +500,10 @@
     width: 10rem;
     height: 14rem;
   }
+
+  .reply-div {
+    padding: 1.5rem 1rem;
+  }
 }
 
 @media screen and (max-width: 900px) {
@@ -491,5 +518,87 @@
   .next-content-div {
     width: 9rem;
     height: 13rem;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .current-story {
+    width: 55%;
+  }
+
+  .next-story {
+    display: none;
+  }
+
+  .left-arrow-box {
+    left: -12%;
+  }
+
+  .right-arrow-box {
+    right: -12%;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .current-story {
+    width: 63%;
+  }
+
+  .left-arrow-box {
+    left: -13%;
+  }
+
+  .right-arrow-box {
+    right: -13%;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .current-story {
+    width: 72%;
+  }
+
+  .left-arrow-box {
+    left: -13%;
+  }
+
+  .right-arrow-box {
+    right: -13%;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .current-story {
+    width: 90%;
+  }
+
+  .left-arrow-box,
+  .right-arrow-box {
+    display: none;
+  }
+
+  .menu-list {
+    top: 30px;
+    left: -200%;
+  }
+
+  .pause-icon {
+    display: none;
+  }
+
+  .menu-div {
+    margin-right: 0.7rem;
+  }
+
+  .close-icon {
+    display: inline;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .current-story {
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
   }
 }
