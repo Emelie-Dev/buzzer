@@ -224,7 +224,7 @@ const ContentBox = ({
                 className={`${styles['content-menu2']} ${
                   showMenu ? styles['active-menu'] : ''
                 }`}
-                onClick={() => setShowMobileMenu(true)}
+                onClick={() => setShowMobileMenu && setShowMobileMenu(true)}
               />
 
               {!hideMenu && (
