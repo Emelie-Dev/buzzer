@@ -130,9 +130,9 @@ const Carousel = ({
             }%)`;
             touchMoveType.current = 'prev';
           }
-
-          touchEndX.current = swipedWidth;
         }
+
+        touchEndX.current = swipedWidth;
       } else {
         if (touchEndX.current > 100) {
           if (touchMoveType.current === 'next') {
