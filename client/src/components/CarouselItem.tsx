@@ -27,9 +27,6 @@ type CarouselItemProps = {
   description?: string;
   name?: string;
   time?: string;
-  carouselRef?: React.MutableRefObject<HTMLDivElement>;
-  setContentIndex?: React.Dispatch<React.SetStateAction<number>>;
-  dotRef?: React.MutableRefObject<HTMLSpanElement>;
 };
 
 const CarouselItem = ({
@@ -43,9 +40,6 @@ const CarouselItem = ({
   contentType,
   description,
   name,
-  carouselRef,
-  setContentIndex,
-  dotRef,
 }: CarouselItemProps) => {
   const { type, src } = item;
   const [loading, setLoading] = useState<
@@ -83,10 +77,6 @@ const CarouselItem = ({
   const videoRef = useRef<HTMLVideoElement>(null!);
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const progressRef = useRef<HTMLInputElement>(null!);
-
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-  const touchMoveType = useRef('');
 
   useEffect(() => {
     const networkHandler = () => {
@@ -349,47 +339,6 @@ const CarouselItem = ({
       }
     };
 
-  const handleSwipe =
-    (type: 'start' | 'move' | 'end') =>
-    (e: React.TouchEvent<HTMLDivElement>) => {
-      const width = (e.target as HTMLDivElement).offsetWidth;
-
-      if (setContentIndex && carouselRef && dotRef) {
-        if (type === 'start') {
-          touchStartX.current = e.touches[0].clientX;
-        } else if (type === 'move') {
-          const swipedWidth = Math.min(
-            Math.abs(e.touches[0].clientX - touchStartX.current),
-            width
-          );
-
-          if (e.touches[0].clientX - touchStartX.current < 0) {
-            carouselRef.current.style.transform = `translateX(${
-              -(itemIndex + 1) * 100 * (swipedWidth / width)
-            }%)`;
-            touchEndX.current = swipedWidth / width;
-            touchMoveType.current = 'next';
-          }
-        } else {
-          if (touchEndX.current > 0.5) {
-            if (touchMoveType.current === 'next') {
-              setContentIndex((prev) => prev + 1);
-
-              carouselRef.current.style.transform = `translateX(${
-                -(itemIndex + 1) * 100
-              }%)`;
-
-              if (contentIndex > 6) dotRef.current.scrollLeft += 10;
-            }
-          } else {
-            carouselRef.current.style.transform = `translateX(${
-              -itemIndex * 100
-            }%)`;
-          }
-        }
-      }
-    };
-
   return (
     <div
       className={`${styles['carousel-item']} ${
@@ -451,9 +400,6 @@ const CarouselItem = ({
             ? handleDoubleClick(setLike, setHideLike)
             : handleDoubleClick(setLike, setHideLike)
         }
-        onTouchStart={handleSwipe('start')}
-        onTouchMove={handleSwipe('move')}
-        onTouchEnd={handleSwipe('end')}
       >
         {type === 'image' ? (
           <img

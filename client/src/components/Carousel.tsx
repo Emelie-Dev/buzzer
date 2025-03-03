@@ -27,6 +27,10 @@ const Carousel = ({
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const dotRef = useRef<HTMLSpanElement>(null!);
 
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const touchMoveType = useRef('');
+
   useEffect(() => {
     const resizeHandler = () => {
       if (setDescriptionWidth)
@@ -99,6 +103,55 @@ const Carousel = ({
     };
   };
 
+  const handleSwipe =
+    (type: 'start' | 'move' | 'end') =>
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      const width = (e.target as HTMLDivElement).offsetWidth;
+
+      if (type === 'start') {
+        touchStartX.current = e.touches[0].clientX;
+      } else if (type === 'move') {
+        const swipedWidth = Math.min(
+          Math.abs(e.touches[0].clientX - touchStartX.current),
+          width
+        );
+
+        if (e.touches[0].clientX - touchStartX.current < 0) {
+          if (contentIndex < data.length - 1) {
+            carouselRef.current.style.transform = `translateX(${
+              -(contentIndex + swipedWidth / width) * 100
+            }%)`;
+            touchEndX.current = swipedWidth / width;
+            touchMoveType.current = 'next';
+          }
+        } else {
+          if (contentIndex !== 0) {
+            carouselRef.current.style.transform = `translateX(${
+              -(contentIndex - swipedWidth / width) * 100
+            }%)`;
+            touchEndX.current = swipedWidth / width;
+            touchMoveType.current = 'prev';
+          }
+        }
+      } else {
+        if (touchEndX.current > 0.5) {
+          if (touchMoveType.current === 'next') {
+            if (contentIndex < data.length - 1) changeMedia('next')();
+          } else {
+            if (contentIndex !== 0) changeMedia('prev')();
+          }
+        } else {
+          carouselRef.current.style.transform = `translateX(${
+            -contentIndex * 100
+          }%)`;
+        }
+
+        touchStartX.current = 0;
+        touchEndX.current = 0;
+        touchMoveType.current = '';
+      }
+    };
+
   return (
     <div
       className={`${styles.carousel} ${
@@ -136,7 +189,13 @@ const Carousel = ({
         </span>
       )}
 
-      <div className={styles['carousel-container']} ref={carouselRef}>
+      <div
+        className={styles['carousel-container']}
+        ref={carouselRef}
+        onTouchStart={handleSwipe('start')}
+        onTouchMove={handleSwipe('move')}
+        onTouchEnd={handleSwipe('end')}
+      >
         {data.map(({ type, src, description }, index) => (
           <CarouselItem
             key={index}
@@ -148,14 +207,11 @@ const Carousel = ({
             viewType={viewType}
             itemIndex={index}
             contentIndex={contentIndex}
-            setContentIndex={setContentIndex}
             aspectRatio={aspectRatio}
             hideData={hideData}
             setHideData={setHideData}
             contentType="carousel"
             description={''}
-            carouselRef={carouselRef}
-            dotRef={dotRef}
           />
         ))}
       </div>
