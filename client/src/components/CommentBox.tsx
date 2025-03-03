@@ -365,7 +365,12 @@ const CommentBox = ({
         <IoClose className={styles['close-icon']} />
       </span>
 
-      <div className={styles.container}>
+      <div
+        className={styles.container}
+        onClick={(e) => {
+          if (window.matchMedia('(max-width: 800px)').matches) handleClick(e);
+        }}
+      >
         <div className={styles['carousel-container']}>
           {type === 'carousel' ? (
             <Carousel data={media} aspectRatio={aspectRatio} type="comment" />
