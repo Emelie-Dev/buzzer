@@ -30,11 +30,18 @@ import { GeneralContext } from '../Contexts';
 type NavBarProps = {
   page: string;
   editStage?: boolean;
+  overlaySearch?: boolean;
+  setOverlaySearch?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const mediumSize = window.matchMedia('(max-width: 900px)').matches;
 
-const NavBar = ({ page, editStage }: NavBarProps) => {
+const NavBar = ({
+  page,
+  editStage,
+  overlaySearch,
+  setOverlaySearch,
+}: NavBarProps) => {
   const [isMediumSize, setIsMediumSize] = useState<boolean>(mediumSize);
 
   const pageType =
@@ -162,6 +169,10 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
       window.removeEventListener('click', clickHandler);
     };
   }, [showSearch]);
+
+  useEffect(() => {
+    if (setOverlaySearch) setShowSearchPage(overlaySearch as boolean);
+  }, [overlaySearch]);
 
   return (
     <>
@@ -919,6 +930,7 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                       setShowSearch(false);
                       setSearchText('');
                       setShowSearchPage(false);
+                      if (setOverlaySearch) setOverlaySearch(false);
                     }}
                   />
                 )}
@@ -927,7 +939,7 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                   <input
                     type="text"
                     className={styles['search-input']}
-                    placeholder="Search"
+                    placeholder="Search...."
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     ref={searchInputRef}
@@ -953,6 +965,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                       className={styles['search-result']}
                       onClick={() => {
                         setShowSearch(false);
+                        setShowSearchPage(false);
+                        if (setOverlaySearch) setOverlaySearch(false);
                         navigate('/search');
                       }}
                     >
@@ -968,6 +982,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                       className={styles['search-result']}
                       onClick={() => {
                         setShowSearch(false);
+                        setShowSearchPage(false);
+                        if (setOverlaySearch) setOverlaySearch(false);
                         navigate('/search');
                       }}
                     >
@@ -983,6 +999,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                       className={styles['search-result']}
                       onClick={() => {
                         setShowSearch(false);
+                        setShowSearchPage(false);
+                        if (setOverlaySearch) setOverlaySearch(false);
                         navigate('/search');
                       }}
                     >
@@ -998,6 +1016,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                       className={styles['search-result']}
                       onClick={() => {
                         setShowSearch(false);
+                        setShowSearchPage(false);
+                        if (setOverlaySearch) setOverlaySearch(false);
                         navigate('/search');
                       }}
                     >
@@ -1013,6 +1033,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                       className={styles['search-result']}
                       onClick={() => {
                         setShowSearch(false);
+                        setShowSearchPage(false);
+                        if (setOverlaySearch) setOverlaySearch(false);
                         navigate('/search');
                       }}
                     >
@@ -1028,6 +1050,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                       className={styles['search-result']}
                       onClick={() => {
                         setShowSearch(false);
+                        setShowSearchPage(false);
+                        if (setOverlaySearch) setOverlaySearch(false);
                         navigate('/search');
                       }}
                     >
@@ -1051,6 +1075,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['search-accounts']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1073,6 +1099,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['search-accounts']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1095,6 +1123,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['search-accounts']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1117,6 +1147,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['search-accounts']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1139,6 +1171,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['search-accounts']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1163,6 +1197,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                     className={styles['show-results-txt']}
                     onClick={() => {
                       setShowSearch(false);
+                      setShowSearchPage(false);
+                      if (setOverlaySearch) setOverlaySearch(false);
                       navigate('/search');
                     }}
                   >
@@ -1179,6 +1215,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1197,6 +1235,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1217,6 +1257,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1237,6 +1279,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1257,6 +1301,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1285,6 +1331,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1298,6 +1346,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1313,6 +1363,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1328,6 +1380,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1343,6 +1397,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                         className={styles['recent-search-box']}
                         onClick={() => {
                           setShowSearch(false);
+                          setShowSearchPage(false);
+                          if (setOverlaySearch) setOverlaySearch(false);
                           navigate('/search');
                         }}
                       >
@@ -1369,6 +1425,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                             className={styles['recent-search-box']}
                             onClick={() => {
                               setShowSearch(false);
+                              setShowSearchPage(false);
+                              if (setOverlaySearch) setOverlaySearch(false);
                               navigate('/search');
                             }}
                           >
@@ -1384,6 +1442,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                             className={styles['recent-search-box']}
                             onClick={() => {
                               setShowSearch(false);
+                              setShowSearchPage(false);
+                              if (setOverlaySearch) setOverlaySearch(false);
                               navigate('/search');
                             }}
                           >
@@ -1399,6 +1459,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                             className={styles['recent-search-box']}
                             onClick={() => {
                               setShowSearch(false);
+                              setShowSearchPage(false);
+                              if (setOverlaySearch) setOverlaySearch(false);
                               navigate('/search');
                             }}
                           >
@@ -1414,6 +1476,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                             className={styles['recent-search-box']}
                             onClick={() => {
                               setShowSearch(false);
+                              setShowSearchPage(false);
+                              if (setOverlaySearch) setOverlaySearch(false);
                               navigate('/search');
                             }}
                           >
@@ -1429,6 +1493,8 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
                             className={styles['recent-search-box']}
                             onClick={() => {
                               setShowSearch(false);
+                              setShowSearchPage(false);
+                              if (setOverlaySearch) setOverlaySearch(false);
                               navigate('/search');
                             }}
                           >

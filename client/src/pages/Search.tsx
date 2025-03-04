@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Search.module.css';
 import { HiPlus } from 'react-icons/hi';
@@ -8,6 +8,7 @@ import StoryModal from '../components/StoryModal';
 import SwitchAccount from '../components/SwitchAccount';
 import AsideHeader from '../components/AsideHeader';
 import { IoClose, IoSearchSharp, IoArrowBack } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
 
 const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
 
@@ -16,6 +17,12 @@ const Search = () => {
   const [category, setCategory] = useState<'all' | 'users' | 'contents'>('all');
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
+  const [searchText, setSearchText] = useState<string>('');
+  const [overlaySearch, setOverlaySearch] = useState<boolean>(false);
+
+  const navigate = useNavigate();
+
+  const searchInputRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
     const resizeHandler = () => {
@@ -34,24 +41,41 @@ const Search = () => {
 
   return (
     <>
-      <NavBar page="search" />
+      <NavBar
+        page="search"
+        overlaySearch={overlaySearch}
+        setOverlaySearch={setOverlaySearch}
+      />
 
       <section className={styles.section}>
         <header className={styles['section-header']}>
           <div className={styles['show-search-div']}>
-            <IoArrowBack className={styles['back-icon']} />
+            <IoArrowBack
+              className={styles['back-icon']}
+              onClick={() => navigate(-1)}
+            />
 
             <div className={styles['search-box']}>
               <IoSearchSharp className={styles['search-icon']} />
               <input
                 type="text"
                 className={styles['search-input']}
-                placeholder="Search"
+                placeholder="Search...."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                ref={searchInputRef}
+                onClick={() => setOverlaySearch(true)}
               />
 
               <IoClose
-                className={`${styles['close-search-icon']} `}
+                className={`${styles['close-search-icon']} ${
+                  searchText.trim().length < 1 ? styles['hide-search'] : ''
+                }`}
                 title="Clear"
+                onClick={() => {
+                  setSearchText('');
+                  searchInputRef.current.focus();
+                }}
               />
             </div>
           </div>

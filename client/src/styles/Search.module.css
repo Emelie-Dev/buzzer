@@ -585,7 +585,7 @@
   }
 
   .user-details {
-    max-width: 42vw;
+    max-width: 45vw;
   }
 
   .header-item {
@@ -598,8 +598,23 @@
   }
 }
 
-@media screen and (max-width: 300px) {
+@media screen and (max-width: 350px) {
   .user-details {
     max-width: 50vw;
+  }
+
+  .content-time {
+    font-size: 0.7rem;
+    padding: 0.2rem;
+  }
+
+  .content-views {
+    font-size: 0.7rem;
+    padding: 0.2rem;
+  }
+
+  .content-views-icon {
+    width: 0.6rem;
+    height: 0.6rem;
   }
 }
