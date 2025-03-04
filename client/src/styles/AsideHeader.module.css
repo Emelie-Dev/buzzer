@@ -151,3 +151,41 @@
 .hide-create {
   visibility: hidden;
 }
+
+/* Media Queries */
+
+@media screen and (max-width: 1200px) {
+  .profile-box2 {
+    margin-left: 3rem;
+  }
+
+  .create-btn2 {
+    padding: 0.5rem 0.8rem;
+    border-radius: 5px;
+    font-size: 0.9rem;
+  }
+
+  .create-icon2 {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+
+  .inbox-icon2 {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .inbox-number2 {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+
+  .inbox-length2 {
+    font-size: 0.85rem;
+  }
+
+  .profile-img2 {
+    width: 2.8rem;
+    height: 2.8rem;
+  }
+}

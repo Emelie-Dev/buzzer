@@ -29,10 +29,13 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
       {second ? (
         <header className={styles['aside-header2']}>
           <button
-            className={styles['create-btn']}
+            className={`${styles['create-btn']} ${styles['create-btn2']}`}
             onClick={() => navigate('/create')}
           >
-            Create <HiPlusSm className={styles['create-icon']} />
+            Create{' '}
+            <HiPlusSm
+              className={`${styles['create-icon']} ${styles['create-icon2']}`}
+            />
           </button>
 
           <span
@@ -40,10 +43,18 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
             title="Inbox"
             onClick={() => navigate('/inbox')}
           >
-            <BiMessageDetail className={styles['inbox-icon']} />
-            <span className={styles['inbox-number']}>
+            <BiMessageDetail
+              className={`${styles['inbox-icon']} ${styles['inbox-icon2 ']}`}
+            />
+            <span
+              className={`${styles['inbox-number']} ${styles['inbox-number2 ']}`}
+            >
               {' '}
-              <span className={styles['inbox-length']}>9</span>
+              <span
+                className={`${styles['inbox-length']} ${styles['inbox-length2 ']}`}
+              >
+                9
+              </span>
             </span>
           </span>
 
@@ -51,7 +62,7 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
             <span className={styles['profile-img-box']}>
               {' '}
               <img
-                className={styles['profile-img']}
+                className={`${styles['profile-img']} ${styles['profile-img2']}`}
                 src="../../assets/images/users/user14.jpeg"
               />
             </span>

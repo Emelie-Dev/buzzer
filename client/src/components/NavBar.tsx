@@ -8,6 +8,7 @@ import {
   IoSettingsOutline,
   IoClose,
   IoSearchSharp,
+  IoArrowBack,
 } from 'react-icons/io5';
 import { IoMdNotificationsOutline } from 'react-icons/io';
 import { BiMenuAltLeft } from 'react-icons/bi';
@@ -24,7 +25,6 @@ import { IoNotificationsOutline } from 'react-icons/io5';
 import { FaCircleUser } from 'react-icons/fa6';
 import { FaRegCircleUser } from 'react-icons/fa6';
 import { TbBrandGoogleAnalytics } from 'react-icons/tb';
-import { IoArrowBack } from 'react-icons/io5';
 import { GeneralContext } from '../Contexts';
 
 type NavBarProps = {
@@ -72,7 +72,12 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
       const mediumSize = window.matchMedia('(max-width: 900px)').matches;
       setIsMediumSize(mediumSize);
 
-      const firstSize = window.matchMedia('(max-width: 1200px)').matches;
+      const firstSize =
+        page === 'home'
+          ? window.matchMedia('(max-width: 1200px)').matches
+          : page === 'search'
+          ? window.matchMedia('(max-width: 1100px)').matches
+          : false;
       const secondSize = window.matchMedia('(max-width: 600px)').matches;
 
       setMediaQueries({
@@ -614,30 +619,51 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
               </span>
 
               <span
-                className={styles['search-section-box']}
+                className={`${styles['search-section-box']} ${
+                  page === 'home' && !showSearch
+                    ? styles['active-search-box']
+                    : ''
+                }`}
                 onClick={() => navigate('/home')}
               >
-                <svg
-                  className={styles['search-section-icon']}
-                  x="0px"
-                  y="0px"
-                  width="100"
-                  height="100"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M 12 2.0996094 L 1 12 L 4 12 L 4 21 L 11 21 L 11 15 L 13 15 L 13 21 L 20 21 L 20 12 L 23 12 L 12 2.0996094 z M 12 4.7910156 L 18 10.191406 L 18 11 L 18 19 L 15 19 L 15 13 L 9 13 L 9 19 L 6 19 L 6 10.191406 L 12 4.7910156 z"></path>
-                </svg>
+                {page === 'home' && !showSearch ? (
+                  <svg
+                    className={`${styles['search-section-icon']} ${styles['active-search-icon']}`}
+                    x="0px"
+                    y="0px"
+                    width="100"
+                    height="100"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M 12 2.0996094 L 1 12 L 4 12 L 4 21 L 10 21 L 10 14 L 14 14 L 14 21 L 20 21 L 20 12 L 23 12 L 12 2.0996094 z"></path>
+                  </svg>
+                ) : (
+                  <svg
+                    className={styles['search-section-icon']}
+                    x="0px"
+                    y="0px"
+                    width="100"
+                    height="100"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M 12 2.0996094 L 1 12 L 4 12 L 4 21 L 11 21 L 11 15 L 13 15 L 13 21 L 20 21 L 20 12 L 23 12 L 12 2.0996094 z M 12 4.7910156 L 18 10.191406 L 18 11 L 18 19 L 15 19 L 15 13 L 9 13 L 9 19 L 6 19 L 6 10.191406 L 12 4.7910156 z"></path>
+                  </svg>
+                )}
               </span>
 
               <span
                 className={`${styles['search-section-box']} ${
-                  showSearch ? styles['active-search-box'] : ''
+                  showSearch || page === 'search'
+                    ? styles['active-search-box']
+                    : ''
                 }`}
                 onClick={() => setShowSearch(true)}
               >
                 <svg
                   className={`${styles['search-section-icon']} ${
-                    showSearch ? styles['active-search-icon'] : ''
+                    showSearch || page === 'search'
+                      ? styles['active-search-icon']
+                      : ''
                   } `}
                   x="0px"
                   y="0px"
@@ -781,13 +807,17 @@ const NavBar = ({ page, editStage }: NavBarProps) => {
 
                   <span
                     className={`${styles['search-section-box']} ${
-                      page === 'inbox' ? styles['active-search-box'] : ''
+                      page === 'inbox' && !showSearch
+                        ? styles['active-search-box']
+                        : ''
                     }`}
                     onClick={() => navigate('/inbox')}
                   >
                     <BiMessageDetail
                       className={`${styles['search-section-icon']} ${
-                        page === 'inbox' ? styles['active-search-icon'] : ''
+                        page === 'inbox' && !showSearch
+                          ? styles['active-search-icon']
+                          : ''
                       }`}
                     />
                   </span>

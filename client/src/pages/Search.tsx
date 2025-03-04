@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Search.module.css';
 import { HiPlus } from 'react-icons/hi';
@@ -7,11 +7,30 @@ import { FaPlay } from 'react-icons/fa6';
 import StoryModal from '../components/StoryModal';
 import SwitchAccount from '../components/SwitchAccount';
 import AsideHeader from '../components/AsideHeader';
+import { IoClose, IoSearchSharp, IoArrowBack } from 'react-icons/io5';
+
+const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
 
 const Search = () => {
+  const [isMediumSize, setIsMediumSize] = useState<boolean>(mediumSize);
   const [category, setCategory] = useState<'all' | 'users' | 'contents'>('all');
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
+
+  useEffect(() => {
+    const resizeHandler = () => {
+      const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
+      setIsMediumSize(mediumSize);
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
+  }, []);
 
   return (
     <>
@@ -19,6 +38,24 @@ const Search = () => {
 
       <section className={styles.section}>
         <header className={styles['section-header']}>
+          <div className={styles['show-search-div']}>
+            <IoArrowBack className={styles['back-icon']} />
+
+            <div className={styles['search-box']}>
+              <IoSearchSharp className={styles['search-icon']} />
+              <input
+                type="text"
+                className={styles['search-input']}
+                placeholder="Search"
+              />
+
+              <IoClose
+                className={`${styles['close-search-icon']} `}
+                title="Clear"
+              />
+            </div>
+          </div>
+
           <ul className={styles['header-list']}>
             <li
               className={`${styles['header-item']} ${
@@ -46,7 +83,7 @@ const Search = () => {
             </li>
           </ul>
 
-          <AsideHeader second />
+          {!isMediumSize && <AsideHeader second />}
         </header>
 
         {category === 'all' && (
@@ -398,7 +435,7 @@ const Search = () => {
                 className={styles['user-img']}
                 src="../../assets/images/users/user14.jpeg"
               />
-              <div className={styles['user-details']}>
+              <div className={styles['user-details2']}>
                 <span className={styles['user-name']}>Davido</span>
                 <span className={styles['user-handle']}>@davido_001</span>
                 <span className={styles['user-followers']}>
@@ -418,7 +455,7 @@ const Search = () => {
                 src="../../assets/images/users/user3.jpeg"
               />
 
-              <div className={styles['user-details']}>
+              <div className={styles['user-details2']}>
                 <span className={styles['user-name']}>Fave</span>
                 <span className={styles['user-handle']}>@favethebaddie</span>
                 <span className={styles['user-followers']}>
@@ -438,7 +475,7 @@ const Search = () => {
                 src="../../assets/images/users/user12.jpeg"
               />
 
-              <div className={styles['user-details']}>
+              <div className={styles['user-details2']}>
                 <span className={styles['user-name']}>Felicia</span>
                 <span className={styles['user-handle']}>
                   @felicia_thunderman
@@ -460,7 +497,7 @@ const Search = () => {
                 src="../../assets/images/users/user10.jpeg"
               />
 
-              <div className={styles['user-details']}>
+              <div className={styles['user-details2']}>
                 <span className={styles['user-name']}>Andrew Tate</span>
                 <span className={styles['user-handle']}>
                   @tatethemovitationalspeaker
@@ -482,7 +519,7 @@ const Search = () => {
                 src="../../assets/images/users/user19.jpeg"
               />
 
-              <div className={styles['user-details']}>
+              <div className={styles['user-details2']}>
                 <span className={styles['user-name']}>Tech Guru</span>
                 <span className={styles['user-handle']}>@stevejobs089</span>
                 <span className={styles['user-followers']}>
@@ -502,7 +539,7 @@ const Search = () => {
                 src="../../assets/images/users/user4.jpeg"
               />
 
-              <div className={styles['user-details']}>
+              <div className={styles['user-details2']}>
                 <span className={styles['user-name']}>Sansa Stark</span>
                 <span className={styles['user-handle']}>@queeninthenorth</span>
                 <span className={styles['user-followers']}>
@@ -522,7 +559,7 @@ const Search = () => {
                 src="../../assets/images/users/user20.jpeg"
               />
 
-              <div className={styles['user-details']}>
+              <div className={styles['user-details2']}>
                 <span className={styles['user-name']}>Stargazer</span>
                 <span className={styles['user-handle']}>@dastargazer_100</span>
                 <span className={styles['user-followers']}>
