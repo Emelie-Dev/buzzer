@@ -2,16 +2,19 @@ import styles from '../styles/Footer.module.css';
 import { LuUserCheck } from 'react-icons/lu';
 import { BsPlusSquareFill } from 'react-icons/bs';
 import { FaUserCheck } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 type FooterProps = {
   page: 'home' | 'following' | 'reels' | 'profile';
 };
 
 const Footer = ({ page }: FooterProps) => {
+  const navigate = useNavigate();
+
   return (
     <footer className={styles.footer}>
       <ul className={styles['footer-list']}>
-        <li className={styles['footer-item']}>
+        <li className={styles['footer-item']} onClick={() => navigate('/home')}>
           <span
             className={`${styles['item-box']} ${
               page === 'home' ? styles['active-item'] : ''
@@ -46,7 +49,10 @@ const Footer = ({ page }: FooterProps) => {
             Home
           </span>
         </li>
-        <li className={styles['footer-item']}>
+        <li
+          className={styles['footer-item']}
+          onClick={() => navigate('/following')}
+        >
           <span
             className={`${styles['item-box']} ${
               page === 'following' ? styles['active-item'] : ''

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Home.module.css';
 import { Content } from '../components/CarouselItem';
@@ -6,6 +6,9 @@ import ContentBox from '../components/ContentBox';
 import { ContentContext } from '../Contexts';
 import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import MobileMenu from '../components/MobileMenu';
 
 type CarouselData = {
   media: Content[];
@@ -158,13 +161,13 @@ const dataList: DataItem[] = [
     type: 'carousel',
     description: `Grateful for every step of this journey ⚽️. From Rosario to Barcelona, Paris, and now Miami, it’s always been about the love of the game and the incredible people I’ve met along the way ❤️💙.
 
-Special memories with my family, teammates, and fans who’ve been there through it all. Thank you! 🙏
+  Special memories with my family, teammates, and fans who’ve been there through it all. Thank you! 🙏
 
-<span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#SiempreMessi</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FromRosarioToTheWorld 🌍</span>
+  <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#SiempreMessi</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FromRosarioToTheWorld 🌍</span>
 
-Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@fcbarcelona</span> – Dreams started here 💙❤️ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@psg</span> – Another chapter, another challenge 🌟 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@intermiamicf</span> – Writing new stories in the USA⚽️
+  Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@fcbarcelona</span> – Dreams started here 💙❤️ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@psg</span> – Another chapter, another challenge 🌟 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@intermiamicf</span> – Writing new stories in the USA⚽️
 
-<span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Argentina</span> – Always proud to wear these colors 💪 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#VamosAlbiceleste</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LaPulga</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Goat</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewGoalsAhead</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FootballFamily</span>`,
+  <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Argentina</span> – Always proud to wear these colors 💪 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#VamosAlbiceleste</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LaPulga</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Goat</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewGoalsAhead</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FootballFamily</span>`,
   },
   {
     media: 'content27',
@@ -179,6 +182,7 @@ Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFo
 ];
 
 const Following = () => {
+  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
 
@@ -192,15 +196,24 @@ const Following = () => {
 
       <section className={styles.main}>
         <section className={styles['main-container2']} onScroll={scrollHandler}>
+          <Header />
+
           <ContentContext.Provider
             value={{ contentRef, activeVideo, setActiveVideo }}
           >
             <div className={styles['content-container']}>
               {dataList.map((data, index) => (
-                <ContentBox key={index} data={data} contentType="following" />
+                <ContentBox
+                  key={index}
+                  data={data}
+                  contentType="following"
+                  setShowMobileMenu={setShowMobileMenu}
+                />
               ))}
             </div>
           </ContentContext.Provider>
+
+          <Footer page={'following'} />
         </section>
 
         <section className={styles.aside}>
@@ -351,6 +364,13 @@ const Following = () => {
           </div>
         </section>
       </section>
+
+      {showMobileMenu && (
+        <MobileMenu
+          showMobileMenu={showMobileMenu}
+          setShowMobileMenu={setShowMobileMenu}
+        />
+      )}
     </>
   );
 };

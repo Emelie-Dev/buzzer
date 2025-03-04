@@ -286,6 +286,10 @@
   line-clamp: 2;
 }
 
+.empty-disc {
+  margin-top: 2.3rem;
+}
+
 .content-description2::after {
   content: '';
   position: absolute;

@@ -476,7 +476,9 @@ const ContentBox = ({
         {contentType !== 'reels' && description && (
           <>
             <div
-              className={`${styles['content-description']}  ${
+              className={`${styles['content-description']} ${
+                description !== '' ? styles['non-empty-desc'] : ''
+              } ${
                 !hideMore && !showMore ? styles['content-description2'] : ''
               } ${showMore ? styles['show-more'] : ''}`}
               style={{ width: `${descriptionWidth}px` }}
@@ -489,6 +491,10 @@ const ContentBox = ({
               </div>
             )}
           </>
+        )}
+
+        {contentType !== 'reels' && description === '' && (
+          <div className={styles['empty-disc']}></div>
         )}
       </article>
     </LikeContext.Provider>
