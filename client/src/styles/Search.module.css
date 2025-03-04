@@ -558,6 +558,10 @@
   .show-search-div {
     display: flex;
   }
+
+  .user-latest-content {
+    grid-template-columns: 8rem 8rem;
+  }
 }
 
 @media screen and (max-width: 500px) {
@@ -571,7 +575,31 @@
 }
 
 @media screen and (max-width: 400px) {
+  .section {
+    padding: 0 0.5rem 2rem;
+  }
+
   .contents-div {
-    grid-template-columns: calc(50% - 0.5rem) calc(50% - 0.5rem);
+    grid-template-columns: calc(50% - 0.25rem) calc(50% - 0.25rem);
+    column-gap: 0.5rem;
+  }
+
+  .user-details {
+    max-width: 42vw;
+  }
+
+  .header-item {
+    font-size: 0.95rem;
+    padding: 0rem 1rem 0.5rem;
+  }
+
+  .back-icon {
+    margin-right: 0.7rem;
+  }
+}
+
+@media screen and (max-width: 300px) {
+  .user-details {
+    max-width: 50vw;
   }
 }
