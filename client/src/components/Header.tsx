@@ -7,9 +7,14 @@ import { useContext, useEffect, useRef } from 'react';
 import { GeneralContext } from '../Contexts';
 
 const Header = () => {
-  const { scrollingUp, setShowSearchPage } = useContext(GeneralContext);
+  const { scrollingUp, setScrollingUp, setShowSearchPage } =
+    useContext(GeneralContext);
 
   const headerRef = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => {
+    setScrollingUp(null);
+  }, []);
 
   useEffect(() => {
     if (scrollingUp) {
@@ -25,6 +30,15 @@ const Header = () => {
       );
     } else if (scrollingUp === null) {
       headerRef.current.style.position = 'static';
+      headerRef.current.animate(
+        {
+          transform: ['translateY(-15px)', 'translateY(0)'],
+        },
+        {
+          fill: 'both',
+          duration: 0,
+        }
+      );
     } else {
       const animation = headerRef.current.animate(
         {

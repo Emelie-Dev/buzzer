@@ -294,6 +294,7 @@
 
   .main-container2 {
     padding: 0 5rem 2rem;
+    border-right: none;
   }
 
   .content-container {
