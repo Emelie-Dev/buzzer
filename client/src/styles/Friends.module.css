@@ -173,6 +173,41 @@
   background: white;
 }
 
+.request-details {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.friends-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.request-details:hover .friends-icon {
+  fill: var(--app-theme-color);
+}
+
+.request-length {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-theme-color);
+  color: white;
+  border-radius: 50%;
+  font-family: appFontMedium;
+  padding: 0.2rem;
+  font-size: 0.8rem;
+  position: absolute;
+  top: -20%;
+  right: -30%;
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
 .header-list {
   width: 100%;
   margin: 0;
@@ -354,6 +389,10 @@
 
   .aside {
     display: none;
+  }
+
+  .request-details {
+    display: flex;
   }
 
   .content-container {

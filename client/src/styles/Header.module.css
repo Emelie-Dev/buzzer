@@ -194,6 +194,41 @@
   color: var(--app-theme-color);
 }
 
+.request-details {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.friends-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.request-details:hover .friends-icon {
+  fill: var(--app-theme-color);
+}
+
+.request-length {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-theme-color);
+  color: white;
+  border-radius: 50%;
+  font-family: appFontMedium;
+  padding: 0.2rem;
+  font-size: 0.8rem;
+  position: absolute;
+  top: -20%;
+  right: -30%;
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
 /* Media Queries */
 
 @media screen and (min-width: 601px) {

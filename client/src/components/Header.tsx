@@ -6,6 +6,7 @@ import { BiMessageDetail } from 'react-icons/bi';
 import { useContext, useEffect, useRef } from 'react';
 import { GeneralContext } from '../Contexts';
 import { useNavigate } from 'react-router-dom';
+import { IoPeopleSharp } from 'react-icons/io5';
 
 type HeaderProps = {
   friends?: boolean;
@@ -13,12 +14,14 @@ type HeaderProps = {
   setFriendsCategory?: React.Dispatch<
     React.SetStateAction<'users' | 'contents' | null>
   >;
+  setShowFriendRequests?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const Header = ({
   friends,
   friendsCategory,
   setFriendsCategory,
+  setShowFriendRequests,
 }: HeaderProps) => {
   const { scrollingUp, setScrollingUp, setShowSearchPage } =
     useContext(GeneralContext);
@@ -120,10 +123,22 @@ const Header = ({
         </div>
 
         <div className={styles['right-box']}>
-          <span className={styles['inbox-box']}>
-            <BiMessageDetail className={styles['inbox-icon']} />
-            <span className={styles['inbox-length']}>5</span>
-          </span>
+          {friends ? (
+            <span
+              className={styles['request-details']}
+              onClick={() =>
+                setShowFriendRequests && setShowFriendRequests(true)
+              }
+            >
+              <IoPeopleSharp className={styles['friends-icon']} />
+              <span className={styles['request-length']}>10</span>
+            </span>
+          ) : (
+            <span className={styles['inbox-box']}>
+              <BiMessageDetail className={styles['inbox-icon']} />
+              <span className={styles['inbox-length']}>5</span>
+            </span>
+          )}
 
           <svg
             className={`${styles['search-icon']}`}

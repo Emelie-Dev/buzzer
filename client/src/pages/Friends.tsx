@@ -11,6 +11,8 @@ import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
+import { IoPeopleSharp } from 'react-icons/io5';
+import FriendRequests from '../components/FriendRequests';
 
 const data: Content[] = [
   {
@@ -162,6 +164,7 @@ Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFo
 const Friends = () => {
   const [category, setCategory] = useState<'users' | 'contents' | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
+  const [showFriendRequests, setShowFriendRequests] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null!);
   const mainRef = useRef<HTMLDivElement>(null!);
@@ -219,6 +222,7 @@ const Friends = () => {
             friends
             friendsCategory={category}
             setFriendsCategory={setCategory}
+            setShowFriendRequests={setShowFriendRequests}
           />
 
           <div className={styles.header}>
@@ -242,6 +246,14 @@ const Friends = () => {
                 Contents
               </li>
             </ul>
+
+            <span
+              className={styles['request-details']}
+              onClick={() => setShowFriendRequests(true)}
+            >
+              <IoPeopleSharp className={styles['friends-icon']} />
+              <span className={styles['request-length']}>10</span>
+            </span>
           </div>
 
           <div className={styles['category-container']} ref={containerRef}>
@@ -620,7 +632,12 @@ const Friends = () => {
               </article>
             </div>
 
-            <span className={styles['friends-request-all']}>View all</span>
+            <span
+              className={styles['friends-request-all']}
+              onClick={() => setShowFriendRequests(true)}
+            >
+              View all
+            </span>
           </div>
         </section>
       </section>
@@ -630,6 +647,10 @@ const Friends = () => {
           showMobileMenu={showMobileMenu}
           setShowMobileMenu={setShowMobileMenu}
         />
+      )}
+
+      {showFriendRequests && (
+        <FriendRequests setShowFriendRequests={setShowFriendRequests} />
       )}
     </>
   );

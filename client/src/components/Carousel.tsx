@@ -116,23 +116,25 @@ const Carousel = ({
           width
         );
 
+        const ratio = Math.min((swipedWidth / width) * 2, 1);
+
         if (e.touches[0].clientX - touchStartX.current < 0) {
           if (contentIndex < data.length - 1) {
             carouselRef.current.style.transform = `translateX(${
-              -(contentIndex + swipedWidth / width) * 100
+              -(contentIndex + ratio) * 100
             }%)`;
             touchMoveType.current = 'next';
+            touchEndX.current = swipedWidth;
           }
         } else {
           if (contentIndex !== 0) {
             carouselRef.current.style.transform = `translateX(${
-              -(contentIndex - swipedWidth / width) * 100
+              -(contentIndex - ratio) * 100
             }%)`;
             touchMoveType.current = 'prev';
+            touchEndX.current = swipedWidth;
           }
         }
-
-        touchEndX.current = swipedWidth;
       } else {
         if (touchEndX.current > 100) {
           if (touchMoveType.current === 'next') {

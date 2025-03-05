@@ -1,0 +1,247 @@
+.section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  min-height: 100vh;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 45%;
+  justify-content: center;
+  align-content: center;
+  overflow: auto;
+  animation: showModal 0.5s ease-in-out 0s 1 normal both;
+}
+
+.container {
+  background: white;
+  max-height: 100vh;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  background: white;
+  width: 100%;
+  z-index: 2;
+}
+
+.head {
+  font-family: appFontMedium;
+  font-size: 1.2rem;
+  margin: auto;
+}
+
+.close-icon-box {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0.2rem;
+  transition: background 0.3s;
+}
+
+.close-icon {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.close-icon-box:hover {
+  background: var(--app-theme-color);
+  color: white;
+}
+
+.friends-request-container {
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 1.5rem;
+}
+
+.friend-request {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 0.5rem;
+  transition: background 0.3s;
+  margin-bottom: 1rem;
+}
+
+.friend-request-img-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.friend-request-img {
+  width: 3.3rem;
+  height: 3.3rem;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.friend-request-icon-box {
+  position: absolute;
+  bottom: -8px;
+  background: white;
+  padding: 0.3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 1px 1px 10px -3px black;
+}
+
+.friend-request-icon {
+  fill: var(--app-theme-color);
+  width: 0.75rem;
+  height: 0.8rem;
+}
+
+.friend-request-details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 1rem;
+  width: calc(100% - 4rem);
+}
+
+.friend-request-username {
+  font-size: 1rem;
+  font-family: appFontMedium;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.friend-btn-box {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.friend-accept-btn {
+  background: var(--app-theme-color);
+  color: white;
+  border: none;
+  outline: none;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.friend-decline-btn {
+  background: gray;
+  color: white;
+  border: none;
+  outline: none;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  margin-left: 2rem;
+}
+
+.friend-decline-btn:hover,
+.friend-accept-btn:hover {
+  opacity: 0.8;
+}
+
+.friend-request:hover {
+  background: rgba(168, 85, 247, 0.2);
+}
+
+/* Animations */
+
+@keyframes showModal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1200px) {
+  .section {
+    grid-template-columns: 48%;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .section {
+    grid-template-columns: 52%;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .section {
+    grid-template-columns: 55%;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .section {
+    grid-template-columns: 60%;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .section {
+    grid-template-columns: 65%;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .section {
+    grid-template-columns: 73%;
+  }
+
+  .friends-request-container {
+    padding: 0 1rem;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .section {
+    grid-template-columns: 82%;
+  }
+
+  .container {
+    height: 100vh;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .section {
+    grid-template-columns: 92%;
+  }
+
+  .friends-request-container {
+    padding: 0 0.5rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .section {
+    grid-template-columns: 100%;
+  }
+}
