@@ -20,20 +20,21 @@
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 .content-head-box {
   display: flex;
   align-items: center;
-  cursor: pointer;
-  width: 100%;
+  width: calc(100% - 2.5rem);
 }
 
 .content-name-box {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  max-width: calc(100% - 3.5rem);
+  max-width: 100%;
+  cursor: pointer;
 }
 
 .content-nickname {
@@ -49,6 +50,7 @@
   fill: gray;
   width: 1.2rem;
   height: 1.2rem;
+  flex-shrink: 0;
 }
 
 .content-time {
@@ -438,10 +440,6 @@
   .content-head {
     padding: 1.1rem 1rem;
     padding-right: 0.5rem;
-  }
-
-  .content-name-box {
-    max-width: calc(100% - 4.5rem);
   }
 
   .content-description {
