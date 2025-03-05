@@ -80,7 +80,7 @@ const NavBar = ({
       setIsMediumSize(mediumSize);
 
       const firstSize =
-        page === 'home'
+        page === 'home' || page === 'following' || page === 'friends'
           ? window.matchMedia('(max-width: 1200px)').matches
           : page === 'search'
           ? window.matchMedia('(max-width: 1100px)').matches
@@ -687,17 +687,37 @@ const NavBar = ({
               </span>
 
               <span
-                className={styles['search-section-box']}
+                className={`${styles['search-section-box']} ${
+                  page === 'following' && !showSearch
+                    ? styles['active-search-box']
+                    : ''
+                }`}
                 onClick={() => navigate('/following')}
               >
-                <LuUserCheck className={styles['search-section-icon2']} />
+                {page === 'following' && !showSearch ? (
+                  <FaUserCheck
+                    className={`${styles['search-section-icon']} ${styles['active-search-icon']}`}
+                  />
+                ) : (
+                  <LuUserCheck className={styles['search-section-icon2']} />
+                )}
               </span>
 
               <span
-                className={styles['search-section-box']}
+                className={`${styles['search-section-box']} ${
+                  page === 'friends' && !showSearch
+                    ? styles['active-search-box']
+                    : ''
+                }`}
                 onClick={() => navigate('/friends')}
               >
-                <IoPeopleOutline className={styles['search-section-icon']} />
+                {page === 'friends' && !showSearch ? (
+                  <IoPeopleSharp
+                    className={`${styles['search-section-icon']} ${styles['active-search-icon']}`}
+                  />
+                ) : (
+                  <IoPeopleOutline className={styles['search-section-icon']} />
+                )}
               </span>
 
               <span

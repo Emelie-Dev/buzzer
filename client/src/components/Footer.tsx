@@ -5,7 +5,7 @@ import { FaUserCheck } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 type FooterProps = {
-  page: 'home' | 'following' | 'reels' | 'profile';
+  page: 'home' | 'following' | 'reels' | 'profile' | 'none';
 };
 
 const Footer = ({ page }: FooterProps) => {

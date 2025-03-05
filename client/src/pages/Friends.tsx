@@ -1,13 +1,15 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Friends.module.css';
 import { PiCheckFatFill } from 'react-icons/pi';
-import { useEffect, useRef, useState } from 'react';
-import { ContentContext } from '../Contexts';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { ContentContext, GeneralContext } from '../Contexts';
 import ContentBox from '../components/ContentBox';
 import { Content } from '../components/CarouselItem';
 import { DataItem } from './Following';
 import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const data: Content[] = [
   {
@@ -157,11 +159,15 @@ Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFo
 ];
 
 const Friends = () => {
-  const [category, setCategory] = useState<'users' | 'contents'>('users');
+  const [category, setCategory] = useState<'users' | 'contents' | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null!);
+  const mainRef = useRef<HTMLDivElement>(null!);
 
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
+
+  const { scrollingUp } = useContext(GeneralContext);
 
   useEffect(() => {
     scrollHandler();
@@ -170,12 +176,32 @@ const Friends = () => {
   useEffect(() => {
     if (containerRef.current) {
       if (category === 'contents') {
-        containerRef.current.style.transform = `translateX(-100%)`;
+        // containerRef.current.style.transform = `translateX(-100%)`;
+
+        // containerRef.current.animate(
+        //   {
+        //     transform: ['translateX(100%)', 'translateX(0)'],
+        //   },
+        //   {
+        //     fill: 'both',
+        //     duration: 200,
+        //   }
+        // );
         if (activeVideo) activeVideo.play();
-      } else {
-        containerRef.current.style.transform = `translateX(0%)`;
+      } else if (category === 'users') {
+        // containerRef.current.style.transform = `translateX(0%)`;
+        // containerRef.current.animate(
+        //   {
+        //     transform: ['translateX(-100%)', 'translateX(0)'],
+        //   },
+        //   {
+        //     fill: 'both',
+        //     duration: 200,
+        //   }
+        // );
         if (activeVideo) activeVideo.pause();
       }
+      mainRef.current.scrollTop = 0;
     }
   }, [category]);
 
@@ -184,12 +210,24 @@ const Friends = () => {
       <NavBar page="friends" />
 
       <section className={styles.main}>
-        <section className={styles['main-container']}>
+        <section
+          className={styles['main-container']}
+          ref={mainRef}
+          onScroll={scrollHandler}
+        >
+          <Header />
+
           <div className={styles.header}>
-            <ul className={styles['header-list']}>
+            <ul
+              className={`${styles['header-list']} ${
+                !scrollingUp ? styles['header-list2'] : ''
+              } `}
+            >
               <li
                 className={`${styles['header-item']} ${
-                  category === 'users' ? styles['active-item'] : ''
+                  category === 'users' || category === null
+                    ? styles['active-item']
+                    : ''
                 }`}
                 onClick={() => setCategory('users')}
               >
@@ -207,7 +245,11 @@ const Friends = () => {
           </div>
 
           <div className={styles['category-container']} ref={containerRef}>
-            <div className={styles['users-container']}>
+            <div
+              className={`${styles['users-container']} ${
+                category === 'contents' ? styles['hide-section'] : ''
+              }`}
+            >
               <article className={styles['user']}>
                 <img
                   className={styles['user-content']}
@@ -420,8 +462,11 @@ const Friends = () => {
               value={{ contentRef, activeVideo, setActiveVideo }}
             >
               <div
-                className={styles['content-container']}
-                onScroll={scrollHandler}
+                className={`${styles['content-container']} ${
+                  category === 'users' || category === null
+                    ? styles['hide-section']
+                    : ''
+                }`}
               >
                 {dataList.map((data, index) => (
                   <ContentBox key={index} data={data} contentType="home" />
@@ -429,6 +474,7 @@ const Friends = () => {
               </div>
             </ContentContext.Provider>
           </div>
+          <Footer page={'none'} />
         </section>
 
         <section className={styles.aside}>
