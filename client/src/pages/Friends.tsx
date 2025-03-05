@@ -1,8 +1,8 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Friends.module.css';
 import { PiCheckFatFill } from 'react-icons/pi';
-import { useContext, useEffect, useRef, useState } from 'react';
-import { ContentContext, GeneralContext } from '../Contexts';
+import { useEffect, useRef, useState } from 'react';
+import { ContentContext } from '../Contexts';
 import ContentBox from '../components/ContentBox';
 import { Content } from '../components/CarouselItem';
 import { DataItem } from './Following';
@@ -10,6 +10,7 @@ import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import MobileMenu from '../components/MobileMenu';
 
 const data: Content[] = [
   {
@@ -160,14 +161,13 @@ Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFo
 
 const Friends = () => {
   const [category, setCategory] = useState<'users' | 'contents' | null>(null);
+  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null!);
   const mainRef = useRef<HTMLDivElement>(null!);
 
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
-
-  const { scrollingUp } = useContext(GeneralContext);
 
   useEffect(() => {
     scrollHandler();
@@ -215,14 +215,14 @@ const Friends = () => {
           ref={mainRef}
           onScroll={scrollHandler}
         >
-          <Header />
+          <Header
+            friends
+            friendsCategory={category}
+            setFriendsCategory={setCategory}
+          />
 
           <div className={styles.header}>
-            <ul
-              className={`${styles['header-list']} ${
-                !scrollingUp ? styles['header-list2'] : ''
-              } `}
-            >
+            <ul className={styles['header-list']}>
               <li
                 className={`${styles['header-item']} ${
                   category === 'users' || category === null
@@ -469,7 +469,12 @@ const Friends = () => {
                 }`}
               >
                 {dataList.map((data, index) => (
-                  <ContentBox key={index} data={data} contentType="home" />
+                  <ContentBox
+                    key={index}
+                    data={data}
+                    contentType="home"
+                    setShowMobileMenu={setShowMobileMenu}
+                  />
                 ))}
               </div>
             </ContentContext.Provider>
@@ -619,6 +624,13 @@ const Friends = () => {
           </div>
         </section>
       </section>
+
+      {showMobileMenu && (
+        <MobileMenu
+          showMobileMenu={showMobileMenu}
+          setShowMobileMenu={setShowMobileMenu}
+        />
+      )}
     </>
   );
 };

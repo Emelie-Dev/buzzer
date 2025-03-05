@@ -1,11 +1,20 @@
 .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: 1rem;
   background: white;
   top: 0;
-  z-index: 5;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+}
+
+.friends-header {
+  padding: 1rem 1rem 0;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .left-box {
@@ -29,6 +38,13 @@
   font-size: 2.2rem;
   font-family: logoFont;
   font-weight: 600;
+}
+
+.friends-text {
+  font-family: appFontMedium;
+  font-size: 1.4rem;
+  font-weight: normal;
+  color: black;
 }
 
 .options-div {
@@ -134,6 +150,48 @@
 .search-icon {
   margin-left: 1.5rem;
   cursor: pointer;
+}
+
+.friends-header-list {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  padding-top: 0.7rem;
+  list-style-type: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.friends-header-item {
+  font-family: appFontMedium;
+  padding: 0 1rem 0.5rem;
+  font-size: 1.05rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  text-align: center;
+  width: 50%;
+}
+
+.friends-header-item:hover {
+  color: var(--app-theme-color);
+}
+
+.friends-active-item {
+  color: var(--app-theme-color);
+  border-bottom: 2px solid var(--app-theme-color);
+}
+
+.back-icon {
+  width: 1.7rem;
+  height: 1.7rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.back-icon:hover {
+  color: var(--app-theme-color);
 }
 
 /* Media Queries */
