@@ -10,6 +10,8 @@ import { RiUnpinFill } from 'react-icons/ri';
 import { IoIosArrowUp } from 'react-icons/io';
 import { IoIosArrowDown } from 'react-icons/io';
 import AsideHeader from '../components/AsideHeader';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const dataList: DataItem[] = [
   {
@@ -101,6 +103,8 @@ const Reels = () => {
           onKeyDown={handleKeyPress('down')}
           onKeyUp={handleKeyPress('up')}
         >
+          <Header />
+
           <div className={styles['reels-container']}>
             <ContentContext.Provider
               value={{ contentRef, activeVideo, setActiveVideo }}
@@ -111,6 +115,64 @@ const Reels = () => {
                 ))}
               </div>
             </ContentContext.Provider>
+
+            <div className={styles['medium-menu-container']}>
+              <div className={styles['arrow-div2']}>
+                <span
+                  className={styles['arrow-box']}
+                  onClick={() => {
+                    mainRef.current.scrollTop -= mainRef.current.clientHeight;
+                  }}
+                >
+                  <IoIosArrowUp
+                    className={`${styles.arrow}  ${
+                      scrollType === 'up' ? styles['active-arrow'] : ''
+                    }`}
+                  />
+                </span>
+
+                <span
+                  className={styles['arrow-box']}
+                  onClick={() => {
+                    mainRef.current.scrollTop += mainRef.current.clientHeight;
+                  }}
+                >
+                  <IoIosArrowDown
+                    className={`${styles.arrow}  ${
+                      scrollType === 'down' ? styles['active-arrow'] : ''
+                    }`}
+                  />
+                </span>
+              </div>
+
+              <div className={styles['reel-options-box2']}>
+                <span className={styles['reel-options-icon-box2']}>
+                  <TbMenuDeep className={styles['reel-options-icon']} />
+                </span>
+
+                <ul className={styles['reel-options-list2']}>
+                  <li className={styles['reel-options-item2']}>
+                    Auto scroll
+                    <input
+                      type="checkbox"
+                      className={styles['autoscroll-checkbox']}
+                    />
+                  </li>
+                  <li className={styles['reel-options-item2']}>
+                    Playback speed
+                    <select className={styles['speed-select']}>
+                      <option className={styles['speed-value']}>2x</option>
+                      <option className={styles['speed-value']}>1.5x</option>
+                      <option className={styles['speed-value']}>1x</option>
+                      <option className={styles['speed-value']}>0.5x</option>
+                    </select>
+                  </li>
+                  <li className={styles['reel-options-item2']}>
+                    Picture-in-picture
+                  </li>
+                </ul>
+              </div>
+            </div>
 
             <div className={styles['reel-options-box']}>
               <span className={styles['reel-options-icon-box']}>
@@ -168,6 +230,8 @@ const Reels = () => {
               />
             </span>
           </div>
+
+          <Footer page={'reels'} />
         </section>
 
         <section className={styles.aside}>

@@ -20,13 +20,13 @@
 
   scroll-snap-type: y mandatory;
   overflow-y: scroll;
+  /* background: green; */
 }
 
 .reels-container {
   width: 100%;
   display: flex;
   justify-content: center;
-  /* padding: 2rem 2rem 0; */
   position: relative;
 }
 
@@ -40,13 +40,14 @@
 .reel-options-box {
   position: fixed;
   bottom: 0;
-  z-index: 4;
+  z-index: 5;
   right: 26%;
   margin: 1rem 1rem 1.5rem;
-  z-index: 3;
+  z-index: 4;
 }
 
-.reel-options-icon-box {
+.reel-options-icon-box,
+.reel-options-icon-box2 {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,7 +61,8 @@
   height: 2rem;
 }
 
-.reel-options-list {
+.reel-options-list,
+.reel-options-list2 {
   list-style-type: none;
   padding: 0;
   margin: 0;
@@ -73,7 +75,8 @@
   display: none;
 }
 
-.reel-options-item {
+.reel-options-item,
+.reel-options-item2 {
   font-family: appFontMedium;
   padding: 0.8rem 1rem;
   font-size: 0.9rem;
@@ -84,15 +87,18 @@
   justify-content: space-between;
 }
 
-.reel-options-item:first-child {
+.reel-options-item:first-child,
+.reel-options-item2:first-child {
   border-radius: 8px 8px 0 0;
 }
 
-.reel-options-item:last-child {
+.reel-options-item:last-child,
+.reel-options-item2:last-child {
   border-radius: 0 0 8px 8px;
 }
 
-.reel-options-item:hover {
+.reel-options-item:hover,
+.reel-options-item2:hover {
   background: rgba(128, 128, 128, 0.2);
   color: var(--app-theme-color);
 }
@@ -223,7 +229,7 @@
 .arrow-div {
   position: fixed;
   bottom: 45%;
-  z-index: 4;
+  z-index: 3;
   right: calc(27.5%);
   display: flex;
   flex-direction: column;
@@ -256,4 +262,93 @@
 
 .active-arrow {
   fill: var(--app-theme-color);
+}
+
+.medium-menu-container {
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  padding-bottom: 0.5rem;
+  display: none;
+}
+
+.arrow-div2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: auto;
+}
+
+.reel-options-box2 {
+  position: relative;
+}
+
+.reel-options-box2:hover .reel-options-list2 {
+  display: inline;
+}
+
+.reel-options-box2:hover .reel-options-icon-box2 {
+  background: rgba(128, 128, 128, 0.2);
+  color: var(--app-theme-color);
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1200px) {
+  .main {
+    margin-left: 22%;
+    grid-template-columns: 100%;
+  }
+
+  .aside {
+    display: none;
+  }
+
+  .main-container {
+    border-right: none;
+  }
+
+  .reels-container {
+    justify-content: space-evenly;
+  }
+
+  .arrow-div,
+  .reel-options-box {
+    display: none;
+  }
+
+  .medium-menu-container {
+    display: flex;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .main {
+    margin-left: 25%;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .main {
+    margin-left: 81px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .main {
+    margin-left: 0;
+  }
+
+  .main-container {
+    /* padding: 0 0 12rem; */
+  }
+
+  .reels-container {
+  }
+
+  .medium-menu-container {
+    display: none;
+  }
 }
