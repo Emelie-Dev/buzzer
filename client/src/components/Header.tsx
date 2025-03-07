@@ -25,8 +25,7 @@ const Header = ({
   setShowFriendRequests,
   reels,
 }: HeaderProps) => {
-  const { scrollingUp, setScrollingUp, setShowSearchPage } =
-    useContext(GeneralContext);
+  const { setScrollingUp, setShowSearchPage } = useContext(GeneralContext);
 
   const headerRef = useRef<HTMLDivElement>(null!);
 
