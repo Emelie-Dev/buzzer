@@ -11,6 +11,7 @@ import { IoPeopleSharp } from 'react-icons/io5';
 type HeaderProps = {
   friends?: boolean;
   friendsCategory?: 'users' | 'contents' | null;
+  reels?: boolean;
   setFriendsCategory?: React.Dispatch<
     React.SetStateAction<'users' | 'contents' | null>
   >;
@@ -22,6 +23,7 @@ const Header = ({
   friendsCategory,
   setFriendsCategory,
   setShowFriendRequests,
+  reels,
 }: HeaderProps) => {
   const { scrollingUp, setScrollingUp, setShowSearchPage } =
     useContext(GeneralContext);
@@ -34,47 +36,49 @@ const Header = ({
     setScrollingUp(null);
   }, []);
 
-  useEffect(() => {
-    if (scrollingUp) {
-      headerRef.current.style.position = 'sticky';
-      headerRef.current.animate(
-        {
-          transform: ['translateY(-15px)', 'translateY(0)'],
-        },
-        {
-          fill: 'both',
-          duration: 150,
-        }
-      );
-    } else if (scrollingUp === null) {
-      headerRef.current.style.position = 'static';
-      headerRef.current.animate(
-        {
-          transform: ['translateY(-15px)', 'translateY(0)'],
-        },
-        {
-          fill: 'both',
-          duration: 0,
-        }
-      );
-    } else {
-      const animation = headerRef.current.animate(
-        {
-          transform: ['translateY(0)', 'translateY(-75px)'],
-        },
-        {
-          fill: 'both',
-          duration: 150,
-        }
-      );
+  // useEffect(() => {
+  //   if (scrollingUp) {
+  //     headerRef.current.style.position = 'sticky';
+  //     headerRef.current.animate(
+  //       {
+  //         transform: ['translateY(-15px)', 'translateY(0)'],
+  //       },
+  //       {
+  //         fill: 'both',
+  //         duration: 150,
+  //       }
+  //     );
+  //   } else if (scrollingUp === null) {
+  //     headerRef.current.style.position = 'static';
+  //     headerRef.current.animate(
+  //       {
+  //         transform: ['translateY(-15px)', 'translateY(0)'],
+  //       },
+  //       {
+  //         fill: 'both',
+  //         duration: 0,
+  //       }
+  //     );
+  //   } else {
+  //     const animation = headerRef.current.animate(
+  //       {
+  //         transform: ['translateY(0)', 'translateY(-75px)'],
+  //       },
+  //       {
+  //         fill: 'both',
+  //         duration: 150,
+  //       }
+  //     );
 
-      animation.onfinish = () => (headerRef.current.style.position = 'static');
-    }
-  }, [scrollingUp]);
+  //     animation.onfinish = () => (headerRef.current.style.position = 'static');
+  //   }
+  // }, [scrollingUp]);
 
   return (
     <header
-      className={`${styles.header} ${friends ? styles['friends-header'] : ''}`}
+      className={`${styles.header} ${
+        friends ? styles['friends-header'] : ''
+      }  ${reels ? styles['reels-header'] : ''}`}
       ref={headerRef}
     >
       <div className={styles['header-top']}>

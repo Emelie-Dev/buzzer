@@ -11,6 +11,11 @@
   padding: 1rem 1rem 0;
 }
 
+.reels-header {
+  position: sticky;
+  top: 0;
+}
+
 .header-top {
   display: flex;
   align-items: center;

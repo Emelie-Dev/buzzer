@@ -408,7 +408,8 @@
     /* padding-top: 4.57rem; */
     margin-bottom: 0;
     padding: 0;
-    /* padding-top: 3rem; */
+    padding-top: 4.57rem;
+    background: black;
   }
 
   .reels-content-box {
