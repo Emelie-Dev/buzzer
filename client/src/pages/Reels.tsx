@@ -12,6 +12,7 @@ import { IoIosArrowDown } from 'react-icons/io';
 import AsideHeader from '../components/AsideHeader';
 // import Header from '../components/Header';
 import Footer from '../components/Footer';
+import MobileMenu from '../components/MobileMenu';
 
 const dataList: DataItem[] = [
   {
@@ -44,6 +45,7 @@ const Reels = () => {
   const [scrollType, setScrollType] = useState<'up' | 'down' | null>(null);
   const [prevTop, setPrevTop] = useState<number>(0);
   const { setScrollingUp } = useContext(GeneralContext);
+  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
 
   const mainRef = useRef<HTMLDivElement>(null!);
   const timeout = useRef<number | NodeJS.Timeout>();
@@ -124,7 +126,12 @@ const Reels = () => {
             >
               <div className={styles['content-container']}>
                 {dataList.map((data, index) => (
-                  <ContentBox key={index} data={data} contentType="reels" />
+                  <ContentBox
+                    key={index}
+                    data={data}
+                    contentType="reels"
+                    setShowMobileMenu={setShowMobileMenu}
+                  />
                 ))}
               </div>
             </ContentContext.Provider>
@@ -402,6 +409,14 @@ const Reels = () => {
           </div>
         </section>
       </section>
+
+      {showMobileMenu && (
+        <MobileMenu
+          showMobileMenu={showMobileMenu}
+          setShowMobileMenu={setShowMobileMenu}
+          reels
+        />
+      )}
     </>
   );
 };

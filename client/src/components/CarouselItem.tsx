@@ -62,6 +62,7 @@ const CarouselItem = ({
     setHideMenu,
     reelMenuRef,
     viewComment,
+    setShowMobileMenu,
   } = useContext(LikeContext);
   const [showLike, setShowLike] = useState<boolean>(false);
   const [webkit, setWebkit] = useState<boolean>(true);
@@ -507,6 +508,7 @@ const CarouselItem = ({
               onClick={() => {
                 setShowMenu((prevState) => !prevState);
                 setHideMenu(false);
+                if (setShowMobileMenu) setShowMobileMenu(true);
               }}
               ref={reelMenuRef}
             >

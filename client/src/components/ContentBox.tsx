@@ -163,6 +163,7 @@ const ContentBox = ({
         setHideMenu,
         reelMenuRef,
         viewComment,
+        setShowMobileMenu,
       }}
     >
       {shareMedia && (

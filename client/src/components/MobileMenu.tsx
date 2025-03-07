@@ -4,9 +4,14 @@ import styles from '../styles/MobileMenu.module.css';
 type MobileMenuProps = {
   showMobileMenu: boolean;
   setShowMobileMenu: React.Dispatch<React.SetStateAction<boolean>>;
+  reels?: boolean;
 };
 
-const MobileMenu = ({ showMobileMenu, setShowMobileMenu }: MobileMenuProps) => {
+const MobileMenu = ({
+  showMobileMenu,
+  setShowMobileMenu,
+  reels,
+}: MobileMenuProps) => {
   const listRef = useRef<HTMLUListElement>(null!);
 
   useEffect(() => {
@@ -42,16 +47,63 @@ const MobileMenu = ({ showMobileMenu, setShowMobileMenu }: MobileMenuProps) => {
   return (
     <section className={styles.section} onClick={handleClick}>
       <ul className={styles['menu-list']} ref={listRef}>
-        <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
+        <li
+          className={`${styles['menu-item']} ${styles['menu-red']} ${
+            reels ? styles['reels-menu-item'] : ''
+          }`}
+        >
           Follow
         </li>
-        <li className={`${styles['menu-item']} ${styles['menu-red']}`}>
+        <li
+          className={`${styles['menu-item']} ${styles['menu-red']} ${
+            reels ? styles['reels-menu-item'] : ''
+          }`}
+        >
           Report
         </li>
-        <li className={styles['menu-item']}>Not interested</li>
-        <li className={styles['menu-item']}>Add to story</li>
-        <li className={styles['menu-item']}>Go to post</li>
-        <li className={styles['menu-item']}>Clear display</li>
+
+        {reels && (
+          <>
+            <li
+              className={`${styles['menu-item']} ${styles['reels-menu-item']}`}
+            >
+              Mute
+            </li>
+            <li
+              className={`${styles['menu-item']} ${styles['reels-menu-item']}`}
+            >
+              Pin
+            </li>
+          </>
+        )}
+        <li
+          className={`${styles['menu-item']} ${
+            reels ? styles['reels-menu-item'] : ''
+          }`}
+        >
+          Not interested
+        </li>
+        <li
+          className={`${styles['menu-item']} ${
+            reels ? styles['reels-menu-item'] : ''
+          }`}
+        >
+          Add to story
+        </li>
+        <li
+          className={`${styles['menu-item']} ${
+            reels ? styles['reels-menu-item'] : ''
+          }`}
+        >
+          Go to post
+        </li>
+        <li
+          className={`${styles['menu-item']} ${
+            reels ? styles['reels-menu-item'] : ''
+          }`}
+        >
+          Clear display
+        </li>
       </ul>
     </section>
   );

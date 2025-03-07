@@ -352,6 +352,21 @@
   .medium-menu-container {
     display: none;
   }
+
+  .reel-options-box {
+    position: fixed;
+    display: inline;
+    height: fit-content;
+    bottom: none;
+    top: -1rem;
+    z-index: 5;
+    right: 0;
+  }
+
+  .reel-options-list {
+    bottom: auto;
+    top: 100%;
+  }
 }
 
 @media screen and (max-width: 500px) {

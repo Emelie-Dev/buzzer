@@ -8,6 +8,7 @@ interface LikeObj {
   setHideMenu: React.Dispatch<React.SetStateAction<boolean>>;
   reelMenuRef: React.MutableRefObject<HTMLDivElement>;
   viewComment: boolean;
+  setShowMobileMenu?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 type AudioFile = {

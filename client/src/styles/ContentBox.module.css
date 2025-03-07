@@ -410,8 +410,11 @@
     /* padding-top: 4.57rem; */
     margin-bottom: 0;
     padding: 0 1rem;
-    /* background: black; */
-    width: 100vw;
+    width: 100%;
+  }
+
+  .reel-menu-div {
+    display: none;
   }
 
   .reels-content-box {
@@ -452,6 +455,10 @@
 
   .menu-list {
     left: -510%;
+  }
+
+  .reels-content {
+    padding: 0;
   }
 }
 

@@ -37,6 +37,7 @@
 .reels-video {
   width: auto;
   max-width: 60vw;
+  object-fit: contain;
 }
 
 .pause-icon-box {
@@ -437,7 +438,11 @@
   .reels-video {
     max-width: none;
     width: 100%;
-    object-fit: contain;
+  }
+
+  .reel-menu-box {
+    right: auto;
+    left: 7px;
   }
 }
 
