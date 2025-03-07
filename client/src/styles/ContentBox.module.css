@@ -405,12 +405,15 @@
 
   .reels-content {
     height: 100%;
+    /* padding-top: 4.57rem; */
+    margin-bottom: 0;
+    padding: 0;
+    /* padding-top: 3rem; */
   }
 
   .reels-content-box {
     max-height: none;
     height: 100%;
-    background: red;
     width: 100vw;
   }
 
