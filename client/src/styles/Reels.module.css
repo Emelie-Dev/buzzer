@@ -342,7 +342,7 @@
   }
 
   .main-container {
-    height: calc(100vh - 3.3rem);
+    height: calc(100vh - 3.92rem);
   }
 
   .reels-container {
@@ -351,5 +351,17 @@
 
   .medium-menu-container {
     display: none;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .main-container {
+    height: calc(100vh - 3.59rem);
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .main-container {
+    height: calc(100vh - 3.29rem);
   }
 }

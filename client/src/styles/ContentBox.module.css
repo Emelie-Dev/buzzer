@@ -404,18 +404,20 @@
   }
 
   .reels-content {
+    display: flex;
+    justify-content: space-between;
     height: 100%;
     /* padding-top: 4.57rem; */
     margin-bottom: 0;
-    padding: 0;
-    padding-top: 4.57rem;
-    background: black;
+    padding: 0 1rem;
+    /* background: black; */
+    width: 100vw;
   }
 
   .reels-content-box {
     max-height: none;
     height: 100%;
-    width: 100vw;
+    width: 100%;
   }
 
   .menu-list {

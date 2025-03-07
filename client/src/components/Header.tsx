@@ -25,7 +25,8 @@ const Header = ({
   setShowFriendRequests,
   reels,
 }: HeaderProps) => {
-  const { setScrollingUp, setShowSearchPage } = useContext(GeneralContext);
+  const { setScrollingUp, setShowSearchPage, scrollingUp } =
+    useContext(GeneralContext);
 
   const headerRef = useRef<HTMLDivElement>(null!);
 
@@ -35,43 +36,43 @@ const Header = ({
     setScrollingUp(null);
   }, []);
 
-  // useEffect(() => {
-  //   if (scrollingUp) {
-  //     headerRef.current.style.position = 'sticky';
-  //     headerRef.current.animate(
-  //       {
-  //         transform: ['translateY(-15px)', 'translateY(0)'],
-  //       },
-  //       {
-  //         fill: 'both',
-  //         duration: 150,
-  //       }
-  //     );
-  //   } else if (scrollingUp === null) {
-  //     headerRef.current.style.position = 'static';
-  //     headerRef.current.animate(
-  //       {
-  //         transform: ['translateY(-15px)', 'translateY(0)'],
-  //       },
-  //       {
-  //         fill: 'both',
-  //         duration: 0,
-  //       }
-  //     );
-  //   } else {
-  //     const animation = headerRef.current.animate(
-  //       {
-  //         transform: ['translateY(0)', 'translateY(-75px)'],
-  //       },
-  //       {
-  //         fill: 'both',
-  //         duration: 150,
-  //       }
-  //     );
+  useEffect(() => {
+    if (scrollingUp) {
+      headerRef.current.style.position = 'sticky';
+      headerRef.current.animate(
+        {
+          transform: ['translateY(-15px)', 'translateY(0)'],
+        },
+        {
+          fill: 'both',
+          duration: 150,
+        }
+      );
+    } else if (scrollingUp === null) {
+      headerRef.current.style.position = 'static';
+      headerRef.current.animate(
+        {
+          transform: ['translateY(-15px)', 'translateY(0)'],
+        },
+        {
+          fill: 'both',
+          duration: 0,
+        }
+      );
+    } else {
+      const animation = headerRef.current.animate(
+        {
+          transform: ['translateY(0)', 'translateY(-75px)'],
+        },
+        {
+          fill: 'both',
+          duration: 150,
+        }
+      );
 
-  //     animation.onfinish = () => (headerRef.current.style.position = 'static');
-  //   }
-  // }, [scrollingUp]);
+      animation.onfinish = () => (headerRef.current.style.position = 'static');
+    }
+  }, [scrollingUp]);
 
   return (
     <header
