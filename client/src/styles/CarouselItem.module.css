@@ -36,6 +36,7 @@
 
 .reels-video {
   width: auto;
+  max-width: 60vw;
 }
 
 .pause-icon-box {

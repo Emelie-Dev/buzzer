@@ -408,69 +408,71 @@ const ContentBox = ({
             </div>
           </div>
 
-          <div className={styles['small-menu-container']}>
-            <span
-              className={styles['small-details-box']}
-              onClick={() => {
-                setLike(!like);
-                setHideLike(like === true ? true : false);
-              }}
-            >
-              {!hideLike ? (
-                <img
-                  src="../../assets/images/Animation - 1731349965809.gif"
-                  className={styles['like-icon']}
-                />
-              ) : (
-                <FaHeart
+          {contentType !== 'reels' && (
+            <div className={styles['small-menu-container']}>
+              <span
+                className={styles['small-details-box']}
+                onClick={() => {
+                  setLike(!like);
+                  setHideLike(like === true ? true : false);
+                }}
+              >
+                {!hideLike ? (
+                  <img
+                    src="../../assets/images/Animation - 1731349965809.gif"
+                    className={styles['like-icon']}
+                  />
+                ) : (
+                  <FaHeart
+                    className={`${styles['small-details-icon']} ${
+                      like ? styles['red-icon'] : ''
+                    }`}
+                    title="Like"
+                  />
+                )}
+
+                <span className={styles['small-details-value']}>21K</span>
+              </span>
+
+              <span
+                className={styles['small-details-box']}
+                onClick={() => {
+                  activeVideo?.pause();
+                  setActiveVideo(null);
+                  setViewComment(true);
+                }}
+              >
+                <FaCommentDots className={styles['small-details-icon']} />
+
+                <span className={styles['small-details-value']}>2345</span>
+              </span>
+
+              <span
+                className={styles['small-details-box']}
+                onClick={() => setSaved(!saved)}
+              >
+                <IoBookmark
                   className={`${styles['small-details-icon']} ${
-                    like ? styles['red-icon'] : ''
+                    saved ? styles['saved-icon'] : ''
                   }`}
-                  title="Like"
                 />
-              )}
 
-              <span className={styles['small-details-value']}>21K</span>
-            </span>
+                <span className={styles['small-details-value']}>954</span>
+              </span>
 
-            <span
-              className={styles['small-details-box']}
-              onClick={() => {
-                activeVideo?.pause();
-                setActiveVideo(null);
-                setViewComment(true);
-              }}
-            >
-              <FaCommentDots className={styles['small-details-icon']} />
+              <span
+                className={styles['small-details-box']}
+                onClick={() => {
+                  activeVideo?.pause();
+                  setShareMedia(true);
+                }}
+              >
+                <FaShare className={styles['small-details-icon']} />
 
-              <span className={styles['small-details-value']}>2345</span>
-            </span>
-
-            <span
-              className={styles['small-details-box']}
-              onClick={() => setSaved(!saved)}
-            >
-              <IoBookmark
-                className={`${styles['small-details-icon']} ${
-                  saved ? styles['saved-icon'] : ''
-                }`}
-              />
-
-              <span className={styles['small-details-value']}>954</span>
-            </span>
-
-            <span
-              className={styles['small-details-box']}
-              onClick={() => {
-                activeVideo?.pause();
-                setShareMedia(true);
-              }}
-            >
-              <FaShare className={styles['small-details-icon']} />
-
-              <span className={styles['small-details-value']}>217</span>
-            </span>
-          </div>
+                <span className={styles['small-details-value']}>217</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {contentType !== 'reels' && description && (

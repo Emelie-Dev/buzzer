@@ -1,7 +1,7 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Reels.module.css';
-import { useEffect, useRef, useState } from 'react';
-import { ContentContext } from '../Contexts';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { ContentContext, GeneralContext } from '../Contexts';
 import ContentBox from '../components/ContentBox';
 import useScrollHandler from '../hooks/useScrollHandler';
 import { DataItem } from './Following';
@@ -42,6 +42,8 @@ const Reels = () => {
   const { activeVideo, setActiveVideo, contentRef } = useScrollHandler();
   const setActiveIndex = useState<number>(0)[1];
   const [scrollType, setScrollType] = useState<'up' | 'down' | null>(null);
+  const [prevTop, setPrevTop] = useState<number>(0);
+  const { setScrollingUp } = useContext(GeneralContext);
 
   const mainRef = useRef<HTMLDivElement>(null!);
   const timeout = useRef<number | NodeJS.Timeout>();
@@ -68,13 +70,24 @@ const Reels = () => {
     }
   }, []);
 
-  const scrollHandler = () => {
+  const scrollHandler = (e: React.UIEvent<HTMLElement, UIEvent>) => {
     clearTimeout(timeout.current);
     timeout.current = setTimeout(() => {
       const scrollPosition = mainRef.current.scrollTop;
 
       setActiveIndex(Math.round(scrollPosition / window.innerHeight));
     }, 100);
+
+    const target = e.target as HTMLDivElement;
+
+    setScrollingUp(
+      target.scrollTop - prevTop < 0
+        ? true
+        : target.scrollTop < 208
+        ? null
+        : false
+    );
+    setPrevTop(target.scrollTop);
   };
 
   const handleKeyPress =

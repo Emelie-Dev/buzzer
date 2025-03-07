@@ -342,10 +342,12 @@
   }
 
   .main-container {
-    /* padding: 0 0 12rem; */
+    height: calc(100vh - 3.5rem);
+    background: gold;
   }
 
   .reels-container {
+    height: 100%;
   }
 
   .medium-menu-container {

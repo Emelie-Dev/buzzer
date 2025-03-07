@@ -7,9 +7,9 @@
 .reels-content {
   border-top: none;
   height: 100vh;
-  padding: 1rem 0;
   scroll-snap-align: start;
   margin-bottom: 0;
+  padding: 1rem 0;
 }
 
 .content-head {
@@ -401,6 +401,15 @@
 @media screen and (max-width: 600px) {
   .content-box {
     max-height: calc(85vh - 3.9rem);
+  }
+
+  .reels-content {
+    height: 100%;
+  }
+
+  .reels-content-box {
+    max-height: none;
+    height: 100%;
   }
 
   .menu-list {
