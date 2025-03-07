@@ -433,6 +433,13 @@
 
 /* Media Queries */
 
+@media screen and (max-width: 600px) {
+  .reels-video {
+    max-width: none;
+    width: 100vw;
+  }
+}
+
 @media screen and (max-width: 400px) {
   .carousel-item {
     border-radius: 0;
