@@ -294,6 +294,10 @@
   color: var(--app-theme-color);
 }
 
+.pinned-videos-item {
+  display: none;
+}
+
 /* Media Queries */
 
 @media screen and (max-width: 1200px) {
@@ -321,6 +325,10 @@
 
   .medium-menu-container {
     display: flex;
+  }
+
+  .pinned-videos-item {
+    display: block;
   }
 }
 

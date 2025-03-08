@@ -10,7 +10,7 @@ import { IoBookmark } from 'react-icons/io5';
 import styles from '../styles/ContentBox.module.css';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { PiCheckFatFill } from 'react-icons/pi';
-import { ContentContext, LikeContext } from '../Contexts';
+import { ContentContext, GeneralContext, LikeContext } from '../Contexts';
 import CommentBox from './CommentBox';
 import ShareMedia from '../components/ShareMedia';
 import { DataItem } from '../pages/Following';
@@ -63,6 +63,7 @@ const ContentBox = ({
   const [hideMore, setHideMore] = useState<boolean>(false);
   const [hideData, setHideData] = useState<boolean>(false);
   const { activeVideo, setActiveVideo } = useContext(ContentContext);
+  const { scrollingUp } = useContext(GeneralContext);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -201,7 +202,7 @@ const ContentBox = ({
       <article
         className={`${styles.content} ${
           contentType === 'reels' ? styles['reels-content'] : ''
-        }`}
+        } ${scrollingUp ? styles['scroll-reels'] : ''}`}
         ref={contentRef}
       >
         {contentType !== 'reels' && (

@@ -13,6 +13,7 @@ import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
+import PinnedReels from '../components/PinnedReels';
 
 const dataList: DataItem[] = [
   {
@@ -46,6 +47,7 @@ const Reels = () => {
   const [prevTop, setPrevTop] = useState<number>(0);
   const { setScrollingUp } = useContext(GeneralContext);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
+  const [showPinnedVideos, setShowPinnedVideos] = useState<boolean>(false);
 
   const mainRef = useRef<HTMLDivElement>(null!);
   const timeout = useRef<number | NodeJS.Timeout>();
@@ -220,6 +222,12 @@ const Reels = () => {
                   <li className={styles['reel-options-item2']}>
                     Picture-in-picture
                   </li>
+                  <li
+                    className={`${styles['reel-options-item']} ${styles['pinned-videos-item']}`}
+                    onClick={() => setShowPinnedVideos(true)}
+                  >
+                    View pinned videos
+                  </li>
                 </ul>
               </div>
             </div>
@@ -248,6 +256,12 @@ const Reels = () => {
                 </li>
                 <li className={styles['reel-options-item']}>
                   Picture-in-picture
+                </li>
+                <li
+                  className={`${styles['reel-options-item']} ${styles['pinned-videos-item']}`}
+                  onClick={() => setShowPinnedVideos(true)}
+                >
+                  View pinned videos
                 </li>
               </ul>
             </div>
@@ -446,6 +460,10 @@ const Reels = () => {
           setShowMobileMenu={setShowMobileMenu}
           reels
         />
+      )}
+
+      {showPinnedVideos && (
+        <PinnedReels setShowPinnedVideos={setShowPinnedVideos} />
       )}
     </>
   );
