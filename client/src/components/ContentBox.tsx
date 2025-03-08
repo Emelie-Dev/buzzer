@@ -306,8 +306,16 @@ const ContentBox = ({
             )}
           </div>
 
-          <div className={styles['menu-container']}>
-            <div className={styles['profile-img-box']}>
+          <div
+            className={`${styles['menu-container']} ${
+              contentType === 'reels' ? styles['reels-menu-container'] : ''
+            }`}
+          >
+            <div
+              className={`${styles['profile-img-box']} ${
+                contentType === 'reels' ? styles['hide-profile-box'] : ''
+              }`}
+            >
               <span className={styles['profile-img-span']}>
                 <img
                   src={`../../assets/images/users/${photo}`}
@@ -363,7 +371,6 @@ const ContentBox = ({
 
               <span className={styles['menu-text']}>21K</span>
             </div>
-
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -378,7 +385,6 @@ const ContentBox = ({
               </span>
               <span className={styles['menu-text']}>2345</span>
             </div>
-
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -393,7 +399,6 @@ const ContentBox = ({
               </span>
               <span className={styles['menu-text']}>954</span>
             </div>
-
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -407,6 +412,13 @@ const ContentBox = ({
               </span>
               <span className={styles['menu-text']}>217</span>
             </div>
+
+            <HiOutlineDotsHorizontal
+              className={`${styles['reel-content-menu']} ${
+                showMenu ? styles['active-menu'] : ''
+              }`}
+              onClick={() => setShowMobileMenu && setShowMobileMenu(true)}
+            />
           </div>
 
           {contentType !== 'reels' && (

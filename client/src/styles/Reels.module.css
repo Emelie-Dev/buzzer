@@ -358,14 +358,30 @@
     display: inline;
     height: fit-content;
     bottom: none;
-    top: -1rem;
+    top: -0.8rem;
     z-index: 5;
-    right: 0;
+    width: fit-content;
   }
 
   .reel-options-list {
     bottom: auto;
     top: 100%;
+  }
+
+  .reel-options-icon-box {
+    padding: 0.4rem;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .reel-options-icon {
+    color: white;
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .reel-options-box:hover .reel-options-icon {
+    color: var(--app-theme-color);
   }
 }
 

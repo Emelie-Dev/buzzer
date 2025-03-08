@@ -49,6 +49,8 @@ const Reels = () => {
 
   const mainRef = useRef<HTMLDivElement>(null!);
   const timeout = useRef<number | NodeJS.Timeout>();
+  const reelsRef = useRef<HTMLDivElement>(null!);
+  const reelOptionsRef = useRef<HTMLDivElement>(null!);
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -70,6 +72,34 @@ const Reels = () => {
     if (contentRef.current) {
       contentRef.current.forEach((video) => observer.observe(video));
     }
+
+    const resizeHandler = () => {
+      if (reelsRef.current) {
+        const smallDevice = window.matchMedia('(max-width: 600px)').matches;
+        const smallDevice2 = window.matchMedia('(max-width: 500px)').matches;
+
+        const offsetLeft = reelsRef.current.offsetLeft;
+
+        const videoWidth =
+          (reelsRef.current.children[0] as HTMLDivElement).querySelector(
+            'video'
+          )?.offsetWidth || 0;
+
+        if (smallDevice)
+          reelOptionsRef.current.style.left = `${
+            offsetLeft + videoWidth - 42 - (smallDevice2 ? 16 : 0)
+          }px`;
+        else reelOptionsRef.current.style.left = 'auto';
+      }
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
   }, []);
 
   const scrollHandler = (e: React.UIEvent<HTMLElement, UIEvent>) => {
@@ -124,7 +154,7 @@ const Reels = () => {
             <ContentContext.Provider
               value={{ contentRef, activeVideo, setActiveVideo }}
             >
-              <div className={styles['content-container']}>
+              <div className={styles['content-container']} ref={reelsRef}>
                 {dataList.map((data, index) => (
                   <ContentBox
                     key={index}
@@ -194,7 +224,7 @@ const Reels = () => {
               </div>
             </div>
 
-            <div className={styles['reel-options-box']}>
+            <div className={styles['reel-options-box']} ref={reelOptionsRef}>
               <span className={styles['reel-options-icon-box']}>
                 <TbMenuDeep className={styles['reel-options-icon']} />
               </span>

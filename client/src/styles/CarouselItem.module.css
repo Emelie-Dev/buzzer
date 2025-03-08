@@ -441,8 +441,7 @@
   }
 
   .reel-menu-box {
-    right: auto;
-    left: 7px;
+    display: none;
   }
 }
 
