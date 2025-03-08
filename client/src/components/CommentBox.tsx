@@ -373,7 +373,13 @@ const CommentBox = ({
       >
         <div className={styles['carousel-container']}>
           {type === 'carousel' ? (
-            <Carousel data={media} aspectRatio={aspectRatio} type="comment" />
+            <Carousel
+              data={media}
+              aspectRatio={aspectRatio}
+              type="comment"
+              hideData={hideData}
+              setHideData={setHideData}
+            />
           ) : (
             <CarouselItem
               item={{ src: media, type }}
