@@ -87,7 +87,7 @@ const Reels = () => {
 
         if (smallDevice)
           reelOptionsRef.current.style.left = `${
-            offsetLeft + videoWidth - 42 - (smallDevice2 ? 16 : 0)
+            offsetLeft + videoWidth - 43 - (smallDevice2 ? 16 : 0)
           }px`;
         else reelOptionsRef.current.style.left = 'auto';
       }
