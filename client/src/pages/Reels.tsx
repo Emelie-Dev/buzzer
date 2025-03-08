@@ -10,7 +10,7 @@ import { RiUnpinFill } from 'react-icons/ri';
 import { IoIosArrowUp } from 'react-icons/io';
 import { IoIosArrowDown } from 'react-icons/io';
 import AsideHeader from '../components/AsideHeader';
-// import Header from '../components/Header';
+import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
 

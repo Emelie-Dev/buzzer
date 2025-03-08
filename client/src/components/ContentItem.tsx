@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import styles from '../styles/ContentItem.module.css';
 import CarouselItem from './CarouselItem';
 
@@ -10,6 +10,8 @@ type ContentItemProps = {
   contentType: 'single' | 'reels';
   description: string;
   name?: string;
+  hideData: boolean;
+  setHideData: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const ContentItem = ({
@@ -20,8 +22,9 @@ const ContentItem = ({
   contentType,
   description,
   name,
+  hideData,
+  setHideData,
 }: ContentItemProps) => {
-  const [hideData, setHideData] = useState<boolean>(false);
   const contentRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {

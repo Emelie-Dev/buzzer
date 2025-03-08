@@ -359,7 +359,7 @@
     height: fit-content;
     bottom: none;
     top: -0.8rem;
-    z-index: 5;
+    z-index: 3;
     width: fit-content;
   }
 
@@ -382,6 +382,10 @@
 
   .reel-options-box:hover .reel-options-icon {
     color: var(--app-theme-color);
+  }
+
+  .reel-options-box:hover .reel-options-icon-box {
+    background: rgba(255, 255, 255, 0.3);
   }
 }
 

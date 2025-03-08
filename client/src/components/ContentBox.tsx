@@ -61,6 +61,7 @@ const ContentBox = ({
   const [shareMedia, setShareMedia] = useState<boolean>(false);
   const [viewComment, setViewComment] = useState<boolean>(false);
   const [hideMore, setHideMore] = useState<boolean>(false);
+  const [hideData, setHideData] = useState<boolean>(false);
   const { activeVideo, setActiveVideo } = useContext(ContentContext);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
@@ -138,6 +139,10 @@ const ContentBox = ({
       window.removeEventListener('click', clickHandler);
     };
   }, [showMenu]);
+
+  useEffect(() => {
+    console.log(hideData);
+  }, [hideData]);
 
   const handleDescription = () => {
     descriptionRef.current.animate(
@@ -261,6 +266,8 @@ const ContentBox = ({
                 data={media}
                 aspectRatio={aspectRatio}
                 setDescriptionWidth={setDescriptionWidth}
+                hideData={hideData}
+                setHideData={setHideData}
                 type="content"
               />
             ) : (
@@ -272,6 +279,8 @@ const ContentBox = ({
                 contentType={contentType === 'reels' ? 'reels' : 'single'}
                 description={description}
                 name={name}
+                hideData={hideData}
+                setHideData={setHideData}
               />
             )}
 
@@ -308,7 +317,9 @@ const ContentBox = ({
 
           <div
             className={`${styles['menu-container']} ${
-              contentType === 'reels' ? styles['reels-menu-container'] : ''
+              contentType === 'reels' && !hideData
+                ? styles['reels-menu-container']
+                : ''
             }`}
           >
             <div

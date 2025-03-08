@@ -8,6 +8,8 @@ type CarouselProps = {
   aspectRatio: number;
   setDescriptionWidth?: React.Dispatch<React.SetStateAction<number>>;
   type: 'comment' | 'content';
+  hideData: boolean;
+  setHideData: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const Carousel = ({
@@ -15,9 +17,10 @@ const Carousel = ({
   aspectRatio,
   setDescriptionWidth,
   type: viewType,
+  hideData,
+  setHideData,
 }: CarouselProps) => {
   const [contentIndex, setContentIndex] = useState<number>(0);
-  const [hideData, setHideData] = useState<boolean>(false);
   const [descriptionHeight, setDescriptionHeight] = useState<number>(0);
   const [showMore, setShowMore] = useState<boolean>(false);
   const [webkit, setWebkit] = useState<boolean>(true);

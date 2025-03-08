@@ -443,6 +443,10 @@
   .reel-menu-box {
     display: none;
   }
+
+  .reel-time {
+    font-size: 0.9rem;
+  }
 }
 
 @media screen and (max-width: 400px) {

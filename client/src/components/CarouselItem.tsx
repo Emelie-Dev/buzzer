@@ -387,8 +387,7 @@ const CarouselItem = ({
         onContextMenu={(e) => {
           if (contentType === 'reels') {
             e.preventDefault();
-            if (hideData) setHideData(false);
-            else setHideData(true);
+            setHideData(!hideData);
           }
         }}
         onClick={
