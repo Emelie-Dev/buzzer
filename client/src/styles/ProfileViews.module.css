@@ -7,7 +7,7 @@
   min-height: 100vh;
   z-index: 6;
   display: grid;
-  grid-template-columns: 40%;
+  grid-template-columns: 45%;
   justify-content: center;
   align-content: center;
   overflow: auto;
@@ -31,7 +31,7 @@
   top: 0;
   background: white;
   width: 100%;
-  z-index: 3;
+  z-index: 2;
 }
 
 .head {
@@ -60,153 +60,148 @@
   color: white;
 }
 
-.pinned-videos-div {
-  padding: 1rem 1.5rem 0.5rem;
+.profile-views-container {
   margin-top: 1.5rem;
-}
-
-.pinned-video-box {
-  width: 100%;
-  height: 8rem;
-  background: black;
-  border-radius: 5px;
-  position: relative;
-  cursor: pointer;
-  margin-bottom: 1.5rem;
-}
-
-.pinned-video {
-  width: 100%;
-  height: 100%;
-  border-radius: 5px;
-  object-fit: cover;
-}
-
-.pinned-video-details {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.5);
-  top: 0;
-  left: 0;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  border-radius: 5px;
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.pinned-video-data {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  padding: 0 1rem;
+  padding-bottom: 1rem;
 }
 
-.pinned-video-username {
-  font-family: appFontMedium;
-}
-
-.profile-img-span {
+.profile-viewer {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0.15rem;
-  border-radius: 50%;
-  background: linear-gradient(
-    to bottom left,
-    #dc143c,
-    var(--app-theme-color) 60%
-  );
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 0.5rem;
+  transition: background 0.3s;
+  margin-bottom: 1rem;
 }
 
-.profile-img2 {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
+.profile-viewer-img {
+  width: 3rem;
+  height: 3rem;
   object-fit: cover;
-  border: 3px solid rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
 }
 
-.unpin-icon {
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  width: 1.2rem;
-  height: 1.2rem;
+.profile-viewer-names {
+  display: flex;
+  flex-direction: column;
+  margin-left: 1rem;
+  width: calc(100% - 9rem);
 }
 
-.pinned-video-duration {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  font-family: monospace;
-  font-size: 1rem;
-  z-index: 5;
+.profile-viewer-username {
+  font-size: 0.9rem;
+  font-family: appFontMedium;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-/* Animations */
+.profile-viewer-handle {
+  font-family: appFont;
+  font-size: 0.85rem;
+  color: gray;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
 
-@keyframes showModal {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.follow-btn {
+  background: var(--app-theme-color);
+  color: white;
+  border: none;
+  outline: none;
+  font-family: appFontMedium;
+  font-size: 0.8rem;
+  border-radius: 5px;
+  margin-left: auto;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.follow-btn:hover {
+  color: black;
+}
+
+.profile-viewer:hover {
+  background: rgba(168, 85, 247, 0.2);
+}
+
+.views-text {
+  display: block;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  color: gray;
+  margin: 0 1.5rem 2rem;
+}
+
+.following-text {
+  margin-left: auto;
+  color: gray;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
 }
 
 /* Media Queries */
 
 @media screen and (max-width: 1200px) {
   .section {
-    grid-template-columns: 40%;
+    grid-template-columns: 48%;
   }
 }
 
 @media screen and (max-width: 1100px) {
   .section {
-    grid-template-columns: 40%;
+    grid-template-columns: 52%;
   }
 }
 
 @media screen and (max-width: 1000px) {
   .section {
-    grid-template-columns: 40%;
+    grid-template-columns: 55%;
   }
 }
 
 @media screen and (max-width: 900px) {
   .section {
-    grid-template-columns: 45%;
+    grid-template-columns: 60%;
   }
 }
 
 @media screen and (max-width: 800px) {
   .section {
-    grid-template-columns: 50%;
+    grid-template-columns: 65%;
   }
 }
 
 @media screen and (max-width: 700px) {
   .section {
-    grid-template-columns: 60%;
+    grid-template-columns: 73%;
   }
 }
 
 @media screen and (max-width: 600px) {
   .section {
-    grid-template-columns: 70%;
+    grid-template-columns: 82%;
   }
 
   .container {
     height: 100vh;
   }
+
+  .profile-views-container {
+    padding: 0 0.5rem;
+    padding-bottom: 1rem;
+  }
 }
 
 @media screen and (max-width: 500px) {
   .section {
-    grid-template-columns: 85%;
+    grid-template-columns: 92%;
   }
 }
 

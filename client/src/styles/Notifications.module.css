@@ -25,6 +25,21 @@
   position: sticky;
   top: 0;
   background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile-view-icon {
+  width: 2rem;
+  height: 2rem;
+  margin-left: 1.5rem;
+  display: none;
+  cursor: pointer;
+}
+
+.profile-view-icon:hover {
+  opacity: 0.8;
 }
 
 .select-box {
@@ -36,7 +51,6 @@
   align-items: center;
   justify-content: space-between;
   width: calc(100% - 4rem);
-  background: gold;
 }
 
 .select-btn-box {
@@ -213,7 +227,7 @@
 }
 
 .notification-time {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: gray;
   font-family: monospace;
   font-weight: bold;
@@ -347,7 +361,7 @@
   display: flex;
   flex-direction: column;
   margin-left: 1rem;
-  width: calc(100% - 8rem);
+  width: calc(100% - 9rem);
 }
 
 .profile-viewer-username {
@@ -431,6 +445,7 @@
 }
 
 /* Media Queries */
+
 @media screen and (max-width: 1200px) {
   .main {
     grid-template-columns: 100%;
@@ -453,6 +468,10 @@
     top: 1.5rem;
     left: 3rem;
     width: calc(100% - 6rem);
+  }
+
+  .profile-view-icon {
+    display: inline;
   }
 }
 
@@ -510,6 +529,10 @@
     left: 2.5rem;
     width: calc(100% - 5rem);
   }
+
+  .profile-view-icon {
+    margin-left: 1rem;
+  }
 }
 
 @media screen and (max-width: 700px) {
@@ -553,6 +576,10 @@
 
   .content-box {
     margin: 0 0.5rem;
+  }
+
+  .header {
+    display: none;
   }
 }
 

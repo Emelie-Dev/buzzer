@@ -219,7 +219,7 @@ const Friends = () => {
           onScroll={scrollHandler}
         >
           <Header
-            friends
+            page="friends"
             friendsCategory={category}
             setFriendsCategory={setCategory}
             setShowFriendRequests={setShowFriendRequests}

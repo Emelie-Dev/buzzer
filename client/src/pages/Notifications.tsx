@@ -5,20 +5,31 @@ import { useState } from 'react';
 import NotificationGroup from '../components/NotificationGroup';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
+import ProfileViews from '../components/ProfileViews';
+import useScrollHandler from '../hooks/useScrollHandler';
 
 const Notifications = () => {
   const [category, setCategory] = useState<
     'all' | 'posts' | 'mentions' | 'followers' | 'requests' | 'system'
   >('all');
   const [selectCount, setSelectCount] = useState<number>(0);
+  const [showProfileViews, setShowProfileViews] = useState<boolean>(false);
+
+  const { scrollHandler } = useScrollHandler();
 
   return (
     <>
       <NavBar page="notifications" />
 
       <section className={styles.main}>
-        <section className={styles['main-container']}>
-          <Header />
+        <section className={styles['main-container']} onScroll={scrollHandler}>
+          <Header
+            page="notifications"
+            selectCount={selectCount}
+            notificationsCategory={category}
+            setNotificationsCategory={setCategory}
+            setShowProfileViews={setShowProfileViews}
+          />
 
           <header className={styles.header}>
             <ul
@@ -81,6 +92,12 @@ const Notifications = () => {
                 <span className={styles['category-count']}>1</span>
               </li>
             </ul>
+
+            <img
+              className={styles['profile-view-icon']}
+              src="../../public/assets/images/others/profile_view.png"
+              onClick={() => setShowProfileViews(true)}
+            />
 
             {selectCount > 0 && (
               <div className={styles['select-box']}>
@@ -220,6 +237,10 @@ const Notifications = () => {
           </div>
         </section>
       </section>
+
+      {showProfileViews && (
+        <ProfileViews setShowProfileViews={setShowProfileViews} />
+      )}
     </>
   );
 };

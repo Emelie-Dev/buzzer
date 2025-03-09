@@ -9,21 +9,37 @@ import { useNavigate } from 'react-router-dom';
 import { IoPeopleSharp } from 'react-icons/io5';
 
 type HeaderProps = {
-  friends?: boolean;
+  page?: string;
   friendsCategory?: 'users' | 'contents' | null;
-  reels?: boolean;
   setFriendsCategory?: React.Dispatch<
     React.SetStateAction<'users' | 'contents' | null>
   >;
   setShowFriendRequests?: React.Dispatch<React.SetStateAction<boolean>>;
+  selectCount?: number;
+  notificationsCategory?:
+    | 'all'
+    | 'posts'
+    | 'mentions'
+    | 'followers'
+    | 'requests'
+    | 'system';
+  setNotificationsCategory?: React.Dispatch<
+    React.SetStateAction<
+      'all' | 'posts' | 'mentions' | 'followers' | 'requests' | 'system'
+    >
+  >;
+  setShowProfileViews?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const Header = ({
-  friends,
+  page,
   friendsCategory,
   setFriendsCategory,
   setShowFriendRequests,
-  reels,
+  selectCount = 0,
+  notificationsCategory,
+  setNotificationsCategory,
+  setShowProfileViews,
 }: HeaderProps) => {
   const { setScrollingUp, setShowSearchPage, scrollingUp } =
     useContext(GeneralContext);
@@ -77,14 +93,14 @@ const Header = ({
   return (
     <header
       className={`${styles.header} ${
-        friends ? styles['friends-header'] : ''
-      }  ${reels ? styles['reels-header'] : ''}`}
+        page === 'friends' ? styles['friends-header'] : ''
+      } `}
       ref={headerRef}
     >
       <div className={styles['header-top']}>
         <div className={styles['left-box']}>
           <div className={styles['name-box']}>
-            {friends ? (
+            {page ? (
               <IoArrowBack
                 className={styles['back-icon']}
                 onClick={() => navigate(-1)}
@@ -98,15 +114,17 @@ const Header = ({
             )}
 
             <span
-              className={`${styles.name} ${
-                friends ? styles['friends-text'] : ''
-              }`}
+              className={`${styles.name} ${page ? styles['friends-text'] : ''}`}
             >
-              {friends ? 'Friends' : 'Buzzer'}
+              {page === 'friends'
+                ? 'Friends'
+                : page === 'notifications'
+                ? 'Notifications'
+                : 'Buzzer'}
             </span>
           </div>
 
-          {!friends && (
+          {!page && (
             <div className={styles['options-div']}>
               <IoIosArrowDown className={styles['options-arrow']} />
 
@@ -127,7 +145,7 @@ const Header = ({
         </div>
 
         <div className={styles['right-box']}>
-          {friends ? (
+          {page === 'friends' ? (
             <span
               className={styles['request-details']}
               onClick={() =>
@@ -137,6 +155,12 @@ const Header = ({
               <IoPeopleSharp className={styles['friends-icon']} />
               <span className={styles['request-length']}>10</span>
             </span>
+          ) : page === 'notifications' ? (
+            <img
+              className={styles['profile-view-icon']}
+              src="../../public/assets/images/others/profile_view.png"
+              onClick={() => setShowProfileViews && setShowProfileViews(true)}
+            />
           ) : (
             <span className={styles['inbox-box']}>
               <BiMessageDetail className={styles['inbox-icon']} />
@@ -145,7 +169,9 @@ const Header = ({
           )}
 
           <svg
-            className={`${styles['search-icon']}`}
+            className={`${styles['search-icon']} ${
+              page === 'notifications' ? styles['search-icon2'] : ''
+            }`}
             x="0px"
             y="0px"
             width="100"
@@ -159,7 +185,7 @@ const Header = ({
       </div>
 
       <div className={styles['header-bottom']}>
-        {friends && (
+        {page === 'friends' ? (
           <ul className={styles['friends-header-list']}>
             <li
               className={`${styles['friends-header-item']} ${
@@ -184,6 +210,99 @@ const Header = ({
               Contents
             </li>
           </ul>
+        ) : page === 'notifications' ? (
+          <ul
+            className={`${styles['notifications-list']} ${
+              selectCount > 0 ? styles['hide-scroll'] : ''
+            }`}
+          >
+            <li
+              className={`${styles['notifications-item']} ${
+                notificationsCategory === 'all'
+                  ? styles['current-notification-category']
+                  : ''
+              } ${selectCount > 0 ? styles['hide-items'] : ''}`}
+              onClick={() =>
+                setNotificationsCategory && setNotificationsCategory('all')
+              }
+            >
+              View All
+              <span className={styles['category-count']}>15</span>
+            </li>
+
+            <li
+              className={`${styles['notifications-item']} ${
+                notificationsCategory === 'posts'
+                  ? styles['current-notification-category']
+                  : ''
+              }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
+              onClick={() =>
+                setNotificationsCategory && setNotificationsCategory('posts')
+              }
+            >
+              Posts
+              <span className={styles['category-count']}>5</span>
+            </li>
+
+            <li
+              className={`${styles['notifications-item']} ${
+                notificationsCategory === 'mentions'
+                  ? styles['current-notification-category']
+                  : ''
+              }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
+              onClick={() =>
+                setNotificationsCategory && setNotificationsCategory('mentions')
+              }
+            >
+              Mentions
+              <span className={styles['category-count']}>3</span>
+            </li>
+
+            <li
+              className={`${styles['notifications-item']} ${
+                notificationsCategory === 'followers'
+                  ? styles['current-notification-category']
+                  : ''
+              }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
+              onClick={() =>
+                setNotificationsCategory &&
+                setNotificationsCategory('followers')
+              }
+            >
+              Followers
+              <span className={styles['category-count']}>2</span>
+            </li>
+
+            <li
+              className={`${styles['notifications-item']} ${
+                notificationsCategory === 'requests'
+                  ? styles['current-notification-category']
+                  : ''
+              }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
+              onClick={() =>
+                setNotificationsCategory && setNotificationsCategory('requests')
+              }
+            >
+              Requests
+              <span className={styles['category-count']}>4</span>
+            </li>
+
+            <li
+              className={`${styles['notifications-item']} ${
+                notificationsCategory === 'system'
+                  ? styles['current-notification-category']
+                  : ''
+              }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
+              onClick={() =>
+                setNotificationsCategory && setNotificationsCategory('system')
+              }
+            >
+              System
+              <span className={styles['category-count']}>1</span>
+            </li>
+          </ul>
+        ) : (
+          ''
         )}
       </div>
     </header>

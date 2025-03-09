@@ -150,7 +150,7 @@ const Reels = () => {
           onKeyDown={handleKeyPress('down')}
           onKeyUp={handleKeyPress('up')}
         >
-          <Header reels />
+          <Header />
 
           <div className={styles['reels-container']}>
             <ContentContext.Provider
