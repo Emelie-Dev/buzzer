@@ -490,7 +490,7 @@
   }
 
   .menu-box {
-    margin-bottom: 0.7rem;
+    margin-bottom: 1rem;
   }
 
   .menu-icon-box {
@@ -507,6 +507,9 @@
 
   .menu-text {
     color: white;
+    font-size: 0.85rem;
+    font-family: appFont;
+    text-shadow: 1px 1px 1px black;
   }
 
   .reel-content-menu {

@@ -3,6 +3,8 @@ import styles from '../styles/Notifications.module.css';
 import AsideHeader from '../components/AsideHeader';
 import { useState } from 'react';
 import NotificationGroup from '../components/NotificationGroup';
+import Footer from '../components/Footer';
+import Header from '../components/Header';
 
 const Notifications = () => {
   const [category, setCategory] = useState<
@@ -16,8 +18,14 @@ const Notifications = () => {
 
       <section className={styles.main}>
         <section className={styles['main-container']}>
+          <Header />
+
           <header className={styles.header}>
-            <ul className={styles['category-list']}>
+            <ul
+              className={`${styles['category-list']} ${
+                selectCount > 0 ? styles['hide-scroll'] : ''
+              }`}
+            >
               <li
                 className={`${styles['category-item']} ${
                   category === 'all' ? styles['current-category'] : ''
@@ -108,6 +116,8 @@ const Notifications = () => {
               />
             ))}
           </div>
+
+          <Footer page="none" />
         </section>
 
         <section className={styles.aside}>

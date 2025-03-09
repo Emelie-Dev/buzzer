@@ -449,6 +449,16 @@
   }
 }
 
+@media screen and (max-width: 500px) {
+  .carousel-item {
+    border-radius: 0;
+  }
+
+  .reel-details-box {
+    max-width: 75%;
+  }
+}
+
 @media screen and (max-width: 400px) {
   .carousel-item {
     border-radius: 0;

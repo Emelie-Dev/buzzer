@@ -83,7 +83,8 @@ const NavBar = ({
         page === 'home' ||
         page === 'following' ||
         page === 'friends' ||
-        page === 'reels'
+        page === 'reels' ||
+        page === 'notifications'
           ? window.matchMedia('(max-width: 1200px)').matches
           : page === 'search'
           ? window.matchMedia('(max-width: 1100px)').matches
@@ -889,12 +890,22 @@ const NavBar = ({
               </span>
 
               <span
-                className={styles['search-section-box']}
+                className={`${styles['search-section-box']} ${
+                  page === 'notifications' && !showSearch
+                    ? styles['active-search-box']
+                    : ''
+                }`}
                 onClick={() => navigate('/notifications')}
               >
-                <IoMdNotificationsOutline
-                  className={styles['search-section-icon']}
-                />{' '}
+                {page === 'notifications' && !showSearch ? (
+                  <IoNotifications
+                    className={`${styles['search-section-icon']} ${styles['active-search-icon']}`}
+                  />
+                ) : (
+                  <IoMdNotificationsOutline
+                    className={styles['search-section-icon']}
+                  />
+                )}
               </span>
 
               {!showSearch && page === 'create' && (
