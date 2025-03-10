@@ -89,7 +89,10 @@ const NavBar = ({
           : page === 'search'
           ? window.matchMedia('(max-width: 1100px)').matches
           : false;
-      const secondSize = window.matchMedia('(max-width: 600px)').matches;
+      const secondSize =
+        page === 'inbox'
+          ? window.matchMedia('(max-width: 700px)').matches
+          : window.matchMedia('(max-width: 600px)').matches;
 
       setMediaQueries({
         ...mediaQueries,
@@ -615,7 +618,7 @@ const NavBar = ({
         <section
           className={`${styles['search-section']} ${
             showSearchPage ? styles['show-search-page'] : ''
-          }`}
+          } ${page === 'inbox' ? styles['hide-navbar'] : ''}`}
           ref={searchSectionRef}
         >
           {(!showSearchPage || !mediaQueries.second) && (

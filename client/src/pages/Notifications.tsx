@@ -15,7 +15,7 @@ const Notifications = () => {
   const [selectCount, setSelectCount] = useState<number>(0);
   const [showProfileViews, setShowProfileViews] = useState<boolean>(false);
 
-  const { scrollHandler } = useScrollHandler();
+  const { scrollHandler } = useScrollHandler(true);
 
   return (
     <>

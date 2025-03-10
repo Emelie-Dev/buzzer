@@ -28,6 +28,7 @@ Pages =>
   - Pause active video for all modals.
   - Create analytics page
   - Show email in proile page
+  - Hide search before any page unmounts
 
 
 

@@ -2,11 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Inbox.module.css';
 import { BiMessageDetail } from 'react-icons/bi';
+import Footer from '../components/Footer';
+import Header from '../components/Header';
+import { IoArrowBack } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
+import useScrollHandler from '../hooks/useScrollHandler';
 
 const Inbox = () => {
   const [category, setCategory] = useState<'friends' | 'others'>('friends');
+  const { scrollHandler } = useScrollHandler(true);
 
   const containerRef = useRef<HTMLDivElement>(null!);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (containerRef.current) {
@@ -23,8 +31,16 @@ const Inbox = () => {
       <NavBar page="inbox" />
 
       <section className={styles.main}>
-        <section className={styles['users-section']}>
-          <h1 className={styles['user-head']}>Inbox</h1>
+        <section className={styles['users-section']} onScroll={scrollHandler}>
+          <Header page="inbox" />
+
+          <h1 className={`${styles['user-head']} ${styles['user-head2']}`}>
+            <IoArrowBack
+              className={styles['back-icon']}
+              onClick={() => navigate(-1)}
+            />
+            Inbox
+          </h1>
 
           <div className={styles['user-container']}>
             <ul className={styles['user-head-list']}>
@@ -217,6 +233,8 @@ const Inbox = () => {
               </div>
             </div>
           </div>
+
+          <Footer page={'none'} />
         </section>
 
         <section className={styles['chat-section']}>

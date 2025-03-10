@@ -120,6 +120,8 @@ const Header = ({
                 ? 'Friends'
                 : page === 'notifications'
                 ? 'Notifications'
+                : page === 'inbox'
+                ? 'Inbox'
                 : 'Buzzer'}
             </span>
           </div>
@@ -162,7 +164,10 @@ const Header = ({
               onClick={() => setShowProfileViews && setShowProfileViews(true)}
             />
           ) : (
-            <span className={styles['inbox-box']}>
+            <span
+              className={styles['inbox-box']}
+              onClick={() => navigate('/inbox')}
+            >
               <BiMessageDetail className={styles['inbox-icon']} />
               <span className={styles['inbox-length']}>5</span>
             </span>

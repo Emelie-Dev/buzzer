@@ -710,6 +710,10 @@
     width: 45vw;
   }
 
+  .hide-navbar {
+    display: none;
+  }
+
   @keyframes searchSlide {
     from {
       width: 0;
