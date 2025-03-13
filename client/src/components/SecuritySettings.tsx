@@ -2,6 +2,9 @@ import styles from '../styles/SecuritySettings.module.css';
 import { FaLaptop } from 'react-icons/fa';
 import { MdDelete } from 'react-icons/md';
 import { MdSmartphone } from 'react-icons/md';
+import { SettingsContext } from '../Contexts';
+import { useContext } from 'react';
+import { IoArrowBack } from 'react-icons/io5';
 
 type SecuritySettingsProps = {
   category: string;
@@ -36,9 +39,17 @@ const SecuritySettings = ({ category }: SecuritySettingsProps) => {
 // Your account has been reported for violating community guidelines.
 
 const SecurityAlerts = () => {
+  const { setMainCategory } = useContext(SettingsContext);
+
   return (
     <div className={styles.section}>
-      <h1 className={styles['section-head']}>Security Alerts</h1>
+      <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
+        Security Alerts
+      </h1>
 
       <div className={styles['alerts-container']}>
         <article className={`${styles.alert} ${styles.info}`}>
@@ -73,9 +84,16 @@ const SecurityAlerts = () => {
 };
 
 const ManageDevices = () => {
+  const { setMainCategory } = useContext(SettingsContext);
   return (
     <div className={styles.section}>
-      <h1 className={styles['section-head']}>Manage Devices</h1>
+      <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
+        Manage Devices
+      </h1>
 
       <div className={styles['current-device']}>
         <span className={styles['current-device-text']}>Current device</span>

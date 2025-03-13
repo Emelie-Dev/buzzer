@@ -7,14 +7,22 @@ import SecuritySettings from '../components/SecuritySettings';
 import ContentSettings from '../components/ContentSettings';
 import SupportSettings from '../components/SupportSettings';
 import SwitchAccount from '../components/SwitchAccount';
-import { GeneralContext } from '../Contexts';
+import { GeneralContext, SettingsContext } from '../Contexts';
+import { IoArrowBack } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
+
+const initialCategory = window.matchMedia('(max-width: 700px)').matches
+  ? ''
+  : 'general';
 
 const Settings = () => {
   const { settingsCategory, setSettingsCategory } = useContext(GeneralContext);
   const [category, setCategory] = useState<string>(
-    settingsCategory.length > 0 ? settingsCategory : 'general'
+    settingsCategory.length > 0 ? settingsCategory : initialCategory
   );
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
+
+  const navigate = useNavigate();
 
   const sectionRef = useRef<HTMLDivElement>(null!);
 
@@ -25,7 +33,7 @@ const Settings = () => {
 
   useEffect(() => {
     return () => {
-      setSettingsCategory('general');
+      setSettingsCategory(initialCategory);
     };
   }, []);
 
@@ -38,8 +46,18 @@ const Settings = () => {
       <NavBar page="settings" />
 
       <section className={styles.main}>
-        <section className={styles['left-section']}>
-          <h1 className={styles['left-section-head']}>Settings</h1>
+        <section
+          className={`${styles['left-section']} ${
+            category ? styles['hide-section'] : ''
+          }`}
+        >
+          <h1 className={styles['left-section-head']}>
+            <IoArrowBack
+              className={styles['back-icon']}
+              onClick={() => navigate(-1)}
+            />
+            Settings
+          </h1>
 
           <div className={styles['category-container']}>
             <div className={styles.category}>
@@ -180,24 +198,31 @@ const Settings = () => {
           </div>
         </section>
 
-        <section className={styles['right-section']} ref={sectionRef}>
-          {category === 'general' && <GeneralSettings />}
+        <section
+          className={`${styles['right-section']} ${
+            category ? styles['show-section'] : ''
+          }`}
+          ref={sectionRef}
+        >
+          <SettingsContext.Provider value={{ setMainCategory: setCategory }}>
+            {category === 'general' && <GeneralSettings />}
 
-          {accountCategories.includes(category) && (
-            <AccountSettings category={category} />
-          )}
+            {accountCategories.includes(category) && (
+              <AccountSettings category={category} />
+            )}
 
-          {settingCategories.includes(category) && (
-            <SecuritySettings category={category} />
-          )}
+            {settingCategories.includes(category) && (
+              <SecuritySettings category={category} />
+            )}
 
-          {contentCategories.includes(category) && (
-            <ContentSettings category={category} />
-          )}
+            {contentCategories.includes(category) && (
+              <ContentSettings category={category} />
+            )}
 
-          {supportCategories.includes(category) && (
-            <SupportSettings category={category} />
-          )}
+            {supportCategories.includes(category) && (
+              <SupportSettings category={category} />
+            )}
+          </SettingsContext.Provider>
         </section>
       </section>
 

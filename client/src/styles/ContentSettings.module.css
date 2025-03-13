@@ -7,6 +7,8 @@
   padding: 0;
   font-family: appFont;
   font-size: 1.2rem;
+  display: flex;
+  align-items: center;
 }
 
 .category {
@@ -72,6 +74,7 @@
   font-family: appFont;
   font-size: 0.95rem;
   margin-right: 2rem;
+  width: calc(100% - 4rem);
 }
 
 .limit-select-box {
@@ -178,6 +181,7 @@
 
 .time-box-text {
   font-family: appFontMedium;
+  white-space: nowrap;
 }
 
 .time-input {
@@ -276,15 +280,144 @@
 .graph-time-label {
   font-family: appFontMedium;
   font-size: 1.05rem;
+  white-space: nowrap;
 }
 
 .graph-time {
   font-family: appFont;
   margin-left: 0.5rem;
+  white-space: nowrap;
 }
 
 .graph-time-box2 {
   display: flex;
   align-items: center;
   margin-left: 1rem;
+}
+
+.back-icon {
+  width: 1.7rem;
+  height: 1.7rem;
+  margin-right: 0.6rem;
+  display: none;
+  cursor: pointer;
+}
+
+.back-icon:hover {
+  color: var(--app-theme-color);
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1200px) {
+  .graph {
+    display: flex;
+    align-items: center;
+    margin-top: 1.5rem;
+    margin-right: 0;
+    padding: 0 1rem;
+  }
+
+  .graph-time-div {
+    margin: 1rem 0 0;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .graph-time-div {
+    padding: 0 1rem;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .graph-div {
+    padding: 0 0.5rem;
+  }
+
+  .graph {
+    padding: 0 0.5rem;
+  }
+
+  .graph-time-div {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin: 1.5rem 0 0;
+  }
+
+  .graph-time-box {
+    margin-bottom: 0.5rem;
+  }
+
+  .graph-time-box2 {
+    margin-left: 0;
+  }
+
+  .custom-limit-box {
+    margin-left: 0.5rem;
+  }
+
+  .custom-min-box {
+    margin-left: 1rem;
+  }
+
+  .custom-limit-btn {
+    margin-left: 1.5rem;
+  }
+
+  .time-box2 {
+    margin-left: 1rem;
+  }
+
+  .time-input {
+    margin-left: 0.5rem;
+  }
+
+  .days-box {
+    grid-template-columns: 2.5rem 2.5rem 2.5rem 2.5rem 2.5rem 2.5rem 2.5rem;
+    column-gap: 0.9rem;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .graph {
+    overflow: auto;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .section {
+    padding-bottom: 2rem;
+  }
+
+  .section-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: white;
+    padding: 2rem 1rem 0.5rem;
+    margin: 0 0 1rem;
+  }
+
+  .category,
+  .time-category {
+    padding: 0 1.5rem;
+  }
+
+  .back-icon {
+    display: inline;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .section-head {
+    padding: 1.5rem 1rem 0.5rem;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .category,
+  .time-category {
+    padding: 0 1rem;
+  }
 }

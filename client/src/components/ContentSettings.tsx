@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useContext } from 'react';
 import styles from '../styles/ContentSettings.module.css';
 import Switch from './Switch';
 import { Bar } from 'react-chartjs-2';
@@ -17,6 +17,8 @@ import {
 } from 'chart.js';
 import { monthLabels } from '../Utilities';
 import crosshairPlugin from 'chartjs-plugin-crosshair';
+import { SettingsContext } from '../Contexts';
+import { IoArrowBack } from 'react-icons/io5';
 
 type ContentSettingsProps = {
   category: string;
@@ -53,6 +55,8 @@ const Notifications = () => {
   const [pushNotifications, setPushNotifications] = useState<boolean>(false);
   const [emailNotifications, setEmailNotifications] = useState<boolean>(false);
 
+  const { setMainCategory } = useContext(SettingsContext);
+
   const [interactions, setInteractions] = useState<{
     likes: boolean;
     comments: boolean;
@@ -71,7 +75,13 @@ const Notifications = () => {
 
   return (
     <section className={styles.section}>
-      <h1 className={styles['section-head']}>Notifications</h1>
+      <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
+        Notifications
+      </h1>
 
       <div className={`${styles.category} ${styles['push-category']}`}>
         <span className={styles['category-head']}>Push notifications</span>
@@ -186,6 +196,12 @@ const TimeManagement = () => {
     end: '',
   });
 
+  const [graphSize, setGraphSize] = useState<{ width: number; height: number }>(
+    { width: 650, height: 350 }
+  );
+  const [showGraph, setShowGraph] = useState<boolean>(true);
+  const { setMainCategory } = useContext(SettingsContext);
+
   useEffect(() => {
     const currentDate = new Date();
     const previousDate = new Date(
@@ -200,6 +216,34 @@ const TimeManagement = () => {
         monthLabels[previousDate.getMonth()]
       } ${previousDate.getDate()}, ${previousDate.getFullYear()}`,
     }));
+
+    const resizeHandler = () => {
+      setShowGraph(false);
+
+      if (window.matchMedia('(max-width: 900px)').matches) {
+        setGraphSize({ width: 420, height: 280 });
+      } else if (window.matchMedia('(max-width: 1000px)').matches) {
+        setGraphSize({ width: 360, height: 250 });
+      } else if (window.matchMedia('(max-width: 1100px)').matches) {
+        setGraphSize({ width: 450, height: 300 });
+      } else if (window.matchMedia('(max-width: 1200px)').matches) {
+        setGraphSize({ width: 500, height: 300 });
+      } else if (window.matchMedia('(max-width: 1300px)').matches) {
+        setGraphSize({ width: 600, height: 350 });
+      }
+
+      setTimeout(() => {
+        setShowGraph(true);
+      }, 100);
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
   }, []);
 
   const days = [
@@ -372,7 +416,13 @@ const TimeManagement = () => {
 
   return (
     <section className={styles.section}>
-      <h1 className={styles['section-head']}>Time Management</h1>
+      <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
+        Time Management
+      </h1>
 
       <div className={styles['time-category']}>
         <div className={styles['time-category-box']}>
@@ -664,7 +714,14 @@ const TimeManagement = () => {
         </div>
 
         <div className={styles.graph}>
-          <Bar data={lineData} options={lineOptions} width={650} height={350} />
+          {showGraph && (
+            <Bar
+              data={lineData}
+              options={lineOptions}
+              width={graphSize.width}
+              height={graphSize.height}
+            />
+          )}
         </div>
 
         <div className={styles['graph-time-div']}>

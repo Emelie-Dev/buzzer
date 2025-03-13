@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import styles from '../styles/GeneralSettings.module.css';
 import Engagements from './Engagements';
 import Switch from './Switch';
+import { IoArrowBack } from 'react-icons/io5';
+import { SettingsContext } from '../Contexts';
 
 const GeneralSettings = () => {
   const [category, setCategory] = useState<'light' | 'dark' | 'device'>(
@@ -13,10 +15,19 @@ const GeneralSettings = () => {
   >(null);
 
   const [privateAccount, setPrivateAccount] = useState<boolean>(false);
+  const { setMainCategory } = useContext(SettingsContext);
 
   return (
     <>
       <section className={styles.section}>
+        <h1 className={styles['section-head']}>
+          <IoArrowBack
+            className={styles['back-icon']}
+            onClick={() => setMainCategory('')}
+          />
+          General Settings
+        </h1>
+
         <div className={styles.category}>
           <span className={styles['category-head']}>Display</span>
 
@@ -78,7 +89,7 @@ const GeneralSettings = () => {
                   checked={category === 'device'}
                 />
               </span>
-              <span className={styles['mode-name']}>Device default</span>
+              <span className={styles['mode-name']}>System</span>
             </span>
           </div>
         </div>

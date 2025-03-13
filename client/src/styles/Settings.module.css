@@ -1,6 +1,5 @@
 .main {
   overflow: hidden;
-  margin-left: 98px;
   margin-left: 18%;
   display: grid;
   grid-template-columns: 30% 70%;
@@ -18,6 +17,8 @@
   font-family: appFont;
   font-size: 1.5rem;
   padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
 }
 
 .category {
@@ -30,7 +31,6 @@
   font-size: 1.1rem;
   padding: 0.5rem 1rem;
   border-radius: 5px;
-  cursor: pointer;
   width: fit-content;
 }
 
@@ -49,6 +49,10 @@
   width: fit-content;
 }
 
+.general-head {
+  cursor: pointer;
+}
+
 .category-item:hover,
 .general-head:hover {
   color: var(--app-theme-color);
@@ -65,4 +69,124 @@
   height: 100vh;
   padding: 2rem 1.5rem;
   overflow: auto;
+}
+
+.back-icon {
+  width: 1.7rem;
+  height: 1.7rem;
+  margin-right: 0.6rem;
+  display: none;
+  cursor: pointer;
+}
+
+.back-icon:hover {
+  color: var(--app-theme-color);
+}
+
+/* Animation */
+
+@keyframes slide {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1200px) {
+  .main {
+    margin-left: 22%;
+    grid-template-columns: 35% 65%;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .main {
+    margin-left: 25%;
+    grid-template-columns: 40% 60%;
+  }
+
+  .left-section {
+    padding: 2rem 0.5rem;
+  }
+
+  .right-section {
+    padding: 2rem 1rem;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .main {
+    margin-left: 81px;
+    grid-template-columns: 35% 65%;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .main {
+    grid-template-columns: 100%;
+  }
+
+  .left-section {
+    padding: 0 1rem 2rem;
+  }
+
+  .right-section {
+    padding: 0;
+    display: none;
+  }
+
+  .left-section-head {
+    position: sticky;
+    top: 0;
+    background: white;
+    padding: 2rem 0.5rem 0.5rem;
+    margin: 0 0 1rem;
+  }
+
+  .hide-section {
+    display: none;
+  }
+
+  .show-section {
+    display: block;
+    animation: slide 0.25s ease 0s 1 normal both;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .main {
+    margin-left: 0;
+  }
+
+  .back-icon {
+    display: inline;
+  }
+
+  .left-section-head {
+    padding: 1.5rem 0.5rem 0.5rem;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .left-section-head {
+    padding: 1.5rem 0rem 0.5rem;
+  }
+
+  .left-section {
+    padding: 0 0.5rem 2rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .left-section-head {
+    padding: 1.5rem 0rem 0.5rem;
+  }
+
+  .left-section {
+    padding: 0 0.5rem 2rem;
+  }
 }

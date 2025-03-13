@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import styles from '../styles/AccountSettings.module.css';
 import Switch from './Switch';
 import CropPhoto from './CropPhoto';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
+import { SettingsContext } from '../Contexts';
+import { IoArrowBack } from 'react-icons/io5';
 
 type AccountSettingsProps = {
   category: string;
@@ -33,6 +35,8 @@ const EditProfile = () => {
     src: '',
   });
 
+  const { setMainCategory } = useContext(SettingsContext);
+
   const fileRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
@@ -55,7 +59,13 @@ const EditProfile = () => {
   return (
     <>
       <section className={styles.section}>
-        <h1 className={styles['section-head']}>Edit Profile</h1>
+        <h1 className={styles['section-head']}>
+          <IoArrowBack
+            className={styles['back-icon']}
+            onClick={() => setMainCategory('')}
+          />
+          Edit Profile
+        </h1>
 
         <input
           className={styles['file-input']}
@@ -164,6 +174,8 @@ const ChangePassword = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [newPassword, setNewPassword] = useState<string>('');
 
+  const { setMainCategory } = useContext(SettingsContext);
+
   const checkBoxRef = useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
@@ -190,7 +202,13 @@ const ChangePassword = () => {
 
   return (
     <section className={styles.section}>
-      <h1 className={styles['section-head']}>Change Password</h1>
+      <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
+        Change Password
+      </h1>
 
       <div className={styles.category}>
         <span className={styles['category-head']}>Current Password</span>
@@ -297,6 +315,8 @@ const DisableAccount = ({ type }: DisableAccountProps) => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [Password, setPassword] = useState<string>('');
 
+  const { setMainCategory } = useContext(SettingsContext);
+
   const [stage, setStage] = useState<'password' | 'token'>('password');
 
   useEffect(() => setStage('password'), [type]);
@@ -304,6 +324,10 @@ const DisableAccount = ({ type }: DisableAccountProps) => {
   return (
     <section className={styles.section}>
       <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
         {type === 'delete' ? 'Delete' : 'Deactivate'} Account
       </h1>
 

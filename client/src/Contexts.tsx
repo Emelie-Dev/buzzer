@@ -65,3 +65,7 @@ export const GeneralContext = createContext<{
   showSearchPage: boolean;
   setShowSearchPage: React.Dispatch<React.SetStateAction<boolean>>;
 }>(null!);
+
+export const SettingsContext = createContext<{
+  setMainCategory: React.Dispatch<React.SetStateAction<string>>;
+}>(null!);

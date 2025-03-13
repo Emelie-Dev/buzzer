@@ -1,6 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useContext } from 'react';
 import styles from '../styles/SupportSettings.module.css';
 import { MdDelete } from 'react-icons/md';
+import { SettingsContext } from '../Contexts';
+import { IoArrowBack } from 'react-icons/io5';
 
 type SupportSettingsProps = {
   category: string;
@@ -21,9 +23,17 @@ const SupportSettings = ({ category }: SupportSettingsProps) => {
 };
 
 const TermsAndPolicies = () => {
+  const { setMainCategory } = useContext(SettingsContext);
+
   return (
     <section className={styles.section}>
-      <h1 className={styles['section-head']}>Terms and Policies</h1>
+      <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
+        Terms and Policies
+      </h1>
 
       <div className={styles.category}>
         <span className={styles['category-head']}>Terms of Service</span>
@@ -114,6 +124,8 @@ const ReportProblem = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [addFiles, setAddFiles] = useState<boolean>(false);
 
+  const { setMainCategory } = useContext(SettingsContext);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const reportFiles = [...e.target.files];
@@ -156,7 +168,13 @@ const ReportProblem = () => {
 
   return (
     <section className={styles.section}>
-      <h1 className={styles['section-head']}>Report Problem</h1>
+      <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
+        Report Problem
+      </h1>
 
       <div className={styles.category}>
         <span className={styles['category-head']}>Problem Topic</span>
