@@ -234,4 +234,14 @@
   .other-devices {
     padding: 0 1rem;
   }
+
+  .alerts-container {
+    padding: 0 1rem 1rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .alerts-container {
+    padding: 0 0.5rem 1rem;
+  }
 }

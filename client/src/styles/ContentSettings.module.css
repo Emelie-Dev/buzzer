@@ -421,3 +421,34 @@
     padding: 0 1rem;
   }
 }
+
+@media screen and (max-width: 400px) {
+  .limit-select-box {
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: 0.7rem;
+  }
+
+  .custom-limit-box,
+  .custom-min-box2,
+  .limit-select-div,
+  .time-box2 {
+    margin-left: 0;
+  }
+
+  .reminder-div {
+    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: 1rem;
+  }
+
+  .days-box {
+    grid-template-columns:
+      calc(14.28% - 0.4rem) calc(14.28% - 0.4rem) calc(14.28% - 0.4rem)
+      calc(14.28% - 0.4rem) calc(14.28% - 0.4rem) calc(14.28% - 0.4rem) calc(14.28% -
+          0.4rem);
+    column-gap: 0.5rem;
+    width: 100%;
+  }
+}

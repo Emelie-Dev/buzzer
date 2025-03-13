@@ -190,7 +190,7 @@
 
 .criteria-box {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 0.2rem;
 }
 
@@ -472,5 +472,11 @@
   .category,
   .info-div {
     padding: 0 1rem;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .verification-input {
+    width: 12rem;
   }
 }

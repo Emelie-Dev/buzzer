@@ -558,7 +558,9 @@ const TimeManagement = () => {
 
             {!scrollBreakValue.done && scrollBreakValue.value === 'custom' ? (
               <div className={styles['custom-limit-box']}>
-                <span className={styles['custom-min-box']}>
+                <span
+                  className={`${styles['custom-min-box']} ${styles['custom-min-box2']}`}
+                >
                   <select
                     className={styles['custom-input']}
                     value={scrollBreakValue.custom}
