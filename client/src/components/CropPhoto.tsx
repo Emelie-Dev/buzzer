@@ -1,6 +1,7 @@
 import AvatarEditor from 'react-avatar-editor';
 import styles from '../styles/CropPhoto.module.css';
 import { IoClose } from 'react-icons/io5';
+import ReactDOM from 'react-dom';
 
 type CropPhotoProps = {
   src: string;
@@ -13,7 +14,9 @@ type CropPhotoProps = {
 };
 
 const CropPhoto = ({ src, setCropPhoto }: CropPhotoProps) => {
-  return (
+  const target = document.getElementById('crop-portal') || document.body;
+
+  return ReactDOM.createPortal(
     <section className={styles.section}>
       <div className={styles.container}>
         <header className={styles.header}>
@@ -36,7 +39,7 @@ const CropPhoto = ({ src, setCropPhoto }: CropPhotoProps) => {
             width={350}
             height={350}
             border={50}
-            color={[255, 255, 255, 0.6]} // RGBA
+            color={[255, 255, 255, 0.6]}
             borderRadius={1000}
           />
         </div>
@@ -53,7 +56,8 @@ const CropPhoto = ({ src, setCropPhoto }: CropPhotoProps) => {
           </button>
         </div>
       </div>
-    </section>
+    </section>,
+    target
   );
 };
 
