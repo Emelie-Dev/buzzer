@@ -41,4 +41,19 @@
   align-items: center;
   margin: 2rem 0;
   padding: 0 1rem;
+  overflow: auto;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 800px) {
+  .graph-box {
+    padding: 0 0.5rem;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .graph-box {
+    padding: 0;
+  }
 }

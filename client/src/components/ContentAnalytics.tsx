@@ -85,6 +85,7 @@ const ContentAnalytics = () => {
                 onClick={() => setViewData(false)}
               />
             </header>
+
             <div className={styles['table-div']}>
               <table className={styles['data-table']}>
                 <tbody>
