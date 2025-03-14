@@ -295,6 +295,10 @@
   .select-box {
     margin-top: 1.5rem;
   }
+
+  .close-icon {
+    margin-right: 1rem;
+  }
 }
 
 @media screen and (max-width: 400px) {
@@ -304,5 +308,9 @@
 
   .data-container {
     padding: 1.5rem 0rem;
+  }
+
+  .close-icon {
+    margin-right: 1rem;
   }
 }
