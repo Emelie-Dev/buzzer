@@ -17,7 +17,7 @@
 .container {
   background: white;
   border-radius: 5px;
-  padding: 1.5rem 2rem;
+  padding: 1.5rem;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -86,4 +86,25 @@
   align-items: center;
   justify-content: center;
   margin: 1rem 0;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 600px) {
+  .container {
+    height: 100vh;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .container {
+    padding: 1.5rem 1rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .container {
+    padding: 1.5rem 0.5rem;
+    width: 100vw;
+  }
 }

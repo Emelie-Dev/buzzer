@@ -2,6 +2,7 @@ import AvatarEditor from 'react-avatar-editor';
 import styles from '../styles/CropPhoto.module.css';
 import { IoClose } from 'react-icons/io5';
 import ReactDOM from 'react-dom';
+import { useEffect, useState } from 'react';
 
 type CropPhotoProps = {
   src: string;
@@ -15,6 +16,33 @@ type CropPhotoProps = {
 
 const CropPhoto = ({ src, setCropPhoto }: CropPhotoProps) => {
   const target = document.getElementById('crop-portal') || document.body;
+  const [avatarSize, setAvatarSize] = useState<{ border: number; dim: number }>(
+    { border: 50, dim: 350 }
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.matchMedia('(max-width: 400px)').matches) {
+        setAvatarSize({ dim: Number(`${window.innerWidth - 50}`), border: 5 });
+      } else if (window.matchMedia('(max-width: 500px)').matches) {
+        setAvatarSize({ dim: 325, border: 20 });
+      } else if (window.matchMedia('(max-width: 600px)').matches) {
+        setAvatarSize({ dim: 350, border: 30 });
+      } else if (window.matchMedia('(max-width: 700px)').matches) {
+        setAvatarSize({ dim: 350, border: 40 });
+      } else {
+        setAvatarSize({ border: 50, dim: 350 });
+      }
+    };
+
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   return ReactDOM.createPortal(
     <section className={styles.section}>
@@ -36,9 +64,9 @@ const CropPhoto = ({ src, setCropPhoto }: CropPhotoProps) => {
         <div className={styles['avatar-box']}>
           <AvatarEditor
             image={src}
-            width={350}
-            height={350}
-            border={50}
+            width={avatarSize.dim}
+            height={avatarSize.dim}
+            border={avatarSize.border}
             color={[255, 255, 255, 0.6]}
             borderRadius={1000}
           />
