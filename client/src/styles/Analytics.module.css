@@ -59,13 +59,9 @@
   font-family: appFontMedium;
 }
 
-.select-box {
-  display: flex;
-  align-items: center;
-}
-
 .period-text {
   font-family: appFontMedium;
+  white-space: nowrap;
 }
 
 .period-select {
@@ -83,6 +79,11 @@
   display: flex;
   align-items: center;
   margin-left: 1rem;
+}
+
+.custom-period-container {
+  display: flex;
+  align-items: center;
 }
 
 .custom-period-box {
@@ -128,6 +129,7 @@
   margin-left: 1.5rem;
   font-family: appFontMedium;
   font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .disable-btn {
@@ -162,6 +164,24 @@
   .header-item {
     margin-right: 5rem;
   }
+
+  .custom-select-div {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .custom-period-div {
+    margin-left: 0rem;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .period-btn {
+    margin-left: 0;
+    margin-top: 1rem;
+  }
 }
 
 @media screen and (max-width: 1200px) {
@@ -179,12 +199,26 @@
   .header-item {
     margin-right: 7rem;
   }
+
+  .custom-period-box:nth-child(2) {
+    margin-left: 1.5rem;
+  }
 }
 
 @media screen and (max-width: 1000px) {
   .section {
     margin-left: 25%;
     width: 75%;
+  }
+
+  .custom-period-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .custom-period-box:nth-child(2) {
+    margin-left: 0;
+    margin-top: 0.5rem;
   }
 }
 
@@ -237,6 +271,18 @@
 }
 
 @media screen and (max-width: 500px) {
+  .select-div {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .select-box {
+    margin-top: 0.5rem;
+  }
+
+  .period-select {
+    margin-left: 0;
+  }
 }
 
 @media screen and (max-width: 400px) {
@@ -251,6 +297,10 @@
 
   .back-icon {
     margin-right: 0.7rem;
+  }
+
+  .custom-date-box {
+    margin-left: 1rem;
   }
 }
 

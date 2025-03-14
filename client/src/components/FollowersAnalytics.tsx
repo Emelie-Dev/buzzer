@@ -115,7 +115,7 @@ const FollowersAnalytics = () => {
       </div>
 
       <div className={styles['data-box2']}>
-        <span className={styles['data-name']}>New Followers</span>
+        <span className={styles['data-name2']}>New Followers</span>
 
         <PeriodComponent />
       </div>

@@ -10,40 +10,48 @@ export const PeriodComponent = () => {
   }>({ value: [], done: true });
 
   return (
-    <div className={styles['select-div']}>
+    <div
+      className={`${styles['select-div']} ${
+        period === 'custom' && !customPeriod.done
+          ? styles['custom-select-div']
+          : ''
+      }`}
+    >
       <span className={styles['period-text']}>Select Period:</span>
 
       {period === 'custom' && !customPeriod.done ? (
         <div className={styles['custom-period-div']}>
-          <span className={styles['custom-period-box']}>
-            <span className={styles['period-text']}>Start Date:</span>
-            <input
-              className={styles['period-input']}
-              type="date"
-              value={customPeriod.value[0]}
-              onChange={(e) =>
-                setCustomPeriod({
-                  ...customPeriod,
-                  value: [e.target.value, customPeriod.value[1]],
-                })
-              }
-            />
-          </span>
+          <div className={styles['custom-period-container']}>
+            <span className={styles['custom-period-box']}>
+              <span className={styles['period-text']}>Start Date:</span>
+              <input
+                className={styles['period-input']}
+                type="date"
+                value={customPeriod.value[0]}
+                onChange={(e) =>
+                  setCustomPeriod({
+                    ...customPeriod,
+                    value: [e.target.value, customPeriod.value[1]],
+                  })
+                }
+              />
+            </span>
 
-          <span className={styles['custom-period-box']}>
-            <span className={styles['period-text']}>End Date:</span>
-            <input
-              className={styles['period-input']}
-              type="date"
-              value={customPeriod.value[1]}
-              onChange={(e) =>
-                setCustomPeriod({
-                  ...customPeriod,
-                  value: [customPeriod.value[0], e.target.value],
-                })
-              }
-            />
-          </span>
+            <span className={styles['custom-period-box']}>
+              <span className={styles['period-text']}>End Date:</span>
+              <input
+                className={styles['period-input']}
+                type="date"
+                value={customPeriod.value[1]}
+                onChange={(e) =>
+                  setCustomPeriod({
+                    ...customPeriod,
+                    value: [customPeriod.value[0], e.target.value],
+                  })
+                }
+              />
+            </span>
+          </div>
 
           <button
             className={`${styles['period-btn']} ${
