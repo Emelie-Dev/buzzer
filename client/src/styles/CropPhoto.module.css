@@ -94,6 +94,10 @@
   .container {
     height: 100vh;
   }
+
+  .avatar-box {
+    margin: auto 0;
+  }
 }
 
 @media screen and (max-width: 500px) {
@@ -106,9 +110,5 @@
   .container {
     padding: 1.5rem 0.5rem;
     width: 100vw;
-  }
-
-  .avatar-box {
-    margin: auto 0;
   }
 }
