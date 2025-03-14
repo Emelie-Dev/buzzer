@@ -128,7 +128,11 @@ const EditProfile = () => {
           <span className={styles['category-head']}>Bio</span>
 
           <div className={styles['username-div']}>
-            <textarea className={styles.bio} maxLength={150}></textarea>
+            <textarea
+              className={styles.bio}
+              maxLength={150}
+              rows={3}
+            ></textarea>
           </div>
         </div>
 

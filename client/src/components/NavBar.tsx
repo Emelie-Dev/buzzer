@@ -86,7 +86,7 @@ const NavBar = ({
         page === 'reels' ||
         page === 'notifications'
           ? window.matchMedia('(max-width: 1200px)').matches
-          : page === 'search'
+          : page === 'search' || page === 'analytics'
           ? window.matchMedia('(max-width: 1100px)').matches
           : page === 'settings'
           ? window.matchMedia('(max-width: 900px)').matches
@@ -919,6 +919,17 @@ const NavBar = ({
                   onClick={() => navigate('/create')}
                 >
                   <FaRegSquarePlus
+                    className={`${styles['search-section-icon']} ${styles['active-search-icon']} `}
+                  />
+                </span>
+              )}
+
+              {!showSearch && page === 'analytics' && (
+                <span
+                  className={`${styles['search-section-box']} ${styles['active-search-box']}`}
+                  onClick={() => navigate('/analytics')}
+                >
+                  <TbBrandGoogleAnalytics
                     className={`${styles['search-section-icon']} ${styles['active-search-icon']} `}
                   />
                 </span>

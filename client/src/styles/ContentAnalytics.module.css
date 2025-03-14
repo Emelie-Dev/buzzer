@@ -31,6 +31,11 @@
   font-size: 0.9rem;
 }
 
+.table-container {
+  width: 100%;
+  overflow: auto;
+}
+
 .table {
   width: 100%;
   margin: 2.5rem 0;
@@ -50,6 +55,7 @@
   background: var(--app-theme-color);
   color: white;
   padding: 0.7rem 1rem;
+  white-space: nowrap;
 }
 
 .table-head:first-child {
@@ -114,6 +120,7 @@
   border-radius: 5px;
   font-size: 0.9rem;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .data-section {

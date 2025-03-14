@@ -18,11 +18,36 @@ const EngagementAnalytics = () => {
   >('profile');
 
   const [graphWidth, setGraphWidth] = useState<number>(0);
+  const [showGraph, setShowGraph] = useState<boolean>(true);
 
   const graphRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
-    setGraphWidth(graphRef.current.offsetWidth - 40);
+    const resizeHandler = () => {
+      setShowGraph(false);
+
+      if (window.matchMedia('(max-width: 500px)').matches) {
+        setGraphWidth(500);
+      } else if (window.matchMedia('(max-width: 600px)').matches) {
+        setGraphWidth(graphRef.current.offsetWidth);
+      } else if (window.matchMedia('(max-width: 800px)').matches) {
+        setGraphWidth(graphRef.current.offsetWidth - 16);
+      } else {
+        setGraphWidth(graphRef.current.offsetWidth - 32);
+      }
+
+      setTimeout(() => {
+        setShowGraph(true);
+      }, 100);
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
   }, []);
 
   const lineData = {
@@ -177,7 +202,7 @@ const EngagementAnalytics = () => {
       </div>
 
       <div className={styles['graph-box']} ref={graphRef}>
-        {graphWidth ? (
+        {showGraph ? (
           <Line
             data={lineData}
             options={lineOptions}

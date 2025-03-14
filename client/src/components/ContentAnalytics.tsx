@@ -22,48 +22,51 @@ const ContentAnalytics = () => {
           </div>
         </header>
 
-        <table className={styles.table}>
-          <thead>
-            <tr className={styles.thead}>
-              <th className={styles['table-head']}>S/N</th>
-              <th className={styles['table-head']}>Content</th>
-              <th className={styles['table-head']}>Views</th>
-              <th className={styles['table-head']}>Date Posted</th>
-              <th className={styles['table-head']}>Action</th>
-            </tr>
-          </thead>
+        <div className={styles['table-container']}>
+          <table className={styles.table}>
+            <thead>
+              <tr className={styles.thead}>
+                <th className={styles['table-head']}>S/N</th>
+                <th className={styles['table-head']}>Content</th>
+                <th className={styles['table-head']}>Views</th>
+                <th className={styles['table-head']}>Date Posted</th>
+                <th className={styles['table-head']}>Action</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            <tr>
-              <td className={styles['content-index']}>1</td>
-              <td className={styles['content-data']}>
-                <div className={styles['content-box']}>
-                  <video className={styles.media}>
-                    <source
-                      src={'../../assets/images/content/content25.mp4'}
-                      type="video/mp4"
-                    />
-                    Your browser does not support playing video.
-                  </video>
+            <tbody>
+              <tr>
+                <td className={styles['content-index']}>1</td>
+                <td className={styles['content-data']}>
+                  <div className={styles['content-box']}>
+                    <video className={styles.media}>
+                      <source
+                        src={'../../assets/images/content/content25.mp4'}
+                        type="video/mp4"
+                      />
+                      Your browser does not support playing video.
+                    </video>
 
-                  <span className={styles['content-description']}>
-                    #coding #mernstackdeveloper #nodejs #mongodb #express #react
-                  </span>
-                </div>
-              </td>
-              <td className={styles['content-value']}>2456</td>
-              <td className={styles['content-date']}>Mar 10, 2024</td>
-              <td className={styles['content-action']}>
-                <button
-                  className={styles['view-btn']}
-                  onClick={() => setViewData(true)}
-                >
-                  View Data
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                    <span className={styles['content-description']}>
+                      #coding #mernstackdeveloper #nodejs #mongodb #express
+                      #react
+                    </span>
+                  </div>
+                </td>
+                <td className={styles['content-value']}>2456</td>
+                <td className={styles['content-date']}>Mar 10, 2024</td>
+                <td className={styles['content-action']}>
+                  <button
+                    className={styles['view-btn']}
+                    onClick={() => setViewData(true)}
+                  >
+                    View Data
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {viewData && (
