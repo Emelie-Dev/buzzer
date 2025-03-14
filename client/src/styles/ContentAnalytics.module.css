@@ -273,6 +273,10 @@
   .data-container {
     padding: 1.5rem 1rem;
   }
+
+  .data-container {
+    height: 100vh;
+  }
 }
 
 @media screen and (max-width: 500px) {
