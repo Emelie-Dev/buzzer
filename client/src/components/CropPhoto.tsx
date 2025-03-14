@@ -23,7 +23,7 @@ const CropPhoto = ({ src, setCropPhoto }: CropPhotoProps) => {
   useEffect(() => {
     const handleResize = () => {
       if (window.matchMedia('(max-width: 400px)').matches) {
-        setAvatarSize({ dim: Number(`${window.innerWidth - 50}`), border: 5 });
+        setAvatarSize({ dim: Number(`${window.innerWidth - 40}`), border: 5 });
       } else if (window.matchMedia('(max-width: 500px)').matches) {
         setAvatarSize({ dim: 325, border: 20 });
       } else if (window.matchMedia('(max-width: 600px)').matches) {
