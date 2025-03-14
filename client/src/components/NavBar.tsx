@@ -88,7 +88,7 @@ const NavBar = ({
           ? window.matchMedia('(max-width: 1200px)').matches
           : page === 'search' || page === 'analytics'
           ? window.matchMedia('(max-width: 1100px)').matches
-          : page === 'settings'
+          : page === 'settings' || page === 'history'
           ? window.matchMedia('(max-width: 900px)').matches
           : false;
       const secondSize =
@@ -930,6 +930,17 @@ const NavBar = ({
                   onClick={() => navigate('/analytics')}
                 >
                   <TbBrandGoogleAnalytics
+                    className={`${styles['search-section-icon']} ${styles['active-search-icon']} `}
+                  />
+                </span>
+              )}
+
+              {!showSearch && page === 'history' && (
+                <span
+                  className={`${styles['search-section-box']} ${styles['active-search-box']}`}
+                  onClick={() => navigate('/history')}
+                >
+                  <MdOutlineHistory
                     className={`${styles['search-section-icon']} ${styles['active-search-icon']} `}
                   />
                 </span>

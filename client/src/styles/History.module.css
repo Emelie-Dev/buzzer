@@ -81,6 +81,7 @@
 .reel-icon {
   width: 1.5rem;
   height: 1.5rem;
+  flex-shrink: 0;
 }
 
 .view-box {
@@ -132,6 +133,7 @@
 .select-text {
   font-family: appFontMedium;
   font-size: 1.05rem;
+  white-space: nowrap;
 }
 
 .btn-div {
@@ -169,4 +171,127 @@
 .cancel-btn:hover,
 .delete-btn:hover {
   opacity: 0.8;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1300px) {
+}
+
+@media screen and (max-width: 1200px) {
+  .section {
+    margin-left: 22%;
+    width: 78%;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .category-div {
+    grid-template-columns: 24% 24% 24% 24%;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .section {
+    margin-left: 25%;
+    width: 75%;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .section {
+    margin-left: 81px;
+    width: calc(100% - 81px);
+  }
+
+  .section-header {
+    padding: 2rem 0 0.5rem;
+    align-items: center;
+  }
+
+  .head {
+    transform: translateY(0);
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .section {
+    padding: 0 1rem 2rem;
+  }
+
+  .reel-icon {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  .view-box {
+    font-size: 0.8rem;
+    padding: 0.25rem;
+  }
+
+  .view-icon {
+    width: 0.7rem;
+    height: 0.7rem;
+    margin-right: 0.25rem;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .category-div {
+    grid-template-columns: 32% 32% 32%;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .section {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .category-div {
+    column-gap: 0.5rem;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .select-div {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .btn-div {
+    margin-top: 1rem;
+  }
+
+  .details-box {
+    top: 0;
+    flex-direction: column;
+    height: 100%;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0.5rem;
+  }
+
+  .reel-icon {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .section {
+    padding: 0 0.5rem 2rem;
+  }
+
+  .category-div {
+    grid-template-columns: 33% 33% 33%;
+  }
+
+  .category-div {
+    column-gap: 0.25rem;
+  }
+}
+
+@media screen and (max-width: 350px) {
 }
