@@ -12,7 +12,8 @@ import UploadReelDetails, {
 } from '../components/UploadReelDetails';
 import { GeneralContext } from '../Contexts';
 import { FaTasks } from 'react-icons/fa';
-import { IoClose } from 'react-icons/io5';
+import { IoClose, IoArrowBack } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
 
 export interface Content {
   src: string | ArrayBuffer | null;
@@ -113,6 +114,8 @@ const Create = () => {
   const [hideVideo, setHideVideo] = useState<boolean>(true);
   const [currentSound, setCurrentSound] = useState<string | null>(null);
   const [showGuidelines, setShowGuidelines] = useState<boolean>(false);
+
+  const navigate = useNavigate();
 
   const containerRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -390,6 +393,13 @@ const Create = () => {
       >
         <section className={styles.section}>
           <header className={styles.header}>
+            <h1 className={styles['section-head']}>
+              <IoArrowBack
+                className={styles['back-icon']}
+                onClick={() => navigate(-1)}
+              />
+              Create
+            </h1>
             <ul className={styles['type-list']}>
               <li
                 className={`${styles['type-item']} ${

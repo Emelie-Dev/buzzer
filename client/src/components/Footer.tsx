@@ -68,7 +68,10 @@ const Footer = ({ page }: FooterProps) => {
             Following
           </span>
         </li>
-        <li className={styles['footer-item']}>
+        <li
+          className={styles['footer-item']}
+          onClick={() => navigate('/create')}
+        >
           <span className={styles['item-box']}>
             <BsPlusSquareFill className={styles['create-icon']} />
           </span>

@@ -66,7 +66,7 @@
   cursor: pointer;
   border-bottom: 2px solid transparent;
   text-align: center;
-  width: 50%;
+  width: 100%;
 }
 
 .type-item:hover {
@@ -100,7 +100,7 @@
   justify-content: center;
   margin: 1rem 0.5rem;
   border: 1px dashed rgba(0, 0, 0, 0.4);
-  height: calc(100vh - 6.5rem);
+  height: calc(100% - 2rem);
   background: rgb(168, 85, 247, 0.1);
   border-radius: 10px;
 }
@@ -240,6 +240,26 @@
   color: white;
 }
 
+.section-head {
+  margin: 0;
+  font-family: appFont;
+  font-size: 1.4rem;
+  align-items: center;
+  margin-bottom: 0.7rem;
+  display: none;
+}
+
+.back-icon {
+  width: 1.7rem;
+  height: 1.7rem;
+  margin-right: 0.6rem;
+  cursor: pointer;
+}
+
+.back-icon:hover {
+  color: var(--app-theme-color);
+}
+
 /* Animations */
 
 @keyframes showModal {
@@ -321,6 +341,37 @@
   .guidelines-section {
     grid-template-columns: 80%;
   }
+
+  .header {
+    align-items: flex-start;
+    max-width: 100%;
+    justify-content: flex-start;
+    padding-top: 1rem;
+    flex-direction: column;
+    padding: 1rem 1rem 0;
+  }
+
+  .section-head {
+    display: flex;
+  }
+
+  .type-list {
+    margin: 0;
+  }
+
+  .guidelines-icon {
+    position: absolute;
+    right: 0.5rem;
+    top: 1.5rem;
+  }
+
+  .type-item {
+    padding: 0 1rem 0.5rem;
+  }
+
+  .category-div {
+    height: calc(100vh - 6.14rem);
+  }
 }
 
 @media screen and (max-width: 500px) {
@@ -350,10 +401,6 @@
 }
 
 @media screen and (max-width: 400px) {
-  .type-list {
-    margin: 0 1rem;
-  }
-
   .guidelines-section {
     grid-template-columns: 100%;
     padding: 0;

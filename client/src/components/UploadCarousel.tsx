@@ -683,7 +683,7 @@ const UploadCarousel = ({
               }`}
               onClick={() => setEditCategory('adjustments')}
             >
-              Sound
+              {uploadType === 'content' ? 'Adjustments' : 'Sound'}
             </span>
           </div>
 
