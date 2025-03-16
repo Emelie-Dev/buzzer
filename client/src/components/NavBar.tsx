@@ -84,7 +84,8 @@ const NavBar = ({
         page === 'following' ||
         page === 'friends' ||
         page === 'reels' ||
-        page === 'notifications'
+        page === 'notifications' ||
+        page === 'create'
           ? window.matchMedia('(max-width: 1200px)').matches
           : page === 'search' || page === 'analytics'
           ? window.matchMedia('(max-width: 1100px)').matches
@@ -518,14 +519,15 @@ const NavBar = ({
                 page === 'settings' ||
                 mediaQueries.first) && (
                 <>
-                  <li
-                    className={`${styles['nav-item']}`}
-                    onClick={() => navigate('/create')}
-                  >
-                    <FaRegSquarePlus className={`${styles['nav-icon']}`} />
-                    Create
-                  </li>
-
+                  {page !== 'create' && (
+                    <li
+                      className={`${styles['nav-item']}`}
+                      onClick={() => navigate('/create')}
+                    >
+                      <FaRegSquarePlus className={`${styles['nav-icon']}`} />
+                      Create
+                    </li>
+                  )}
                   <li
                     className={`${styles['nav-item']}`}
                     onClick={() => navigate('/inbox')}
@@ -948,15 +950,16 @@ const NavBar = ({
 
               {(page === 'inbox' || mediaQueries.first) && (
                 <>
-                  <span
-                    className={`${styles['search-section-box']} `}
-                    onClick={() => navigate('/create')}
-                  >
-                    <FaRegSquarePlus
-                      className={`${styles['search-section-icon']} `}
-                    />
-                  </span>
-
+                  {page !== 'create' && (
+                    <span
+                      className={`${styles['search-section-box']} `}
+                      onClick={() => navigate('/create')}
+                    >
+                      <FaRegSquarePlus
+                        className={`${styles['search-section-icon']} `}
+                      />
+                    </span>
+                  )}
                   <span
                     className={`${styles['search-section-box']} ${
                       page === 'inbox' && !showSearch

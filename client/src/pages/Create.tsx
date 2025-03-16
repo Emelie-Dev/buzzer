@@ -11,6 +11,8 @@ import UploadReelDetails, {
   ReelDetails,
 } from '../components/UploadReelDetails';
 import { GeneralContext } from '../Contexts';
+import { FaTasks } from 'react-icons/fa';
+import { IoClose } from 'react-icons/io5';
 
 export interface Content {
   src: string | ArrayBuffer | null;
@@ -110,6 +112,7 @@ const Create = () => {
   const [sliderValues, setSliderValues] = useState<number | number[]>([0, 100]);
   const [hideVideo, setHideVideo] = useState<boolean>(true);
   const [currentSound, setCurrentSound] = useState<string | null>(null);
+  const [showGuidelines, setShowGuidelines] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -386,32 +389,39 @@ const Create = () => {
         }`}
       >
         <section className={styles.section}>
-          <ul className={styles['type-list']}>
-            <li
-              className={`${styles['type-item']} ${
-                category === 'content' ? styles['active-item'] : ''
-              }`}
-              onClick={() => setCategory('content')}
-            >
-              Content
-            </li>
-            <li
-              className={`${styles['type-item']} ${
-                category === 'reel' ? styles['active-item'] : ''
-              }`}
-              onClick={() => setCategory('reel')}
-            >
-              Reel
-            </li>
-            <li
-              className={`${styles['type-item']} ${
-                category === 'story' ? styles['active-item'] : ''
-              }`}
-              onClick={() => setCategory('story')}
-            >
-              Story
-            </li>
-          </ul>
+          <header className={styles.header}>
+            <ul className={styles['type-list']}>
+              <li
+                className={`${styles['type-item']} ${
+                  category === 'content' ? styles['active-item'] : ''
+                }`}
+                onClick={() => setCategory('content')}
+              >
+                Content
+              </li>
+              <li
+                className={`${styles['type-item']} ${
+                  category === 'reel' ? styles['active-item'] : ''
+                }`}
+                onClick={() => setCategory('reel')}
+              >
+                Reel
+              </li>
+              <li
+                className={`${styles['type-item']} ${
+                  category === 'story' ? styles['active-item'] : ''
+                }`}
+                onClick={() => setCategory('story')}
+              >
+                Story
+              </li>
+            </ul>
+
+            <FaTasks
+              className={styles['guidelines-icon']}
+              onClick={() => setShowGuidelines(true)}
+            />
+          </header>
 
           <input
             className={styles['file-input']}
@@ -603,6 +613,100 @@ const Create = () => {
           </div>
         </section>
       </section>
+
+      {showGuidelines && (
+        <section
+          className={styles['guidelines-section']}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowGuidelines(false);
+            }
+          }}
+        >
+          <div className={styles['guidelines-container']}>
+            <h1 className={styles['guidelines-head']}>
+              <span className={styles['guidelines-head-text']}>
+                Upload Guidelines
+              </span>
+
+              <span
+                className={styles['close-icon-box']}
+                title="Close"
+                onClick={() => setShowGuidelines(false)}
+              >
+                <IoClose className={styles['close-icon']} />
+              </span>
+            </h1>
+
+            <ul className={styles['upload-guidelines']}>
+              <li className={styles['guideline']}>
+                <span className={styles['guideline-head']}>
+                  Upload Limit (for content)
+                </span>
+                <br />
+                <span className={styles['guideline-text']}>
+                  Maximum number of files per post: 20.
+                </span>
+              </li>
+
+              <li className={styles['guideline']}>
+                <span className={styles['guideline-head']}>File Size</span>
+                <br />
+                <span className={styles['guideline-text']}>
+                  Maximum file size: 1 GB.
+                </span>
+              </li>
+
+              <li className={styles['guideline']}>
+                <span className={styles['guideline-head']}>File Format</span>
+                <br />
+                <span className={styles['guideline-text']}>
+                  Major file formats for photos and videos are supported.
+                </span>
+              </li>
+
+              <li className={styles['guideline']}>
+                <span className={styles['guideline-head']}>
+                  Duration (for videos)
+                </span>
+                <br />
+                <span className={styles['guideline-text']}>
+                  Maximum Duration for content: 60 seconds. <br />
+                  Maximum Duration for reel: 60 minutes.
+                </span>
+              </li>
+
+              <li className={styles['guideline']}>
+                <span className={styles['guideline-head']}>Resolution</span>
+                <br />
+                <span className={styles['guideline-text']}>
+                  Minimum recommended resolution: 720p (for videos).
+                </span>
+              </li>
+
+              <li className={styles['guideline']}>
+                <span className={styles['guideline-head']}>Aspect Ratio</span>
+                <br />
+                <span className={styles['guideline-text']}>
+                  Recommended aspect ratio: 16:9 (for videos).
+                </span>
+              </li>
+
+              <li className={styles['guideline']}>
+                <span className={styles['guideline-head']}>Safe Posting</span>
+                <br />
+                <span className={styles['guideline-text']}>
+                  Ensure your content follows{' '}
+                  <b className={styles['community-guidelines']}>
+                    community guidelines
+                  </b>
+                  .
+                </span>
+              </li>
+            </ul>
+          </div>
+        </section>
+      )}
     </>
   );
 };
