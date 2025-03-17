@@ -10,7 +10,7 @@ type FileData = {
   };
 };
 
-const filters = [
+export const filters = [
   {
     name: 'Original',
     filter:

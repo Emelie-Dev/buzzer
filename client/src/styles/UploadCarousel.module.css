@@ -791,3 +791,10 @@
     padding: 0.2rem 0.5rem;
   }
 }
+
+@media screen and (max-width: 400px) {
+  .right-arrow-box,
+  .left-arrow-box {
+    top: 50%;
+  }
+}

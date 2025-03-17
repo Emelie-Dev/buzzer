@@ -7,8 +7,9 @@ import { useEffect, useRef, useState } from 'react';
 import { IoCheckmarkSharp, IoColorFilterOutline } from 'react-icons/io5';
 import Cropper from 'react-easy-crop';
 import { Content, StoryData } from '../pages/Create';
-import { getFilterValue, getDurationText } from '../Utilities';
+import { getFilterValue, getDurationText, filters } from '../Utilities';
 import { TbAdjustmentsFilled } from 'react-icons/tb';
+import MobileFilter from './MobileFilter';
 
 type StoryProps = {
   storyFiles: StoryData[];
@@ -44,59 +45,6 @@ type UploadCarouselProps = {
   setAddFiles: React.Dispatch<React.SetStateAction<boolean>>;
   fileRef: React.MutableRefObject<HTMLInputElement>;
 };
-
-const filters = [
-  {
-    name: 'Original',
-    filter:
-      'brightness(1) contrast(1) grayscale(0) hue-rotate(0deg) saturate(1) sepia(0)',
-  },
-  { name: 'Warm Glow', filter: 'brightness(1.1) saturate(1.2) sepia(0.2)' },
-  {
-    name: 'Cool Mist',
-    filter: 'brightness(0.95) saturate(0.8) contrast(1.1) hue-rotate(-20deg)',
-  },
-  { name: 'Vintage Charm', filter: 'sepia(0.5) saturate(0.8) contrast(1.2)' },
-  { name: 'Dreamscape', filter: 'blur(2px) brightness(1.1) saturate(1.1)' },
-  {
-    name: 'Golden Hour',
-    filter: 'brightness(1.2) sepia(0.4) hue-rotate(-10deg)',
-  },
-  {
-    name: 'Ocean Breeze',
-    filter: 'brightness(1.05) saturate(1.3) hue-rotate(-40deg)',
-  },
-  {
-    name: 'Pastel Dreams',
-    filter: 'brightness(1.1) saturate(0.7) contrast(1.1)',
-  },
-  { name: 'Rustic Vibes', filter: 'sepia(0.6) contrast(1.1) brightness(0.9)' },
-  { name: 'Cinematic', filter: 'contrast(1.4) brightness(0.8) saturate(0.9)' },
-  { name: 'Frosted', filter: 'brightness(1.2) blur(1px) saturate(0.8)' },
-  {
-    name: 'Twilight',
-    filter: 'brightness(0.9) contrast(1.1) hue-rotate(40deg)',
-  },
-  { name: 'Ember', filter: 'sepia(0.3) brightness(1.2) saturate(1.1)' },
-  { name: 'Serenity', filter: 'contrast(1.1) brightness(1.1) saturate(0.9)' },
-  {
-    name: 'Lush Forest',
-    filter: 'hue-rotate(80deg) brightness(1.1) saturate(1.3)',
-  },
-  {
-    name: 'Muted Elegance',
-    filter: 'brightness(0.9) saturate(0.7) contrast(1.2)',
-  },
-  { name: 'Radiance', filter: 'brightness(1.3) saturate(1.2) contrast(1.1)' },
-  {
-    name: 'Arctic Chill',
-    filter: 'brightness(1.1) saturate(0.8) hue-rotate(-50deg)',
-  },
-  { name: 'Sepia Luxe', filter: 'sepia(1) brightness(1.2) contrast(1.1)' },
-
-  { name: 'Noir', filter: 'grayscale(1) brightness(0.9) contrast(1.2)' },
-  { name: 'Monochrome Bliss', filter: 'grayscale(1) brightness(1.1)' },
-];
 
 const UploadCarousel = ({
   uploadType,
@@ -155,6 +103,7 @@ const UploadCarousel = ({
     src: string;
   }>(null!);
   const [playStorySound, setPlayStorySound] = useState<boolean>(false);
+  const [showMobileFilter, setShowMobileFilter] = useState<boolean>(false);
 
   const dotRef = useRef<HTMLSpanElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -550,648 +499,679 @@ const UploadCarousel = ({
   };
 
   return (
-    <div className={styles.carousel}>
-      <div className={styles['carousel-container']} ref={carouselRef}>
-        <div className={styles['carousel-box']}>
-          {currentIndex !== 0 && (
-            <span
-              className={styles['left-arrow-box']}
-              onClick={changeCurrentIndex('prev')}
-            >
-              <MdKeyboardArrowLeft className={styles.arrow} />
-            </span>
-          )}
-
-          <div className={styles['media-edit-container']}>
-            <div className={styles['mark-box']}>
+    <>
+      <div className={styles.carousel}>
+        <div className={styles['carousel-container']} ref={carouselRef}>
+          <div className={styles['carousel-box']}>
+            {currentIndex !== 0 && (
               <span
-                className={`${styles['mark-icon-box']} ${
-                  !cropImage ? styles['hide-visibility'] : ''
-                }`}
-                onClick={() => setCropImage(false)}
-                title="Cancel"
+                className={styles['left-arrow-box']}
+                onClick={changeCurrentIndex('prev')}
               >
-                <IoClose className={styles['mark-icon']} />
+                <MdKeyboardArrowLeft className={styles.arrow} />
               </span>
+            )}
 
-              {cropImage ? (
+            <div className={styles['media-edit-container']}>
+              <div className={styles['mark-box']}>
                 <span
-                  className={styles['mark-icon-box']}
+                  className={`${styles['mark-icon-box']} ${
+                    !cropImage ? styles['hide-visibility'] : ''
+                  }`}
                   onClick={() => setCropImage(false)}
-                  title="Done"
+                  title="Cancel"
                 >
-                  <IoCheckmarkSharp className={styles['mark-icon']} />
+                  <IoClose className={styles['mark-icon']} />
                 </span>
-              ) : (
-                <span
-                  className={styles['mark-icon-box']}
-                  onClick={() => setCropImage(true)}
-                  title="Crop"
-                >
-                  <IoMdCrop className={styles['mark-icon']} />
-                </span>
+
+                {cropImage ? (
+                  <span
+                    className={styles['mark-icon-box']}
+                    onClick={() => setCropImage(false)}
+                    title="Done"
+                  >
+                    <IoCheckmarkSharp className={styles['mark-icon']} />
+                  </span>
+                ) : (
+                  <span
+                    className={styles['mark-icon-box']}
+                    onClick={() => setCropImage(true)}
+                    title="Crop"
+                  >
+                    <IoMdCrop className={styles['mark-icon']} />
+                  </span>
+                )}
+              </div>
+
+              {!cropImage && (
+                <div className={styles['mobile-edit-box']}>
+                  <span
+                    className={`${styles['mark-icon-box']} `}
+                    title="Filters"
+                    onClick={() => setShowMobileFilter(true)}
+                  >
+                    <IoColorFilterOutline className={styles['mark-icon']} />
+                  </span>
+
+                  <span
+                    className={`${styles['mark-icon-box']} `}
+                    title="Adjustments"
+                  >
+                    <TbAdjustmentsFilled
+                      className={`${styles['mark-icon']} ${styles['adjust-icon']}`}
+                    />
+                  </span>
+                </div>
               )}
             </div>
 
-            {!cropImage && (
-              <div className={styles['mobile-edit-box']}>
-                <span className={`${styles['mark-icon-box']} `} title="Filters">
-                  <IoColorFilterOutline className={styles['mark-icon']} />
-                </span>
+            {files.length &&
+              (cropImage ? (
+                <Cropper
+                  image={
+                    files[currentIndex].type === 'image'
+                      ? (files[currentIndex].src as string)
+                      : undefined
+                  }
+                  video={
+                    files[currentIndex].type === 'video'
+                      ? (files[currentIndex].src as string)
+                      : undefined
+                  }
+                  crop={crop}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  // onInteractionEnd={handleInteractionEnd}
+                  restrictPosition={true}
+                  zoomWithScroll={false}
+                  objectFit={'cover'}
+                  classes={{
+                    // containerClassName: styles['img-container'],
+                    mediaClassName: styles.img,
+                  }}
+                  style={{
+                    mediaStyle: {
+                      aspectRatio,
+                      filter: getFilterValue(currentFileData),
+                      height: `${imageRef.current?.offsetHeight}px`,
+                    },
+                  }}
+                />
+              ) : (
+                <>
+                  {files[currentIndex].type === 'image' ? (
+                    <img
+                      className={styles.img}
+                      src={files[currentIndex].src as string}
+                      ref={imageRef}
+                      style={{
+                        aspectRatio,
+                        filter: getFilterValue(currentFileData),
+                      }}
+                      onMouseDown={(e) =>
+                        (e.currentTarget.style.filter = 'none')
+                      }
+                      onMouseUp={(e) =>
+                        (e.currentTarget.style.filter = getFilterValue(
+                          currentFileData
+                        ) as string)
+                      }
+                    />
+                  ) : (
+                    <video
+                      className={styles.img}
+                      ref={videoRef}
+                      style={{
+                        aspectRatio,
+                        filter: getFilterValue(currentFileData),
+                      }}
+                      autoPlay={true}
+                      loop={true}
+                      onMouseDown={(e) =>
+                        (e.currentTarget.style.filter = 'none')
+                      }
+                      onMouseUp={(e) =>
+                        (e.currentTarget.style.filter = getFilterValue(
+                          currentFileData
+                        ) as string)
+                      }
+                    >
+                      <source type="video/mp4" />
+                      Your browser does not support playing video.
+                    </video>
+                  )}
+                </>
+              ))}
 
-                <span
-                  className={`${styles['mark-icon-box']} `}
-                  title="Adjustments"
-                >
-                  <TbAdjustmentsFilled
-                    className={`${styles['mark-icon']} ${styles['adjust-icon']}`}
-                  />
-                </span>
-              </div>
+            {currentIndex < files.length - 1 && (
+              <span
+                className={styles['right-arrow-box']}
+                onClick={changeCurrentIndex('next')}
+              >
+                <MdKeyboardArrowRight className={styles.arrow} />
+              </span>
+            )}
+
+            {files.length > 1 && (
+              <span className={styles['dot-box']} ref={dotRef}>
+                {files.map((_, index) => (
+                  <span
+                    key={`${Math.random()}-${index}`}
+                    className={`${styles.dot} ${
+                      currentIndex === index ? styles['current-dot'] : ''
+                    }`}
+                  >
+                    .
+                  </span>
+                ))}
+              </span>
             )}
           </div>
 
-          {files.length &&
-            (cropImage ? (
-              <Cropper
-                image={
-                  files[currentIndex].type === 'image'
-                    ? (files[currentIndex].src as string)
-                    : undefined
-                }
-                video={
-                  files[currentIndex].type === 'video'
-                    ? (files[currentIndex].src as string)
-                    : undefined
-                }
-                crop={crop}
-                aspect={1}
-                onCropChange={setCrop}
-                // onInteractionEnd={handleInteractionEnd}
-                restrictPosition={true}
-                zoomWithScroll={false}
-                objectFit={'cover'}
-                classes={{
-                  // containerClassName: styles['img-container'],
-                  mediaClassName: styles.img,
-                }}
-                style={{
-                  mediaStyle: {
-                    aspectRatio,
-                    filter: getFilterValue(currentFileData),
-                    height: `${imageRef.current?.offsetHeight}px`,
-                  },
-                }}
-              />
-            ) : (
-              <>
-                {files[currentIndex].type === 'image' ? (
-                  <img
-                    className={styles.img}
-                    src={files[currentIndex].src as string}
-                    ref={imageRef}
-                    style={{
-                      aspectRatio,
-                      filter: getFilterValue(currentFileData),
-                    }}
-                    onMouseDown={(e) => (e.currentTarget.style.filter = 'none')}
-                    onMouseUp={(e) =>
-                      (e.currentTarget.style.filter = getFilterValue(
-                        currentFileData
-                      ) as string)
-                    }
-                  />
-                ) : (
-                  <video
-                    className={styles.img}
-                    ref={videoRef}
-                    style={{
-                      aspectRatio,
-                      filter: getFilterValue(currentFileData),
-                    }}
-                    autoPlay={true}
-                    loop={true}
-                    onMouseDown={(e) => (e.currentTarget.style.filter = 'none')}
-                    onMouseUp={(e) =>
-                      (e.currentTarget.style.filter = getFilterValue(
-                        currentFileData
-                      ) as string)
-                    }
-                  >
-                    <source type="video/mp4" />
-                    Your browser does not support playing video.
-                  </video>
-                )}
-              </>
-            ))}
-
-          {currentIndex < files.length - 1 && (
-            <span
-              className={styles['right-arrow-box']}
-              onClick={changeCurrentIndex('next')}
-            >
-              <MdKeyboardArrowRight className={styles.arrow} />
-            </span>
-          )}
-
-          {files.length > 1 && (
-            <span className={styles['dot-box']} ref={dotRef}>
-              {files.map((_, index) => (
-                <span
-                  key={`${Math.random()}-${index}`}
-                  className={`${styles.dot} ${
-                    currentIndex === index ? styles['current-dot'] : ''
-                  }`}
-                >
-                  .
-                </span>
-              ))}
-            </span>
-          )}
-        </div>
-
-        <div className={styles['edit-container']}>
-          <div className={styles['edit-head']}>
-            <span
-              className={`${styles['edit-head-text']} ${
-                editCategory === 'filters' ? styles['current-edit-head'] : ''
-              }`}
-              onClick={() => setEditCategory('filters')}
-            >
-              Filters
-            </span>
-            <span
-              className={`${styles['edit-head-text']} ${
-                editCategory === 'adjustments'
-                  ? styles['current-edit-head']
-                  : ''
-              }`}
-              onClick={() => setEditCategory('adjustments')}
-            >
-              {uploadType === 'content' ? 'Adjustments' : 'Sound'}
-            </span>
-          </div>
-
-          <div className={styles['edit-div']} ref={editRef}>
-            <div className={styles['filters-div']}>
-              {filters.map(({ name, filter }, index) => (
-                <span
-                  className={`${styles['filter-box']} ${
-                    cropImage ? styles['disable-filter'] : ''
-                  }`}
-                  key={index}
-                  onClick={() =>
-                    !cropImage
-                      ? setCurrentFileData({ ...currentFileData, filter: name })
-                      : null
-                  }
-                >
-                  <span
-                    className={`${styles['filter-img-span']} ${
-                      currentFileData.filter === name
-                        ? styles['current-filter-span']
-                        : ''
-                    }`}
-                  >
-                    {' '}
-                    <img
-                      className={styles['filter-img']}
-                      src="../../assets/filter.avif"
-                      style={{ filter }}
-                    />
-                  </span>
-
-                  <span
-                    className={`${styles['filter-name']} ${
-                      currentFileData.filter === name
-                        ? styles['current-filter-name']
-                        : ''
-                    }`}
-                  >
-                    {name}
-                  </span>
-                </span>
-              ))}
+          <div className={styles['edit-container']}>
+            <div className={styles['edit-head']}>
+              <span
+                className={`${styles['edit-head-text']} ${
+                  editCategory === 'filters' ? styles['current-edit-head'] : ''
+                }`}
+                onClick={() => setEditCategory('filters')}
+              >
+                Filters
+              </span>
+              <span
+                className={`${styles['edit-head-text']} ${
+                  editCategory === 'adjustments'
+                    ? styles['current-edit-head']
+                    : ''
+                }`}
+                onClick={() => setEditCategory('adjustments')}
+              >
+                {uploadType === 'content' ? 'Adjustments' : 'Sound'}
+              </span>
             </div>
 
-            {uploadType === 'content' ? (
-              <div className={styles['adjustment-div']}>
-                <span className={styles['adjustment-box']}>
-                  <span className={styles['adjustment-box-head']}>
-                    <label className={styles['adjustment-label']}>
-                      Brightness
-                    </label>
-                    <span
-                      className={`${styles['adjustment-reset']} ${
-                        cropImage ? styles['hide-reset'] : ''
-                      }`}
-                      onClick={changeAdjustmentValue('brightness', true)}
-                    >
-                      Reset
-                    </span>
-                  </span>
-
-                  <span className={styles['adjustment-details']}>
-                    <input
-                      className={`${styles['adjustment-input']} ${
-                        cropImage ? styles['adjustment-input2'] : ''
-                      }`}
-                      type="range"
-                      disabled={cropImage}
-                      min={-100}
-                      max={100}
-                      value={currentFileData.adjustments.brightness}
-                      onChange={changeAdjustmentValue('brightness')}
-                      ref={addToObjRef('brightness')}
-                    />
-                    <span className={styles['adjustment-value']}>
-                      {currentFileData.adjustments.brightness}
-                    </span>
-                  </span>
-                </span>
-
-                <span className={styles['adjustment-box']}>
-                  <span className={styles['adjustment-box-head']}>
-                    <label className={styles['adjustment-label']}>
-                      Contrast
-                    </label>
-                    <span
-                      className={`${styles['adjustment-reset']} ${
-                        cropImage ? styles['hide-reset'] : ''
-                      }`}
-                      onClick={changeAdjustmentValue('contrast', true)}
-                    >
-                      Reset
-                    </span>
-                  </span>
-                  <span className={styles['adjustment-details']}>
-                    <input
-                      className={`${styles['adjustment-input']} ${
-                        cropImage ? styles['adjustment-input2'] : ''
-                      }`}
-                      type="range"
-                      disabled={cropImage}
-                      min={-100}
-                      max={100}
-                      value={currentFileData.adjustments.contrast}
-                      onChange={changeAdjustmentValue('contrast')}
-                      ref={addToObjRef('contrast')}
-                    />
-                    <span className={styles['adjustment-value']}>
-                      {currentFileData.adjustments.contrast}
-                    </span>
-                  </span>
-                </span>
-
-                <span className={styles['adjustment-box']}>
-                  <span className={styles['adjustment-box-head']}>
-                    <label className={styles['adjustment-label']}>
-                      Hue-rotate
-                    </label>
-                    <span
-                      className={`${styles['adjustment-reset']} ${
-                        cropImage ? styles['hide-reset'] : ''
-                      }`}
-                      onClick={changeAdjustmentValue('hue-rotate', true)}
-                    >
-                      Reset
-                    </span>
-                  </span>
-                  <span className={styles['adjustment-details']}>
-                    <input
-                      className={`${styles['adjustment-input']} ${
-                        cropImage ? styles['adjustment-input2'] : ''
-                      }`}
-                      type="range"
-                      disabled={cropImage}
-                      min={-100}
-                      max={100}
-                      value={currentFileData.adjustments['hue-rotate']}
-                      onChange={changeAdjustmentValue('hue-rotate')}
-                      ref={addToObjRef('hue-rotate')}
-                    />
-                    <span className={styles['adjustment-value']}>
-                      {currentFileData.adjustments['hue-rotate']}
-                    </span>
-                  </span>
-                </span>
-
-                <span className={styles['adjustment-box']}>
-                  <span className={styles['adjustment-box-head']}>
-                    <label className={styles['adjustment-label']}>
-                      Saturate
-                    </label>
-                    <span
-                      className={`${styles['adjustment-reset']} ${
-                        cropImage ? styles['hide-reset'] : ''
-                      }`}
-                      onClick={changeAdjustmentValue('saturate', true)}
-                    >
-                      Reset
-                    </span>
-                  </span>
-                  <span className={styles['adjustment-details']}>
-                    <input
-                      className={`${styles['adjustment-input']} ${
-                        cropImage ? styles['adjustment-input2'] : ''
-                      }`}
-                      type="range"
-                      disabled={cropImage}
-                      min={-100}
-                      max={100}
-                      value={currentFileData.adjustments.saturate}
-                      onChange={changeAdjustmentValue('saturate')}
-                      ref={addToObjRef('saturate')}
-                    />
-                    <span className={styles['adjustment-value']}>
-                      {currentFileData.adjustments.saturate}
-                    </span>
-                  </span>
-                </span>
-
-                <span className={styles['adjustment-box']}>
-                  <span className={styles['adjustment-box-head']}>
-                    <label className={styles['adjustment-label']}>
-                      Grayscale
-                    </label>
-                    <span
-                      className={`${styles['adjustment-reset']} ${
-                        cropImage ? styles['hide-reset'] : ''
-                      }`}
-                      onClick={changeAdjustmentValue('grayscale', true)}
-                    >
-                      Reset
-                    </span>
-                  </span>
-                  <span className={styles['adjustment-details']}>
-                    <input
-                      className={`${styles['adjustment-input']} ${
-                        cropImage ? styles['adjustment-input2'] : ''
-                      }`}
-                      type="range"
-                      disabled={cropImage}
-                      min={0}
-                      max={100}
-                      value={currentFileData.adjustments.grayscale}
-                      onChange={changeAdjustmentValue('grayscale')}
-                      ref={addToObjRef('grayscale')}
-                    />
-                    <span className={styles['adjustment-value']}>
-                      {currentFileData.adjustments.grayscale}
-                    </span>
-                  </span>
-                </span>
-
-                <span className={styles['adjustment-box']}>
-                  <span className={styles['adjustment-box-head']}>
-                    <label className={styles['adjustment-label']}>Sepia</label>
-                    <span
-                      className={`${styles['adjustment-reset']} ${
-                        cropImage ? styles['hide-reset'] : ''
-                      }`}
-                      onClick={changeAdjustmentValue('sepia', true)}
-                    >
-                      Reset
-                    </span>
-                  </span>
-                  <span className={styles['adjustment-details']}>
-                    <input
-                      className={`${styles['adjustment-input']} ${
-                        cropImage ? styles['adjustment-input2'] : ''
-                      }`}
-                      type="range"
-                      disabled={cropImage}
-                      min={0}
-                      max={100}
-                      value={currentFileData.adjustments.sepia}
-                      onChange={changeAdjustmentValue('sepia')}
-                      ref={addToObjRef('sepia')}
-                    />
-                    <span className={styles['adjustment-value']}>
-                      {currentFileData.adjustments.sepia}
-                    </span>
-                  </span>
-                </span>
-              </div>
-            ) : (
-              <div className={styles['sound-div']}>
-                <div className={styles['hide-sound']}>
-                  <input
-                    type="file"
-                    accept="audio/mp3, audio/wav, audio/aac, audio/ogg"
-                    ref={soundInputRef}
-                    onChange={handleStorySound}
-                  />
-
-                  <audio ref={storySoundRef}>
-                    <source />
-                    Your browser does not support the audio element.
-                  </audio>
-                </div>
-
-                {storySound && (
-                  <div
-                    className={`${styles['sound-box']} ${
-                      playStorySound ? styles['active-sound'] : ''
+            <div className={styles['edit-div']} ref={editRef}>
+              <div className={styles['filters-div']}>
+                {filters.map(({ name, filter }, index) => (
+                  <span
+                    className={`${styles['filter-box']} ${
+                      cropImage ? styles['disable-filter'] : ''
                     }`}
-                    onClick={() => setPlayStorySound(!playStorySound)}
+                    key={index}
+                    onClick={() =>
+                      !cropImage
+                        ? setCurrentFileData({
+                            ...currentFileData,
+                            filter: name,
+                          })
+                        : null
+                    }
                   >
-                    <span className={styles['sound-name']}>
-                      {storySound.name}
-                    </span>
-                    <span className={styles['sound-duration']}>
-                      {storySound.duration}
-                    </span>
-                  </div>
-                )}
-
-                <div className={styles['sound-btn-div']}>
-                  <button
-                    className={styles['sound-btn']}
-                    onClick={() => soundInputRef.current.click()}
-                  >
-                    {storySound ? 'Change' : 'Select Sound'}
-                  </button>
-                  {storySound && (
-                    <button
-                      className={styles['remove-btn']}
-                      onClick={() => {
-                        URL.revokeObjectURL(storySound.src);
-                        storySoundRef.current.src = '';
-                        setPlayStorySound(false);
-                        setStorySound(null!);
-                      }}
+                    <span
+                      className={`${styles['filter-img-span']} ${
+                        currentFileData.filter === name
+                          ? styles['current-filter-span']
+                          : ''
+                      }`}
                     >
-                      Remove
-                    </button>
-                  )}
-                </div>
+                      {' '}
+                      <img
+                        className={styles['filter-img']}
+                        src="../../assets/filter.avif"
+                        style={{ filter }}
+                      />
+                    </span>
+
+                    <span
+                      className={`${styles['filter-name']} ${
+                        currentFileData.filter === name
+                          ? styles['current-filter-name']
+                          : ''
+                      }`}
+                    >
+                      {name}
+                    </span>
+                  </span>
+                ))}
               </div>
-            )}
+
+              {uploadType === 'content' ? (
+                <div className={styles['adjustment-div']}>
+                  <span className={styles['adjustment-box']}>
+                    <span className={styles['adjustment-box-head']}>
+                      <label className={styles['adjustment-label']}>
+                        Brightness
+                      </label>
+                      <span
+                        className={`${styles['adjustment-reset']} ${
+                          cropImage ? styles['hide-reset'] : ''
+                        }`}
+                        onClick={changeAdjustmentValue('brightness', true)}
+                      >
+                        Reset
+                      </span>
+                    </span>
+
+                    <span className={styles['adjustment-details']}>
+                      <input
+                        className={`${styles['adjustment-input']} ${
+                          cropImage ? styles['adjustment-input2'] : ''
+                        }`}
+                        type="range"
+                        disabled={cropImage}
+                        min={-100}
+                        max={100}
+                        value={currentFileData.adjustments.brightness}
+                        onChange={changeAdjustmentValue('brightness')}
+                        ref={addToObjRef('brightness')}
+                      />
+                      <span className={styles['adjustment-value']}>
+                        {currentFileData.adjustments.brightness}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span className={styles['adjustment-box']}>
+                    <span className={styles['adjustment-box-head']}>
+                      <label className={styles['adjustment-label']}>
+                        Contrast
+                      </label>
+                      <span
+                        className={`${styles['adjustment-reset']} ${
+                          cropImage ? styles['hide-reset'] : ''
+                        }`}
+                        onClick={changeAdjustmentValue('contrast', true)}
+                      >
+                        Reset
+                      </span>
+                    </span>
+                    <span className={styles['adjustment-details']}>
+                      <input
+                        className={`${styles['adjustment-input']} ${
+                          cropImage ? styles['adjustment-input2'] : ''
+                        }`}
+                        type="range"
+                        disabled={cropImage}
+                        min={-100}
+                        max={100}
+                        value={currentFileData.adjustments.contrast}
+                        onChange={changeAdjustmentValue('contrast')}
+                        ref={addToObjRef('contrast')}
+                      />
+                      <span className={styles['adjustment-value']}>
+                        {currentFileData.adjustments.contrast}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span className={styles['adjustment-box']}>
+                    <span className={styles['adjustment-box-head']}>
+                      <label className={styles['adjustment-label']}>
+                        Hue-rotate
+                      </label>
+                      <span
+                        className={`${styles['adjustment-reset']} ${
+                          cropImage ? styles['hide-reset'] : ''
+                        }`}
+                        onClick={changeAdjustmentValue('hue-rotate', true)}
+                      >
+                        Reset
+                      </span>
+                    </span>
+                    <span className={styles['adjustment-details']}>
+                      <input
+                        className={`${styles['adjustment-input']} ${
+                          cropImage ? styles['adjustment-input2'] : ''
+                        }`}
+                        type="range"
+                        disabled={cropImage}
+                        min={-100}
+                        max={100}
+                        value={currentFileData.adjustments['hue-rotate']}
+                        onChange={changeAdjustmentValue('hue-rotate')}
+                        ref={addToObjRef('hue-rotate')}
+                      />
+                      <span className={styles['adjustment-value']}>
+                        {currentFileData.adjustments['hue-rotate']}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span className={styles['adjustment-box']}>
+                    <span className={styles['adjustment-box-head']}>
+                      <label className={styles['adjustment-label']}>
+                        Saturate
+                      </label>
+                      <span
+                        className={`${styles['adjustment-reset']} ${
+                          cropImage ? styles['hide-reset'] : ''
+                        }`}
+                        onClick={changeAdjustmentValue('saturate', true)}
+                      >
+                        Reset
+                      </span>
+                    </span>
+                    <span className={styles['adjustment-details']}>
+                      <input
+                        className={`${styles['adjustment-input']} ${
+                          cropImage ? styles['adjustment-input2'] : ''
+                        }`}
+                        type="range"
+                        disabled={cropImage}
+                        min={-100}
+                        max={100}
+                        value={currentFileData.adjustments.saturate}
+                        onChange={changeAdjustmentValue('saturate')}
+                        ref={addToObjRef('saturate')}
+                      />
+                      <span className={styles['adjustment-value']}>
+                        {currentFileData.adjustments.saturate}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span className={styles['adjustment-box']}>
+                    <span className={styles['adjustment-box-head']}>
+                      <label className={styles['adjustment-label']}>
+                        Grayscale
+                      </label>
+                      <span
+                        className={`${styles['adjustment-reset']} ${
+                          cropImage ? styles['hide-reset'] : ''
+                        }`}
+                        onClick={changeAdjustmentValue('grayscale', true)}
+                      >
+                        Reset
+                      </span>
+                    </span>
+                    <span className={styles['adjustment-details']}>
+                      <input
+                        className={`${styles['adjustment-input']} ${
+                          cropImage ? styles['adjustment-input2'] : ''
+                        }`}
+                        type="range"
+                        disabled={cropImage}
+                        min={0}
+                        max={100}
+                        value={currentFileData.adjustments.grayscale}
+                        onChange={changeAdjustmentValue('grayscale')}
+                        ref={addToObjRef('grayscale')}
+                      />
+                      <span className={styles['adjustment-value']}>
+                        {currentFileData.adjustments.grayscale}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span className={styles['adjustment-box']}>
+                    <span className={styles['adjustment-box-head']}>
+                      <label className={styles['adjustment-label']}>
+                        Sepia
+                      </label>
+                      <span
+                        className={`${styles['adjustment-reset']} ${
+                          cropImage ? styles['hide-reset'] : ''
+                        }`}
+                        onClick={changeAdjustmentValue('sepia', true)}
+                      >
+                        Reset
+                      </span>
+                    </span>
+                    <span className={styles['adjustment-details']}>
+                      <input
+                        className={`${styles['adjustment-input']} ${
+                          cropImage ? styles['adjustment-input2'] : ''
+                        }`}
+                        type="range"
+                        disabled={cropImage}
+                        min={0}
+                        max={100}
+                        value={currentFileData.adjustments.sepia}
+                        onChange={changeAdjustmentValue('sepia')}
+                        ref={addToObjRef('sepia')}
+                      />
+                      <span className={styles['adjustment-value']}>
+                        {currentFileData.adjustments.sepia}
+                      </span>
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <div className={styles['sound-div']}>
+                  <div className={styles['hide-sound']}>
+                    <input
+                      type="file"
+                      accept="audio/mp3, audio/wav, audio/aac, audio/ogg"
+                      ref={soundInputRef}
+                      onChange={handleStorySound}
+                    />
+
+                    <audio ref={storySoundRef}>
+                      <source />
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+
+                  {storySound && (
+                    <div
+                      className={`${styles['sound-box']} ${
+                        playStorySound ? styles['active-sound'] : ''
+                      }`}
+                      onClick={() => setPlayStorySound(!playStorySound)}
+                    >
+                      <span className={styles['sound-name']}>
+                        {storySound.name}
+                      </span>
+                      <span className={styles['sound-duration']}>
+                        {storySound.duration}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className={styles['sound-btn-div']}>
+                    <button
+                      className={styles['sound-btn']}
+                      onClick={() => soundInputRef.current.click()}
+                    >
+                      {storySound ? 'Change' : 'Select Sound'}
+                    </button>
+                    {storySound && (
+                      <button
+                        className={styles['remove-btn']}
+                        onClick={() => {
+                          URL.revokeObjectURL(storySound.src);
+                          storySoundRef.current.src = '';
+                          setPlayStorySound(false);
+                          setStorySound(null!);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className={styles['imgs-container']}>
-        {uploadType === 'content' && (
-          <div className={styles['ratio-box']}>
-            Aspect ratio:
-            <select
-              className={styles['ratio-select']}
-              onChange={(e) =>
-                setAspectRatio(
-                  e.target.value === 'initial'
-                    ? 'initial'
-                    : Number(e.target.value)
-                )
-              }
-              disabled={cropImage}
-              defaultValue={1 / 1}
+        <div className={styles['imgs-container']}>
+          {uploadType === 'content' && (
+            <div className={styles['ratio-box']}>
+              Aspect ratio:
+              <select
+                className={styles['ratio-select']}
+                onChange={(e) =>
+                  setAspectRatio(
+                    e.target.value === 'initial'
+                      ? 'initial'
+                      : Number(e.target.value)
+                  )
+                }
+                disabled={cropImage}
+                defaultValue={1 / 1}
+              >
+                <option value={'initial'}>Original</option>
+                <option value={1 / 1}>1:1</option>
+                <option value={4 / 5}>4:5</option>
+                <option value={16 / 9}>16:9</option>
+              </select>
+            </div>
+          )}
+
+          <div
+            className={`${styles['imgs-div']} ${
+              uploadType === 'story' ? styles['story-imgs-div'] : ''
+            }`}
+          >
+            <div
+              className={styles['imgs']}
+              ref={imgsRef}
+              onScroll={handleSmallImgsScroll}
             >
-              <option value={'initial'}>Original</option>
-              <option value={1 / 1}>1:1</option>
-              <option value={4 / 5}>4:5</option>
-              <option value={16 / 9}>16:9</option>
-            </select>
+              <span
+                className={`${styles['left-arrow-box2']}  ${
+                  !showArrow.left ? styles['hide-icon'] : ''
+                }`}
+                onClick={() => {
+                  if (imgsRef.current) imgsRef.current.scrollLeft -= 448;
+                }}
+              >
+                <MdKeyboardArrowLeft className={styles['left-arrow2']} />
+              </span>
+
+              {files.map((file, index) => (
+                <span
+                  key={`${Math.random()}-${index}`}
+                  className={styles['small-img-box']}
+                  onClick={() => setCurrentIndex(index)}
+                  ref={currentIndex === index ? smallImgRef : null}
+                >
+                  {file.type === 'image' ? (
+                    <img
+                      className={`${styles['small-img']} ${
+                        currentIndex === index
+                          ? styles['current-small-img']
+                          : ''
+                      }`}
+                      src={file.src as string}
+                    />
+                  ) : (
+                    <video
+                      className={`${styles['small-img']} ${
+                        currentIndex === index
+                          ? styles['current-small-img']
+                          : ''
+                      }`}
+                    >
+                      <source src={file.src as string} type="video/mp4" />
+                      Your browser does not support playing video.
+                    </video>
+                  )}
+                  <span
+                    className={`${styles['remove-file-box']} ${
+                      currentIndex === index ? styles['current-file-box'] : ''
+                    }`}
+                    title="Remove"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(index);
+                    }}
+                  >
+                    <IoClose className={styles['remove-file-icon']} />
+                  </span>
+                </span>
+              ))}
+
+              <span
+                className={`${styles['right-arrow-box2']}  ${
+                  !showArrow.right ? styles['hide-icon'] : ''
+                }`}
+                onClick={() => {
+                  if (imgsRef.current) imgsRef.current.scrollLeft += 448;
+                }}
+              >
+                <MdKeyboardArrowRight className={styles['right-arrow2']} />
+              </span>
+            </div>
+
+            <div className={styles['add-file-container']}>
+              <span className={styles['files-length']}>
+                {files.length === 1 ? '1 file' : `${files.length} files`}
+              </span>
+              <span
+                className={`${styles['add-file-box']} ${
+                  files.length >= sizeLimit ? styles['disable-add-files'] : ''
+                }`}
+                onClick={() => {
+                  setAddFiles(true);
+                  if (uploadType === 'story') storySoundRef.current.pause();
+                  fileRef.current.click();
+                }}
+              >
+                <FaPlus className={styles['add-file-icon']} />
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {uploadType === 'story' && (
+          <div className={styles['settings-container']}>
+            <div className={styles['settings-box']}>
+              <span className={styles['settings-box-head']}>
+                Accessibility:
+              </span>
+              <select className={styles['accessibility-select']}>
+                <option value={'everyone'}>Everyone</option>
+                <option value={'friends'}>Friends</option>
+                <option value={'only-you'}>Only you</option>
+              </select>
+            </div>
+
+            <div className={styles['settings-box2']}>
+              <input
+                type="checkbox"
+                id="comments2"
+                className={styles['settings-checkbox']}
+              />
+
+              <label
+                className={styles['settings-box-label']}
+                htmlFor="comments2"
+              >
+                Disable comments
+              </label>
+            </div>
           </div>
         )}
 
-        <div
-          className={`${styles['imgs-div']} ${
-            uploadType === 'story' ? styles['story-imgs-div'] : ''
-          }`}
-        >
-          <div
-            className={styles['imgs']}
-            ref={imgsRef}
-            onScroll={handleSmallImgsScroll}
+        <div className={styles['next-btn-div']}>
+          <button
+            className={`${styles['next-btn']} ${styles['cancel-btn']}`}
+            onClick={() => {
+              files.forEach((file) => URL.revokeObjectURL(file.src as string));
+              setStage((prevStage) => ({
+                ...prevStage,
+                [uploadType]: 'select',
+              }));
+            }}
           >
-            <span
-              className={`${styles['left-arrow-box2']}  ${
-                !showArrow.left ? styles['hide-icon'] : ''
-              }`}
-              onClick={() => {
-                if (imgsRef.current) imgsRef.current.scrollLeft -= 448;
-              }}
-            >
-              <MdKeyboardArrowLeft className={styles['left-arrow2']} />
-            </span>
+            Cancel
+          </button>
 
-            {files.map((file, index) => (
-              <span
-                key={`${Math.random()}-${index}`}
-                className={styles['small-img-box']}
-                onClick={() => setCurrentIndex(index)}
-                ref={currentIndex === index ? smallImgRef : null}
-              >
-                {file.type === 'image' ? (
-                  <img
-                    className={`${styles['small-img']} ${
-                      currentIndex === index ? styles['current-small-img'] : ''
-                    }`}
-                    src={file.src as string}
-                  />
-                ) : (
-                  <video
-                    className={`${styles['small-img']} ${
-                      currentIndex === index ? styles['current-small-img'] : ''
-                    }`}
-                  >
-                    <source src={file.src as string} type="video/mp4" />
-                    Your browser does not support playing video.
-                  </video>
-                )}
-                <span
-                  className={`${styles['remove-file-box']} ${
-                    currentIndex === index ? styles['current-file-box'] : ''
-                  }`}
-                  title="Remove"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile(index);
-                  }}
-                >
-                  <IoClose className={styles['remove-file-icon']} />
-                </span>
-              </span>
-            ))}
-
-            <span
-              className={`${styles['right-arrow-box2']}  ${
-                !showArrow.right ? styles['hide-icon'] : ''
-              }`}
-              onClick={() => {
-                if (imgsRef.current) imgsRef.current.scrollLeft += 448;
-              }}
-            >
-              <MdKeyboardArrowRight className={styles['right-arrow2']} />
-            </span>
-          </div>
-
-          <div className={styles['add-file-container']}>
-            <span className={styles['files-length']}>
-              {files.length === 1 ? '1 file' : `${files.length} files`}
-            </span>
-            <span
-              className={`${styles['add-file-box']} ${
-                files.length >= sizeLimit ? styles['disable-add-files'] : ''
-              }`}
-              onClick={() => {
-                setAddFiles(true);
-                if (uploadType === 'story') storySoundRef.current.pause();
-                fileRef.current.click();
-              }}
-            >
-              <FaPlus className={styles['add-file-icon']} />
-            </span>
-          </div>
+          <button
+            className={styles['next-btn']}
+            onClick={uploadType === 'content' ? nextStage : undefined}
+          >
+            {uploadType === 'content' ? 'Next' : 'Post'}
+          </button>
         </div>
       </div>
 
-      {uploadType === 'story' && (
-        <div className={styles['settings-container']}>
-          <div className={styles['settings-box']}>
-            <span className={styles['settings-box-head']}>Accessibility:</span>
-            <select className={styles['accessibility-select']}>
-              <option value={'everyone'}>Everyone</option>
-              <option value={'friends'}>Friends</option>
-              <option value={'only-you'}>Only you</option>
-            </select>
-          </div>
-
-          <div className={styles['settings-box2']}>
-            <input
-              type="checkbox"
-              id="comments2"
-              className={styles['settings-checkbox']}
-            />
-
-            <label className={styles['settings-box-label']} htmlFor="comments2">
-              Disable comments
-            </label>
-          </div>
-        </div>
+      {showMobileFilter && (
+        <MobileFilter setShowMobileFilter={setShowMobileFilter} />
       )}
-
-      <div className={styles['next-btn-div']}>
-        <button
-          className={`${styles['next-btn']} ${styles['cancel-btn']}`}
-          onClick={() => {
-            files.forEach((file) => URL.revokeObjectURL(file.src as string));
-            setStage((prevStage) => ({ ...prevStage, [uploadType]: 'select' }));
-          }}
-        >
-          Cancel
-        </button>
-
-        <button
-          className={styles['next-btn']}
-          onClick={uploadType === 'content' ? nextStage : undefined}
-        >
-          {uploadType === 'content' ? 'Next' : 'Post'}
-        </button>
-      </div>
-    </div>
+    </>
   );
 };
 

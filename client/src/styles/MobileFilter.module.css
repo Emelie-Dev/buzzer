@@ -1,0 +1,99 @@
+.section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: transparent;
+  width: 100vw;
+  height: 100vh;
+  z-index: 6;
+  grid-template-columns: 100%;
+  justify-content: center;
+  align-content: end;
+}
+
+.filter-container {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 1rem 1rem;
+  background: white;
+  border-radius: 10px 10px 0 0;
+  align-items: center;
+}
+
+.container-head {
+  font-family: appFontMedium;
+  font-size: 1.3rem;
+  margin-right: auto;
+}
+
+.close-btn-box {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.close-btn {
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  color: white;
+  font-family: appFontMedium;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.filters-div {
+  overflow: auto;
+  height: auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  column-gap: 0.2rem;
+  padding: 1rem 0.5rem 0.5rem;
+}
+
+.filter-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.disable-filter {
+  cursor: not-allowed;
+}
+
+.filter-img-span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+
+.filter-img {
+  width: 6rem;
+  height: 4rem;
+  object-fit: cover;
+  border: 1px solid transparent;
+}
+
+.filter-name {
+  color: gray;
+  font-family: appFontMedium;
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+.current-filter-span {
+  border: 2px solid var(--app-theme-color);
+}
+
+.current-filter-name {
+  color: var(--app-theme-color);
+  font-weight: 600;
+}
