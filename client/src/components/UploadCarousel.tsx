@@ -4,10 +4,11 @@ import { FaPlus } from 'react-icons/fa6';
 import { IoClose } from 'react-icons/io5';
 import { IoMdCrop } from 'react-icons/io';
 import { useEffect, useRef, useState } from 'react';
-import { IoCheckmarkSharp } from 'react-icons/io5';
+import { IoCheckmarkSharp, IoColorFilterOutline } from 'react-icons/io5';
 import Cropper from 'react-easy-crop';
 import { Content, StoryData } from '../pages/Create';
 import { getFilterValue, getDurationText } from '../Utilities';
+import { TbAdjustmentsFilled } from 'react-icons/tb';
 
 type StoryProps = {
   storyFiles: StoryData[];
@@ -178,6 +179,33 @@ const UploadCarousel = ({
     saturate: null,
     sepia: null,
   });
+  const carouselRef = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => {
+    const resizeHandler = () => {
+      if (window.matchMedia('(max-width: 510px)').matches) {
+        const size = window.innerWidth;
+
+        carouselRef.current.style.gridTemplateColumns = `${size - 4}px`;
+        carouselRef.current.style.gridTemplateRows = `${size - 4}px`;
+      } else if (window.matchMedia('(max-width: 900px)').matches) {
+        carouselRef.current.style.gridTemplateColumns = '500px';
+        carouselRef.current.style.gridTemplateRows = '500px';
+      } else {
+        carouselRef.current.style.gridTemplateColumns =
+          '500px calc(100% - 500px)';
+        carouselRef.current.style.gridTemplateRows = '500px';
+      }
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
+  }, []);
 
   useEffect(() => {
     if (files.length === 1) {
@@ -523,7 +551,7 @@ const UploadCarousel = ({
 
   return (
     <div className={styles.carousel}>
-      <div className={styles['carousel-container']}>
+      <div className={styles['carousel-container']} ref={carouselRef}>
         <div className={styles['carousel-box']}>
           {currentIndex !== 0 && (
             <span
@@ -564,6 +592,23 @@ const UploadCarousel = ({
                 </span>
               )}
             </div>
+
+            {!cropImage && (
+              <div className={styles['mobile-edit-box']}>
+                <span className={`${styles['mark-icon-box']} `} title="Filters">
+                  <IoColorFilterOutline className={styles['mark-icon']} />
+                </span>
+
+                <span
+                  className={`${styles['mark-icon-box']} `}
+                  title="Adjustments"
+                >
+                  <TbAdjustmentsFilled
+                    className={`${styles['mark-icon']} ${styles['adjust-icon']}`}
+                  />
+                </span>
+              </div>
+            )}
           </div>
 
           {files.length &&

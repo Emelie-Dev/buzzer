@@ -6,7 +6,7 @@
 }
 
 .edit-main {
-  margin-left: 84px !important;
+  margin-left: 81px !important;
   grid-template-columns: 72% 28%;
 }
 
@@ -288,6 +288,10 @@
 
   .guidelines-icon {
     display: inline;
+  }
+
+  .section {
+    border-right: none;
   }
 }
 
