@@ -10,6 +10,7 @@ import { Content, StoryData } from '../pages/Create';
 import { getFilterValue, getDurationText, filters } from '../Utilities';
 import { TbAdjustmentsFilled } from 'react-icons/tb';
 import MobileFilter from './MobileFilter';
+import MobileAdjustments from './MobileAdjustments';
 
 type StoryProps = {
   storyFiles: StoryData[];
@@ -104,6 +105,8 @@ const UploadCarousel = ({
   }>(null!);
   const [playStorySound, setPlayStorySound] = useState<boolean>(false);
   const [showMobileFilter, setShowMobileFilter] = useState<boolean>(false);
+  const [showMobileAdjustments, setShowMobileAdjustments] =
+    useState<boolean>(false);
 
   const dotRef = useRef<HTMLSpanElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -556,6 +559,7 @@ const UploadCarousel = ({
                   <span
                     className={`${styles['mark-icon-box']} `}
                     title="Adjustments"
+                    onClick={() => setShowMobileAdjustments(true)}
                   >
                     <TbAdjustmentsFilled
                       className={`${styles['mark-icon']} ${styles['adjust-icon']}`}
@@ -1169,7 +1173,21 @@ const UploadCarousel = ({
       </div>
 
       {showMobileFilter && (
-        <MobileFilter setShowMobileFilter={setShowMobileFilter} />
+        <MobileFilter
+          setShowMobileFilter={setShowMobileFilter}
+          currentFileData={currentFileData}
+          setCurrentFileData={setCurrentFileData}
+          cropImage={cropImage}
+        />
+      )}
+
+      {showMobileAdjustments && (
+        <MobileAdjustments
+          setShowMobileAdjustments={setShowMobileAdjustments}
+          currentFileData={currentFileData}
+          setCurrentFileData={setCurrentFileData}
+          cropImage={cropImage}
+        />
       )}
     </>
   );

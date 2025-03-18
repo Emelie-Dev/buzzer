@@ -6,6 +6,7 @@
   width: 100vw;
   height: 100vh;
   z-index: 6;
+  display: none;
   grid-template-columns: 100%;
   justify-content: center;
   align-content: end;
@@ -18,6 +19,18 @@
   background: white;
   border-radius: 10px 10px 0 0;
   align-items: center;
+  position: relative;
+}
+
+.filter-container::before {
+  display: block;
+  width: 100%;
+  content: '.';
+  position: absolute;
+  top: 0;
+  box-shadow: 1px 1px 10px -4px black;
+  transform: rotate(180deg);
+  z-index: -1;
 }
 
 .container-head {
@@ -31,7 +44,7 @@
   align-items: center;
   justify-content: flex-end;
   width: 100%;
-  margin-top: 1rem;
+  margin: 1rem 0 0.5rem;
 }
 
 .close-btn {
@@ -96,4 +109,12 @@
 .current-filter-name {
   color: var(--app-theme-color);
   font-weight: 600;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 900px) {
+  .section {
+    display: grid;
+  }
 }

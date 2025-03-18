@@ -5,9 +5,39 @@ import { useEffect, useRef } from 'react';
 
 type MobileFilterProps = {
   setShowMobileFilter: React.Dispatch<React.SetStateAction<boolean>>;
+  currentFileData: {
+    filter: string;
+    adjustments: {
+      brightness: number;
+      contrast: number;
+      grayscale: number;
+      'hue-rotate': number;
+      saturate: number;
+      sepia: number;
+    };
+  };
+  setCurrentFileData: React.Dispatch<
+    React.SetStateAction<{
+      filter: string;
+      adjustments: {
+        brightness: number;
+        contrast: number;
+        grayscale: number;
+        'hue-rotate': number;
+        saturate: number;
+        sepia: number;
+      };
+    }>
+  >;
+  cropImage: boolean;
 };
 
-const MobileFilter = ({ setShowMobileFilter }: MobileFilterProps) => {
+const MobileFilter = ({
+  setShowMobileFilter,
+  currentFileData,
+  setCurrentFileData,
+  cropImage,
+}: MobileFilterProps) => {
   const containerRef = useRef<HTMLDivElement>(null!);
 
   const target = document.getElementById('filter-portal') || document.body;
@@ -15,7 +45,7 @@ const MobileFilter = ({ setShowMobileFilter }: MobileFilterProps) => {
   useEffect(() => {
     containerRef.current.animate(
       {
-        height: ['0px', '219px'],
+        height: ['0px', '230px'],
       },
       {
         fill: 'both',
@@ -31,9 +61,27 @@ const MobileFilter = ({ setShowMobileFilter }: MobileFilterProps) => {
 
         <div className={styles['filters-div']}>
           {filters.map(({ name, filter }, index) => (
-            <span className={`${styles['filter-box']}`} key={index}>
-              <span className={`${styles['filter-img-span']} `}>
-                {' '}
+            <span
+              className={`${styles['filter-box']} ${
+                cropImage ? styles['disable-filter'] : ''
+              }`}
+              key={index}
+              onClick={() =>
+                !cropImage
+                  ? setCurrentFileData({
+                      ...currentFileData,
+                      filter: name,
+                    })
+                  : null
+              }
+            >
+              <span
+                className={`${styles['filter-img-span']} ${
+                  currentFileData.filter === name
+                    ? styles['current-filter-span']
+                    : ''
+                }`}
+              >
                 <img
                   className={styles['filter-img']}
                   src="../../assets/filter.avif"
@@ -41,7 +89,15 @@ const MobileFilter = ({ setShowMobileFilter }: MobileFilterProps) => {
                 />
               </span>
 
-              <span className={`${styles['filter-name']}`}>{name}</span>
+              <span
+                className={`${styles['filter-name']} ${
+                  currentFileData.filter === name
+                    ? styles['current-filter-name']
+                    : ''
+                }`}
+              >
+                {name}
+              </span>
             </span>
           ))}
         </div>
