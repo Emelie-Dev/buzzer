@@ -273,9 +273,6 @@
 
 /* Media Queries */
 
-@media screen and (max-width: 1300px) {
-}
-
 @media screen and (max-width: 1200px) {
   .main {
     grid-template-columns: 100%;

@@ -35,6 +35,29 @@ const UploadDetails = ({
   const imageRef = useRef<HTMLImageElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const collaboratorRef = useRef<HTMLInputElement>(null!);
+  const carouselRef = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => {
+    const resizeHandler = () => {
+      if (window.matchMedia('(max-width: 510px)').matches) {
+        const size = window.innerWidth;
+
+        carouselRef.current.style.width = `${size - 4}px`;
+        carouselRef.current.style.height = `${size - 4}px`;
+      } else {
+        carouselRef.current.style.width = '500px';
+        carouselRef.current.style.height = '500px';
+      }
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
+  }, []);
 
   useEffect(() => {
     (() => {
@@ -70,7 +93,7 @@ const UploadDetails = ({
 
   return (
     <div className={styles['carousel-details-section']}>
-      <div className={styles['carousel-details-container']}>
+      <div className={styles['carousel-details-container']} ref={carouselRef}>
         <span
           className={styles['back-arrow-box']}
           onClick={() =>
