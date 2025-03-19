@@ -13,6 +13,7 @@ import { IoClose } from 'react-icons/io5';
 import { MdChangeCircle } from 'react-icons/md';
 import { getDurationText } from '../Utilities';
 import { soundData, videoData, AudioFile } from '../pages/Create';
+import { FaCheck } from 'react-icons/fa6';
 
 type UploadReelProps = {
   videoProps: videoData;
@@ -102,7 +103,14 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
       slider.style.background = `linear-gradient(to right,  transparent ${secondValue}%,  rgba(0,0,0,0.6) ${secondValue}%, rgba(0,0,0,0.6) 100%)`;
 
       startRef.current.style.left = `${firstValue - 2}%`;
-      endRef.current.style.left = `${secondValue - 3}%`;
+
+      const endNumber = window.matchMedia('(max-width: 400px)').matches
+        ? 12
+        : window.matchMedia('(max-width: 500px)').matches
+        ? 10
+        : 3;
+
+      endRef.current.style.left = `${secondValue - endNumber}%`;
 
       const durationValues = values.reduce(
         (accumulator, value, index) => {
@@ -428,13 +436,34 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
       <div className={styles['edit-container']}>
         <div className={styles['container-head']}>
           Edit Video
-          <span
-            className={styles['close-edit-box']}
-            onClick={() =>
-              setStage((prevStage) => ({ ...prevStage, reel: 'select' }))
-            }
-          >
-            <IoClose className={styles['close-edit-icon']} />
+          <span className={styles['head-menu']}>
+            <span
+              className={styles['close-edit-box']}
+              onClick={() =>
+                setStage((prevStage) => ({ ...prevStage, reel: 'select' }))
+              }
+            >
+              <IoClose className={styles['close-edit-icon']} />
+            </span>
+
+            <span
+              className={`${styles['close-edit-box']} ${styles['next-stage-btn']}`}
+              onClick={() => {
+                setReelData({
+                  video: src,
+                  sound: sounds.find((sound) => sound.id === currentSound)?.src,
+                  duration: durationValues,
+                  coverPhoto: coverIndex
+                    ? coverIndex === 'local'
+                      ? localCoverUrl
+                      : coverUrls[coverIndex]
+                    : '',
+                });
+                setStage((prevStage) => ({ ...prevStage, reel: 'finish' }));
+              }}
+            >
+              <FaCheck className={styles['close-edit-icon2']} />
+            </span>
           </span>
         </div>
 
