@@ -16,6 +16,7 @@ import MobileFilter from './MobileFilter';
 import MobileAdjustments from './MobileAdjustments';
 import { PiMusicNotesBold } from 'react-icons/pi';
 import MobileSound from './MobileSound';
+import { FaPause, FaPlay } from 'react-icons/fa6';
 
 type StoryProps = {
   storyFiles: StoryData[];
@@ -589,6 +590,20 @@ const UploadCarousel = ({
                     </span>
                   )}
                 </div>
+              )}
+
+              {!cropImage && uploadType === 'story' && storySound && (
+                <span
+                  className={`${styles['mark-icon-box']} ${styles['mark-icon-box2']} `}
+                  title={playStorySound ? 'Pause sound' : 'Play sound'}
+                  onClick={() => setPlayStorySound(!playStorySound)}
+                >
+                  {playStorySound ? (
+                    <FaPause className={styles['mark-icon2']} />
+                  ) : (
+                    <FaPlay className={styles['mark-icon2']} />
+                  )}
+                </span>
               )}
             </div>
 

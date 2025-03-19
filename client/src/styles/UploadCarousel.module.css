@@ -459,9 +459,21 @@
   color: black;
 }
 
+.mark-icon-box2 {
+  position: absolute;
+  left: 0.5rem;
+  display: none;
+}
+
 .mark-icon {
   width: 1.2rem;
   height: 1.2rem;
+}
+
+.mark-icon2 {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: var(--app-theme-color);
 }
 
 .mark-icon-box:hover {
@@ -599,6 +611,7 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .sound-details:hover,
@@ -767,6 +780,10 @@
   }
 
   .mobile-edit-box {
+    display: flex;
+  }
+
+  .mark-icon-box2 {
     display: flex;
   }
 }
