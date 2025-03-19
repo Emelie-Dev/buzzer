@@ -79,6 +79,9 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
   const endRef = useRef<HTMLSpanElement>(null!);
   const progressRef = useRef<HTMLSpanElement>(null!);
 
+  const coverContainerRef = useRef<HTMLDivElement>(null!);
+  const soundContainerRef = useRef<HTMLDivElement>(null!);
+
   useEffect(() => {
     if (loaded) {
       const tracks = document.querySelectorAll(`.${styles.track}`);
@@ -134,6 +137,11 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
       videoRef.current?.play();
     }
   }, [pauseVideo]);
+
+  useEffect(() => {
+    if (category === 'cover') coverContainerRef.current.scrollTop = 0;
+    else soundContainerRef.current.scrollTop = 0;
+  }, [category]);
 
   // Add animation for sound processing
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -486,7 +494,10 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
           </ul>
 
           {category === 'cover' ? (
-            <div className={styles['cover-photo-container']}>
+            <div
+              className={styles['cover-photo-container']}
+              ref={coverContainerRef}
+            >
               <div className={styles['cover-photo-head']}>
                 Select Cover photo
               </div>
@@ -555,7 +566,10 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
               </div>
             </div>
           ) : (
-            <div className={styles['add-sound-container']}>
+            <div
+              className={styles['add-sound-container']}
+              ref={soundContainerRef}
+            >
               <div className={styles['sound-category-container']}>
                 <ul className={styles['sound-category-list']}>
                   <li
