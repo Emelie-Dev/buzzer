@@ -7,7 +7,13 @@ import { BiSolidColor } from 'react-icons/bi';
 import { RiContrastDrop2Line } from 'react-icons/ri';
 
 type MobileAdjustmentsProps = {
-  setShowMobileAdjustments: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowMobile: React.Dispatch<
+    React.SetStateAction<{
+      filter: boolean;
+      adjustments: boolean;
+      sound: boolean;
+    }>
+  >;
   currentFileData: {
     filter: string;
     adjustments: {
@@ -36,7 +42,7 @@ type MobileAdjustmentsProps = {
 };
 
 const MobileAdjustments = ({
-  setShowMobileAdjustments,
+  setShowMobile,
   cropImage,
   currentFileData,
   setCurrentFileData,
@@ -248,7 +254,9 @@ const MobileAdjustments = ({
           </span>
           <button
             className={styles['close-btn']}
-            onClick={() => setShowMobileAdjustments(false)}
+            onClick={() =>
+              setShowMobile((prev) => ({ ...prev, adjustments: false }))
+            }
           >
             Done
           </button>

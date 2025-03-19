@@ -4,7 +4,13 @@ import { filters } from '../Utilities';
 import { useEffect, useRef } from 'react';
 
 type MobileFilterProps = {
-  setShowMobileFilter: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowMobile: React.Dispatch<
+    React.SetStateAction<{
+      filter: boolean;
+      adjustments: boolean;
+      sound: boolean;
+    }>
+  >;
   currentFileData: {
     filter: string;
     adjustments: {
@@ -33,7 +39,7 @@ type MobileFilterProps = {
 };
 
 const MobileFilter = ({
-  setShowMobileFilter,
+  setShowMobile,
   currentFileData,
   setCurrentFileData,
   cropImage,
@@ -105,7 +111,9 @@ const MobileFilter = ({
         <div className={styles['close-btn-box']}>
           <button
             className={styles['close-btn']}
-            onClick={() => setShowMobileFilter(false)}
+            onClick={() =>
+              setShowMobile((prev) => ({ ...prev, filter: false }))
+            }
           >
             Done
           </button>

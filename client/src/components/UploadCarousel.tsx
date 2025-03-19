@@ -1,16 +1,21 @@
 import styles from '../styles/UploadCarousel.module.css';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { FaPlus } from 'react-icons/fa6';
-import { IoClose } from 'react-icons/io5';
 import { IoMdCrop } from 'react-icons/io';
 import { useEffect, useRef, useState } from 'react';
-import { IoCheckmarkSharp, IoColorFilterOutline } from 'react-icons/io5';
+import {
+  IoCheckmarkSharp,
+  IoColorFilterOutline,
+  IoClose,
+} from 'react-icons/io5';
 import Cropper from 'react-easy-crop';
 import { Content, StoryData } from '../pages/Create';
 import { getFilterValue, getDurationText, filters } from '../Utilities';
 import { TbAdjustmentsFilled } from 'react-icons/tb';
 import MobileFilter from './MobileFilter';
 import MobileAdjustments from './MobileAdjustments';
+import { PiMusicNotesBold } from 'react-icons/pi';
+import MobileSound from './MobileSound';
 
 type StoryProps = {
   storyFiles: StoryData[];
@@ -104,9 +109,11 @@ const UploadCarousel = ({
     src: string;
   }>(null!);
   const [playStorySound, setPlayStorySound] = useState<boolean>(false);
-  const [showMobileFilter, setShowMobileFilter] = useState<boolean>(false);
-  const [showMobileAdjustments, setShowMobileAdjustments] =
-    useState<boolean>(false);
+  const [showMobile, setShowMobile] = useState<{
+    filter: boolean;
+    adjustments: boolean;
+    sound: boolean;
+  }>({ sound: false, adjustments: false, filter: false });
 
   const dotRef = useRef<HTMLSpanElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -551,20 +558,36 @@ const UploadCarousel = ({
                   <span
                     className={`${styles['mark-icon-box']} `}
                     title="Filters"
-                    onClick={() => setShowMobileFilter(true)}
+                    onClick={() =>
+                      setShowMobile({ ...showMobile, filter: true })
+                    }
                   >
                     <IoColorFilterOutline className={styles['mark-icon']} />
                   </span>
 
-                  <span
-                    className={`${styles['mark-icon-box']} `}
-                    title="Adjustments"
-                    onClick={() => setShowMobileAdjustments(true)}
-                  >
-                    <TbAdjustmentsFilled
-                      className={`${styles['mark-icon']} ${styles['adjust-icon']}`}
-                    />
-                  </span>
+                  {uploadType === 'content' ? (
+                    <span
+                      className={`${styles['mark-icon-box']} `}
+                      title="Adjustments"
+                      onClick={() =>
+                        setShowMobile({ ...showMobile, adjustments: true })
+                      }
+                    >
+                      <TbAdjustmentsFilled
+                        className={`${styles['mark-icon']} ${styles['adjust-icon']}`}
+                      />
+                    </span>
+                  ) : (
+                    <span
+                      className={`${styles['mark-icon-box']} `}
+                      title="Sound"
+                      onClick={() =>
+                        setShowMobile({ ...showMobile, sound: true })
+                      }
+                    >
+                      <PiMusicNotesBold className={styles['mark-icon']} />
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -961,13 +984,17 @@ const UploadCarousel = ({
                       className={`${styles['sound-box']} ${
                         playStorySound ? styles['active-sound'] : ''
                       }`}
-                      onClick={() => setPlayStorySound(!playStorySound)}
                     >
-                      <span className={styles['sound-name']}>
-                        {storySound.name}
-                      </span>
-                      <span className={styles['sound-duration']}>
-                        {storySound.duration}
+                      <span
+                        className={styles['sound-details']}
+                        onClick={() => setPlayStorySound(!playStorySound)}
+                      >
+                        <span className={styles['sound-name']}>
+                          {storySound.name}
+                        </span>
+                        <span className={styles['sound-duration']}>
+                          {storySound.duration}
+                        </span>
                       </span>
                     </div>
                   )}
@@ -1143,7 +1170,7 @@ const UploadCarousel = ({
                 className={styles['settings-box-label']}
                 htmlFor="comments2"
               >
-                Disable comments
+                Disable replies
               </label>
             </div>
           </div>
@@ -1172,21 +1199,33 @@ const UploadCarousel = ({
         </div>
       </div>
 
-      {showMobileFilter && (
+      {showMobile.filter && (
         <MobileFilter
-          setShowMobileFilter={setShowMobileFilter}
+          setShowMobile={setShowMobile}
           currentFileData={currentFileData}
           setCurrentFileData={setCurrentFileData}
           cropImage={cropImage}
         />
       )}
 
-      {showMobileAdjustments && (
+      {showMobile.adjustments && (
         <MobileAdjustments
-          setShowMobileAdjustments={setShowMobileAdjustments}
+          setShowMobile={setShowMobile}
           currentFileData={currentFileData}
           setCurrentFileData={setCurrentFileData}
           cropImage={cropImage}
+        />
+      )}
+
+      {showMobile.sound && (
+        <MobileSound
+          setShowMobile={setShowMobile}
+          storySound={storySound}
+          playStorySound={playStorySound}
+          soundInputRef={soundInputRef}
+          storySoundRef={storySoundRef}
+          setPlayStorySound={setPlayStorySound}
+          setStorySound={setStorySound}
         />
       )}
     </>
