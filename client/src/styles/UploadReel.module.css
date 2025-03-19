@@ -619,11 +619,24 @@
 
   .video-container {
     grid-template-columns: 100%;
+    position: relative;
   }
 
   .cover-photo-container,
-  .add-sound-container,
+  .add-sound-container {
+    display: none;
+  }
+
   .category-list {
+    position: absolute;
+    z-index: 2;
+    border-right: none;
+    padding: 0;
+    left: 5%;
+    padding-top: 1rem;
+  }
+
+  .category-name {
     display: none;
   }
 }

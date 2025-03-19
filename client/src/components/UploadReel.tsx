@@ -500,7 +500,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
               onClick={() => setCategory('cover')}
             >
               <MdOutlineMonochromePhotos className={styles['edit-icon']} />
-              Cover Photo
+              <span className={styles['category-name']}> Cover Photo</span>
             </li>
             <li
               className={`${styles['category-item']} ${
@@ -509,7 +509,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
               onClick={() => setCategory('sound')}
             >
               <IoMusicalNotes className={styles['edit-icon']} />
-              Sounds
+              <span className={styles['category-name']}> Sounds </span>
             </li>
 
             <MdChangeCircle
