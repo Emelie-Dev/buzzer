@@ -161,6 +161,8 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
     } else soundContainerRef.current.scrollTop = 0;
   }, [category]);
 
+  useEffect(() => {}, [showMobile]);
+
   // Add animation for sound processing
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -1001,6 +1003,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
           fileRef={fileRef}
           savedSounds={savedSounds}
           setPlayingIndex={setPlayingIndex}
+          audioRef={audioRef}
         />
       )}
     </>

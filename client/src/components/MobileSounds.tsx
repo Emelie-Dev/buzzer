@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import styles from '../styles/MobileSounds.module.css';
 import ReactDOM from 'react-dom';
 import { AudioFile } from '../pages/Create';
@@ -26,6 +26,7 @@ type MobileSoundsProps = {
   setPauseVideo: React.Dispatch<React.SetStateAction<boolean>>;
   savedSounds: AudioFile[];
   setPlayingIndex: React.Dispatch<React.SetStateAction<string>>;
+  audioRef: React.MutableRefObject<HTMLAudioElement>;
 };
 
 const MobileSounds = ({
@@ -43,22 +44,23 @@ const MobileSounds = ({
   fileRef,
   savedSounds,
   setPlayingIndex,
+  audioRef,
 }: MobileSoundsProps) => {
   const containerRef = useRef<HTMLDivElement>(null!);
 
   const target = document.getElementById('sounds-portal') || document.body;
 
-  // useEffect(() => {
-  //   containerRef.current.animate(
-  //     {
-  //       height: ['0px', '230px'],
-  //     },
-  //     {
-  //       fill: 'both',
-  //       duration: 150,
-  //     }
-  //   );
-  // }, []);
+  useEffect(() => {
+    containerRef.current.animate(
+      {
+        height: ['0', '65vh'],
+      },
+      {
+        fill: 'both',
+        duration: 150,
+      }
+    );
+  }, []);
 
   return ReactDOM.createPortal(
     <section className={styles.section}>
@@ -213,6 +215,7 @@ const MobileSounds = ({
           <button
             className={styles['close-btn']}
             onClick={() => {
+              audioRef.current.src = '';
               setPlayingIndex(null!);
               setShowMobile((prev) => ({ ...prev, sounds: false }));
             }}
