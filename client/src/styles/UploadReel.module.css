@@ -34,6 +34,7 @@
   display: grid;
   grid-template-columns: 10% 45% 45%;
   justify-content: center;
+  position: relative;
 }
 
 .video-box {
@@ -604,6 +605,83 @@
   display: none;
 }
 
+.mobile-menu-div {
+  position: absolute;
+  right: 0.8rem;
+  top: 0.6rem;
+  display: none;
+  z-index: 2;
+}
+
+.menu-icon-box {
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  box-shadow: 1px 1px 8px -4px black;
+  padding: 0.3rem;
+  cursor: pointer;
+}
+
+.menu-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.menu-icon-box:hover {
+  color: var(--app-theme-color);
+}
+
+.menu-list {
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  list-style-type: none;
+  top: 110%;
+  right: 0%;
+  background: white;
+  box-shadow: 1px 1px 8px -4px black;
+  border-radius: 5px;
+  display: none;
+}
+
+.menu-item {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  font-family: appFontMedium;
+  font-size: 0.95rem;
+  padding: 0.75rem 0.6rem;
+  padding-right: 1rem;
+}
+
+.menu-item-icon {
+  margin-right: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.menu-item:first-child {
+  border-radius: 5px 5px 0 0;
+}
+
+.menu-item:last-child {
+  border-radius: 0 0 5px 5px;
+}
+
+.menu-item:hover {
+  background: var(--app-theme-color);
+  color: white;
+}
+
+.mobile-menu-div:hover .menu-list {
+  display: block;
+}
+
+.mobile-menu-div:hover .menu-icon-box {
+  color: var(--app-theme-color);
+}
 /* Media Queries */
 
 @media screen and (max-width: 1000px) {
@@ -623,21 +701,13 @@
   }
 
   .cover-photo-container,
-  .add-sound-container {
-    display: none;
-  }
-
+  .add-sound-container,
   .category-list {
-    position: absolute;
-    z-index: 2;
-    border-right: none;
-    padding: 0;
-    left: 5%;
-    padding-top: 1rem;
+    display: none;
   }
 
-  .category-name {
-    display: none;
+  .mobile-menu-div {
+    display: block;
   }
 }
 
@@ -663,5 +733,10 @@
   .next-stage-btn {
     display: flex;
     padding: 0.3rem;
+  }
+
+  .mobile-menu-div {
+    right: 0.5rem;
+    top: 0.5rem;
   }
 }

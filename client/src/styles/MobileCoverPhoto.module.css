@@ -1,0 +1,143 @@
+.section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: transparent;
+  width: 100vw;
+  height: 100vh;
+  z-index: 6;
+  display: none;
+  grid-template-columns: 100%;
+  justify-content: center;
+  align-content: end;
+}
+
+.filter-container {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 1rem 1rem;
+  background: white;
+  border-radius: 10px 10px 0 0;
+  align-items: center;
+  position: relative;
+}
+
+.filter-container::before {
+  display: block;
+  width: 100%;
+  content: '.';
+  position: absolute;
+  top: 0;
+  box-shadow: 2px 2px 10px -4px black;
+  transform: rotate(180deg);
+  z-index: -1;
+}
+
+.container-head {
+  font-family: appFontMedium;
+  font-size: 1.3rem;
+  margin-right: auto;
+}
+
+.close-btn-box {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 1rem 0 0.5rem;
+}
+
+.close-btn {
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  color: white;
+  font-family: appFontMedium;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.cover-photo-container {
+  width: 100%;
+}
+
+.cover-photo-div {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem 0 0.5rem;
+  width: 100%;
+  overflow: auto;
+  scroll-behavior: smooth;
+}
+
+.cover-photo-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  margin: 0 0.5rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.current-cover {
+  border: 2px solid var(--app-theme-color);
+}
+
+.remove-cover-box {
+  position: absolute;
+  right: -10%;
+  top: -20%;
+  background: var(--app-theme-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+}
+
+.remove-cover-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: white;
+}
+
+.cover-photo-img {
+  width: 5rem;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.cover-photo-btn-div {
+  display: flex;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.cover-photo-btn {
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  cursor: pointer;
+  color: white;
+  font-family: appFont;
+  padding: 0.7rem;
+  border-radius: 5px;
+  transition: opacity 0.2s;
+}
+
+.cover-photo-btn:hover {
+  opacity: 0.9;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 900px) {
+  .section {
+    display: grid;
+  }
+}

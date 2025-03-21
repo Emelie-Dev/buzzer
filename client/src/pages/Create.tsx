@@ -182,6 +182,12 @@ const Create = () => {
     if (contentRef.current) contentRef.current.scrollTop = 0;
 
     if (stage.reel === 'select') {
+      if (files.reel) URL.revokeObjectURL(files.reel as string);
+      if (localCoverUrl) URL.revokeObjectURL(localCoverUrl as string);
+
+      if (sounds.length > 0)
+        sounds.forEach((file) => URL.revokeObjectURL(file.src as string));
+
       setSounds([]);
       setRawSounds(null!);
       setSavedSounds([]);

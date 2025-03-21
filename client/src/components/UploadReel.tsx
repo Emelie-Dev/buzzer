@@ -14,6 +14,10 @@ import { MdChangeCircle } from 'react-icons/md';
 import { getDurationText } from '../Utilities';
 import { soundData, videoData, AudioFile } from '../pages/Create';
 import { FaCheck } from 'react-icons/fa6';
+import { HiMenuAlt3 } from 'react-icons/hi';
+import { GrPowerCycle } from 'react-icons/gr';
+import MobileCoverPhoto from './MobileCoverPhoto';
+import MobileSounds from './MobileSounds';
 
 type UploadReelProps = {
   videoProps: videoData;
@@ -43,6 +47,10 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
   const [showCover, setShowCover] = useState<boolean>(true);
   const [durationValues, setDurationValues] = useState<number[]>([0, 0]);
   const [loaded, setLoaded] = useState<boolean>(false);
+  const [showMobile, setShowMobile] = useState<{
+    coverPhoto: boolean;
+    sounds: boolean;
+  }>({ coverPhoto: false, sounds: false });
 
   const {
     src,
@@ -82,6 +90,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
 
   const coverContainerRef = useRef<HTMLDivElement>(null!);
   const soundContainerRef = useRef<HTMLDivElement>(null!);
+  const coverPhotoBoxRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     if (loaded) {
@@ -147,8 +156,9 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
   }, [pauseVideo]);
 
   useEffect(() => {
-    if (category === 'cover') coverContainerRef.current.scrollTop = 0;
-    else soundContainerRef.current.scrollTop = 0;
+    if (category === 'cover') {
+      if (coverContainerRef.current) coverContainerRef.current.scrollTop = 0;
+    } else soundContainerRef.current.scrollTop = 0;
   }, [category]);
 
   // Add animation for sound processing
@@ -186,13 +196,13 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
         reject('Size error');
       } else {
         const fileURL = URL.createObjectURL(file);
-        const video = document.createElement('video');
+        const audio = document.createElement('audio');
 
-        video.src = fileURL;
-        video.preload = 'metadata';
+        audio.src = fileURL;
+        audio.preload = 'metadata';
 
-        video.onloadedmetadata = () => {
-          const duration = Math.round(video.duration);
+        audio.onloadedmetadata = () => {
+          const duration = Math.round(audio.duration);
           const durationText: string = getDurationText(duration);
 
           if (duration > 3600) reject('Duration error');
@@ -205,7 +215,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
           });
         };
 
-        video.onerror = () =>
+        audio.onerror = () =>
           resolve({
             name: file.name,
             duration: '',
@@ -352,6 +362,8 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
         setPauseVideo(true);
         setCoverIndex('local');
         setShowCover(true);
+
+        if (coverPhotoBoxRef) coverPhotoBoxRef.current.scrollLeft = 0;
       }
     }
   };
@@ -432,465 +444,23 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles['edit-container']}>
-        <div className={styles['container-head']}>
-          Edit Video
-          <span className={styles['head-menu']}>
-            <span
-              className={styles['close-edit-box']}
-              onClick={() =>
-                setStage((prevStage) => ({ ...prevStage, reel: 'select' }))
-              }
-            >
-              <IoClose className={styles['close-edit-icon']} />
-            </span>
-
-            <span
-              className={`${styles['close-edit-box']} ${styles['next-stage-btn']}`}
-              onClick={() => {
-                setReelData({
-                  video: src,
-                  sound: sounds.find((sound) => sound.id === currentSound)?.src,
-                  duration: durationValues,
-                  coverPhoto: coverIndex
-                    ? coverIndex === 'local'
-                      ? localCoverUrl
-                      : coverUrls[coverIndex]
-                    : '',
-                });
-                setStage((prevStage) => ({ ...prevStage, reel: 'finish' }));
-              }}
-            >
-              <FaCheck className={styles['close-edit-icon2']} />
-            </span>
-          </span>
-        </div>
-
-        <div className={styles['hidden-div']}>
-          <input
-            type="file"
-            ref={fileRef}
-            accept="audio/mp3, audio/wav, audio/aac, audio/ogg"
-            multiple={true}
-            onChange={handleFileUpload}
-          />
-
-          <input
-            type="file"
-            ref={coverRef}
-            accept="image/jpeg, image/png, image/webp, image/avif"
-            onChange={handleCoverPhoto}
-          />
-
-          <audio ref={audioRef}>
-            <source />
-            Your browser does not support the audio element.
-          </audio>
-
-          <canvas ref={canvasRef} />
-        </div>
-
-        <div className={styles['video-container']}>
-          <ul className={styles['category-list']}>
-            <li
-              className={`${styles['category-item']} ${
-                category === 'cover' ? styles['current-category'] : ''
-              }`}
-              onClick={() => setCategory('cover')}
-            >
-              <MdOutlineMonochromePhotos className={styles['edit-icon']} />
-              <span className={styles['category-name']}> Cover Photo</span>
-            </li>
-            <li
-              className={`${styles['category-item']} ${
-                category === 'sound' ? styles['current-category'] : ''
-              }`}
-              onClick={() => setCategory('sound')}
-            >
-              <IoMusicalNotes className={styles['edit-icon']} />
-              <span className={styles['category-name']}> Sounds </span>
-            </li>
-
-            <MdChangeCircle
-              className={styles['swap-icon']}
-              title="Change Video"
-              onClick={() => {
-                setStage((prevStage) => ({ ...prevStage, reel: 'select' }));
-                inputRef.current.click();
-              }}
-            />
-          </ul>
-
-          {category === 'cover' ? (
-            <div
-              className={styles['cover-photo-container']}
-              ref={coverContainerRef}
-            >
-              <div className={styles['cover-photo-head']}>
-                Select Cover photo
-              </div>
-
-              <div className={styles['cover-photo-div']}>
-                {coverUrls.length > 0 &&
-                  coverUrls.map((src, index) => (
-                    <span
-                      key={index}
-                      className={`${styles['cover-photo-box']} ${
-                        index === coverIndex ? styles['current-cover'] : ''
-                      }`}
-                      onClick={playVideo(index)}
-                    >
-                      {index === coverIndex && (
-                        <span
-                          className={styles['remove-cover-box']}
-                          onClick={() => setCoverIndex(null)}
-                        >
-                          <IoClose className={styles['remove-cover-icon']} />
-                        </span>
-                      )}
-                      <img src={src} className={styles['cover-photo-img']} />
-                    </span>
-                  ))}
-              </div>
-
-              {localCoverUrl && (
-                <div className={styles['local-photo-div']}>
-                  <span className={styles['local-photo-head']}>
-                    Local photo
-                  </span>
-
-                  <span
-                    className={`${styles['cover-photo-box']} ${
-                      coverIndex === 'local' ? styles['current-cover'] : ''
-                    }`}
-                    onClick={playVideo(null, true)}
-                  >
-                    {coverIndex === 'local' && (
-                      <span
-                        className={styles['remove-cover-box']}
-                        onClick={() => setCoverIndex(null)}
-                      >
-                        <IoClose className={styles['remove-cover-icon']} />
-                      </span>
-                    )}
-                    <img
-                      src={localCoverUrl}
-                      className={styles['cover-photo-img']}
-                    />
-                  </span>
-                </div>
-              )}
-
-              <div className={styles['cover-photo-btn-div']}>
-                <button
-                  className={styles['cover-photo-btn']}
-                  onClick={() => {
-                    coverRef.current.click();
-                    setPauseVideo(true);
-                  }}
-                >
-                  Select from computer
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div
-              className={styles['add-sound-container']}
-              ref={soundContainerRef}
-            >
-              <div className={styles['sound-category-container']}>
-                <ul className={styles['sound-category-list']}>
-                  <li
-                    className={`${styles['sound-category-item']} ${
-                      soundCategory === 'local'
-                        ? styles['current-sound-category']
-                        : ''
-                    }`}
-                    onClick={() => setSoundCategory('local')}
-                  >
-                    Local
-                  </li>
-                  <li
-                    className={`${styles['sound-category-item']} ${
-                      soundCategory === 'saved'
-                        ? styles['current-sound-category']
-                        : ''
-                    }`}
-                    onClick={() => setSoundCategory('saved')}
-                  >
-                    Saved
-                  </li>
-                </ul>
-
-                <div className={styles['sound-category-div']}>
-                  {soundCategory === 'local' &&
-                    sounds.length > 0 &&
-                    sounds.map((file, index) => (
-                      <article
-                        key={`${Math.random()}-${index}`}
-                        className={styles['sound-box']}
-                      >
-                        <span
-                          className={`${styles['sound-details']} ${
-                            playingIndex === file.id
-                              ? styles['playing-sound']
-                              : ''
-                          }`}
-                          onClick={handlePlayingSound(file.id)}
-                        >
-                          <span className={styles['sound-name']}>
-                            {file.name}
-                          </span>
-                          <span className={styles['sound-duration']}>
-                            {file.duration}
-                          </span>
-                        </span>
-
-                        <span className={styles['sound-btn-box']}>
-                          <button
-                            className={styles['sound-use-button']}
-                            onClick={handleCurrentSound(file.id)}
-                          >
-                            {file.current ? 'Remove' : 'Use'}
-                          </button>
-
-                          {file.saved ? (
-                            <IoBookmark
-                              className={styles['sound-save-icon']}
-                              onClick={handleSavedSounds(file.id)}
-                            />
-                          ) : (
-                            <IoBookmarkOutline
-                              className={styles['sound-save-icon']}
-                              onClick={handleSavedSounds(file.id)}
-                            />
-                          )}
-                        </span>
-
-                        <MdDelete
-                          className={styles['sound-icon']}
-                          onClick={deleteSound(file.id)}
-                          title="Delete Sound"
-                        />
-                      </article>
-                    ))}
-
-                  {soundCategory === 'saved' &&
-                    savedSounds.length > 0 &&
-                    savedSounds.map((file, index) => (
-                      <article
-                        key={`${Math.random()}-${index}`}
-                        className={styles['sound-box']}
-                      >
-                        <span
-                          className={`${styles['sound-details']} ${
-                            playingIndex === file.id
-                              ? styles['playing-sound']
-                              : ''
-                          }`}
-                          onClick={handlePlayingSound(file.id)}
-                        >
-                          <span className={styles['sound-name']}>
-                            {file.name}
-                          </span>
-                          <span className={styles['sound-duration']}>
-                            {file.duration}
-                          </span>
-                        </span>
-
-                        <span className={styles['sound-btn-box']}>
-                          <button className={styles['sound-use-button']}>
-                            Use
-                          </button>
-                          <IoBookmark
-                            className={styles['sound-save-icon']}
-                            onClick={handleSavedSounds(file.id)}
-                          />
-                        </span>
-                      </article>
-                    ))}
-
-                  {soundCategory === 'local' && sounds.length > 0 && (
-                    <div className={styles['plus-icon-div']}>
-                      <span
-                        className={styles['plus-icon-box']}
-                        title="Add sound"
-                        onClick={() => {
-                          setAddSounds(true);
-                          fileRef.current.click();
-                          setPauseVideo(true);
-                        }}
-                      >
-                        <FaPlus className={styles['plus-icon']} />
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {soundCategory === 'local' && sounds.length === 0 && (
-                <div className={styles['add-sound-btn-div']}>
-                  <span className={styles['add-sound-txt']}>
-                    You can select multiple songs and pick one to use
-                  </span>
-
-                  <button
-                    className={styles['add-sound-btn']}
-                    onClick={() => {
-                      fileRef.current.click();
-                      setPauseVideo(true);
-                    }}
-                  >
-                    Select from computer
-                  </button>
-                </div>
-              )}
-
-              {soundCategory === 'saved' && savedSounds.length === 0 && (
-                <span className={styles['add-sound-txt2']}>
-                  You have no saved songs
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className={styles['video-box']}>
-            <div className={styles['video-div']}>
-              <video
-                className={`${styles.video}  ${
-                  hideVideo ? styles['hide-item'] : ''
-                } `}
-                ref={videoRef}
-                onLoadedMetadata={handleCapture}
-                onEnded={() => {
-                  setPauseVideo(true);
-                  setShowCover(true);
-                  setPlayingIndex('');
-                }}
-                onTimeUpdate={(e) => {
-                  if (e.currentTarget.currentTime >= durationValues[1]) {
-                    setPauseVideo(true);
-                    setShowCover(true);
-                    setPlayingIndex('');
-                  }
-                }}
-                onPlay={handlePlayVideo}
-              >
-                <source src={src as string} />
-                Your browser does not support playing video.
-              </video>
-
-              <div className={styles['video-details']}>
-                {pauseVideo ? (
-                  <FaPlay
-                    className={styles['video-play-icon']}
-                    onClick={() => {
-                      if (showCover && videoRef.current)
-                        videoRef.current.currentTime = durationValues[0];
-                      setPauseVideo(false);
-                      setShowCover(false);
-                    }}
-                  />
-                ) : (
-                  <FaPause
-                    className={styles['video-play-icon']}
-                    onClick={() => {
-                      setPauseVideo(true);
-                      setPlayingIndex('');
-                    }}
-                  />
-                )}
-                <span className={styles['video-duration']}>{newDuration}</span>
-              </div>
-
-              {showCover && coverIndex !== null && (
-                <img
-                  className={styles.poster}
-                  src={
-                    coverIndex === 'local'
-                      ? localCoverUrl
-                      : coverUrls[coverIndex]
-                  }
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className={styles['trim-container']}>
-          <div className={styles['trim-div']}>
-            {coverUrls
-              ? coverUrls.map((url, index) => (
-                  <img key={index} className={styles['trim-img']} src={url} />
-                ))
-              : ''}
-
-            <div className={styles['slider-div']}>
-              {!pauseVideo && (
-                <span
-                  className={styles['progress-line']}
-                  ref={progressRef}
-                ></span>
-              )}
-
+    <>
+      <div className={styles.container}>
+        <div className={styles['edit-container']}>
+          <div className={styles['container-head']}>
+            Edit Video
+            <span className={styles['head-menu']}>
               <span
-                className={`${styles['start-position']} ${
-                  hideVideo ? styles['hide-item'] : ''
-                } `}
-                ref={startRef}
+                className={styles['close-edit-box']}
+                onClick={() =>
+                  setStage((prevStage) => ({ ...prevStage, reel: 'select' }))
+                }
               >
-                {positionValues.left}
+                <IoClose className={styles['close-edit-icon']} />
               </span>
 
-              <ReactSlider
-                className={`${styles.slider} ${
-                  hideVideo ? styles['hide-item'] : ''
-                }`}
-                trackClassName={styles.track}
-                value={sliderValues}
-                min={0}
-                max={100}
-                pearling
-                minDistance={1}
-                renderThumb={(props) => (
-                  <div {...props} className={styles['thumb']}>
-                    <img
-                      src="../../assets/images/suppository-capsule-svgrepo-com (4).svg"
-                      alt="Thumb"
-                      className={styles['thumb-image']}
-                    />
-                  </div>
-                )}
-                onChange={(values) => {
-                  setSliderValues(values);
-                  setPauseVideo(true);
-                  if (coverIndex) setShowCover(true);
-                  setPlayingIndex('');
-                }}
-                onAfterChange={() => {
-                  if (videoRef.current)
-                    videoRef.current.currentTime = durationValues[0];
-                  setPauseVideo(false);
-                  setShowCover(false);
-                }}
-              />
-
               <span
-                className={`${styles['start-position']} ${
-                  hideVideo ? styles['hide-item'] : ''
-                } `}
-                ref={endRef}
-              >
-                {positionValues.right}
-              </span>
-            </div>
-          </div>
-
-          {!hideVideo && (
-            <div className={styles['next-btn-div']}>
-              <button
-                className={styles['next-btn']}
+                className={`${styles['close-edit-box']} ${styles['next-stage-btn']}`}
                 onClick={() => {
                   setReelData({
                     video: src,
@@ -906,13 +476,517 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                   setStage((prevStage) => ({ ...prevStage, reel: 'finish' }));
                 }}
               >
-                Next
-              </button>
+                <FaCheck className={styles['close-edit-icon2']} />
+              </span>
+            </span>
+          </div>
+
+          <div className={styles['hidden-div']}>
+            <input
+              type="file"
+              ref={fileRef}
+              accept="audio/mp3, audio/wav, audio/aac, audio/ogg"
+              multiple={true}
+              onChange={handleFileUpload}
+            />
+
+            <input
+              type="file"
+              ref={coverRef}
+              accept="image/jpeg, image/png, image/webp, image/avif"
+              onChange={handleCoverPhoto}
+            />
+
+            <audio ref={audioRef}>
+              <source />
+              Your browser does not support the audio element.
+            </audio>
+
+            <canvas ref={canvasRef} />
+          </div>
+
+          <div className={styles['video-container']}>
+            <ul className={styles['category-list']}>
+              <li
+                className={`${styles['category-item']} ${
+                  category === 'cover' ? styles['current-category'] : ''
+                }`}
+                onClick={() => setCategory('cover')}
+              >
+                <MdOutlineMonochromePhotos className={styles['edit-icon']} />
+                <span className={styles['category-name']}> Cover Photo</span>
+              </li>
+              <li
+                className={`${styles['category-item']} ${
+                  category === 'sound' ? styles['current-category'] : ''
+                }`}
+                onClick={() => setCategory('sound')}
+              >
+                <IoMusicalNotes className={styles['edit-icon']} />
+                <span className={styles['category-name']}> Sounds </span>
+              </li>
+
+              <MdChangeCircle
+                className={styles['swap-icon']}
+                title="Change Video"
+                onClick={() => {
+                  setStage((prevStage) => ({ ...prevStage, reel: 'select' }));
+                  inputRef.current.click();
+                }}
+              />
+            </ul>
+
+            {category === 'cover' ? (
+              <div
+                className={styles['cover-photo-container']}
+                ref={coverContainerRef}
+              >
+                <div className={styles['cover-photo-head']}>
+                  Select cover photo
+                </div>
+
+                <div className={styles['cover-photo-div']}>
+                  {coverUrls.length > 0 &&
+                    coverUrls.map((src, index) => (
+                      <span
+                        key={index}
+                        className={`${styles['cover-photo-box']} ${
+                          index === coverIndex ? styles['current-cover'] : ''
+                        }`}
+                        onClick={playVideo(index)}
+                      >
+                        {index === coverIndex && (
+                          <span
+                            className={styles['remove-cover-box']}
+                            onClick={() => setCoverIndex(null)}
+                          >
+                            <IoClose className={styles['remove-cover-icon']} />
+                          </span>
+                        )}
+                        <img src={src} className={styles['cover-photo-img']} />
+                      </span>
+                    ))}
+                </div>
+
+                {localCoverUrl && (
+                  <div className={styles['local-photo-div']}>
+                    <span className={styles['local-photo-head']}>
+                      Local photo
+                    </span>
+
+                    <span
+                      className={`${styles['cover-photo-box']} ${
+                        coverIndex === 'local' ? styles['current-cover'] : ''
+                      }`}
+                      onClick={playVideo(null, true)}
+                    >
+                      {coverIndex === 'local' && (
+                        <span
+                          className={styles['remove-cover-box']}
+                          onClick={() => setCoverIndex(null)}
+                        >
+                          <IoClose className={styles['remove-cover-icon']} />
+                        </span>
+                      )}
+                      <img
+                        src={localCoverUrl}
+                        className={styles['cover-photo-img']}
+                      />
+                    </span>
+                  </div>
+                )}
+
+                <div className={styles['cover-photo-btn-div']}>
+                  <button
+                    className={styles['cover-photo-btn']}
+                    onClick={() => {
+                      coverRef.current.click();
+                      setPauseVideo(true);
+                    }}
+                  >
+                    Select from computer
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className={styles['add-sound-container']}
+                ref={soundContainerRef}
+              >
+                <div className={styles['sound-category-container']}>
+                  <ul className={styles['sound-category-list']}>
+                    <li
+                      className={`${styles['sound-category-item']} ${
+                        soundCategory === 'local'
+                          ? styles['current-sound-category']
+                          : ''
+                      }`}
+                      onClick={() => setSoundCategory('local')}
+                    >
+                      Local
+                    </li>
+                    <li
+                      className={`${styles['sound-category-item']} ${
+                        soundCategory === 'saved'
+                          ? styles['current-sound-category']
+                          : ''
+                      }`}
+                      onClick={() => setSoundCategory('saved')}
+                    >
+                      Saved
+                    </li>
+                  </ul>
+
+                  <div className={styles['sound-category-div']}>
+                    {soundCategory === 'local' &&
+                      sounds.length > 0 &&
+                      sounds.map((file, index) => (
+                        <article
+                          key={`${Math.random()}-${index}`}
+                          className={styles['sound-box']}
+                        >
+                          <span
+                            className={`${styles['sound-details']} ${
+                              playingIndex === file.id
+                                ? styles['playing-sound']
+                                : ''
+                            }`}
+                            onClick={handlePlayingSound(file.id)}
+                          >
+                            <span className={styles['sound-name']}>
+                              {file.name}
+                            </span>
+                            <span className={styles['sound-duration']}>
+                              {file.duration}
+                            </span>
+                          </span>
+
+                          <span className={styles['sound-btn-box']}>
+                            <button
+                              className={styles['sound-use-button']}
+                              onClick={handleCurrentSound(file.id)}
+                            >
+                              {file.current ? 'Remove' : 'Use'}
+                            </button>
+
+                            {file.saved ? (
+                              <IoBookmark
+                                className={styles['sound-save-icon']}
+                                onClick={handleSavedSounds(file.id)}
+                              />
+                            ) : (
+                              <IoBookmarkOutline
+                                className={styles['sound-save-icon']}
+                                onClick={handleSavedSounds(file.id)}
+                              />
+                            )}
+                          </span>
+
+                          <MdDelete
+                            className={styles['sound-icon']}
+                            onClick={deleteSound(file.id)}
+                            title="Delete Sound"
+                          />
+                        </article>
+                      ))}
+
+                    {soundCategory === 'saved' &&
+                      savedSounds.length > 0 &&
+                      savedSounds.map((file, index) => (
+                        <article
+                          key={`${Math.random()}-${index}`}
+                          className={styles['sound-box']}
+                        >
+                          <span
+                            className={`${styles['sound-details']} ${
+                              playingIndex === file.id
+                                ? styles['playing-sound']
+                                : ''
+                            }`}
+                            onClick={handlePlayingSound(file.id)}
+                          >
+                            <span className={styles['sound-name']}>
+                              {file.name}
+                            </span>
+                            <span className={styles['sound-duration']}>
+                              {file.duration}
+                            </span>
+                          </span>
+
+                          <span className={styles['sound-btn-box']}>
+                            <button className={styles['sound-use-button']}>
+                              Use
+                            </button>
+                            <IoBookmark
+                              className={styles['sound-save-icon']}
+                              onClick={handleSavedSounds(file.id)}
+                            />
+                          </span>
+                        </article>
+                      ))}
+
+                    {soundCategory === 'local' && sounds.length > 0 && (
+                      <div className={styles['plus-icon-div']}>
+                        <span
+                          className={styles['plus-icon-box']}
+                          title="Add sound"
+                          onClick={() => {
+                            setAddSounds(true);
+                            fileRef.current.click();
+                            setPauseVideo(true);
+                          }}
+                        >
+                          <FaPlus className={styles['plus-icon']} />
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {soundCategory === 'local' && sounds.length === 0 && (
+                  <div className={styles['add-sound-btn-div']}>
+                    <span className={styles['add-sound-txt']}>
+                      You can select multiple songs and pick one to use
+                    </span>
+
+                    <button
+                      className={styles['add-sound-btn']}
+                      onClick={() => {
+                        fileRef.current.click();
+                        setPauseVideo(true);
+                      }}
+                    >
+                      Select from computer
+                    </button>
+                  </div>
+                )}
+
+                {soundCategory === 'saved' && savedSounds.length === 0 && (
+                  <span className={styles['add-sound-txt2']}>
+                    You have no saved songs
+                  </span>
+                )}
+              </div>
+            )}
+
+            <div className={styles['video-box']}>
+              <div className={styles['video-div']}>
+                <video
+                  className={`${styles.video}  ${
+                    hideVideo ? styles['hide-item'] : ''
+                  } `}
+                  ref={videoRef}
+                  onLoadedMetadata={handleCapture}
+                  onEnded={() => {
+                    setPauseVideo(true);
+                    setShowCover(true);
+                    setPlayingIndex('');
+                  }}
+                  onTimeUpdate={(e) => {
+                    if (e.currentTarget.currentTime >= durationValues[1]) {
+                      setPauseVideo(true);
+                      setShowCover(true);
+                      setPlayingIndex('');
+                    }
+                  }}
+                  onPlay={handlePlayVideo}
+                >
+                  <source src={src as string} />
+                  Your browser does not support playing video.
+                </video>
+
+                <div className={styles['video-details']}>
+                  {pauseVideo ? (
+                    <FaPlay
+                      className={styles['video-play-icon']}
+                      onClick={() => {
+                        if (showCover && videoRef.current)
+                          videoRef.current.currentTime = durationValues[0];
+                        setPauseVideo(false);
+                        setShowCover(false);
+                      }}
+                    />
+                  ) : (
+                    <FaPause
+                      className={styles['video-play-icon']}
+                      onClick={() => {
+                        setPauseVideo(true);
+                        setPlayingIndex('');
+                      }}
+                    />
+                  )}
+                  <span className={styles['video-duration']}>
+                    {newDuration}
+                  </span>
+                </div>
+
+                {showCover && coverIndex !== null && (
+                  <img
+                    className={styles.poster}
+                    src={
+                      coverIndex === 'local'
+                        ? localCoverUrl
+                        : coverUrls[coverIndex]
+                    }
+                  />
+                )}
+              </div>
             </div>
-          )}
+
+            <div className={styles['mobile-menu-div']}>
+              <span className={styles['menu-icon-box']}>
+                <HiMenuAlt3 className={styles['menu-icon']} />
+              </span>
+
+              <ul className={styles['menu-list']}>
+                <li
+                  className={styles['menu-item']}
+                  onClick={() => {
+                    setShowMobile((prev) => ({ ...prev, coverPhoto: true }));
+                    setCategory('cover');
+                  }}
+                >
+                  <MdOutlineMonochromePhotos
+                    className={styles['menu-item-icon']}
+                  />
+                  Cover Photo
+                </li>
+                <li
+                  className={styles['menu-item']}
+                  onClick={() => {
+                    setShowMobile((prev) => ({ ...prev, sounds: true }));
+                    setCategory('sound');
+                  }}
+                >
+                  <IoMusicalNotes className={styles['menu-item-icon']} />
+                  Sounds
+                </li>
+                <li
+                  className={styles['menu-item']}
+                  onClick={() => {
+                    setStage((prevStage) => ({ ...prevStage, reel: 'select' }));
+                    inputRef.current.click();
+                  }}
+                >
+                  <GrPowerCycle className={styles['menu-item-icon']} />
+                  Change Video
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className={styles['trim-container']}>
+            <div className={styles['trim-div']}>
+              {coverUrls
+                ? coverUrls.map((url, index) => (
+                    <img key={index} className={styles['trim-img']} src={url} />
+                  ))
+                : ''}
+
+              <div className={styles['slider-div']}>
+                {!pauseVideo && (
+                  <span
+                    className={styles['progress-line']}
+                    ref={progressRef}
+                  ></span>
+                )}
+
+                <span
+                  className={`${styles['start-position']} ${
+                    hideVideo ? styles['hide-item'] : ''
+                  } `}
+                  ref={startRef}
+                >
+                  {positionValues.left}
+                </span>
+
+                <ReactSlider
+                  className={`${styles.slider} ${
+                    hideVideo ? styles['hide-item'] : ''
+                  }`}
+                  trackClassName={styles.track}
+                  value={sliderValues}
+                  min={0}
+                  max={100}
+                  pearling
+                  minDistance={1}
+                  renderThumb={(props) => (
+                    <div {...props} className={styles['thumb']}>
+                      <img
+                        src="../../assets/images/suppository-capsule-svgrepo-com (4).svg"
+                        alt="Thumb"
+                        className={styles['thumb-image']}
+                      />
+                    </div>
+                  )}
+                  onChange={(values) => {
+                    setSliderValues(values);
+                    setPauseVideo(true);
+                    if (coverIndex) setShowCover(true);
+                    setPlayingIndex('');
+                  }}
+                  onAfterChange={() => {
+                    if (videoRef.current)
+                      videoRef.current.currentTime = durationValues[0];
+                    setPauseVideo(false);
+                    setShowCover(false);
+                  }}
+                />
+
+                <span
+                  className={`${styles['start-position']} ${
+                    hideVideo ? styles['hide-item'] : ''
+                  } `}
+                  ref={endRef}
+                >
+                  {positionValues.right}
+                </span>
+              </div>
+            </div>
+
+            {!hideVideo && (
+              <div className={styles['next-btn-div']}>
+                <button
+                  className={styles['next-btn']}
+                  onClick={() => {
+                    setReelData({
+                      video: src,
+                      sound: sounds.find((sound) => sound.id === currentSound)
+                        ?.src,
+                      duration: durationValues,
+                      coverPhoto: coverIndex
+                        ? coverIndex === 'local'
+                          ? localCoverUrl
+                          : coverUrls[coverIndex]
+                        : '',
+                    });
+                    setStage((prevStage) => ({ ...prevStage, reel: 'finish' }));
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {showMobile.coverPhoto && (
+        <MobileCoverPhoto
+          coverUrls={coverUrls}
+          coverIndex={coverIndex}
+          playVideo={playVideo}
+          setCoverIndex={setCoverIndex}
+          localCoverUrl={localCoverUrl}
+          coverRef={coverRef}
+          setPauseVideo={setPauseVideo}
+          setShowMobile={setShowMobile}
+          coverPhotoBoxRef={coverPhotoBoxRef}
+        />
+      )}
+
+      {showMobile.sounds && <MobileSounds setShowMobile={setShowMobile} />}
+    </>
   );
 };
 
