@@ -985,7 +985,24 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
         />
       )}
 
-      {showMobile.sounds && <MobileSounds setShowMobile={setShowMobile} />}
+      {showMobile.sounds && (
+        <MobileSounds
+          setShowMobile={setShowMobile}
+          soundCategory={soundCategory}
+          setAddSounds={setAddSounds}
+          setPauseVideo={setPauseVideo}
+          setSoundCategory={setSoundCategory}
+          sounds={sounds}
+          playingIndex={playingIndex}
+          handleCurrentSound={handleCurrentSound}
+          handlePlayingSound={handlePlayingSound}
+          handleSavedSounds={handleSavedSounds}
+          deleteSound={deleteSound}
+          fileRef={fileRef}
+          savedSounds={savedSounds}
+          setPlayingIndex={setPlayingIndex}
+        />
+      )}
     </>
   );
 };

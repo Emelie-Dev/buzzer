@@ -20,6 +20,7 @@
   border-radius: 10px 10px 0 0;
   align-items: center;
   position: relative;
+  height: 65vh;
 }
 
 .filter-container::before {
@@ -44,12 +45,13 @@
   align-items: center;
   justify-content: flex-end;
   width: 100%;
-  margin: 1rem 0 0.5rem;
+  margin: auto 0 0.5rem;
 }
 
 .close-btn {
   border: none;
   outline: none;
+  border: 2px solid var(--app-theme-color);
   background: var(--app-theme-color);
   color: white;
   font-family: appFontMedium;
@@ -59,10 +61,240 @@
   cursor: pointer;
 }
 
+.close-btn2 {
+  border: 2px solid var(--app-theme-color);
+  outline: none;
+  background: white;
+  color: var(--app-theme-color);
+  font-family: appFontMedium;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  margin-right: 1.5rem;
+}
+
+.add-sound-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 0 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.sound-category-container {
+  width: 100%;
+}
+
+.sound-category-list {
+  list-style-type: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid rgb(128, 128, 128, 0.3);
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 2;
+}
+
+.sound-category-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  font-family: appFontMedium;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: gray;
+  border-bottom: 1px solid transparent;
+}
+
+.current-sound-category {
+  color: black;
+  border-bottom: 1px solid black;
+}
+
+.add-sound-btn-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.add-sound-txt {
+  font-family: appFont;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.add-sound-txt2 {
+  font-family: appFont;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.add-sound-btn {
+  border: none;
+  outline: none;
+  background: var(--app-theme-color);
+  cursor: pointer;
+  color: white;
+  font-family: appFont;
+  padding: 0.7rem;
+  border-radius: 5px;
+  transition: opacity 0.2s;
+}
+
+.add-sound-btn:hover {
+  opacity: 0.9;
+}
+
+.sound-category-div {
+  width: 100%;
+  padding: 1rem 0.5rem;
+  position: relative;
+}
+
+.sound-box {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.sound-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: var(--app-theme-color);
+  margin-left: 1rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sound-icon:hover {
+  opacity: 0.8;
+}
+
+.sound-details {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 2.5rem);
+  /* background: red; */
+}
+
+.sound-name {
+  font-family: appFontMedium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.95rem;
+}
+
+.sound-duration {
+  font-family: appFont;
+  font-size: 0.9rem;
+  margin-top: 0.1rem;
+}
+
+.sound-btn-box {
+  margin-left: auto;
+  align-items: center;
+  display: none;
+}
+
+.sound-use-button {
+  outline: none;
+  border: none;
+  border-radius: 5px;
+  padding: 0.4rem 0.7rem;
+  background: var(--app-theme-color);
+  color: white;
+  cursor: pointer;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.sound-save-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 1rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sound-use-button:hover,
+.sound-save-icon:hover {
+  opacity: 0.8;
+}
+
+.sound-box:hover .sound-btn-box {
+  display: flex;
+}
+
+.sound-box:hover .sound-details {
+  width: calc(100% - 10.5rem);
+  color: var(--app-theme-color);
+}
+
+.playing-sound {
+  color: var(--app-theme-color);
+}
+
+.plus-icon-div {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 1rem;
+  z-index: 2;
+}
+
+.plus-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-theme-color);
+  color: white;
+  padding: 1rem;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.plus-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.plus-icon-box:hover .plus-icon {
+  color: black;
+}
+
 /* Media Queries */
 
 @media screen and (max-width: 900px) {
   .section {
     display: grid;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .add-sound-container {
+    padding: 0;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .sound-category-div {
+    padding: 1rem 0rem;
   }
 }
