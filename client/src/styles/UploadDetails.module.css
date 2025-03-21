@@ -580,6 +580,10 @@
     padding: 0.5rem;
   }
 
+  .reels-details-section {
+    padding-top: 1rem;
+  }
+
   .settings-box2 {
     align-items: flex-start;
   }

@@ -39,9 +39,37 @@ const UploadReelDetails = ({ data, setStage }: UploadReelDetailsProps) => {
   const videoRef = useRef<HTMLVideoElement>(null!);
   const progressRef = useRef<HTMLInputElement>(null!);
   const audioRef = useRef<HTMLAudioElement>(null!);
+  const carouselRef = useRef<HTMLDivElement>(null!);
+  const durationBoxRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     if (videoRef.current) videoRef.current.currentTime = duration[0];
+
+    const resizeHandler = () => {
+      if (window.matchMedia('(max-width: 510px)').matches) {
+        const size = window.innerWidth - 4;
+
+        carouselRef.current.style.width = `${size}px`;
+        carouselRef.current.style.height = `${size}px`;
+
+        progressRef.current.style.width = `${(17 * size) / 500}rem`;
+        durationBoxRef.current.style.width = `${(17 * size) / 500}rem`;
+      } else {
+        carouselRef.current.style.width = '500px';
+        carouselRef.current.style.height = '500px';
+
+        progressRef.current.style.width = '17rem';
+        durationBoxRef.current.style.width = '17rem';
+      }
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
   }, []);
 
   useEffect(() => {
@@ -103,8 +131,10 @@ const UploadReelDetails = ({ data, setStage }: UploadReelDetailsProps) => {
   };
 
   return (
-    <div className={styles['carousel-details-section']}>
-      <div className={styles['video-container']}>
+    <div
+      className={`${styles['carousel-details-section']} ${styles['reels-details-section']}`}
+    >
+      <div className={styles['video-container']} ref={carouselRef}>
         <span
           className={styles['back-arrow-box']}
           onClick={() =>
@@ -141,7 +171,7 @@ const UploadReelDetails = ({ data, setStage }: UploadReelDetailsProps) => {
           Your browser does not support the audio element.
         </audio>
 
-        <div className={styles['duration-box']}>
+        <div className={styles['duration-box']} ref={durationBoxRef}>
           <span>{getDurationText(durationValues[0])}</span>
           <span>{getDurationText(durationValues[1])}</span>
         </div>
