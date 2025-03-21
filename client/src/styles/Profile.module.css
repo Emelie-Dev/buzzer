@@ -17,6 +17,7 @@
   align-items: center;
   flex-direction: column;
   margin-left: 5rem;
+  width: 11rem;
 }
 
 .img {
@@ -29,6 +30,8 @@
 .user-name {
   margin-top: 0.5rem;
   font-family: appFontSemi;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .profile-details {
@@ -36,6 +39,7 @@
   flex-direction: column;
   align-items: flex-start;
   margin-left: 4rem;
+  overflow: hidden;
 }
 
 .user-handle {
@@ -86,6 +90,8 @@
   display: flex;
   align-items: center;
   margin-top: 1rem;
+  flex-wrap: wrap;
+  row-gap: 0.3rem;
 }
 
 .data-box {
@@ -115,10 +121,13 @@
 .description {
   font-family: appFont;
   margin-top: 1rem;
+  width: 100%;
+  word-wrap: break-word;
 }
 
 .links {
   margin-top: 0.5rem;
+  width: 100%;
 }
 
 .link {
@@ -126,6 +135,7 @@
   font-family: appFont;
   font-size: 0.9rem;
   cursor: pointer;
+  word-wrap: break-word;
 }
 
 .link:hover {
@@ -214,6 +224,7 @@
 .contents-container {
   display: grid;
   grid-template-columns: 32% 32% 32%;
+  justify-content: center;
   margin-top: 1rem;
   padding: 0 1rem;
   column-gap: 1.5%;
@@ -497,5 +508,80 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1300px) {
+}
+
+@media screen and (max-width: 1200px) {
+  .main {
+    margin-left: 22%;
+    padding: 1rem 2rem;
+  }
+
+  .img-box,
+  .profile-details {
+    margin-left: 2rem;
+  }
+
+  .sort-div {
+    display: none;
+  }
+
+  .bottom-header {
+    justify-content: center;
+  }
+
+  .category-list {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .img-box,
+  .profile-details {
+    margin-left: 0;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .main {
+    margin-left: 25%;
+  }
+
+  .category-item {
+    padding: 1rem;
+  }
+
+  .contents-container {
+    padding: 0;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .main {
+    margin-left: 81px;
+  }
+
+  .contents-container {
+    padding: 0 0.5rem;
+  }
+
+  .img-box {
+  }
+
+  .img {
+    width: 9rem;
+    height: 9rem;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .main {
+    margin-left: 0;
   }
 }

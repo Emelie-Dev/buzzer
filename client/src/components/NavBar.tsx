@@ -89,7 +89,7 @@ const NavBar = ({
           ? window.matchMedia('(max-width: 1200px)').matches
           : page === 'search' || page === 'analytics'
           ? window.matchMedia('(max-width: 1100px)').matches
-          : page === 'settings' || page === 'history'
+          : page === 'settings' || page === 'history' || page === 'profile'
           ? window.matchMedia('(max-width: 900px)').matches
           : false;
       const secondSize =
