@@ -243,7 +243,10 @@ const Footer = ({ page }: FooterProps) => {
             Reels
           </span>
         </li>
-        <li className={styles['footer-item']}>
+        <li
+          className={styles['footer-item']}
+          onClick={() => navigate('/profile')}
+        >
           <span
             className={`${styles['item-box']} ${
               page === 'profile' ? styles['active-item'] : ''

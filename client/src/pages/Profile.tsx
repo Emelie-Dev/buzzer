@@ -7,7 +7,7 @@ import { MdOutlineGridOn } from 'react-icons/md';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { FaPlay } from 'react-icons/fa6';
 import { FaHeart, FaCommentDots } from 'react-icons/fa';
-import { IoClose } from 'react-icons/io5';
+import { IoClose, IoMenu } from 'react-icons/io5';
 import { QRCodeCanvas } from 'qrcode.react';
 import { FaCopy } from 'react-icons/fa6';
 import { Arrow } from '../pages/Home';
@@ -19,6 +19,8 @@ import { ContentContext, GeneralContext, LikeContext } from '../Contexts';
 import { Content } from '../components/CarouselItem';
 import ShareMedia from '../components/ShareMedia';
 import { useNavigate } from 'react-router-dom';
+import Footer from '../components/Footer';
+import { RiArrowDownSLine } from 'react-icons/ri';
 
 const data: Content[] = [
   {
@@ -164,6 +166,15 @@ const Profile = () => {
 
       <section className={styles.main}>
         <section className={styles['top-section']}>
+          <header className={styles['mobile-header']}>
+            <span className={styles['user-handle2']}>
+              josephlouis_100{' '}
+              <RiArrowDownSLine className={styles['down-arrow']} />
+            </span>
+
+            <IoMenu className={styles['menu-icon']} />
+          </header>
+
           <figure className={styles['img-box']}>
             <img
               className={styles.img}
@@ -253,7 +264,7 @@ const Profile = () => {
                 onClick={() => setcategory('contents')}
               >
                 <MdOutlineGridOn className={styles['category-icon']} />
-                Contents
+                <span className={styles['category-text']}>Contents</span>
               </li>
               <li
                 className={`${styles['category-item']} ${
@@ -344,7 +355,7 @@ const Profile = () => {
                     />
                   </g>
                 </svg>
-                Reels
+                <span className={styles['category-text']}>Reels</span>
               </li>
 
               <li
@@ -356,7 +367,7 @@ const Profile = () => {
                 <RiGitRepositoryPrivateLine
                   className={styles['category-icon']}
                 />
-                Private
+                <span className={styles['category-text']}>Private</span>
               </li>
 
               <li
@@ -366,7 +377,7 @@ const Profile = () => {
                 onClick={() => setcategory('saved')}
               >
                 <HiOutlineBookmark className={styles['category-icon']} />
-                Saved
+                <span className={styles['category-text']}>Saved</span>
               </li>
 
               <li
@@ -376,7 +387,7 @@ const Profile = () => {
                 onClick={() => setcategory('liked')}
               >
                 <FiHeart className={styles['category-icon']} />
-                Liked
+                <span className={styles['category-text']}>Liked</span>
               </li>
             </ul>
 
@@ -518,7 +529,7 @@ const Profile = () => {
                 )}
 
                 <div className={styles['content-details']}>
-                  <span className={styles['content-data']}>2h</span>
+                  <span className={styles['content-data']}>999-999-999</span>
 
                   <span className={styles['content-data']}>
                     <FaPlay className={styles['views-icon']} /> 250
@@ -537,6 +548,8 @@ const Profile = () => {
             ))}
           </div>
         </section>
+
+        <Footer page="profile" />
       </section>
 
       {shareModal && (
