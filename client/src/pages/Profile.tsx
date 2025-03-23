@@ -529,7 +529,7 @@ const Profile = () => {
                 )}
 
                 <div className={styles['content-details']}>
-                  <span className={styles['content-data']}>999-999-999</span>
+                  <span className={styles['content-data']}>2h</span>
 
                   <span className={styles['content-data']}>
                     <FaPlay className={styles['views-icon']} /> 250
@@ -593,94 +593,98 @@ const Profile = () => {
               />
             </span>
 
-            <div
-              className={styles['options-container']}
-              ref={optionsRef}
-              onScroll={handleScroll}
-            >
-              <span
-                className={`${styles['left-arrow-box']} ${
-                  !showArrow.left ? styles['hide-icon'] : ''
-                }`}
-                onClick={() => (optionsRef.current.scrollLeft -= 300)}
-              >
-                <MdKeyboardArrowLeft className={styles['left-arrow']} />
-              </span>
-
-              <div className={styles['share-option']}>
-                <img
-                  className={styles['option-img']}
-                  src="../../assets/images/media/1_Whatsapp2_colored_svg-128.webp"
-                />
-                <span className={styles['share-icon-text']}>Whatsapp</span>
-              </div>
-
-              <div className={styles['share-option']}>
-                <img
-                  className={styles['option-img']}
-                  src="../../assets/images/media/x-logo-twitter-new-brand-contained-128.webp"
-                />
-                <span className={styles['share-icon-text']}>X</span>
-              </div>
-
-              <div className={styles['share-option']}>
-                <img
-                  className={styles['option-img']}
-                  src="../../assets/images/media/1_Instagram_colored_svg_1-128.webp"
-                />
-                <span className={styles['share-icon-text']}>Instagram</span>
-              </div>
-
-              <div className={styles['share-option']}>
-                <img
-                  className={styles['option-img']}
-                  src="../../assets/images/media/Colored_Facebook3_svg-128.webp"
-                />
-                <span className={styles['share-icon-text']}>Facebook</span>
-              </div>
-
-              <div className={styles['share-option']}>
-                <img
-                  className={styles['option-img']}
-                  src="../../assets/images/media/telegram-64.webp"
-                />
-                <span className={styles['share-icon-text']}>Telegram</span>
-              </div>
-
-              <div className={styles['share-option']}>
-                <img
-                  className={styles['option-img']}
-                  src="../../assets/images/media/112-gmail_email_mail-64.webp"
-                />
-                <span className={styles['share-icon-text']}>Email</span>
-              </div>
-
-              <div className={styles['share-option']}>
-                <img
-                  className={styles['option-img']}
-                  src="../../assets/images/media/social-facebook-messenger-square2-64.webp"
-                />
-                <span className={styles['share-icon-text']}>Messenger</span>
-              </div>
-
+            <div className={styles['options-section']}>
               <div
-                className={`${styles['share-option']} ${styles['last-option']}`}
+                className={styles['options-container']}
+                ref={optionsRef}
+                onScroll={handleScroll}
               >
-                <img
-                  className={styles['option-img']}
-                  src="../../assets/images/media/1_Snapchat_colored_svg-64.webp"
-                />
-                <span className={styles['share-icon-text']}>Snapchat</span>
-              </div>
+                <span
+                  className={`${styles['left-arrow-box']} ${
+                    !showArrow.left ? styles['hide-icon'] : ''
+                  }`}
+                  onClick={() => (optionsRef.current.scrollLeft -= 300)}
+                >
+                  <MdKeyboardArrowLeft className={styles['left-arrow']} />
+                </span>
 
-              <span
-                className={`${styles['right-arrow-box']} ${
-                  !showArrow.right ? styles['hide-icon'] : ''
-                }`}
-                onClick={() => (optionsRef.current.scrollLeft += 300)}
-              >
-                <MdKeyboardArrowRight className={styles['right-arrow']} />
-              </span>
+                <div className={styles['options-div']}>
+                  <div className={styles['share-option']}>
+                    <img
+                      className={styles['option-img']}
+                      src="../../assets/images/media/1_Whatsapp2_colored_svg-128.webp"
+                    />
+                    <span className={styles['share-icon-text']}>Whatsapp</span>
+                  </div>
+
+                  <div className={styles['share-option']}>
+                    <img
+                      className={styles['option-img']}
+                      src="../../assets/images/media/x-logo-twitter-new-brand-contained-128.webp"
+                    />
+                    <span className={styles['share-icon-text']}>X</span>
+                  </div>
+
+                  <div className={styles['share-option']}>
+                    <img
+                      className={styles['option-img']}
+                      src="../../assets/images/media/1_Instagram_colored_svg_1-128.webp"
+                    />
+                    <span className={styles['share-icon-text']}>Instagram</span>
+                  </div>
+
+                  <div className={styles['share-option']}>
+                    <img
+                      className={styles['option-img']}
+                      src="../../assets/images/media/Colored_Facebook3_svg-128.webp"
+                    />
+                    <span className={styles['share-icon-text']}>Facebook</span>
+                  </div>
+
+                  <div className={styles['share-option']}>
+                    <img
+                      className={styles['option-img']}
+                      src="../../assets/images/media/telegram-64.webp"
+                    />
+                    <span className={styles['share-icon-text']}>Telegram</span>
+                  </div>
+
+                  <div className={styles['share-option']}>
+                    <img
+                      className={styles['option-img']}
+                      src="../../assets/images/media/112-gmail_email_mail-64.webp"
+                    />
+                    <span className={styles['share-icon-text']}>Email</span>
+                  </div>
+
+                  <div className={styles['share-option']}>
+                    <img
+                      className={styles['option-img']}
+                      src="../../assets/images/media/social-facebook-messenger-square2-64.webp"
+                    />
+                    <span className={styles['share-icon-text']}>Messenger</span>
+                  </div>
+
+                  <div
+                    className={`${styles['share-option']} ${styles['last-option']}`}
+                  >
+                    <img
+                      className={styles['option-img']}
+                      src="../../assets/images/media/1_Snapchat_colored_svg-64.webp"
+                    />
+                    <span className={styles['share-icon-text']}>Snapchat</span>
+                  </div>
+                </div>
+
+                <span
+                  className={`${styles['right-arrow-box']} ${
+                    !showArrow.right ? styles['hide-icon'] : ''
+                  }`}
+                  onClick={() => (optionsRef.current.scrollLeft += 300)}
+                >
+                  <MdKeyboardArrowRight className={styles['right-arrow']} />
+                </span>
+              </div>
             </div>
           </div>
         </section>
