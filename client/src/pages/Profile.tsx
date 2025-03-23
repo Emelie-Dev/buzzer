@@ -21,6 +21,8 @@ import ShareMedia from '../components/ShareMedia';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import { RiArrowDownSLine } from 'react-icons/ri';
+import SwitchAccount from '../components/SwitchAccount';
+import { BiSort } from 'react-icons/bi';
 
 const data: Content[] = [
   {
@@ -123,6 +125,7 @@ const Profile = () => {
   const [hideLike, setHideLike] = useState<boolean>(true);
   const [saved, setSaved] = useState<boolean>(false);
   const [shareMedia, setShareMedia] = useState<boolean>(false);
+  const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const optionsRef = useRef<HTMLDivElement>(null!);
   const reelMenuRef = useRef<HTMLDivElement>(null!);
@@ -167,7 +170,10 @@ const Profile = () => {
       <section className={styles.main}>
         <section className={styles['top-section']}>
           <header className={styles['mobile-header']}>
-            <span className={styles['user-handle2']}>
+            <span
+              className={styles['user-handle2']}
+              onClick={() => setSwitchAccount(true)}
+            >
               josephlouis_100{' '}
               <RiArrowDownSLine className={styles['down-arrow']} />
             </span>
@@ -547,6 +553,20 @@ const Profile = () => {
               </article>
             ))}
           </div>
+
+          <div className={styles['sort-container']}>
+            <span className={styles['sort-icon-box']}>
+              <BiSort className={styles['sort-icon']} />
+            </span>
+
+            <div className={styles['sort-div2']}>
+              <select className={styles['sort-select2']}>
+                <option>Latest</option>
+                <option>Oldest</option>
+                <option>Popular</option>
+              </select>
+            </div>
+          </div>
         </section>
 
         <Footer page="profile" />
@@ -693,6 +713,8 @@ const Profile = () => {
       {engagementModal && (
         <Engagements value={engagementModal} setValue={setEngagementModal} />
       )}
+
+      {switchAccount && <SwitchAccount setSwitchAccount={setSwitchAccount} />}
 
       <ContentContext.Provider
         value={{ contentRef, activeVideo, setActiveVideo }}

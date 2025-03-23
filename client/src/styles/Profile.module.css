@@ -559,6 +559,50 @@
   cursor: pointer;
 }
 
+.sort-container {
+  display: none;
+  position: fixed;
+  right: 3%;
+  bottom: 6%;
+  z-index: 3;
+}
+
+.sort-icon-box {
+  background: var(--app-theme-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 1rem;
+  color: white;
+  cursor: pointer;
+}
+
+.sort-icon {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.sort-select2 {
+  outline: none;
+  border: 2px solid var(--app-theme-color);
+  font-family: appFont;
+  padding: 0.3rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.sort-div2 {
+  display: none;
+  position: absolute;
+  top: -70%;
+  right: 0;
+}
+
+.sort-container:hover .sort-div2 {
+  display: block;
+}
+
 /* Animations */
 
 @keyframes showModal {
@@ -599,6 +643,10 @@
 
   .edit-section {
     grid-template-columns: 49%;
+  }
+
+  .sort-container {
+    display: block;
   }
 }
 
@@ -807,6 +855,10 @@
 
   .link-box {
     width: 90%;
+  }
+
+  .sort-container {
+    bottom: 15%;
   }
 }
 

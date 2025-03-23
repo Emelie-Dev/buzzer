@@ -9,7 +9,7 @@
   overflow: auto;
   animation: showModal 0.5s ease-in-out 0s 1 normal both;
   display: grid;
-  grid-template-columns: 35%;
+  grid-template-columns: 37%;
   justify-content: center;
   align-content: center;
 }
@@ -18,6 +18,8 @@
   background: white;
   border-radius: 5px;
   padding: 1.5rem;
+  max-height: 100vh;
+  overflow: auto;
 }
 
 .header {
@@ -156,5 +158,86 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1300px) {
+  .section {
+    grid-template-columns: 40%;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .section {
+    grid-template-columns: 45%;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .section {
+    grid-template-columns: 50%;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .section {
+    grid-template-columns: 55%;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .section {
+    grid-template-columns: 60%;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .section {
+    grid-template-columns: 70%;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .section {
+    grid-template-columns: 80%;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .section {
+    grid-template-columns: 90%;
+    align-content: end;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .section {
+    grid-template-columns: 95%;
+  }
+
+  .container {
+    padding: 1.5rem 1rem;
+  }
+
+  .accounts-img {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .add-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .section {
+    grid-template-columns: 100%;
+  }
+
+  .container {
+    padding: 1.5rem 0.5rem;
   }
 }
