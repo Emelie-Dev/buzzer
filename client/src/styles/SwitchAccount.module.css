@@ -210,6 +210,10 @@
     grid-template-columns: 90%;
     align-content: end;
   }
+
+  .container {
+    border-radius: 5px 5px 0 0;
+  }
 }
 
 @media screen and (max-width: 500px) {

@@ -11,14 +11,13 @@ import {
   IoArrowBack,
 } from 'react-icons/io5';
 import { IoMdNotificationsOutline } from 'react-icons/io';
-import { BiMenuAltLeft } from 'react-icons/bi';
+import { BiMenuAltLeft, BiMessageDetail } from 'react-icons/bi';
 import { MdOutlineHistory, MdOutlineLightMode } from 'react-icons/md';
 import { FiLogOut } from 'react-icons/fi';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { AiFillClockCircle } from 'react-icons/ai';
 import { HiTrendingUp } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
-import { BiMessageDetail } from 'react-icons/bi';
 import { FaRegSquarePlus } from 'react-icons/fa6';
 import { BsPlusSquareFill } from 'react-icons/bs';
 import { IoNotificationsOutline } from 'react-icons/io5';
@@ -960,6 +959,7 @@ const NavBar = ({
                       />
                     </span>
                   )}
+
                   <span
                     className={`${styles['search-section-box']} ${
                       page === 'inbox' && !showSearch

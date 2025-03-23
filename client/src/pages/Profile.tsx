@@ -7,11 +7,15 @@ import { MdOutlineGridOn } from 'react-icons/md';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { FaPlay } from 'react-icons/fa6';
 import { FaHeart, FaCommentDots } from 'react-icons/fa';
-import { IoClose, IoMenu } from 'react-icons/io5';
+import { IoClose, IoMenu, IoSettingsOutline } from 'react-icons/io5';
 import { QRCodeCanvas } from 'qrcode.react';
 import { FaCopy } from 'react-icons/fa6';
 import { Arrow } from '../pages/Home';
-import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
+import {
+  MdKeyboardArrowLeft,
+  MdKeyboardArrowRight,
+  MdOutlineHistory,
+} from 'react-icons/md';
 import Engagements from '../components/Engagements';
 import CommentBox from '../components/CommentBox';
 import { CommentData } from '../components/ContentBox';
@@ -23,6 +27,9 @@ import Footer from '../components/Footer';
 import { RiArrowDownSLine } from 'react-icons/ri';
 import SwitchAccount from '../components/SwitchAccount';
 import { BiSort } from 'react-icons/bi';
+import { TbBrandGoogleAnalytics } from 'react-icons/tb';
+import { BiMessageDetail } from 'react-icons/bi';
+import { IoMdNotificationsOutline } from 'react-icons/io';
 
 const data: Content[] = [
   {
@@ -126,11 +133,13 @@ const Profile = () => {
   const [saved, setSaved] = useState<boolean>(false);
   const [shareMedia, setShareMedia] = useState<boolean>(false);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
+  const [mobileMenu, setMobileMenu] = useState<boolean>(false);
 
   const optionsRef = useRef<HTMLDivElement>(null!);
   const reelMenuRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement[]>([]);
   const inputRef = useRef<HTMLInputElement>(null!);
+  const listRef = useRef<HTMLUListElement>(null!);
 
   const navigate = useNavigate();
 
@@ -141,6 +150,20 @@ const Profile = () => {
       }, 400);
     }
   }, [like]);
+
+  useEffect(() => {
+    if (mobileMenu) {
+      listRef.current.animate(
+        {
+          height: ['0px', `${listRef.current.scrollHeight}px`],
+        },
+        {
+          fill: 'both',
+          duration: 150,
+        }
+      );
+    }
+  }, [mobileMenu]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
@@ -178,7 +201,10 @@ const Profile = () => {
               <RiArrowDownSLine className={styles['down-arrow']} />
             </span>
 
-            <IoMenu className={styles['menu-icon']} />
+            <IoMenu
+              className={styles['menu-icon']}
+              onClick={() => setMobileMenu(true)}
+            />
           </header>
 
           <figure className={styles['img-box']}>
@@ -707,6 +733,52 @@ const Profile = () => {
               </div>
             </div>
           </div>
+        </section>
+      )}
+
+      {mobileMenu && (
+        <section
+          className={styles['menu-section']}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setMobileMenu(false);
+          }}
+        >
+          <ul className={styles['menu-list']} ref={listRef}>
+            <li
+              className={styles['menu-item']}
+              onClick={() => navigate('/inbox')}
+            >
+              <BiMessageDetail className={styles['menu-item-icon']} /> Inbox
+            </li>
+            <li
+              className={styles['menu-item']}
+              onClick={() => navigate('/notifications')}
+            >
+              <IoMdNotificationsOutline className={styles['menu-item-icon']} />
+              Notifications
+            </li>
+            <li
+              className={styles['menu-item']}
+              onClick={() => navigate('/history')}
+            >
+              <MdOutlineHistory className={styles['menu-item-icon']} />
+              Watch History
+            </li>
+            <li
+              className={styles['menu-item']}
+              onClick={() => navigate('/analytics')}
+            >
+              <TbBrandGoogleAnalytics className={styles['menu-item-icon']} />
+              Analytics
+            </li>
+            <li
+              className={styles['menu-item']}
+              onClick={() => navigate('/settings')}
+            >
+              <IoSettingsOutline className={styles['menu-item-icon']} />
+              Settings
+            </li>
+          </ul>
         </section>
       )}
 

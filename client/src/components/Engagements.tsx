@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from '../styles/Engagements.module.css';
 import { IoClose, IoSearchSharp } from 'react-icons/io5';
+import ReactDOM from 'react-dom';
 
 type EngagementsProps = {
   value: 'followers' | 'following' | 'friends' | 'suggested' | 'private' | null;
@@ -36,6 +37,8 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
     if (category) itemRef.current[category].scrollIntoView();
   }, [category]);
 
+  const target = document.getElementById('engagements-portal') || document.body;
+
   const addToRef =
     (
       ref: React.MutableRefObject<{
@@ -53,7 +56,7 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
       }
     };
 
-  return (
+  return ReactDOM.createPortal(
     <section
       className={styles.section}
       onClick={(e) => {
@@ -279,7 +282,8 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
           </div>
         )}
       </div>
-    </section>
+    </section>,
+    target
   );
 };
 
