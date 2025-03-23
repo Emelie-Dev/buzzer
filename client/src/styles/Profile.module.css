@@ -802,6 +802,7 @@
 
   .edit-container {
     height: 100vh;
+    justify-content: space-between;
   }
 
   .link-box {
