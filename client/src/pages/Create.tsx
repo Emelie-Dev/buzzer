@@ -72,8 +72,11 @@ export type AudioFile = {
 };
 
 const Create = () => {
-  const { createCategory = 'content', setCreateCategory } =
-    useContext(GeneralContext);
+  const {
+    createCategory = 'content',
+    setCreateCategory,
+    setShowSearchPage,
+  } = useContext(GeneralContext);
   const [category, setCategory] = useState<'reel' | 'content' | 'story'>(
     createCategory
   );
@@ -149,7 +152,11 @@ const Create = () => {
   };
 
   useEffect(() => {
+    document.title = 'Buzzer - Create';
+
     return () => {
+      setShowSearchPage(false);
+
       setCreateCategory('content');
 
       const { content, reel } = files;

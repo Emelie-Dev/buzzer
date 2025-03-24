@@ -16,7 +16,8 @@ const initialCategory = window.matchMedia('(max-width: 700px)').matches
   : 'general';
 
 const Settings = () => {
-  const { settingsCategory, setSettingsCategory } = useContext(GeneralContext);
+  const { settingsCategory, setSettingsCategory, setShowSearchPage } =
+    useContext(GeneralContext);
   const [category, setCategory] = useState<string>(
     settingsCategory.length > 0 ? settingsCategory : initialCategory
   );
@@ -32,7 +33,10 @@ const Settings = () => {
   const supportCategories = ['support', 'info'];
 
   useEffect(() => {
+    document.title = 'Buzzer - Settings';
+
     return () => {
+      setShowSearchPage(false);
       setSettingsCategory(initialCategory);
     };
   }, []);

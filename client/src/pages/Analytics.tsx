@@ -1,6 +1,6 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Analytics.module.css';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import StoryModal from '../components/StoryModal';
 import SwitchAccount from '../components/SwitchAccount';
 import EngagementAnalytics from '../components/EngagementAnalytics';
@@ -9,6 +9,7 @@ import FollowersAnalytics from '../components/FollowersAnalytics';
 import AsideHeader from '../components/AsideHeader';
 import { IoArrowBack } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
+import { GeneralContext } from '../Contexts';
 
 const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
 
@@ -20,9 +21,13 @@ const Settings = () => {
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
+  const { setShowSearchPage } = useContext(GeneralContext);
+
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = 'Buzzer - Analytics';
+
     const resizeHandler = () => {
       const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
       setIsMediumSize(mediumSize);
@@ -33,6 +38,7 @@ const Settings = () => {
     window.addEventListener('resize', resizeHandler);
 
     return () => {
+      setShowSearchPage(false);
       window.removeEventListener('resize', resizeHandler);
     };
   }, []);

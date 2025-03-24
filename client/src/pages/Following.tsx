@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Home.module.css';
 import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
-import { ContentContext } from '../Contexts';
+import { ContentContext, GeneralContext } from '../Contexts';
 import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
@@ -186,8 +186,16 @@ const Following = () => {
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
 
+  const { setShowSearchPage } = useContext(GeneralContext);
+
   useEffect(() => {
+    document.title = 'Buzzer - Following';
+
     scrollHandler();
+
+    return () => {
+      setShowSearchPage(false);
+    };
   }, []);
 
   return (

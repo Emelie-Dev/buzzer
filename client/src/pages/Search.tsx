@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Search.module.css';
 import { HiPlus } from 'react-icons/hi';
@@ -9,6 +9,7 @@ import SwitchAccount from '../components/SwitchAccount';
 import AsideHeader from '../components/AsideHeader';
 import { IoClose, IoSearchSharp, IoArrowBack } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
+import { GeneralContext } from '../Contexts';
 
 const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
 
@@ -20,11 +21,15 @@ const Search = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [overlaySearch, setOverlaySearch] = useState<boolean>(false);
 
+  const { setShowSearchPage } = useContext(GeneralContext);
+
   const navigate = useNavigate();
 
   const searchInputRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
+    document.title = 'Buzzer - Search';
+
     const resizeHandler = () => {
       const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
       setIsMediumSize(mediumSize);
@@ -35,6 +40,7 @@ const Search = () => {
     window.addEventListener('resize', resizeHandler);
 
     return () => {
+      setShowSearchPage(false);
       window.removeEventListener('resize', resizeHandler);
     };
   }, []);

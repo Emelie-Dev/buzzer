@@ -213,14 +213,20 @@ const Home = () => {
 
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
-  const { setCreateCategory } = useContext(GeneralContext);
+  const { setCreateCategory, setShowSearchPage } = useContext(GeneralContext);
 
   const storyRef = useRef<HTMLDivElement>(null!);
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = 'Buzzer - Home';
+
     scrollHandler();
+
+    return () => {
+      setShowSearchPage(false);
+    };
   }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {

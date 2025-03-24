@@ -6,26 +6,50 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate', // Automatically updates service worker
-      devOptions: { enabled: true }, // Enables PWA in dev mode
+      registerType: 'autoUpdate', // Auto-update service worker
+      devOptions: { enabled: true }, // Enable in dev mode
       manifest: {
         name: 'Buzzer',
         short_name: 'Buzzer',
         description: 'A social media web application.',
         theme_color: '#ffffff',
-        background_color: '#ffffff',
-        display: 'standalone', // Runs as a standalone app
-        start_url: '/auth', // Ensures the app loads correctly
+        background_color: '#a855f733',
+        display: 'standalone',
+        start_url: '/auth',
         icons: [
+          { src: '/pwa-icons/icon1.png', sizes: '192x192', type: 'image/png' },
+          { src: '/pwa-icons/icon2.png', sizes: '512x512', type: 'image/png' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,png,jpg,svg}'], // Cache assets
+        cleanupOutdatedCaches: true,
+        runtimeCaching: [
           {
-            src: '/icons/icon1.png',
-            sizes: '192x192',
-            type: 'image/png',
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst', // Try network first, fallback to cache
+            options: { cacheName: 'pages-cache' },
           },
           {
-            src: '/icons/icon2.png',
-            sizes: '512x512',
-            type: 'image/png',
+            urlPattern: ({ url }) => url.pathname === '/offline.html',
+            handler: 'CacheFirst',
+            options: { cacheName: 'offline-cache' },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'document',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-cache',
+              networkTimeoutSeconds: 5,
+              plugins: [
+                {
+                  cacheWillUpdate: async ({ response }) =>
+                    response && response.status === 200
+                      ? response
+                      : caches.match('/offline.html'),
+                },
+              ],
+            },
           },
         ],
       },

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import styles from '../styles/History.module.css';
 import NavBar from '../components/NavBar';
 import StoryModal from '../components/StoryModal';
@@ -8,6 +8,7 @@ import { PeriodComponent } from '../components/PeriodComponent';
 import { FaPlay } from 'react-icons/fa6';
 import { IoArrowBack } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
+import { GeneralContext } from '../Contexts';
 
 const mediumSize = window.matchMedia('(max-width: 900px)').matches;
 
@@ -19,12 +20,16 @@ const History = () => {
 
   const navigate = useNavigate();
 
+  const { setShowSearchPage } = useContext(GeneralContext);
+
   const handleSelectCount = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) setSelectCount((prev) => prev + 1);
     else setSelectCount((prev) => prev - 1);
   };
 
   useEffect(() => {
+    document.title = 'Buzzer - History';
+
     const resizeHandler = () => {
       const mediumSize = window.matchMedia('(max-width: 900px)').matches;
       setIsMediumSize(mediumSize);
@@ -35,6 +40,7 @@ const History = () => {
     window.addEventListener('resize', resizeHandler);
 
     return () => {
+      setShowSearchPage(false);
       window.removeEventListener('resize', resizeHandler);
     };
   }, []);

@@ -45,7 +45,7 @@ const Reels = () => {
   const setActiveIndex = useState<number>(0)[1];
   const [scrollType, setScrollType] = useState<'up' | 'down' | null>(null);
   const [prevTop, setPrevTop] = useState<number>(0);
-  const { setScrollingUp } = useContext(GeneralContext);
+  const { setScrollingUp, setShowSearchPage } = useContext(GeneralContext);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const [showPinnedVideos, setShowPinnedVideos] = useState<boolean>(false);
 
@@ -71,6 +71,8 @@ const Reels = () => {
   );
 
   useEffect(() => {
+    document.title = 'Buzzer - Reels';
+
     if (contentRef.current) {
       contentRef.current.forEach((video) => observer.observe(video));
     }
@@ -100,6 +102,7 @@ const Reels = () => {
     window.addEventListener('resize', resizeHandler);
 
     return () => {
+      setShowSearchPage(false);
       window.removeEventListener('resize', resizeHandler);
     };
   }, []);

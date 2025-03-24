@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import styles from '../styles/Auth.module.css';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebookSquare } from 'react-icons/fa';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
 import { useNavigate } from 'react-router-dom';
+import { GeneralContext } from '../Contexts';
 
 type SignupType = {
   username: string;
@@ -52,6 +53,8 @@ const Auth = () => {
     signin: false,
   });
 
+  const { setShowSearchPage } = useContext(GeneralContext);
+
   const navigate = useNavigate();
 
   const emailRef = useRef<HTMLInputElement>(null!);
@@ -59,6 +62,10 @@ const Auth = () => {
 
   useEffect(() => {
     document.title = 'Buzzer - Authentication';
+
+    return () => {
+      setShowSearchPage(false);
+    };
   }, []);
 
   useEffect(() => {

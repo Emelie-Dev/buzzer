@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useContext } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Inbox.module.css';
 import { BiMessageDetail } from 'react-icons/bi';
@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import { IoArrowBack } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
 import useScrollHandler from '../hooks/useScrollHandler';
+import { GeneralContext } from '../Contexts';
 
 const Inbox = () => {
   const [category, setCategory] = useState<'friends' | 'others'>('friends');
@@ -14,7 +15,17 @@ const Inbox = () => {
 
   const containerRef = useRef<HTMLDivElement>(null!);
 
+  const { setShowSearchPage } = useContext(GeneralContext);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'Buzzer - Inbox';
+
+    return () => {
+      setShowSearchPage(false);
+    };
+  }, []);
 
   useEffect(() => {
     if (containerRef.current) {

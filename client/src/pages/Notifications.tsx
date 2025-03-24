@@ -1,12 +1,13 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Notifications.module.css';
 import AsideHeader from '../components/AsideHeader';
-import { useState } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import NotificationGroup from '../components/NotificationGroup';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import ProfileViews from '../components/ProfileViews';
 import useScrollHandler from '../hooks/useScrollHandler';
+import { GeneralContext } from '../Contexts';
 
 const Notifications = () => {
   const [category, setCategory] = useState<
@@ -16,6 +17,16 @@ const Notifications = () => {
   const [showProfileViews, setShowProfileViews] = useState<boolean>(false);
 
   const { scrollHandler } = useScrollHandler(true);
+
+  const { setShowSearchPage } = useContext(GeneralContext);
+
+  useEffect(() => {
+    document.title = 'Buzzer - Notifications';
+
+    return () => {
+      setShowSearchPage(false);
+    };
+  }, []);
 
   return (
     <>

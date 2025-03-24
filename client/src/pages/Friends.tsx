@@ -1,8 +1,8 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Friends.module.css';
 import { PiCheckFatFill } from 'react-icons/pi';
-import { useEffect, useRef, useState } from 'react';
-import { ContentContext } from '../Contexts';
+import { useEffect, useRef, useState, useContext } from 'react';
+import { ContentContext, GeneralContext } from '../Contexts';
 import ContentBox from '../components/ContentBox';
 import { Content } from '../components/CarouselItem';
 import { DataItem } from './Following';
@@ -172,8 +172,16 @@ const Friends = () => {
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
 
+  const { setShowSearchPage } = useContext(GeneralContext);
+
   useEffect(() => {
+    document.title = 'Buzzer - Friends';
+
     scrollHandler();
+
+    return () => {
+      setShowSearchPage(false);
+    };
   }, []);
 
   useEffect(() => {

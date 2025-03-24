@@ -123,7 +123,7 @@ const Profile = () => {
   const [activeVideo, setActiveVideo] = useState<HTMLVideoElement | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(null!);
 
-  const { setSettingsCategory } = useContext(GeneralContext);
+  const { setSettingsCategory, setShowSearchPage } = useContext(GeneralContext);
 
   const setShowMenu = useState<boolean>(false)[1];
   const setHideMenu = useState<boolean>(true)[1];
@@ -142,6 +142,14 @@ const Profile = () => {
   const listRef = useRef<HTMLUListElement>(null!);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'Buzzer - Profile';
+
+    return () => {
+      setShowSearchPage(false);
+    };
+  }, []);
 
   useEffect(() => {
     if (like) {
