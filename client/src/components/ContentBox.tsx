@@ -141,10 +141,6 @@ const ContentBox = ({
     };
   }, [showMenu]);
 
-  useEffect(() => {
-    console.log(hideData);
-  }, [hideData]);
-
   const handleDescription = () => {
     descriptionRef.current.animate(
       {

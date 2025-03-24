@@ -221,7 +221,7 @@ const MobileAdjustments = ({
           >
             <img
               className={styles['adjustment-icon2']}
-              src="../../public/assets/images/others/grayscale.png"
+              src="../../assets/images/others/grayscale.png"
             />
             <span className={styles['adjustment-text']}>Grayscale</span>
           </span>

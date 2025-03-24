@@ -172,7 +172,7 @@ const Header = ({
             ) : page === 'notifications' ? (
               <img
                 className={styles['profile-view-icon']}
-                src="../../public/assets/images/others/profile_view.png"
+                src="../../assets/images/others/profile_view.png"
                 onClick={() => setShowProfileViews && setShowProfileViews(true)}
               />
             ) : (
