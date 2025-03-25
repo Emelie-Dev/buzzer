@@ -17,8 +17,7 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/auth',
         icons: [
-          { src: '/pwa-icons/icon1.png', sizes: '192x192', type: 'image/png' },
-          { src: '/pwa-icons/icon2.png', sizes: '512x512', type: 'image/png' },
+          { src: '/pwa-icons/icon1.png', sizes: '960x960', type: 'image/png' },
         ],
       },
       workbox: {
