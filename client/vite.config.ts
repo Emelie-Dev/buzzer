@@ -17,39 +17,8 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/auth',
         icons: [
-          { src: '/pwa-icons/icon1.png', sizes: '960x960', type: 'image/png' },
-        ],
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,png,jpg,svg}'], // Cache assets
-        cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'NetworkFirst', // Try network first, fallback to cache
-            options: { cacheName: 'pages-cache' },
-          },
-          {
-            urlPattern: ({ url }) => url.pathname === '/offline.html',
-            handler: 'CacheFirst',
-            options: { cacheName: 'offline-cache' },
-          },
-          {
-            urlPattern: ({ request }) => request.destination === 'document',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'html-cache',
-              networkTimeoutSeconds: 5,
-              plugins: [
-                {
-                  cacheWillUpdate: async ({ response }) =>
-                    response && response.status === 200
-                      ? response
-                      : caches.match('/offline.html'),
-                },
-              ],
-            },
-          },
+          { src: '/pwa-icons/icon1.png', sizes: '192x192', type: 'image/png' },
+          { src: '/pwa-icons/icon2.png', sizes: '512x512', type: 'image/png' },
         ],
       },
     }),
