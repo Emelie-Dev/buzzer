@@ -13,7 +13,7 @@ export default defineConfig({
         short_name: 'Buzzer',
         description: 'A social media web application.',
         theme_color: '#ffffff',
-        background_color: '#a855f733',
+        background_color: '#ffffff',
         display: 'standalone',
         start_url: '/auth',
         icons: [
