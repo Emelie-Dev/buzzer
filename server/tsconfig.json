@@ -2,10 +2,20 @@
   "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    // "allowJs": true,
-    "checkJs": true
-    // "sourceMap": true
-    // "noEmitOnError": true
+    "strict": true, // Enables all strict type checks
+    "noImplicitAny": true, // Prevents implicit `any`
+    "noUnusedLocals": true, // Warns about unused variables
+    "noUnusedParameters": true, // Warns about unused function parameters
+    "noImplicitReturns": true, // Ensures functions always return a value
+    "noFallthroughCasesInSwitch": true, // Prevents fallthrough in switch statements
+    "checkJs": true, // Type-checks JavaScript files (if any)
+    "allowJs": true, // Allows JS files if needed
+    "noEmitOnError": true, // Prevents emitting JS if errors exist
+    "sourceMap": true, // Enables source maps for debugging
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]

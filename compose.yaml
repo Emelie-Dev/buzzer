@@ -22,7 +22,7 @@ services:
     ports: 
       - 5000:5000
     env_file:
-      - config.env
+      - ./server/src/config.env
     develop:
       watch:
         - path: ./server/package.json
