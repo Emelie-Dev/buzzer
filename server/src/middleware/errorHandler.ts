@@ -9,7 +9,7 @@ const devErrorHandler = (error: any, res: Response) => {
   });
 };
 
-export default (error: any, req: any, res: any, next: any) => {
+export default (error: any, res: any) => {
   error.status = error.status || 'error';
   error.statusCode = error.statusCode || 500;
 
