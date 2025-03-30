@@ -20,4 +20,5 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["npm", "run", "start:dev"]
+# Dynamically set CMD based on NODE_ENV
+CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run start:dev; fi"]
