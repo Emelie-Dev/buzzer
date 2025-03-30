@@ -39,6 +39,7 @@ const App = () => {
         }}
       >
         <Routes>
+          <Route path="/" element={<Auth />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/home" element={<Home />} />
           <Route path="/search" element={<Search />} />

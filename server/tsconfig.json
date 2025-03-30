@@ -8,8 +8,6 @@
     "noUnusedParameters": true, // Warns about unused function parameters
     "noImplicitReturns": true, // Ensures functions always return a value
     "noFallthroughCasesInSwitch": true, // Prevents fallthrough in switch statements
-    "checkJs": true, // Type-checks JavaScript files (if any)
-    "allowJs": true, // Allows JS files if needed
     "noEmitOnError": true, // Prevents emitting JS if errors exist
     "sourceMap": true, // Enables source maps for debugging
     "module": "NodeNext",

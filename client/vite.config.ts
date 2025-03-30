@@ -15,7 +15,7 @@ export default defineConfig({
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/auth',
+        start_url: '/',
         icons: [
           { src: '/pwa-icons/icon1.png', sizes: '192x192', type: 'image/png' },
           { src: '/pwa-icons/icon2.png', sizes: '512x512', type: 'image/png' },

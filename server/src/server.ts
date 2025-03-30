@@ -2,10 +2,7 @@ import { config } from 'dotenv';
 import mongoose from 'mongoose';
 
 // Set environmental variables
-
-export const configEnv = () => config({ path: './config.env' });
-
-configEnv();
+config({ path: './config.env' });
 
 // Handles uncaught exceptions(No business with the server)
 process.on('uncaughtException', (err) => {
@@ -15,7 +12,6 @@ process.on('uncaughtException', (err) => {
 });
 
 // Custom Modules
-
 import app from './app.ts';
 
 // Connects to database

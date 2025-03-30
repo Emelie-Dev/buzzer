@@ -16,8 +16,8 @@ import compression from 'compression';
 import morgan from 'morgan';
 
 // Custom Modules
-// import errorController from './Controllers/errorController.ts';
-// import CustomError from './Utils/CustomError.js';
+import authRouter from './routes/authRoutes.ts';
+import errorHandler from './middleware/errorHandler.ts';
 
 const app = express();
 
@@ -101,6 +101,7 @@ app.use(compression());
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
 // Route handlers
+app.use('/api/v1/auth', authRouter);
 
 // For wrong endpoints
 // app.all('*', (req, _, next) => {
@@ -113,10 +114,6 @@ if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 // });
 
 // Error middlewares
-// app.use(errorController);
-
-app.get('/', (_: Request, res: Response) => {
-  return res.send('Welcome to Buzzer!!');
-});
+app.use(errorHandler);
 
 export default app;
