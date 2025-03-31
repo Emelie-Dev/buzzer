@@ -1,23 +1,28 @@
+# Base image
 FROM node:20-alpine
 
-# RUN addgroup app && adduser -S -G app app
-
-# USER app
-
+# Set working directory
 WORKDIR /app
 
+# Copy package files and install dependencies
 COPY package*.json ./
 
-# USER root
+# Use ARG to set NODE_ENV during build
+ARG NODE_ENV=development
+RUN if [ "$NODE_ENV" = "production" ]; then npm install --omit=dev; else npm install; fi
 
-# RUN chown -R app:app .
-
-# USER app
-
-RUN npm install
-
+# Copy the entire source code
 COPY . .
 
+# Build only if in production
+RUN if [ "$NODE_ENV" = "production" ]; then \
+    npm run build && \
+    cp -r /app/src/public /app/dist/public && \
+    cp -r /app/src/templates /app/dist/templates && \
+    rm -rf /app/src; \
+    fi
+
+# Expose the port
 EXPOSE 5000
 
 # Dynamically set CMD based on NODE_ENV
