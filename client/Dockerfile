@@ -21,6 +21,9 @@ CMD ["npm", "run", "dev"]
 
 # Stage 2: Serve with Nginx in production
 FROM nginx:alpine AS production
+# Copy custom Nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
+# Copy built React app
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off; access_log off; error_log /dev/null warn;"]
+CMD ["nginx", "-g", "daemon off;"]
