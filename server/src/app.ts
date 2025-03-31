@@ -49,9 +49,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Render static files
-app.use(
-  express.static(join(dirname(fileURLToPath(import.meta.url)), 'public'))
-);
+app.use(express.static('/app/dist/public'));
 
 // Adds security headers
 app.use(helmet());
