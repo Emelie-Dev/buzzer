@@ -1,8 +1,8 @@
-import User from '../models/userModel.ts';
-import asyncErrorHandler from '../utils/asyncErrorHandler.ts';
+import User from '../models/userModel.js';
+import asyncErrorHandler from '../utils/asyncErrorHandler.js';
 import { NextFunction, Request, Response } from 'express';
-import Email from '../utils/Email.ts';
-import CustomError from '../utils/CustomError.ts';
+import Email from '../utils/Email.js';
+import CustomError from '../utils/CustomError.js';
 
 export const signup = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {

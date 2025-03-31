@@ -3,7 +3,7 @@ import { htmlToText } from 'html-to-text';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { IUser } from '../models/userModel.ts';
+import { IUser } from '../models/userModel.js';
 
 const baseEmail = fs.readFileSync(
   join(

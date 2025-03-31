@@ -12,7 +12,7 @@ process.on('uncaughtException', (err) => {
 });
 
 // Custom Modules
-import app from './app.ts';
+import app from './app.js';
 
 // Connects to database
 await mongoose.connect(

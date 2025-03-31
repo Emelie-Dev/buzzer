@@ -16,8 +16,9 @@ import compression from 'compression';
 import morgan from 'morgan';
 
 // Custom Modules
-import authRouter from './routes/authRoutes.ts';
-import errorHandler from './middleware/errorHandler.ts';
+import authRouter from './routes/authRoutes.js';
+import errorHandler from './middleware/errorHandler.js';
+import CustomError from './utils/CustomError.js';
 
 const app = express();
 
@@ -104,14 +105,9 @@ if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 app.use('/api/v1/auth', authRouter);
 
 // For wrong endpoints
-// app.all('*', (req, _, next) => {
-//   const error = new CustomError(
-//     `Can't find ${req.originalUrl} on the server.`,
-//     404
-//   );
-
-//   next(error);
-// });
+app.all('*', (req, _, next) => {
+  next(new CustomError(`Can't find ${req.originalUrl} on the server.`, 404));
+});
 
 // Error middlewares
 app.use(errorHandler);
