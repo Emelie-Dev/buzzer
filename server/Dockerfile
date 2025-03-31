@@ -9,7 +9,7 @@ COPY package*.json ./
 
 # Use ARG to set NODE_ENV during build
 ARG NODE_ENV=development
-RUN if [ "$NODE_ENV" = "production" ]; then npm install; else npm install; fi
+RUN if [ "$NODE_ENV" = "production" ]; then npm install --omit=optional; else npm install; fi
 
 # Copy the entire source code
 COPY . .
@@ -17,8 +17,9 @@ COPY . .
 # Build only if in production
 RUN sh -c 'if [ "$NODE_ENV" = "production" ]; then \
     npm run build && \
-    [ -d /app/src/public ] && cp -r /app/src/public /app/dist/public || echo "No public folder"; \
-    [ -d /app/src/templates ] && cp -r /app/src/templates /app/dist/templates || echo "No templates folder"; \
+    mkdir -p /app/dist/public /app/dist/templates && \
+    cp -r /app/src/public /app/dist/public && \
+    cp -r /app/src/templates /app/dist/templates && \
     rm -rf /app/src; \
     fi'
 
