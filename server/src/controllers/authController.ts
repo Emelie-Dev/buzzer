@@ -58,7 +58,7 @@ export const verifyEmail = asyncErrorHandler(
 
     const url =
       process.env.NODE_ENV === 'production'
-        ? 'https://taskflow-266v.onrender.com'
+        ? 'https://buzzer-on6q.onrender.com'
         : 'http://localhost:5173';
   }
 );
