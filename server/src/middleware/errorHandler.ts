@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, NextFunction, Response } from 'express';
 
 const devErrorHandler = (error: any, res: Response) => {
   return res.status(error.statusCode).json({
@@ -9,12 +9,12 @@ const devErrorHandler = (error: any, res: Response) => {
   });
 };
 
-export default (error: any, res: any) => {
+export default (error: any, _: Request, res: Response, __: NextFunction) => {
   error.status = error.status || 'error';
   error.statusCode = error.statusCode || 500;
 
   if (process.env.NODE_ENV === 'production') {
-    return res.status(500).json({
+    res.status(500).json({
       status: 'error',
       message: 'Server error!!!',
     });
