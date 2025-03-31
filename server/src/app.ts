@@ -1,6 +1,6 @@
 // Core Modules
-// import { fileURLToPath } from 'url';
-// import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 // Third party Modules
 import express from 'express';
@@ -49,7 +49,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Render static files
-// app.use(express.static('/app/dist/public'));
+app.use(
+  express.static(join(dirname(fileURLToPath(import.meta.url)), 'public'))
+);
 
 // Adds security headers
 app.use(helmet());
@@ -101,6 +103,10 @@ if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
 // Route handlers
 app.use('/api/v1/auth', authRouter);
+
+app.get('/', (_, res) => {
+  res.send('Server is running!');
+});
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {
