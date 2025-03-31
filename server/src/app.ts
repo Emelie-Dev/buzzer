@@ -103,9 +103,6 @@ if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
 // Route handlers
 app.use('/api/v1/auth', authRouter);
-// app.get(['/', '/favicon.ico'], (_, res) => {
-//   res.status(200).send();
-// });
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {

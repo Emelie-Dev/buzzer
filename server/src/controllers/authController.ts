@@ -3,6 +3,7 @@ import asyncErrorHandler from '../utils/asyncErrorHandler.js';
 import { NextFunction, Request, Response } from 'express';
 import Email from '../utils/Email.js';
 import CustomError from '../utils/CustomError.js';
+import crypto from 'crypto';
 
 export const signup = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -39,5 +40,25 @@ export const signup = asyncErrorHandler(
         )
       );
     }
+  }
+);
+
+export const verifyEmail = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    //  Regenerates token
+    const emailVerificationToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+
+    const user = await User.find({
+      emailVerificationToken,
+      emailVerificationTokenExpires: { $gt: Date.now() },
+    });
+
+    const url =
+      process.env.NODE_ENV === 'production'
+        ? 'https://taskflow-266v.onrender.com'
+        : 'http://localhost:5173';
   }
 );
