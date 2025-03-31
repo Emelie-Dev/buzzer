@@ -18,8 +18,8 @@ COPY . .
 RUN sh -c 'if [ "$NODE_ENV" = "production" ]; then \
     npm run build && \
     mkdir -p /app/dist/public /app/dist/templates && \
-    cp -r /app/src/public /app/dist/public && \
-    cp -r /app/src/templates /app/dist/templates && \
+    cp -r /app/src/public/* /app/dist/public/ && \
+    cp -r /app/src/templates/* /app/dist/templates/ && \
     rm -rf /app/src; \
     fi'
 
