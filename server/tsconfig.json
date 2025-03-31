@@ -11,7 +11,8 @@
     "noEmitOnError": true,
     "sourceMap": true,
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "NodeNext",
+    "declaration": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
