@@ -9,7 +9,7 @@ RUN npm install
 
 COPY . .
 
-ARG NODE_ENV=development
+ARG NODE_ENV=production
 RUN if [ "$NODE_ENV" = "production" ]; then npm run build; fi
 
 # Stage 2: Serve with Nginx in production, or start Vite in dev
