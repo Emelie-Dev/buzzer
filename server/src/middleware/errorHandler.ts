@@ -13,7 +13,12 @@ export default (error: any, res: any) => {
   error.status = error.status || 'error';
   error.statusCode = error.statusCode || 500;
 
-  if (process.env.NODE_ENV) {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(500).json({
+      status: 'error',
+      message: 'Server error!!!',
+    });
+  } else {
     devErrorHandler(error, res);
   }
 };
