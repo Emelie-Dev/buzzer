@@ -15,12 +15,12 @@ RUN if [ "$NODE_ENV" = "production" ]; then npm install --omit=dev; else npm ins
 COPY . .
 
 # Build only if in production
-RUN if [ "$NODE_ENV" = "production" ]; then \
+RUN sh -c 'if [ "$NODE_ENV" = "production" ]; then \
     npm run build && \
-    cp -r /app/src/public /app/dist/public && \
-    cp -r /app/src/templates /app/dist/templates && \
+    [ -d /app/src/public ] && cp -r /app/src/public /app/dist/public || echo "No public folder"; \
+    [ -d /app/src/templates ] && cp -r /app/src/templates /app/dist/templates || echo "No templates folder"; \
     rm -rf /app/src; \
-    fi
+    fi'
 
 # Expose the port
 EXPOSE 5000
