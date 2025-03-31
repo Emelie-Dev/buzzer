@@ -21,6 +21,14 @@ const verifyEmail = fs.readFileSync(
   'utf-8'
 );
 
+const welcomeEmail = fs.readFileSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../templates/emails/welcomeEmail.html'
+  ),
+  'utf-8'
+);
+
 class Email {
   private to: string;
   private username: string;
@@ -84,6 +92,15 @@ class Email {
       .replace('{{URL}}', this.url);
 
     await this.send(template, 'Verify Your Email');
+  }
+
+  // Sends verification email
+  async sendWelcome() {
+    const template = welcomeEmail
+      .replace('{{USERNAME}}', this.username)
+      .replace('{{URL}}', this.url);
+
+    await this.send(template, 'Welcome to the Buzzer Family');
   }
 }
 

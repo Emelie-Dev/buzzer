@@ -4,6 +4,13 @@ import { NextFunction, Request, Response } from 'express';
 import Email from '../utils/Email.js';
 import CustomError from '../utils/CustomError.js';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+
+const signToken = (id: unknown) => {
+  return jwt.sign({ id }, String(process.env.JWT_SECRET), {
+    expiresIn: Number(process.env.JWT_LOGIN_EXPIRES),
+  });
+};
 
 export const signup = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -44,21 +51,46 @@ export const signup = asyncErrorHandler(
 );
 
 export const verifyEmail = asyncErrorHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response) => {
     //  Regenerates token
     const emailVerificationToken = crypto
       .createHash('sha256')
       .update(req.params.token)
       .digest('hex');
 
-    const user = await User.find({
+    const user = await User.findOne({
       emailVerificationToken,
       emailVerificationTokenExpires: { $gt: Date.now() },
     });
 
-    const url =
-      process.env.NODE_ENV === 'production'
-        ? 'https://buzzer-on6q.onrender.com'
-        : 'http://localhost:5173';
+    // const url =
+    //   process.env.NODE_ENV === 'production'
+    //     ? 'https://buzzer-0z8q.onrender.com'
+    //     : 'http://localhost:5173';
+
+    if (!user) {
+      return res.status(404).send('This link does not exist.');
+    } else {
+      user.emailVerified = true;
+      user.emailVerificationToken = undefined;
+      user.emailVerificationTokenExpires = undefined;
+
+      await user.save({ validateBeforeSave: false });
+
+      const jwtToken = signToken(user._id);
+
+      res.cookie('jwt', jwtToken, {
+        maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
+        httpOnly: true,
+      });
+
+      res.status(200).send('Email is verified successfully!!!');
+
+      // Sends welcome email after response so as not to delay response
+      try {
+        const url = `${req.protocol}://${req.get('host')}/settings`;
+        return await new Email(user, url).sendWelcome();
+      } catch {}
+    }
   }
 );
