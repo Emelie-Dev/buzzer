@@ -1,10 +1,20 @@
 import express from 'express';
-import { signup } from '../controllers/authController.js';
+import {
+  authConfirmed,
+  login,
+  logout,
+  signup,
+  verifyEmail,
+} from '../controllers/authController.js';
+import protectRoute from '../middleware/protectRoute.js';
 
 const router = express.Router();
 
-router.post('/signup', signup);
+router.get('/verify-email/:token', verifyEmail);
+router.get('/auth-check', protectRoute, authConfirmed);
 
-router.get('/verify_email/:token', signup);
+router.post('/signup', signup);
+router.post('/login', login);
+router.post('/logout', logout);
 
 export default router;

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Taskflow - Verify Email</title>
+
+    <style>
+      :root {
+        --app-theme-color: #a855f7;
+      }
+
+      .body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 7rem 2rem;
+        font-size: 1.1rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .body-success {
+        color: green;
+      }
+
+      .body-fail {
+        color: red;
+      }
+
+      .btn-div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2rem 0;
+      }
+
+      .btn {
+        outline: none;
+        font-family: var(--general-font);
+        background: var(--app-theme-color);
+        color: white;
+        padding: 0.7rem 1.4rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.03rem;
+        font-weight: 500;
+        cursor: pointer;
+        box-shadow: 2px 2px 20px -5px var(--app-theme-color);
+        transition: opacity 0.3s;
+        text-transform: capitalize;
+      }
+
+      .btn:hover {
+        opacity: 0.75;
+      }
+    </style>
+  </head>
+
+  <body>
+    {{CONTENT}} {{CONTENT2}}
+  </body>
+</html>

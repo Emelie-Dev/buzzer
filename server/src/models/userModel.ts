@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { Query } from 'mongoose';
 
 export interface IUser extends Document {
   username: string;
@@ -11,9 +12,12 @@ export interface IUser extends Document {
   photo: string;
   active: boolean;
   emailVerified: boolean;
-  emailVerificationToken?: string | undefined;
-  emailVerificationTokenExpires?: Date | undefined;
+  emailVerificationToken: string | undefined;
+  emailVerificationTokenExpires: Date | undefined;
+  passwordChangedAt: Date;
   generateToken: () => string;
+  comparePasswordInDb: (pswd: string, pswdDb: string) => Promise<boolean>;
+  isPasswordChanged: (JWTTimestamp: number) => boolean;
 }
 
 const userSchema = new Schema<IUser>({
@@ -71,15 +75,34 @@ const userSchema = new Schema<IUser>({
     type: Boolean,
     default: false,
   },
+  passwordChangedAt: Date,
   emailVerificationToken: String,
   emailVerificationTokenExpires: Date,
 });
+
+// Middlewares
 
 // Encrypts Password
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
 });
+
+userSchema.pre(/^find/, function (this: Query<any, any>, next) {
+  const filters = this.getFilter();
+
+  if (filters.__login) {
+    this.setQuery({ ...filters, __login: undefined });
+  } else if (filters.emailVerificationToken) {
+    this.where({ active: true });
+  } else {
+    this.where({ active: true, emailVerified: true });
+  }
+
+  next();
+});
+
+// Instance Methods
 
 // Generates email verification token
 userSchema.methods.generateToken = function () {
@@ -91,6 +114,27 @@ userSchema.methods.generateToken = function () {
     .digest('hex');
   this.emailVerificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
   return verificationToken;
+};
+
+// Checks if provided password is correct
+userSchema.methods.comparePasswordInDb = async function (
+  pswd: string,
+  pswdDb: string
+) {
+  return await bcrypt.compare(pswd, pswdDb);
+};
+
+// Checks is password was changed
+userSchema.methods.isPasswordChanged = function (JWTTimestamp: number) {
+  if (this.passwordChangedAt) {
+    const passwordChangedTimestamp = parseInt(
+      String(this.passwordChangedAt.getTime() / 1000),
+      10
+    );
+    return JWTTimestamp < passwordChangedTimestamp;
+  }
+
+  return false;
 };
 
 const User = mongoose.model<IUser>('User', userSchema);

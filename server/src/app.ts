@@ -29,7 +29,7 @@ config({ path: './config.env' });
 // Implements Cors
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://buzzer-d1x4.onrender.com/',
+  'https://buzzer-0z8q.onrender.com/',
 ];
 
 const corsOptions = {
