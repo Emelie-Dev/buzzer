@@ -1,12 +1,9 @@
 import asyncErrorHandler from '../utils/asyncErrorHandler.js';
 import User from '../models/userModel.js';
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Response } from 'express';
 import CustomError from '../utils/CustomError.js';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-
-export interface AuthRequest extends Request {
-  user?: Record<string, any>;
-}
+import { AuthRequest } from '../utils/asyncErrorHandler.js';
 
 export default asyncErrorHandler(
   async (req: AuthRequest, _: Response, next: NextFunction) => {

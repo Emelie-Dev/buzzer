@@ -29,6 +29,14 @@ const welcomeEmail = fs.readFileSync(
   'utf-8'
 );
 
+const resetPassword = fs.readFileSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../templates/emails/resetPassword.html'
+  ),
+  'utf-8'
+);
+
 class Email {
   private to: string;
   private username: string;
@@ -68,9 +76,13 @@ class Email {
   // Sends the mail
   private async send(template: string, subject: string) {
     // Render HTML
+    const templateContent = template
+      .replace('{{USERNAME}}', this.username)
+      .replace('{{URL}}', this.url);
+
     const html = baseEmail
       .replace('{{SUBJECT}}', subject)
-      .replace('{{CONTENT}}', template);
+      .replace('{{CONTENT}}', templateContent);
 
     // Define email options
     const mailOptions = {
@@ -87,20 +99,17 @@ class Email {
 
   // Sends verification email
   async sendEmailVerification() {
-    const template = verifyEmail
-      .replace('{{USERNAME}}', this.username)
-      .replace('{{URL}}', this.url);
-
-    await this.send(template, 'Verify Your Email');
+    await this.send(verifyEmail, 'Verify Your Email');
   }
 
-  // Sends verification email
+  // Sends welcome email
   async sendWelcome() {
-    const template = welcomeEmail
-      .replace('{{USERNAME}}', this.username)
-      .replace('{{URL}}', this.url);
+    await this.send(welcomeEmail, 'Welcome to the Buzzer Family');
+  }
 
-    await this.send(template, 'Welcome to the Buzzer Family');
+  // Sends pasword reset email
+  async sendPasswordReset() {
+    await this.send(resetPassword, 'Reset your Password');
   }
 }
 

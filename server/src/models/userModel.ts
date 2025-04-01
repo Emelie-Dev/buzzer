@@ -15,7 +15,9 @@ export interface IUser extends Document {
   emailVerificationToken: string | undefined;
   emailVerificationTokenExpires: Date | undefined;
   passwordChangedAt: Date;
-  generateToken: () => string;
+  passwordResetToken: String | undefined;
+  passwordResetTokenExpires: Date | undefined;
+  generateToken: (type: 'email' | 'password') => string;
   comparePasswordInDb: (pswd: string, pswdDb: string) => Promise<boolean>;
   isPasswordChanged: (JWTTimestamp: number) => boolean;
 }
@@ -78,6 +80,8 @@ const userSchema = new Schema<IUser>({
   passwordChangedAt: Date,
   emailVerificationToken: String,
   emailVerificationTokenExpires: Date,
+  passwordResetToken: String,
+  passwordResetTokenExpires: Date,
 });
 
 // Middlewares
@@ -105,15 +109,25 @@ userSchema.pre(/^find/, function (this: Query<any, any>, next) {
 // Instance Methods
 
 // Generates email verification token
-userSchema.methods.generateToken = function () {
-  const verificationToken = crypto.randomBytes(32).toString('hex');
+userSchema.methods.generateToken = function (type: 'email' | 'password') {
+  const token = crypto.randomBytes(32).toString('hex');
 
-  this.emailVerificationToken = crypto
-    .createHash('sha256')
-    .update(verificationToken)
-    .digest('hex');
-  this.emailVerificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
-  return verificationToken;
+  if (type === 'email') {
+    this.emailVerificationToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+    this.emailVerificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
+  } else {
+    this.passwordResetToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    this.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000;
+  }
+
+  return token;
 };
 
 // Checks if provided password is correct
