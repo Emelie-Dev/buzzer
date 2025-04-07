@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   authConfirmed,
+  checkIfDataExist,
   forgotPassword,
   login,
   logout,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.get('/verify-email/:token', verifyEmail);
 router.get('/auth-check', protectRoute, authConfirmed);
+router.get('/check-data/:field/:value', checkIfDataExist);
 
 router.post('/signup', signup);
 router.post('/login', login);

@@ -4,6 +4,28 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Query } from 'mongoose';
 
+export enum StoryAccessibility {
+  EVERYONE,
+  FRIENDS,
+  YOU,
+}
+
+export interface StoryItem extends Document {
+  media: {
+    src: String;
+    mediaType: 'image' | 'video';
+    filter: String;
+  };
+  disableComments: Boolean;
+  accessibility: StoryAccessibility;
+  sound: String;
+  volume: {
+    sound: Number;
+    story: Number;
+  };
+  createdAt: Date;
+}
+
 export interface IUser extends Document {
   username: string;
   name: string;
@@ -17,10 +39,53 @@ export interface IUser extends Document {
   passwordChangedAt: Date;
   passwordResetToken: String | undefined;
   passwordResetTokenExpires: Date | undefined;
+  story: StoryItem[];
   generateToken: (type: 'email' | 'password') => string;
   comparePasswordInDb: (pswd: string, pswdDb: string) => Promise<boolean>;
   isPasswordChanged: (JWTTimestamp: number) => boolean;
 }
+
+const StorySchema = new Schema<StoryItem>({
+  media: {
+    type: {
+      src: {
+        type: String,
+        required: true,
+      },
+      mediaType: {
+        type: String,
+        enum: ['image', 'video'],
+        required: true,
+      },
+      filter: {
+        type: String,
+        required: true,
+      },
+    },
+  },
+  disableComments: {
+    type: Boolean,
+    default: false,
+  },
+  accessibility: {
+    type: Number,
+    default: StoryAccessibility.EVERYONE,
+  },
+  sound: String,
+  volume: {
+    type: {
+      sound: {
+        type: Number,
+        default: 0.5,
+      },
+      story: {
+        type: Number,
+        default: 1,
+      },
+    },
+  },
+  createdAt: { type: Date, default: Date.now },
+});
 
 const userSchema = new Schema<IUser>({
   username: {
@@ -76,6 +141,16 @@ const userSchema = new Schema<IUser>({
   emailVerified: {
     type: Boolean,
     default: false,
+  },
+  story: {
+    type: [StorySchema],
+    default: [],
+    validate: {
+      validator: (value: StoryItem[]) => {
+        return value.length <= 10;
+      },
+      message: 'Story must not exceed 10 items.',
+    },
   },
   passwordChangedAt: Date,
   emailVerificationToken: String,

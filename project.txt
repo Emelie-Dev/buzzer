@@ -31,17 +31,28 @@ Pages =>
   - Hide search before any page unmounts
 
 
+Server =>
+  - Collections
+    - Users
+      - Actions 
+        - Normal (follow, unfollow, add friend, remove friend)
+        - Auth (manage devices)
 
+    - Contents
+    - Notifications
 
+  - Worker threads
+    - Image resizing after upload for different display sizes (profile picture, thumbnails).
+    - Video transcoding to different formats and resolutions for streaming.
+    - Image filtering or applying effects to user-uploaded images.
+    - Video processing (e.g., trimming, adding watermarks) before display.
+    - Thumbnail generation from video files to display previews.
+    - Compression of media files (images/videos) to reduce storage size.
+    - Metadata extraction (e.g., EXIF data from images or video duration) after upload.
+    - Automatic content moderation (e.g., detecting inappropriate content in images/videos).
+    - Generating animated GIFs from video clips.
+    - Audio processing (e.g., normalization or conversion) for videos with sound.
 
-General - display, chat , privacy.
+  Tips
+  - Enable chat feature
 
-Account- profile, password, delete or deactivate , 
-Security - security alerts, manage devices, 2-step
-
-Content- notifications, analytics, time management, interactions.
-
-
-About- terms and policies, report a problem
-
-Authentication- switch account, logout

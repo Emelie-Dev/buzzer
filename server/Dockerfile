@@ -27,4 +27,4 @@ RUN sh -c 'if [ "$NODE_ENV" = "production" ]; then \
 EXPOSE 5000
 
 # Dynamically set CMD based on NODE_ENV
-CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run start:dev; fi"]
+CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run dev; fi"]

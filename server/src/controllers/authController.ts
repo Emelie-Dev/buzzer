@@ -63,6 +63,31 @@ const signToken = (id: unknown) => {
   });
 };
 
+export const checkIfDataExist = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { field, value } = req.params;
+
+    if (field !== 'username' && field !== 'email')
+      return next(new CustomError('This request is invalid!', 400));
+
+    const user = await User.findOne({
+      [field]: value,
+    });
+
+    if (user) {
+      return res.status(409).json({
+        status: 'fail',
+        message: `This ${field} already exists.`,
+      });
+    } else {
+      return res.status(200).json({
+        status: 'success',
+        message: `This ${field} is available.`,
+      });
+    }
+  }
+);
+
 export const signup = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const user = await User.create(req.body);
@@ -141,7 +166,7 @@ export const verifyEmail = asyncErrorHandler(
 
       // Sends welcome email after response so as not to delay response
       try {
-        const url = `${req.protocol}://${req.get('host')}/settings`;
+        const url = `${homePage}/settings`;
         return await new Email(user, url).sendWelcome();
       } catch {}
     }

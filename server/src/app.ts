@@ -1,6 +1,6 @@
 // Core Modules
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 
 // Third party Modules
 import express from 'express';
@@ -14,15 +14,25 @@ import sanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import compression from 'compression';
 import morgan from 'morgan';
+import workerpool from 'workerpool';
 
 // Custom Modules
 import authRouter from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import CustomError from './utils/CustomError.js';
+import storiesRouter from './routes/storyRoutes.js';
 
 const app = express();
 
 config({ path: './config.env' });
+
+// Create a worker pool
+export const pool = workerpool.pool(
+  join(dirname(fileURLToPath(import.meta.url)), 'worker.js'),
+  {
+    maxWorkers: 4, // Set number of workers
+  }
+);
 
 // Middlewares
 
@@ -103,6 +113,7 @@ if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
 // Route handlers
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/stories', storiesRouter);
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {
