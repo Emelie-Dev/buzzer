@@ -7,22 +7,42 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { pool } from '../app.js';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinary from '../utils/cloudinary.js';
+
+// Cloudinary Storage Configuration
+const onlineStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    const ext = path.extname(file.originalname).replace('.', '');
+    return {
+      folder: 'stories', // Cloudinary folder name
+      format: ext, // Use the original file extension as format
+      public_id: `${(req as AuthRequest).user?._id}-${Date.now()}-${Math.trunc(
+        Math.random() * 1000000000
+      )}${ext}`, // Unique name
+    };
+  },
+});
 
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_, __, cb) => {
-      cb(null, 'src/public/stories');
-    },
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      cb(
-        null,
-        `${(req as AuthRequest).user?._id}-${Date.now()}-${Math.trunc(
-          Math.random() * 1000000000
-        )}${ext}`
-      );
-    },
-  }),
+  storage:
+    process.env.NODE_ENV === 'production'
+      ? onlineStorage
+      : multer.diskStorage({
+          destination: (_, __, cb) => {
+            cb(null, 'src/public/stories');
+          },
+          filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname);
+            cb(
+              null,
+              `${(req as AuthRequest).user?._id}-${Date.now()}-${Math.trunc(
+                Math.random() * 1000000000
+              )}${ext}`
+            );
+          },
+        }),
   limits: { fileSize: 1_073_741_824 },
   fileFilter: (_, file, cb) => {
     const videoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
@@ -48,6 +68,26 @@ const upload = multer({
     cb(null, true);
   },
 });
+
+const deleteStoryFiles = async (files: {
+  [fieldname: string]: Express.Multer.File[];
+}) => {
+  const paths = Object.entries(files).reduce((accumulator, field) => {
+    accumulator.push(...field[1].map((data) => data.path));
+    return accumulator;
+  }, [] as String[]);
+
+  await Promise.allSettled(
+    paths.map((path): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        fs.unlink(path as fs.PathLike, (err) => {
+          if (err) reject();
+          resolve();
+        });
+      });
+    })
+  );
+};
 
 export const getStories = asyncErrorHandler(
   async (_: AuthRequest, res: Response, __: NextFunction) => {
@@ -93,9 +133,10 @@ export const getStory = asyncErrorHandler(
   }
 );
 
-// Check for current story length
 export const validateStoryFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const maxCount = 10 - req.user?.story.length;
+
     const uploader = upload.fields([
       { name: 'story', maxCount: 10 },
       { name: 'sound', maxCount: 1 },
@@ -119,6 +160,14 @@ export const validateStoryFiles = asyncErrorHandler(
           );
         }
 
+        if (files.story.length > maxCount)
+          throw new CustomError(
+            `You can only upload ${
+              maxCount === 1 ? '1 file' : `${maxCount} files`
+            }.`,
+            400
+          );
+
         const storyFiles = files.story || [];
         if (storyFiles.length === 0) {
           throw new CustomError(
@@ -137,22 +186,7 @@ export const validateStoryFiles = asyncErrorHandler(
 
         next();
       } catch (err) {
-        const paths = Object.entries(files).reduce((accumulator, field) => {
-          accumulator.push(...field[1].map((data) => data.path));
-          return accumulator;
-        }, [] as String[]);
-
-        await Promise.allSettled(
-          paths.map((path): Promise<void> => {
-            return new Promise((resolve, reject) => {
-              fs.unlink(path as fs.PathLike, (err) => {
-                if (err) reject();
-                resolve();
-              });
-            });
-          })
-        );
-
+        await deleteStoryFiles(files);
         next(err);
       }
     });
@@ -185,22 +219,8 @@ export const processStoryFiles = asyncErrorHandler(
       );
 
       next();
-    } catch {
-      const paths = Object.entries(files).reduce((accumulator, field) => {
-        accumulator.push(...field[1].map((data) => data.path));
-        return accumulator;
-      }, [] as String[]);
-
-      await Promise.allSettled(
-        paths.map((path): Promise<void> => {
-          return new Promise((resolve, reject) => {
-            fs.unlink(path as fs.PathLike, (err) => {
-              if (err) reject();
-              resolve();
-            });
-          });
-        })
-      );
+    } catch (err) {
+      await deleteStoryFiles(files);
 
       res.status(500).end(
         JSON.stringify({
@@ -213,7 +233,7 @@ export const processStoryFiles = asyncErrorHandler(
 );
 
 export const saveStory = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response) => {
     const files = req.files as {
       [fieldname: string]: Express.Multer.File[];
     };
@@ -227,7 +247,10 @@ export const saveStory = asyncErrorHandler(
 
       const newStory = files.story.map((file, index) => ({
         media: {
-          src: path.basename(file.path),
+          src:
+            process.env.NODE_ENV === 'production'
+              ? (file as any).secure_url
+              : path.basename(file.path),
           mediaType: file.mimetype.startsWith('video')
             ? 'video'
             : file.mimetype.startsWith('image')
@@ -237,11 +260,14 @@ export const saveStory = asyncErrorHandler(
         },
         disableComments,
         accessibility,
-        sound: path.basename(files.sound[0].path),
+        sound:
+          process.env.NODE_ENV === 'production'
+            ? (files.sound[0] as any).secure_url
+            : path.basename(files.sound[0].path),
         volume,
       }));
 
-      await User.findByIdAndUpdate(
+      const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
           $push: {
@@ -258,9 +284,12 @@ export const saveStory = asyncErrorHandler(
         JSON.stringify({
           status: 'success',
           message: 'Story updated!',
+          story: user?.story,
         })
       );
-    } catch {
+    } catch (err) {
+      await deleteStoryFiles(files);
+
       return res.status(500).end(
         JSON.stringify({
           status: 'fail',
