@@ -20,6 +20,7 @@ RUN sh -c 'if [ "$NODE_ENV" = "production" ]; then \
     mkdir -p /app/dist/public /app/dist/templates && \
     cp -r /app/src/public/* /app/dist/public/ && \
     cp -r /app/src/templates/* /app/dist/templates/ && \
+    cp /app/src/worker.js /app/dist/ && \
     rm -rf /app/src; \
     fi'
 
