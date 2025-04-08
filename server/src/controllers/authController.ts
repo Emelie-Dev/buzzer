@@ -43,6 +43,7 @@ const sendEmail = async (
         'A verification email has been sent to you. Click the link in the email to complete your signup process.',
     });
   } catch (err) {
+    console.log(signup);
     // Removes verification token from user data
     user.emailVerificationToken = undefined;
     user.emailVerificationTokenExpires = undefined;
