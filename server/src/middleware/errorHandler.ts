@@ -16,7 +16,8 @@ export default (error: any, _: Request, res: Response, __: NextFunction) => {
   if (process.env.NODE_ENV === 'production') {
     res.status(500).json({
       status: 'error',
-      message: 'Server error!!!',
+      message: error.message,
+      error,
     });
   } else {
     devErrorHandler(error, res);
