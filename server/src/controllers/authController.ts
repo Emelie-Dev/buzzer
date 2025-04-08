@@ -42,20 +42,18 @@ const sendEmail = async (
       message:
         'A verification email has been sent to you. Click the link in the email to complete your signup process.',
     });
-  } catch (err) {
-    console.log(signup);
+  } catch {
     // Removes verification token from user data
     user.emailVerificationToken = undefined;
     user.emailVerificationTokenExpires = undefined;
 
     await user.save({ validateBeforeSave: false });
 
-    // const message = signup
-    //   ? 'An error occurred while sending the verification email. Please try logging in with the credentials you entered.'
-    //   : 'An error occurred while sending the verification email. Please try again later.';
+    const message = signup
+      ? 'An error occurred while sending the verification email. Please try logging in with the credentials you entered.'
+      : 'An error occurred while sending the verification email. Please try again later.';
 
-    return next(err);
-    // return next(new CustomError(message, 500));
+    return next(new CustomError(message, 500));
   }
 };
 
