@@ -61,7 +61,7 @@ const processStoryImage = async (filter, filePath, tempFilePath) => {
   // Overwrite the original file with the processed one
   await new Promise((resolve, reject) =>
     fs.rename(tempFilePath, filePath, (err) => {
-      if (err) reject();
+      if (err) return reject();
       resolve();
     })
   );
@@ -124,7 +124,7 @@ const processStoryVideo = (filter, filePath, tempFilePath) => {
       .output(tempFilePath)
       .on('end', () => {
         fs.rename(tempFilePath, filePath, (err) => {
-          if (err) reject(err);
+          if (err) return reject(err);
           else resolve();
         });
       })
@@ -144,19 +144,19 @@ const checkVideoFilesDuration = async (files) => {
           if (err) {
             error.statusCode = 500;
             error.message = 'Error uploading files!.';
-            reject(error);
+            return reject(error);
           }
 
           const duration = metadata.format.duration;
 
           if (!duration) {
             error.message = 'Please select only valid file types.';
-            reject(error);
+            return reject(error);
           }
 
           if (duration > 300) {
             error.message = 'Video duration must not exceed 5 minutes.';
-            reject(error);
+            return reject(error);
           }
 
           resolve();

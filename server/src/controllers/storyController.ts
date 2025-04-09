@@ -9,6 +9,7 @@ import fs from 'fs';
 import { pool } from '../app.js';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../utils/cloudinary.js';
+import protectData from '../utils/protectData.js';
 
 // Cloudinary Storage Configuration
 const onlineStorage = new CloudinaryStorage({
@@ -90,24 +91,56 @@ const deleteStoryFiles = async (files: {
 };
 
 export const getStories = asyncErrorHandler(
-  async (_: AuthRequest, res: Response, __: NextFunction) => {
+  async (req: AuthRequest, res: Response, _: NextFunction) => {
     // Select 10 from following, 5 from followers, 5 from others
 
     const users = await User.aggregate([
+      { $match: { _id: { $ne: req.user?._id } } },
       {
         $match: {
           story: {
-            $elemMatch: { storyAccessibility: StoryAccessibility.EVERYONE },
+            $elemMatch: { accessibility: StoryAccessibility.EVERYONE },
           },
         },
       },
-      { $sample: { size: 20 } }, // Pick random users
+      {
+        $project: {
+          story: {
+            $filter: {
+              input: '$story',
+              as: 's',
+              cond: { $eq: ['$$s.accessibility', StoryAccessibility.EVERYONE] },
+            },
+          },
+          username: 1,
+          name: 1,
+          photo: 1,
+        },
+      },
+      { $unset: ['story.createdAt', 'story.accessibility'] },
+      { $sample: { size: 20 } },
+    ]);
+
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        storyFeed: users,
+      },
+      { new: true, runValidators: true }
+    );
+
+    const userData = protectData(user!, [
+      'password',
+      'emailVerified',
+      '__v',
+      'active',
+      'passwordChangedAt',
     ]);
 
     return res.status(200).json({
       status: 'success',
       data: {
-        users,
+        user: userData,
       },
     });
   }
@@ -280,6 +313,7 @@ export const saveStory = asyncErrorHandler(
         }
       );
 
+      // in production delete story files from server storage
       return res.status(201).end(
         JSON.stringify({
           status: 'success',
@@ -298,4 +332,60 @@ export const saveStory = asyncErrorHandler(
       );
     }
   }
+);
+
+export const deleteStory = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const storyId = req.params.id;
+    const userStories = req.user?.story;
+    const story = userStories.id(storyId);
+
+    if (!story) {
+      return next(new CustomError('This story does not exist!', 404));
+    }
+
+    // Deletes user story
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $pull: { story: { _id: storyId } },
+      },
+      {
+        new: true,
+      }
+    );
+
+    // Deletes user story and music file
+    if (process.env.NODE_ENV === 'production') {
+    } else {
+      try {
+        const deleteArray = [
+          fs.promises.unlink(`src/public/stories/${story.media.src}`),
+        ];
+
+        if (
+          !userStories.find(
+            (item: Record<any, any>) =>
+              String(item._id) !== storyId && item.sound === story.sound
+          )
+        )
+          deleteArray.push(
+            fs.promises.unlink(`src/public/stories/${story.sound}`)
+          );
+
+        await Promise.allSettled(deleteArray);
+      } catch {}
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        story: user?.story,
+      },
+    });
+  }
+);
+
+export const hideStory = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {}
 );

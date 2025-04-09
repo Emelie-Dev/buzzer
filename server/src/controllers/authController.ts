@@ -9,6 +9,8 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
+import protectData from '../utils/protectData.js';
+import { Document } from 'mongoose';
 
 const verifyResult = fs.readFileSync(
   join(
@@ -211,13 +213,14 @@ export const login = asyncErrorHandler(
     }
 
     const token = signToken(user._id);
-    const {
-      password: userPassword,
-      emailVerified,
-      __v,
-      active,
-      ...userData
-    } = user.toObject();
+
+    const userData = protectData(user, [
+      'password',
+      'emailVerified',
+      '__v',
+      'active',
+      'passwordChangedAt',
+    ]);
 
     res.cookie('jwt', token, {
       maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
@@ -252,10 +255,18 @@ export const logout = asyncErrorHandler(
 
 export const authConfirmed = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
+    const user = protectData(req.user as Document, [
+      'password',
+      'emailVerified',
+      '__v',
+      'active',
+      'passwordChangedAt',
+    ]);
+
     return res.status(200).json({
       status: 'success',
       data: {
-        user: req.user,
+        user,
       },
     });
   }

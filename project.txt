@@ -38,6 +38,9 @@ Server =>
         - Normal (follow, unfollow, add friend, remove friend)
         - Auth (manage devices)
 
+    - Story
+      - Actions (create, get stories, get user story, delete story, hide story, like story, comment on story)
+
     - Contents
     - Notifications
 

@@ -44,10 +44,7 @@ export default asyncErrorHandler(
         )
       );
 
-    const { password, emailVerified, __v, active, ...userData } =
-      user.toObject();
-
-    req.user = userData;
+    req.user = user;
 
     // Allow the user access the route
     next();

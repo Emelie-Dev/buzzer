@@ -26,6 +26,9 @@ export interface StoryItem extends Document {
   createdAt: Date;
 }
 
+export interface StoryFeedItem
+  extends Omit<StoryItem, 'createdAt' | 'accessibility'> {}
+
 export interface IUser extends Document {
   username: string;
   name: string;
@@ -40,12 +43,13 @@ export interface IUser extends Document {
   passwordResetToken: String | undefined;
   passwordResetTokenExpires: Date | undefined;
   story: StoryItem[];
+  storyFeed: StoryFeedItem[];
   generateToken: (type: 'email' | 'password') => string;
   comparePasswordInDb: (pswd: string, pswdDb: string) => Promise<boolean>;
   isPasswordChanged: (JWTTimestamp: number) => boolean;
 }
 
-const StorySchema = new Schema<StoryItem>({
+const StorySchema = new Schema<StoryItem | StoryFeedItem>({
   media: {
     type: {
       src: {
@@ -150,6 +154,23 @@ const userSchema = new Schema<IUser>({
         return value.length <= 10;
       },
       message: 'Story must not exceed 10 items.',
+    },
+  },
+  storyFeed: {
+    type: [
+      {
+        username: String,
+        name: String,
+        photo: String,
+        story: [StorySchema],
+      },
+    ],
+    default: [],
+    validate: {
+      validator: (value: StoryFeedItem[]) => {
+        return value.length <= 20;
+      },
+      message: 'Story feed must not exceed 20 items.',
     },
   },
   passwordChangedAt: Date,
