@@ -6,6 +6,7 @@ import {
   validateStoryFiles,
   processStoryFiles,
   deleteStory,
+  hideStory,
 } from '../controllers/storyController.js';
 import protectRoute from '../middleware/protectRoute.js';
 
@@ -19,5 +20,7 @@ router
   .post(validateStoryFiles, processStoryFiles, saveStory);
 
 router.route('/:id').get(getStory).delete(deleteStory);
+
+router.post('/hide/:id', hideStory);
 
 export default router;

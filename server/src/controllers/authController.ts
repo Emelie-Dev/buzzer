@@ -214,13 +214,7 @@ export const login = asyncErrorHandler(
 
     const token = signToken(user._id);
 
-    const userData = protectData(user, [
-      'password',
-      'emailVerified',
-      '__v',
-      'active',
-      'passwordChangedAt',
-    ]);
+    const userData = protectData(user, 'user');
 
     res.cookie('jwt', token, {
       maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
@@ -255,13 +249,7 @@ export const logout = asyncErrorHandler(
 
 export const authConfirmed = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
-    const user = protectData(req.user as Document, [
-      'password',
-      'emailVerified',
-      '__v',
-      'active',
-      'passwordChangedAt',
-    ]);
+    const user = protectData(req.user as Document, 'user');
 
     return res.status(200).json({
       status: 'success',

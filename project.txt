@@ -39,7 +39,7 @@ Server =>
         - Auth (manage devices)
 
     - Story
-      - Actions (create, get stories, get user story, delete story, hide story, like story, comment on story)
+      - Actions (create, get stories, get user story, delete story, hide story, like story (use notification to detect), comment on story)
 
     - Contents
     - Notifications

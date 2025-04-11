@@ -21,6 +21,7 @@ import authRouter from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import CustomError from './utils/CustomError.js';
 import storiesRouter from './routes/storyRoutes.js';
+import likesRouter from './routes/likeRoutes.js';
 
 const app = express();
 
@@ -114,6 +115,7 @@ if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 // Route handlers
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/stories', storiesRouter);
+app.use('/api/v1/likes', likesRouter);
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {

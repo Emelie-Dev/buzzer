@@ -1,7 +1,7 @@
 import asyncErrorHandler from '../utils/asyncErrorHandler.js';
 import { NextFunction, Response } from 'express';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
-import User, { StoryAccessibility } from '../models/userModel.js';
+import User from '../models/userModel.js';
 import CustomError from '../utils/CustomError.js';
 import multer from 'multer';
 import path from 'path';
@@ -10,6 +10,7 @@ import { pool } from '../app.js';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../utils/cloudinary.js';
 import protectData from '../utils/protectData.js';
+import Story, { StoryAccessibility, StoryItem } from '../models/storyModel.js';
 
 // Cloudinary Storage Configuration
 const onlineStorage = new CloudinaryStorage({
@@ -94,48 +95,122 @@ export const getStories = asyncErrorHandler(
   async (req: AuthRequest, res: Response, _: NextFunction) => {
     // Select 10 from following, 5 from followers, 5 from others
 
-    const users = await User.aggregate([
-      { $match: { _id: { $ne: req.user?._id } } },
+    // Check if users are in the client hidden stories
+    const hiddenStories = req.user?.settings.general.hiddenStories || [];
+
+    const stories = await Story.aggregate([
+      //  Filter only public stories not from the current user
       {
         $match: {
-          story: {
-            $elemMatch: { accessibility: StoryAccessibility.EVERYONE },
-          },
+          user: { $ne: req.user?._id },
+          accessibility: StoryAccessibility.EVERYONE,
         },
       },
+
+      //  Get distinct users with public stories
+      {
+        $group: {
+          _id: '$user', // group by user ID to get unique users
+        },
+      },
+
+      // return users who are not hidden
+      {
+        $match: {
+          _id: { $nin: hiddenStories },
+        },
+      },
+
+      //  Randomly sample 20 users
+      {
+        $sample: { size: 20 },
+      },
+
+      //  Re-join all their stories (again) using $lookup
+      {
+        $lookup: {
+          from: 'stories', // collection name in DB (lowercase plural)
+          localField: '_id', // _id is the userId from step 2
+          foreignField: 'user', // user field in the Story collection
+          as: 'story',
+        },
+      },
+
+      //  Filter only public stories inside the joined stories array
       {
         $project: {
           story: {
-            $filter: {
-              input: '$story',
-              as: 's',
-              cond: { $eq: ['$$s.accessibility', StoryAccessibility.EVERYONE] },
+            $map: {
+              input: {
+                $filter: {
+                  input: '$story',
+                  as: 'story',
+                  cond: {
+                    $eq: ['$$story.accessibility', StoryAccessibility.EVERYONE],
+                  },
+                },
+              },
+              as: 'story',
+              in: {
+                _id: '$$story._id',
+                createdAt: '$$story.createdAt',
+                media: '$$story.media',
+                disableComments: '$$story.disableComments',
+                // Add/remove fields as needed
+              },
             },
           },
-          username: 1,
-          name: 1,
-          photo: 1,
         },
       },
-      { $unset: ['story.createdAt', 'story.accessibility'] },
-      { $sample: { size: 20 } },
+      // Sort each user's stories by createdAt ascending
+      {
+        $addFields: {
+          story: {
+            $sortArray: {
+              input: '$story',
+              sortBy: { createdAt: 1 },
+            },
+          },
+        },
+      },
+
+      //  Lookup user info (username, name, photo) from the users collection
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id', // _id is the userId
+          foreignField: '_id',
+          as: 'userInfo',
+        },
+      },
+
+      //  Unwrap the userInfo array
+      {
+        $unwind: '$userInfo',
+      },
+
+      //  Final shape of the result
+      {
+        $project: {
+          _id: 0,
+          user: '$_id',
+          username: '$userInfo.username',
+          name: '$userInfo.name',
+          photo: '$userInfo.photo',
+          story: 1,
+        },
+      },
     ]);
 
     const user = await User.findByIdAndUpdate(
       req.user?._id,
       {
-        storyFeed: users,
+        storyFeed: stories,
       },
       { new: true, runValidators: true }
     );
 
-    const userData = protectData(user!, [
-      'password',
-      'emailVerified',
-      '__v',
-      'active',
-      'passwordChangedAt',
-    ]);
+    const userData = protectData(user!, 'user');
 
     return res.status(200).json({
       status: 'success',
@@ -148,14 +223,26 @@ export const getStories = asyncErrorHandler(
 
 export const getStory = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    // Check if user is friends
-    const user = await User.findById(req.params.id);
+    const id = req.params.id;
+    let story;
 
-    if (!user) {
-      return next(new CustomError('This user does not exist.', 404));
+    if (String(req.user?._id) === id) {
+      story = await Story.find({
+        user: id,
+      }).select('-__v -user -accessibility');
+    } else {
+      const user = await User.findById(req.params.id);
+
+      if (!user) {
+        return next(new CustomError('This user does not exist.', 404));
+      }
+
+      // Check if user is friends
+      story = await Story.find({
+        user: req.params.id,
+        accessibility: StoryAccessibility.EVERYONE,
+      }).select('-__v -user -accessibility');
     }
-
-    let story = user.story;
 
     return res.status(200).json({
       status: 'success',
@@ -168,7 +255,9 @@ export const getStory = asyncErrorHandler(
 
 export const validateStoryFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const maxCount = 10 - req.user?.story.length;
+    const storyCount = (await Story.find({ user: req.user?._id })).length || 0;
+
+    const maxCount = 10 - storyCount;
 
     const uploader = upload.fields([
       { name: 'story', maxCount: 10 },
@@ -279,6 +368,7 @@ export const saveStory = asyncErrorHandler(
       const filters = JSON.parse(req.body.filters).value;
 
       const newStory = files.story.map((file, index) => ({
+        user: req.user?._id,
         media: {
           src:
             process.env.NODE_ENV === 'production'
@@ -300,17 +390,10 @@ export const saveStory = asyncErrorHandler(
         volume,
       }));
 
-      const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-          $push: {
-            story: { $each: newStory },
-          },
-        },
-        {
-          runValidators: true,
-          new: true,
-        }
+      await Story.insertMany(newStory);
+
+      const story = await Story.find({ user: req.user?._id }).select(
+        '-__v -user -accessibility'
       );
 
       // in production delete story files from server storage
@@ -318,7 +401,7 @@ export const saveStory = asyncErrorHandler(
         JSON.stringify({
           status: 'success',
           message: 'Story updated!',
-          story: user?.story,
+          story,
         })
       );
     } catch (err) {
@@ -336,24 +419,14 @@ export const saveStory = asyncErrorHandler(
 
 export const deleteStory = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const storyId = req.params.id;
-    const userStories = req.user?.story;
-    const story = userStories.id(storyId);
+    const story = (await Story.findById(req.params.id)) as StoryItem;
 
-    if (!story) {
+    if (!story || String(story.user) !== String(req.user?._id)) {
       return next(new CustomError('This story does not exist!', 404));
     }
 
     // Deletes user story
-    const user = await User.findByIdAndUpdate(
-      req.user?._id,
-      {
-        $pull: { story: { _id: storyId } },
-      },
-      {
-        new: true,
-      }
-    );
+    await story.deleteOne();
 
     // Deletes user story and music file
     if (process.env.NODE_ENV === 'production') {
@@ -363,29 +436,64 @@ export const deleteStory = asyncErrorHandler(
           fs.promises.unlink(`src/public/stories/${story.media.src}`),
         ];
 
-        if (
-          !userStories.find(
-            (item: Record<any, any>) =>
-              String(item._id) !== storyId && item.sound === story.sound
-          )
-        )
+        if (!(await Story.findOne({ sound: story.sound }))) {
           deleteArray.push(
             fs.promises.unlink(`src/public/stories/${story.sound}`)
           );
+        }
 
         await Promise.allSettled(deleteArray);
       } catch {}
     }
 
+    const userStory = await Story.find({ user: req.user?._id }).select(
+      '-__v -user -accessibility'
+    );
+
     return res.status(200).json({
       status: 'success',
       data: {
-        story: user?.story,
+        story: userStory,
       },
     });
   }
 );
 
 export const hideStory = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {}
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const id = req.params.id;
+    const user = await User.findById(id);
+
+    if (!user) return next(new CustomError('This user does not exist!', 404));
+
+    if (String(req.user?._id) === id)
+      return next(new CustomError('You cannot hide your story.', 400));
+
+    const hiddenStories = new Set(user.settings.general.hiddenStories || []);
+    hiddenStories.add(id);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        settings: {
+          general: {
+            hiddenStories: [...hiddenStories],
+          },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    const userData = protectData(updatedUser!, 'user');
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: userData,
+      },
+    });
+  }
 );

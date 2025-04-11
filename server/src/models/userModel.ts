@@ -1,33 +1,8 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Query } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { Query } from 'mongoose';
-
-export enum StoryAccessibility {
-  EVERYONE,
-  FRIENDS,
-  YOU,
-}
-
-export interface StoryItem extends Document {
-  media: {
-    src: String;
-    mediaType: 'image' | 'video';
-    filter: String;
-  };
-  disableComments: Boolean;
-  accessibility: StoryAccessibility;
-  sound: String;
-  volume: {
-    sound: Number;
-    story: Number;
-  };
-  createdAt: Date;
-}
-
-export interface StoryFeedItem
-  extends Omit<StoryItem, 'createdAt' | 'accessibility'> {}
+import { StoryFeedItem, StorySchema } from './storyModel.js';
 
 export interface IUser extends Document {
   username: string;
@@ -42,56 +17,18 @@ export interface IUser extends Document {
   passwordChangedAt: Date;
   passwordResetToken: String | undefined;
   passwordResetTokenExpires: Date | undefined;
-  story: StoryItem[];
   storyFeed: StoryFeedItem[];
+  settings: {
+    general: {
+      hiddenStories: String[];
+    };
+  };
   generateToken: (type: 'email' | 'password') => string;
   comparePasswordInDb: (pswd: string, pswdDb: string) => Promise<boolean>;
   isPasswordChanged: (JWTTimestamp: number) => boolean;
 }
 
-const StorySchema = new Schema<StoryItem | StoryFeedItem>({
-  media: {
-    type: {
-      src: {
-        type: String,
-        required: true,
-      },
-      mediaType: {
-        type: String,
-        enum: ['image', 'video'],
-        required: true,
-      },
-      filter: {
-        type: String,
-        required: true,
-      },
-    },
-  },
-  disableComments: {
-    type: Boolean,
-    default: false,
-  },
-  accessibility: {
-    type: Number,
-    default: StoryAccessibility.EVERYONE,
-  },
-  sound: String,
-  volume: {
-    type: {
-      sound: {
-        type: Number,
-        default: 0.5,
-      },
-      story: {
-        type: Number,
-        default: 1,
-      },
-    },
-  },
-  createdAt: { type: Date, default: Date.now },
-});
-
-const userSchema = new Schema<IUser>({
+const UserSchema = new Schema<IUser>({
   username: {
     type: String,
     trim: true,
@@ -146,19 +83,10 @@ const userSchema = new Schema<IUser>({
     type: Boolean,
     default: false,
   },
-  story: {
-    type: [StorySchema],
-    default: [],
-    validate: {
-      validator: (value: StoryItem[]) => {
-        return value.length <= 10;
-      },
-      message: 'Story must not exceed 10 items.',
-    },
-  },
   storyFeed: {
     type: [
       {
+        user: mongoose.Schema.ObjectId,
         username: String,
         name: String,
         photo: String,
@@ -173,6 +101,24 @@ const userSchema = new Schema<IUser>({
       message: 'Story feed must not exceed 20 items.',
     },
   },
+  settings: {
+    type: {
+      general: {
+        hiddenStories: [
+          {
+            type: mongoose.Schema.ObjectId,
+            ref: 'User',
+            default: [],
+          },
+        ],
+      },
+    },
+    default: {
+      general: {
+        hiddenStories: [],
+      },
+    },
+  },
   passwordChangedAt: Date,
   emailVerificationToken: String,
   emailVerificationTokenExpires: Date,
@@ -183,12 +129,12 @@ const userSchema = new Schema<IUser>({
 // Middlewares
 
 // Encrypts Password
-userSchema.pre('save', async function (next) {
+UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
 });
 
-userSchema.pre(/^find/, function (this: Query<any, any>, next) {
+UserSchema.pre(/^find/, function (this: Query<any, any>, next) {
   const filters = this.getFilter();
 
   if (filters.__login) {
@@ -205,7 +151,7 @@ userSchema.pre(/^find/, function (this: Query<any, any>, next) {
 // Instance Methods
 
 // Generates email verification token
-userSchema.methods.generateToken = function (type: 'email' | 'password') {
+UserSchema.methods.generateToken = function (type: 'email' | 'password') {
   const token = crypto.randomBytes(32).toString('hex');
 
   if (type === 'email') {
@@ -227,7 +173,7 @@ userSchema.methods.generateToken = function (type: 'email' | 'password') {
 };
 
 // Checks if provided password is correct
-userSchema.methods.comparePasswordInDb = async function (
+UserSchema.methods.comparePasswordInDb = async function (
   pswd: string,
   pswdDb: string
 ) {
@@ -235,7 +181,7 @@ userSchema.methods.comparePasswordInDb = async function (
 };
 
 // Checks is password was changed
-userSchema.methods.isPasswordChanged = function (JWTTimestamp: number) {
+UserSchema.methods.isPasswordChanged = function (JWTTimestamp: number) {
   if (this.passwordChangedAt) {
     const passwordChangedTimestamp = parseInt(
       String(this.passwordChangedAt.getTime() / 1000),
@@ -247,6 +193,6 @@ userSchema.methods.isPasswordChanged = function (JWTTimestamp: number) {
   return false;
 };
 
-const User = mongoose.model<IUser>('User', userSchema);
+const User = mongoose.model<IUser>('User', UserSchema);
 
 export default User;
