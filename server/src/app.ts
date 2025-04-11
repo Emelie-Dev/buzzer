@@ -31,7 +31,8 @@ config({ path: './config.env' });
 export const pool = workerpool.pool(
   join(dirname(fileURLToPath(import.meta.url)), 'worker.js'),
   {
-    maxWorkers: 4, // Set number of workers
+    maxWorkers: 2,
+    minWorkers: 0,
   }
 );
 
