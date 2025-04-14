@@ -263,7 +263,7 @@ export const getContents = asyncErrorHandler(
 
     switch (page) {
       case 'home':
-        const contents = await Content.aggregate([
+        await Content.aggregate([
           { $match: { user: { $nin: [req.user?._id, ...excludedUsers] } } },
           { $sample: { size: 10 } },
         ]);
