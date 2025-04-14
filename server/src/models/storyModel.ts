@@ -1,20 +1,20 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export enum StoryAccessibility {
+export enum ContentAccessibility {
   EVERYONE,
   FRIENDS,
   YOU,
 }
 
 export interface StoryItem extends Document {
-  user: String;
+  user: Types.ObjectId;
   media: {
     src: String;
     mediaType: 'image' | 'video';
     filter: String;
   };
   disableComments: Boolean;
-  accessibility: StoryAccessibility;
+  accessibility: ContentAccessibility;
   sound: String;
   volume: {
     sound: Number;
@@ -28,7 +28,7 @@ export interface StoryFeedItem
 
 export const StorySchema = new Schema<StoryItem | StoryFeedItem>({
   user: {
-    type: mongoose.Schema.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
   },
   media: {
@@ -54,7 +54,7 @@ export const StorySchema = new Schema<StoryItem | StoryFeedItem>({
   },
   accessibility: {
     type: Number,
-    default: StoryAccessibility.EVERYONE,
+    default: ContentAccessibility.EVERYONE,
   },
   sound: String,
   volume: {
@@ -71,9 +71,6 @@ export const StorySchema = new Schema<StoryItem | StoryFeedItem>({
   },
   createdAt: { type: Date, default: Date.now },
 });
-
-// Deletes each storyafter 24 hours
-StorySchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
 
 const Story = mongoose.model('Story', StorySchema);
 

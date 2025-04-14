@@ -42,6 +42,8 @@ Server =>
       - Actions (create, get stories, get user story, delete story, hide story, like story (use notification to detect), comment on story)
 
     - Contents
+        - Actions (create, delete, like, comment, save, get contents, get content, not interested)
+
     - Notifications
 
   - Worker threads

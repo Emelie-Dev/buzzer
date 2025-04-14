@@ -22,6 +22,11 @@ import errorHandler from './middleware/errorHandler.js';
 import CustomError from './utils/CustomError.js';
 import storiesRouter from './routes/storyRoutes.js';
 import likesRouter from './routes/likeRoutes.js';
+import './cron/expiredStoryCron.js';
+import contentRouter from './routes/contentRoutes.js';
+import commentRouter from './routes/commentRoutes.js';
+import bookmarkRouter from './routes/bookmarkRoute.js';
+import followRouter from './routes/followRoutes.js';
 
 const app = express();
 
@@ -31,7 +36,7 @@ config({ path: './config.env' });
 export const pool = workerpool.pool(
   join(dirname(fileURLToPath(import.meta.url)), 'worker.js'),
   {
-    maxWorkers: 1,
+    maxWorkers: 4,
     minWorkers: 0,
   }
 );
@@ -117,6 +122,10 @@ if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/stories', storiesRouter);
 app.use('/api/v1/likes', likesRouter);
+app.use('/api/v1/contents', contentRouter);
+app.use('/api/v1/comments', commentRouter);
+app.use('/api/v1/bookmarks', bookmarkRouter);
+app.use('/api/v1/follow', followRouter);
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {

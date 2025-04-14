@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Query } from 'mongoose';
+import mongoose, { Schema, Document, Query, Types } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -17,10 +17,16 @@ export interface IUser extends Document {
   passwordChangedAt: Date;
   passwordResetToken: String | undefined;
   passwordResetTokenExpires: Date | undefined;
-  storyFeed: StoryFeedItem[];
+  storyFeed: Types.ObjectId[];
   settings: {
     general: {
-      hiddenStories: String[];
+      hiddenStories: Types.ObjectId[];
+    };
+    content: {
+      notInterested: {
+        content: Types.ObjectId[];
+        reels: String[];
+      };
     };
   };
   generateToken: (type: 'email' | 'password') => string;
@@ -86,7 +92,7 @@ const UserSchema = new Schema<IUser>({
   storyFeed: {
     type: [
       {
-        user: mongoose.Schema.ObjectId,
+        user: Schema.Types.ObjectId,
         username: String,
         name: String,
         photo: String,
@@ -106,11 +112,26 @@ const UserSchema = new Schema<IUser>({
       general: {
         hiddenStories: [
           {
-            type: mongoose.Schema.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: 'User',
             default: [],
           },
         ],
+      },
+      content: {
+        notInterested: {
+          content: [
+            {
+              type: Schema.Types.ObjectId,
+              ref: 'User',
+              default: [],
+            },
+          ],
+          reels: {
+            type: [String],
+            default: [],
+          },
+        },
       },
     },
     default: {

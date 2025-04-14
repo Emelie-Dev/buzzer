@@ -1,13 +1,13 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
-export interface ILike extends Document {
+interface IBookmark extends Document {
   user: Types.ObjectId;
   collectionName: String;
   documentId: Types.ObjectId;
-  likedAt: Date;
+  savedAt: Date;
 }
 
-const LikeSchema = new Schema<ILike>({
+const BookmarkSchema = new Schema<IBookmark>({
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -15,24 +15,24 @@ const LikeSchema = new Schema<ILike>({
   },
   collectionName: {
     type: String,
-    enum: ['story', 'content', 'comment'],
+    enum: ['content'],
     required: true,
   },
   documentId: {
     type: Schema.Types.ObjectId,
     required: true,
   },
-  likedAt: {
+  savedAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-LikeSchema.index(
+BookmarkSchema.index(
   { user: 1, collectionName: 1, documentId: 1 },
   { unique: true }
 );
 
-const Like = mongoose.model('Like', LikeSchema);
+const Bookmark = mongoose.model('Bookmark', BookmarkSchema);
 
-export default Like;
+export default Bookmark;

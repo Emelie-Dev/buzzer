@@ -32,7 +32,7 @@ const getGrayscaleMatrix = (intensity) => {
   );
 };
 
-const processStoryImage = async (filter, filePath, tempFilePath) => {
+const processImage = async (filter, filePath, tempFilePath) => {
   const {
     brightness,
     contrast,
@@ -67,7 +67,7 @@ const processStoryImage = async (filter, filePath, tempFilePath) => {
   );
 };
 
-const processStoryVideo = (filter, filePath, tempFilePath) => {
+const processVideo = (filter, filePath, tempFilePath) => {
   const {
     brightness,
     contrast,
@@ -133,7 +133,7 @@ const processStoryVideo = (filter, filePath, tempFilePath) => {
   });
 };
 
-const checkVideoFilesDuration = async (files) => {
+const checkVideoFilesDuration = async (files, seconds) => {
   await Promise.all(
     files.map((file) => {
       return new Promise((resolve, reject) => {
@@ -154,8 +154,10 @@ const checkVideoFilesDuration = async (files) => {
             return reject(error);
           }
 
-          if (duration > 300) {
-            error.message = 'Video duration must not exceed 5 minutes.';
+          if (duration > seconds) {
+            error.message = `Video duration must not exceed ${seconds / 60} ${
+              seconds / 60 === 1 ? 'minute' : 'minutes'
+            }.`;
             return reject(error);
           }
 
@@ -166,7 +168,7 @@ const checkVideoFilesDuration = async (files) => {
   );
 };
 
-const processStoryFiles = async (files, filters) => {
+const processFiles = async (files, filters) => {
   let fileIndex = 0;
   const initialValues = {
     brightness: 1,
@@ -208,11 +210,11 @@ const processStoryFiles = async (files, filters) => {
         );
 
         if (file.mimetype.startsWith('video')) {
-          await processStoryVideo(filter, file.path, tempFilePath);
+          await processVideo(filter, file.path, tempFilePath);
         }
 
         if (file.mimetype.startsWith('image')) {
-          await processStoryImage(filter, file.path, tempFilePath);
+          await processImage(filter, file.path, tempFilePath);
         }
       }
 
@@ -229,5 +231,5 @@ const processStoryFiles = async (files, filters) => {
 // Register the function with workerpool
 workerpool.worker({
   checkVideoFilesDuration,
-  processStoryFiles,
+  processFiles,
 });

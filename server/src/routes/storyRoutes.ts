@@ -21,6 +21,6 @@ router
 
 router.route('/:id').get(getStory).delete(deleteStory);
 
-router.post('/hide/:id', hideStory);
+router.patch('/hide/:id', hideStory);
 
 export default router;

@@ -4,21 +4,31 @@ import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import CustomError from '../utils/CustomError.js';
 import Story from '../models/storyModel.js';
 import Like from '../models/likeModel.js';
+import Content from '../models/contentModel.js';
+import Comment from '../models/commentModel.js';
 
 export const likeItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     let { collection, documentId } = req.body;
     collection = collection.toLowerCase();
 
-    const query = collection === 'story' ? Story.findById(documentId) : null;
+    const query =
+      collection === 'story'
+        ? Story.findById(documentId)
+        : collection === 'content'
+        ? Content.findById(documentId)
+        : collection === 'comment'
+        ? Comment.findById(documentId)
+        : null;
+
     const data = (await query) as Record<string, any>;
 
     if (!data) {
       return next(new CustomError(`This ${collection} does not exist.`, 404));
     }
 
-    if (String(data.user) === String(req.user?._id)) {
-      return next(new CustomError(`You can't like your ${collection}.`, 404));
+    if (collection === 'story' && String(data.user) === String(req.user?._id)) {
+      return next(new CustomError("You can't like your story.", 404));
     }
 
     await Like.create({

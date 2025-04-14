@@ -3,73 +3,17 @@ import { NextFunction, Response } from 'express';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import User from '../models/userModel.js';
 import CustomError from '../utils/CustomError.js';
-import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { pool } from '../app.js';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '../utils/cloudinary.js';
 import protectData from '../utils/protectData.js';
-import Story, { StoryAccessibility, StoryItem } from '../models/storyModel.js';
+import Story, {
+  ContentAccessibility,
+  StoryItem,
+} from '../models/storyModel.js';
+import multerConfig from '../utils/multerConfig.js';
 
-// Cloudinary Storage Configuration
-const onlineStorage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => {
-    const ext = path.extname(file.originalname).replace('.', '');
-    return {
-      folder: 'stories', // Cloudinary folder name
-      format: ext, // Use the original file extension as format
-      public_id: `${(req as AuthRequest).user?._id}-${Date.now()}-${Math.trunc(
-        Math.random() * 1000000000
-      )}${ext}`, // Unique name
-    };
-  },
-});
-
-const upload = multer({
-  storage:
-    process.env.NODE_ENV === 'production'
-      ? onlineStorage
-      : multer.diskStorage({
-          destination: (_, __, cb) => {
-            cb(null, 'src/public/stories');
-          },
-          filename: (req, file, cb) => {
-            const ext = path.extname(file.originalname);
-            cb(
-              null,
-              `${(req as AuthRequest).user?._id}-${Date.now()}-${Math.trunc(
-                Math.random() * 1000000000
-              )}${ext}`
-            );
-          },
-        }),
-  limits: { fileSize: 1_073_741_824 },
-  fileFilter: (_, file, cb) => {
-    const videoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
-    const audioTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg'];
-
-    if (file.fieldname === 'story') {
-      if (
-        !file.mimetype.startsWith('image') &&
-        !videoTypes.includes(file.mimetype)
-      ) {
-        return cb(
-          new CustomError('Please select only valid file types.', 400) as any
-        );
-      }
-    }
-
-    if (file.fieldname === 'sound') {
-      if (!audioTypes.includes(file.mimetype)) {
-        return cb(new CustomError('Invalid audio file type.', 400) as any);
-      }
-    }
-
-    cb(null, true);
-  },
-});
+const upload = multerConfig('stories');
 
 const deleteStoryFiles = async (files: {
   [fieldname: string]: Express.Multer.File[];
@@ -103,7 +47,7 @@ export const getStories = asyncErrorHandler(
       {
         $match: {
           user: { $ne: req.user?._id },
-          accessibility: StoryAccessibility.EVERYONE,
+          accessibility: ContentAccessibility.EVERYONE,
         },
       },
 
@@ -146,7 +90,10 @@ export const getStories = asyncErrorHandler(
                   input: '$story',
                   as: 'story',
                   cond: {
-                    $eq: ['$$story.accessibility', StoryAccessibility.EVERYONE],
+                    $eq: [
+                      '$$story.accessibility',
+                      ContentAccessibility.EVERYONE,
+                    ],
                   },
                 },
               },
@@ -240,7 +187,7 @@ export const getStory = asyncErrorHandler(
       // Check if user is friends
       story = await Story.find({
         user: req.params.id,
-        accessibility: StoryAccessibility.EVERYONE,
+        accessibility: ContentAccessibility.EVERYONE,
       }).select('-__v -user -accessibility');
     }
 
@@ -304,7 +251,7 @@ export const validateStoryFiles = asyncErrorHandler(
         );
 
         // Checks if video files duration are correct in the worker pool
-        await pool.exec('checkVideoFilesDuration', [videoFiles]);
+        await pool.exec('checkVideoFilesDuration', [videoFiles, 300]);
 
         next();
       } catch (err) {
@@ -331,7 +278,7 @@ export const processStoryFiles = asyncErrorHandler(
     try {
       // Process files
       await pool.exec(
-        'processStoryFiles',
+        'processFiles',
         [files.story, JSON.parse(req.body.filters).value],
         {
           on: function (event) {
@@ -469,7 +416,15 @@ export const hideStory = asyncErrorHandler(
     if (String(req.user?._id) === id)
       return next(new CustomError('You cannot hide your story.', 400));
 
-    const hiddenStories = new Set(user.settings.general.hiddenStories || []);
+    const hiddenStories = new Set(
+      req.user?.settings.general.hiddenStories || []
+    );
+
+    if (hiddenStories.size === 100) {
+      const firstItem = [...hiddenStories].shift();
+      hiddenStories.delete(firstItem);
+    }
+
     hiddenStories.add(id);
 
     const updatedUser = await User.findByIdAndUpdate(
