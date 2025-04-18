@@ -15,6 +15,7 @@ import hpp from 'hpp';
 import compression from 'compression';
 import morgan from 'morgan';
 import workerpool from 'workerpool';
+import requestIp from 'request-ip';
 
 // Custom Modules
 import authRouter from './routes/authRoutes.js';
@@ -27,6 +28,7 @@ import contentRouter from './routes/contentRoutes.js';
 import commentRouter from './routes/commentRoutes.js';
 import bookmarkRouter from './routes/bookmarkRoute.js';
 import followRouter from './routes/followRoutes.js';
+import viewRouter from './routes/viewRoutes.js';
 
 const app = express();
 
@@ -62,6 +64,12 @@ const corsOptions = {
   },
   credentials: true,
 };
+
+// ✅ Trust proxy so IPs are real behind Render
+app.set('trust proxy', true);
+
+// ✅ Use request-ip middleware
+app.use(requestIp.mw());
 
 app.use(cors(corsOptions));
 
@@ -126,6 +134,7 @@ app.use('/api/v1/contents', contentRouter);
 app.use('/api/v1/comments', commentRouter);
 app.use('/api/v1/bookmarks', bookmarkRouter);
 app.use('/api/v1/follow', followRouter);
+app.use('/api/v1/views', viewRouter);
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {

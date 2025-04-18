@@ -11,6 +11,7 @@ import { dirname, join } from 'path';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import protectData from '../utils/protectData.js';
 import { Document } from 'mongoose';
+import getUserLocation from '../utils/getUserLocation.js';
 
 const verifyResult = fs.readFileSync(
   join(
@@ -92,7 +93,12 @@ export const checkIfDataExist = asyncErrorHandler(
 
 export const signup = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const user = await User.create(req.body);
+    const location = await getUserLocation(req.clientIp);
+
+    const user = await User.create({
+      ...req.body,
+      location,
+    });
 
     return await sendEmail(req, res, next, user, true);
   }

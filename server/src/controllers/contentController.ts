@@ -9,6 +9,7 @@ import path from 'path';
 import Content from '../models/contentModel.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
+import getUserLocation from '../utils/getUserLocation.js';
 
 const upload = multerConfig('contents');
 
@@ -127,6 +128,9 @@ export const saveContent = asyncErrorHandler(
         filter: filters[index],
       }));
 
+      // Get user's location
+      const location = await getUserLocation(req.clientIp);
+
       const content = await Content.create({
         user: req.user?._id,
         media: contentItems,
@@ -144,6 +148,7 @@ export const saveContent = asyncErrorHandler(
 
           return undefined;
         })(),
+        location,
         settings: JSON.parse(req.body.settings),
       });
 
@@ -261,16 +266,28 @@ export const getContents = asyncErrorHandler(
     const excludedUsers =
       req.user?.settings.content.notInterested.content || [];
 
+    let contents;
+
     switch (page) {
       case 'home':
-        await Content.aggregate([
+        contents = await Content.aggregate([
           { $match: { user: { $nin: [req.user?._id, ...excludedUsers] } } },
           { $sample: { size: 10 } },
+          {
+            $project: {
+              location: 0,
+              settings: 0,
+              __v: 0,
+            },
+          },
         ]);
     }
 
     return res.status(200).json({
       status: 'success',
+      data: {
+        contents,
+      },
     });
   }
 );

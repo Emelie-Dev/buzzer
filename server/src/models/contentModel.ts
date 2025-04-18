@@ -14,6 +14,12 @@ interface IContent extends Document {
   aspectRatio: Number;
   description: String;
   collaborators: Types.ObjectId[];
+  location: {
+    continent: String;
+    country: String;
+    state: String;
+    city: String;
+  };
   settings: {
     accessibility: Number;
     disableComments: Boolean;
@@ -72,6 +78,15 @@ const ContentSchema = new Schema<IContent>({
       ref: 'User',
     },
   ],
+  location: {
+    type: {
+      continent: String,
+      country: String,
+      state: String,
+      city: String,
+    },
+    required: true,
+  },
   settings: {
     type: {
       accessibility: Number,

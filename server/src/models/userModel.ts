@@ -18,6 +18,12 @@ export interface IUser extends Document {
   passwordResetToken: String | undefined;
   passwordResetTokenExpires: Date | undefined;
   storyFeed: Types.ObjectId[];
+  location: {
+    continent: String;
+    country: String;
+    state: String;
+    city: String;
+  };
   settings: {
     general: {
       hiddenStories: Types.ObjectId[];
@@ -106,6 +112,15 @@ const UserSchema = new Schema<IUser>({
       },
       message: 'Story feed must not exceed 20 items.',
     },
+  },
+  location: {
+    type: {
+      continent: String,
+      country: String,
+      state: String,
+      city: String,
+    },
+    required: true,
   },
   settings: {
     type: {
