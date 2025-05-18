@@ -244,7 +244,6 @@ const ContentBox = ({
                   </li>
                   <li className={styles['menu-item']}>Not interested</li>
                   <li className={styles['menu-item']}>Add to story</li>
-                  <li className={styles['menu-item']}>Go to post</li>
                   <li className={styles['menu-item']}>Clear display</li>
                 </ul>
               )}
@@ -304,7 +303,6 @@ const ContentBox = ({
                     <li className={styles['menu-item']}>Pin</li>
                     <li className={styles['menu-item']}>Not interested</li>
                     <li className={styles['menu-item']}>Add to story</li>
-                    <li className={styles['menu-item']}>Go to post</li>
                     <li className={styles['menu-item']}>Clear display</li>
                   </ul>
                 )}

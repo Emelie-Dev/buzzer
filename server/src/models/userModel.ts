@@ -24,6 +24,7 @@ export interface IUser extends Document {
     state: String;
     city: String;
   };
+  searchHistory: String[];
   settings: {
     general: {
       hiddenStories: Types.ObjectId[];
@@ -35,6 +36,7 @@ export interface IUser extends Document {
       };
     };
   };
+  createdAt: Date;
   generateToken: (type: 'email' | 'password') => string;
   comparePasswordInDb: (pswd: string, pswdDb: string) => Promise<boolean>;
   isPasswordChanged: (JWTTimestamp: number) => boolean;
@@ -122,6 +124,10 @@ const UserSchema = new Schema<IUser>({
     },
     required: true,
   },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
   settings: {
     type: {
       general: {
@@ -154,6 +160,10 @@ const UserSchema = new Schema<IUser>({
         hiddenStories: [],
       },
     },
+  },
+  searchHistory: {
+    type: [String],
+    default: [],
   },
   passwordChangedAt: Date,
   emailVerificationToken: String,

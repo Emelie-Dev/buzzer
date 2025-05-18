@@ -6,6 +6,7 @@ import {
   validateContentFiles,
   excludeContent,
   getContents,
+  getContent,
 } from '../controllers/contentController.js';
 import protectRoute from '../middleware/protectRoute.js';
 
@@ -13,11 +14,12 @@ const router = express.Router();
 
 router.use(protectRoute);
 
-router.post('/', validateContentFiles, processContentFiles, saveContent);
+router
+  .route('/')
+  .get(getContents)
+  .post(validateContentFiles, processContentFiles, saveContent);
 
-router.get('/:page', getContents);
-
-router.delete('/:id', deleteContent);
+router.route('/:id').get(getContent).delete(deleteContent);
 
 router.patch('/not-interested/:id', excludeContent);
 

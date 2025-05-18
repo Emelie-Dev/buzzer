@@ -1,6 +1,11 @@
 import { config } from 'dotenv';
 import mongoose from 'mongoose';
 
+// Custom Modules
+import app from './app.js';
+import { createSchemasIfNeeded, syncAllCollections } from './typesense/sync.js';
+import watcher from './typesense/watcher.js';
+
 // Set environmental variables
 config({ path: './config.env' });
 
@@ -11,9 +16,6 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-// Custom Modules
-import app from './app.js';
-
 // Connects to database
 await mongoose.connect(
   (process.env.NODE_ENV === 'production'
@@ -23,6 +25,14 @@ await mongoose.connect(
     autoIndex: true,
   }
 );
+
+// Initialize typesense
+const initTypesense = async () => {
+  await createSchemasIfNeeded();
+  await syncAllCollections();
+  watcher();
+};
+await initTypesense();
 
 console.log('\nDatabase Connection successfull....');
 

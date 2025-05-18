@@ -27,6 +27,6 @@ const FollowSchema = new Schema<IFollow>({
 // Ensures a user cannot follow the same user multiple times
 FollowSchema.index({ follower: 1, following: 1 }, { unique: true });
 
-const Follow = mongoose.model('Follow', FollowSchema);
+const Follow = mongoose.model<IFollow>('Follow', FollowSchema);
 
 export default Follow;

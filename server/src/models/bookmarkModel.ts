@@ -33,6 +33,6 @@ BookmarkSchema.index(
   { unique: true }
 );
 
-const Bookmark = mongoose.model('Bookmark', BookmarkSchema);
+const Bookmark = mongoose.model<IBookmark>('Bookmark', BookmarkSchema);
 
 export default Bookmark;

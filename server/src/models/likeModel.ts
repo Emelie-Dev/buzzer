@@ -33,6 +33,6 @@ LikeSchema.index(
   { unique: true }
 );
 
-const Like = mongoose.model('Like', LikeSchema);
+const Like = mongoose.model<ILike>('Like', LikeSchema);
 
 export default Like;

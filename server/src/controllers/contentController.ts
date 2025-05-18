@@ -10,6 +10,7 @@ import Content from '../models/contentModel.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
 import getUserLocation from '../utils/getUserLocation.js';
+import mongoose from 'mongoose';
 
 const upload = multerConfig('contents');
 
@@ -218,13 +219,12 @@ export const excludeContent = asyncErrorHandler(
     const excludedContents = new Set(
       req.user?.settings.content.notInterested.content || []
     );
+    excludedContents.add(req.params.id);
 
-    if (excludedContents.size === 100) {
+    if (excludedContents.size > 100) {
       const firstItem = [...excludedContents].shift();
       excludedContents.delete(firstItem);
     }
-
-    excludedContents.add(req.params.id);
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user?._id,
@@ -256,22 +256,23 @@ export const excludeContent = asyncErrorHandler(
 
 export const getContents = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const pages = ['home', 'following', 'friends'];
-    const page = String(req.params.page).trim();
+    const categories = ['home', 'following', 'friends'];
+    const category = String(req.query.category).trim();
 
-    if (!pages.includes(page)) {
+    if (!categories.includes(category)) {
       return next(new CustomError('Invalid request!', 400));
     }
 
     const excludedUsers =
       req.user?.settings.content.notInterested.content || [];
+    excludedUsers.push(req.user?._id);
 
     let contents;
 
-    switch (page) {
+    switch (category) {
       case 'home':
         contents = await Content.aggregate([
-          { $match: { user: { $nin: [req.user?._id, ...excludedUsers] } } },
+          { $match: { user: { $nin: excludedUsers } } },
           { $sample: { size: 10 } },
           {
             $project: {
@@ -281,12 +282,83 @@ export const getContents = asyncErrorHandler(
             },
           },
         ]);
+        break;
+
+      case 'following':
+        contents = await Content.aggregate([
+          {
+            // Join with the Follow collection to see if the content's user is being followed by current user
+            $lookup: {
+              from: 'follows',
+              let: { contentUser: '$user' }, // field in Content referencing the user who created it
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$following', '$$contentUser'] }, // content.user == follow.following
+                        {
+                          $eq: [
+                            '$follower',
+                            mongoose.Types.ObjectId.createFromHexString(
+                              req.user?.id
+                            ),
+                          ],
+                        },
+                        { $not: [{ $in: ['$$contentUser', excludedUsers] }] }, // Exclude users
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'followInfo',
+            },
+          },
+          {
+            // Only keep contents from users that current user follows
+            $match: {
+              followInfo: { $ne: [] },
+            },
+          },
+          {
+            $sample: { size: 10 }, // Random sample
+          },
+          {
+            $project: {
+              location: 0,
+              settings: 0,
+              followInfo: 0,
+              __v: 0,
+            },
+          },
+        ]);
+
+        break;
     }
 
     return res.status(200).json({
       status: 'success',
       data: {
         contents,
+      },
+    });
+  }
+);
+
+export const getContent = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const content = await Content.findById(req.params.id).select('-__v');
+
+    // Check content accessibility settings
+
+    if (!content) {
+      return next(new CustomError('This content does not exist!', 404));
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        content,
       },
     });
   }

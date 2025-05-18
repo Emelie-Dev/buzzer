@@ -71,6 +71,7 @@ const ContentSchema = new Schema<IContent>({
     type: String,
     maxlength: 2200,
     trim: true,
+    default: '',
   },
   collaborators: [
     {
@@ -105,6 +106,6 @@ const ContentSchema = new Schema<IContent>({
   },
 });
 
-const Content = mongoose.model('Content', ContentSchema);
+const Content = mongoose.model<IContent>('Content', ContentSchema);
 
 export default Content;

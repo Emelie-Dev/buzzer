@@ -28,11 +28,11 @@ const ViewSchema = new Schema<IView>({
   },
 });
 
-ViewSchema.index(
-  { user: 1, collectionName: 1, documentId: 1 },
-  { unique: true }
-);
+// ViewSchema.index(
+//   { user: 1, collectionName: 1, documentId: 1 },
+//   { unique: true }
+// );
 
-const View = mongoose.model('View', ViewSchema);
+const View = mongoose.model<IView>('View', ViewSchema);
 
 export default View;

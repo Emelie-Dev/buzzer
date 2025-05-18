@@ -29,6 +29,8 @@ import commentRouter from './routes/commentRoutes.js';
 import bookmarkRouter from './routes/bookmarkRoute.js';
 import followRouter from './routes/followRoutes.js';
 import viewRouter from './routes/viewRoutes.js';
+import userRouter from './routes/userRoutes.js';
+import searchRouter from './routes/searchRoutes.js';
 
 const app = express();
 
@@ -135,6 +137,8 @@ app.use('/api/v1/comments', commentRouter);
 app.use('/api/v1/bookmarks', bookmarkRouter);
 app.use('/api/v1/follow', followRouter);
 app.use('/api/v1/views', viewRouter);
+app.use('/api/v1/users', userRouter);
+app.use('/api/v1/search', searchRouter);
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {

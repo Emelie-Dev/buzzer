@@ -18,8 +18,9 @@ services:
           action: sync
 
   api:
-    depends_on: 
-      - db
+    depends_on:
+      db:
+        condition: service_healthy
     build: ./server
     ports: 
       - 5000:5000
@@ -37,13 +38,44 @@ services:
 
   db:
     image: mongo:latest
-    command: ["mongod", "--quiet", "--logpath", "/dev/null"]
+    command: ["mongod", "--quiet", "--logpath", "/dev/null", "--replSet", "rs0"]
     logging:
       driver: "none"
     ports:
       - 27017:27017
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: >
+        echo "try {
+          if (rs.status().ok) {
+            if (!rs.status().members[0].name.includes('db:27017')) {
+              rs.reconfig({_id:'rs0',members:[{_id:0,host:'db:27017'}]}, {force:true})
+            }
+          }
+        } catch (err) {
+          rs.initiate({_id:'rs0',members:[{_id:0,host:'db:27017'}]})
+        }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
     volumes:
       - mongo_data:/data/db
 
+
+  typesense:
+    image: typesense/typesense:28.0
+    command: "--data-dir /data --api-key=xyz --listen-port 8108"
+    ports:
+      - 8108:8108
+    volumes:
+      - typesense_data:/data
+    logging:
+      driver: "none"
+      
+
 volumes:
   mongo_data:
+  typesense_data:

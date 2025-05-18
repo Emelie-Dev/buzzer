@@ -72,6 +72,6 @@ export const StorySchema = new Schema<StoryItem | StoryFeedItem>({
   createdAt: { type: Date, default: Date.now },
 });
 
-const Story = mongoose.model('Story', StorySchema);
+const Story = mongoose.model<StoryItem | StoryFeedItem>('Story', StorySchema);
 
 export default Story;
