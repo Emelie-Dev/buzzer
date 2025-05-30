@@ -18,12 +18,12 @@ import workerpool from 'workerpool';
 import requestIp from 'request-ip';
 
 // Custom Modules
+import './cron/expiredStoryCron.js';
 import authRouter from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import CustomError from './utils/CustomError.js';
 import storiesRouter from './routes/storyRoutes.js';
 import likesRouter from './routes/likeRoutes.js';
-import './cron/expiredStoryCron.js';
 import contentRouter from './routes/contentRoutes.js';
 import commentRouter from './routes/commentRoutes.js';
 import bookmarkRouter from './routes/bookmarkRoute.js';
@@ -31,6 +31,7 @@ import followRouter from './routes/followRoutes.js';
 import viewRouter from './routes/viewRoutes.js';
 import userRouter from './routes/userRoutes.js';
 import searchRouter from './routes/searchRoutes.js';
+import friendRouter from './routes/friendRoutes.js';
 
 const app = express();
 
@@ -139,6 +140,7 @@ app.use('/api/v1/follow', followRouter);
 app.use('/api/v1/views', viewRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/search', searchRouter);
+app.use('/api/v1/friends', friendRouter);
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {

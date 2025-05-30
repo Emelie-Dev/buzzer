@@ -26,7 +26,7 @@ export default [
       { name: 'description', type: 'string' },
       {
         name: 'media',
-        type: 'string[]',
+        type: 'string',
       },
       { name: 'createdAt', type: 'int64' },
     ],

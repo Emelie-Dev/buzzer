@@ -67,11 +67,17 @@ services:
 
   typesense:
     image: typesense/typesense:28.0
-    command: "--data-dir /data --api-key=xyz --listen-port 8108"
+    command: [
+      "typesense-server",
+      "--log-level=off",
+      "--data-dir=/data",
+      "--api-key=xyz", 
+      "--listen-port=8108"
+    ]
     ports:
       - 8108:8108
     volumes:
-      - typesense_data:/data
+      - typesense_data:/data 
     logging:
       driver: "none"
       

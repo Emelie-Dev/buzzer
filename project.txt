@@ -60,6 +60,8 @@ Server =>
 
   Tips
   - Enable chat feature
+  - Users can have only 1000 friends at max
+  - Enable users to view sent friend requests
 
 
 
