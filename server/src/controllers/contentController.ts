@@ -10,7 +10,6 @@ import Content from '../models/contentModel.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
 import getUserLocation from '../utils/getUserLocation.js';
-import mongoose from 'mongoose';
 
 const upload = multerConfig('contents');
 
@@ -298,14 +297,9 @@ export const getContents = asyncErrorHandler(
                       $and: [
                         { $eq: ['$following', '$$contentUser'] }, // content.user == follow.following
                         {
-                          $eq: [
-                            '$follower',
-                            mongoose.Types.ObjectId.createFromHexString(
-                              req.user?.id
-                            ),
-                          ],
+                          $eq: ['$follower', req.user?._id],
                         },
-                        { $not: [{ $in: ['$$contentUser', excludedUsers] }] }, // Exclude users
+                        { $not: { $in: ['$$contentUser', excludedUsers] } }, // Exclude users
                       ],
                     },
                   },
@@ -332,7 +326,65 @@ export const getContents = asyncErrorHandler(
             },
           },
         ]);
+        break;
 
+      case 'friends':
+        contents = await Content.aggregate([
+          {
+            $lookup: {
+              from: 'friends',
+              let: { contentUser: '$user' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        {
+                          $or: [
+                            {
+                              $and: [
+                                { $eq: ['$requester', '$$contentUser'] },
+                                {
+                                  $eq: ['$recipient', req.user?._id],
+                                },
+                              ],
+                            },
+                            {
+                              $and: [
+                                {
+                                  $eq: ['$requester', req.user?._id],
+                                },
+                                { $eq: ['$recipient', '$$contentUser'] },
+                              ],
+                            },
+                          ],
+                        },
+                        { $not: { $in: ['$$contentUser', excludedUsers] } },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'friendInfo',
+            },
+          },
+          {
+            $match: {
+              friendInfo: { $ne: [] },
+            },
+          },
+          {
+            $sample: { size: 10 },
+          },
+          {
+            $project: {
+              location: 0,
+              settings: 0,
+              friendInfo: 0,
+              __v: 0,
+            },
+          },
+        ]);
         break;
     }
 

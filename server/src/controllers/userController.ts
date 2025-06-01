@@ -17,6 +17,8 @@ export const getSuggestedUsers = asyncErrorHandler(
           location: 0,
           settings: 0,
           storyFeed: 0,
+          searchHistory: 0,
+          createdAt: 0,
         },
       },
     ]);
