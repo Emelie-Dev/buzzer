@@ -11,7 +11,7 @@ COPY package*.json ./
 ARG NODE_ENV=development
 RUN if [ "$NODE_ENV" = "production" ]; then npm install --omit=optional --legacy-peer-deps; else npm install --legacy-peer-deps; fi
 
-RUN if [ "$NODE_ENV" = "production" ]; npm install sharp --legacy-peer-deps;
+RUN if [ "$NODE_ENV" = "production" ]; then npm install sharp --legacy-peer-deps fi;
 
 # Copy the entire source code
 COPY . .
