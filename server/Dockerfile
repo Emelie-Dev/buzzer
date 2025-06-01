@@ -1,32 +1,20 @@
 # Base image
-FROM node:20-alpine
+FROM node:20-slim
 
 # Set working directory
 WORKDIR /app
 
-# Use ARG to conditionally run logic
-ARG NODE_ENV=development
-
-# 🛠️ Only install build tools in production
-RUN if [ "$NODE_ENV" = "production" ]; then \
-    apk add --no-cache libc6-compat make gcc g++ python3; \
-    fi
-
-# Copy package files
+# Copy package files and install dependencies
 COPY package*.json ./
 
-# Install sharp for musl first, then rest of the deps
-RUN npm install sharp --platform=linux --libc=musl --legacy-peer-deps && \
-    if [ "$NODE_ENV" = "production" ]; then \
-    npm install --omit=optional --legacy-peer-deps; \
-    else \
-    npm install --legacy-peer-deps; \
-    fi
+# Use ARG to set NODE_ENV during build
+ARG NODE_ENV=development
+RUN if [ "$NODE_ENV" = "production" ]; then npm install --omit=optional --legacy-peer-deps; else npm install --legacy-peer-deps; fi
 
-# Copy the app source
+# Copy the entire source code
 COPY . .
 
-# Build in production only
+# Build only if in production
 RUN sh -c 'if [ "$NODE_ENV" = "production" ]; then \
     npm run build && \
     mkdir -p /app/dist/public /app/dist/templates && \
@@ -36,6 +24,8 @@ RUN sh -c 'if [ "$NODE_ENV" = "production" ]; then \
     rm -rf /app/src; \
     fi'
 
+# Expose the port
 EXPOSE 5000
 
+# Dynamically set CMD based on NODE_ENV
 CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run dev; fi"]
