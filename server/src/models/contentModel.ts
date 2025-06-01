@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 import { ContentAccessibility } from './storyModel.js';
+import locationSubschema from './subschemas/locationSubschema.js';
 
 interface IContentItem extends Document {
   src: string;
@@ -80,12 +81,7 @@ const ContentSchema = new Schema<IContent>({
     },
   ],
   location: {
-    type: {
-      continent: String,
-      country: String,
-      state: String,
-      city: String,
-    },
+    type: locationSubschema,
     required: true,
   },
   settings: {

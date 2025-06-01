@@ -1,5 +1,5 @@
 import asyncErrorHandler from '../utils/asyncErrorHandler.js';
-import { NextFunction, Response } from 'express';
+import { Response } from 'express';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import Search from '../models/searchModel.js';
 import getUserLocation from '../utils/getUserLocation.js';

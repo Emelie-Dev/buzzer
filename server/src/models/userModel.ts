@@ -3,6 +3,7 @@ import validator from 'validator';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { StoryFeedItem, StorySchema } from './storyModel.js';
+import locationSubschema from './subschemas/locationSubschema.js';
 
 export interface IUser extends Document {
   username: string;
@@ -116,12 +117,7 @@ const UserSchema = new Schema<IUser>({
     },
   },
   location: {
-    type: {
-      continent: String,
-      country: String,
-      state: String,
-      city: String,
-    },
+    type: locationSubschema,
     required: true,
   },
   createdAt: {
