@@ -16,7 +16,7 @@ RUN npm install --omit=optional --legacy-peer-deps
 
 # Then install sharp explicitly with optional dependencies
 RUN if [ "$NODE_ENV" = "production" ]; then \
-    npm install sharp --include=optional  --legacy-peer-deps; \
+    npm install sharp --legacy-peer-deps; \
     fi
 
 # Copy the entire source code
