@@ -11,11 +11,12 @@ COPY package*.json ./
 ARG NODE_ENV=development
 ENV NODE_ENV=$NODE_ENV
 
-# Install dependencies based on NODE_ENV
+# Install all other dependencies without optional ones
+RUN npm install --omit=optional --legacy-peer-deps
+
+# Then install sharp explicitly with optional dependencies
 RUN if [ "$NODE_ENV" = "production" ]; then \
-    npm install --include=optional --legacy-peer-deps; \
-    else \
-    npm install --legacy-peer-deps; \
+    npm install --include=optional sharp; \
     fi
 
 # Copy the entire source code
@@ -34,5 +35,5 @@ RUN if [ "$NODE_ENV" = "production" ]; then \
 # Expose the port
 EXPOSE 5000
 
-# Dynamically set CMD based on NODE_ENV
+# Run based on NODE_ENV
 CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run dev; fi"]
