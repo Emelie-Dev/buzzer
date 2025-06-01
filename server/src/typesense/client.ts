@@ -1,6 +1,6 @@
 import Typesense from 'typesense';
 
-const typesense = new Typesense.Client({
+const typesenseDev = new Typesense.Client({
   nodes: [
     {
       host: 'typesense', // <-- matches docker service name
@@ -12,4 +12,18 @@ const typesense = new Typesense.Client({
   connectionTimeoutSeconds: 2,
 });
 
-export default typesense;
+const typesenseProd = new Typesense.Client({
+  nodes: [
+    {
+      host: 'r8k3i62abdcspxu4p-1.a1.typesense.net',
+      port: 443,
+      protocol: 'https',
+    },
+  ],
+  apiKey: process.env.TYPESENSE_PROD_KEY!,
+  connectionTimeoutSeconds: 2,
+});
+
+export default process.env.NODE_ENV === 'production'
+  ? typesenseProd
+  : typesenseDev;
