@@ -32,6 +32,7 @@ import viewRouter from './routes/viewRoutes.js';
 import userRouter from './routes/userRoutes.js';
 import searchRouter from './routes/searchRoutes.js';
 import friendRouter from './routes/friendRoutes.js';
+import reelRouter from './routes/reelRoutes.js';
 
 const app = express();
 
@@ -141,6 +142,7 @@ app.use('/api/v1/views', viewRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/search', searchRouter);
 app.use('/api/v1/friends', friendRouter);
+app.use('/api/v1/reels', reelRouter);
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {

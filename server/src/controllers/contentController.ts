@@ -10,6 +10,8 @@ import Content from '../models/contentModel.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
 import getUserLocation from '../utils/getUserLocation.js';
+// @ts-ignore
+import { checkVideoFilesDuration } from '../worker.js';
 
 const upload = multerConfig('contents');
 
@@ -59,8 +61,12 @@ export const validateContentFiles = asyncErrorHandler(
           file.mimetype.startsWith('video')
         );
 
-        // Checks if video files duration are correct in the worker pool
-        await pool.exec('checkVideoFilesDuration', [videoFiles, 60]);
+        // Checks if video files duration is valid
+        if (process.env.NODE_ENV === 'development') {
+          await pool.exec('checkVideoFilesDuration', [videoFiles, 60]);
+        } else {
+          await checkVideoFilesDuration(videoFiles, 60);
+        }
 
         next();
       } catch (err) {
@@ -152,12 +158,10 @@ export const saveContent = asyncErrorHandler(
         settings: JSON.parse(req.body.settings),
       });
 
-      // in production delete content files from server storage
       return res.status(201).end(
         JSON.stringify({
           status: 'success',
-          message: 'Content created!',
-          content,
+          data: { content },
         })
       );
     } catch (err) {
@@ -399,7 +403,9 @@ export const getContents = asyncErrorHandler(
 
 export const getContent = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const content = await Content.findById(req.params.id).select('-__v');
+    const content = await Content.findById(req.params.id).select(
+      '-__v -settings -location'
+    );
 
     // Check content accessibility settings
 

@@ -1,23 +1,16 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
-import { ContentAccessibility } from './storyModel.js';
 import locationSubschema, {
   ILocation,
 } from './subschemas/locationSubschema.js';
+import { ContentAccessibility } from './storyModel.js';
 
-interface IContentItem extends Document {
-  src: string;
-  mediaType: 'image' | 'video';
-  description: string;
-  filter: string;
-}
-
-interface IContent extends Document {
+interface IReel extends Document {
   user: Types.ObjectId;
-  media: IContentItem[];
-  aspectRatio: Number;
+  src: String;
   description: String;
   collaborators: Types.ObjectId[];
   location: ILocation;
+  keywords: String[];
   settings: {
     accessibility: Number;
     disableComments: Boolean;
@@ -26,50 +19,25 @@ interface IContent extends Document {
   createdAt: Date;
 }
 
-const ContentItemSchema = new Schema<IContentItem>({
-  src: {
-    type: String,
-    required: true,
-  },
-  mediaType: {
-    type: String,
-    enum: ['image', 'video'],
-    required: true,
-  },
-  description: {
-    type: String,
-    maxlength: 800,
-    trim: true,
-  },
-  filter: { type: String, required: true },
-});
-
-const ContentSchema = new Schema<IContent>({
+const ReelSchema = new Schema<IReel>({
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  media: {
-    type: [ContentItemSchema],
+  src: {
+    type: String,
     required: true,
-    validate: {
-      validator: (value: IContentItem[]) => {
-        return value.length <= 20;
-      },
-      message: 'You can only upload 20 files at once!',
-    },
-  },
-  aspectRatio: {
-    type: Number,
-    enum: [1, 0.8, 1.7778, 0],
-    default: 0,
   },
   description: {
     type: String,
     maxlength: 2200,
     trim: true,
     default: '',
+  },
+  keywords: {
+    type: [String],
+    default: [],
   },
   collaborators: [
     {
@@ -99,6 +67,6 @@ const ContentSchema = new Schema<IContent>({
   },
 });
 
-const Content = mongoose.model<IContent>('Content', ContentSchema);
+const Reel = mongoose.model<IReel>('Reel', ReelSchema);
 
-export default Content;
+export default Reel;

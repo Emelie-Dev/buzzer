@@ -7,12 +7,10 @@ services:
       target: development 
     ports:
       - 5173:5173
+    volumes:
+      - /app/node_modules  # Cache for node_modules in container
     develop:
       watch:
-        - path: ./client/package.json
-          action: rebuild
-        - path: ./client/package-lock.json
-          action: rebuild
         - path: ./client
           target: /app
           action: sync
@@ -26,12 +24,10 @@ services:
       - 5000:5000
     env_file:
       - ./server/src/config.env
+    volumes:
+      - /app/node_modules
     develop:
       watch:
-        - path: ./server/package.json
-          action: rebuild
-        - path: ./server/package-lock.json
-          action: rebuild
         - path: ./server
           target: /app
           action: sync
@@ -54,7 +50,7 @@ services:
             }
           }
         } catch (err) {
-          rs.initiate({_id:'rs0',members:[{_id:0,host:'db:27017'}]})
+          rs.initiate({_id:'rs0',members:[{_id:0,host:'db:27017'}]} )
         }" | mongosh --port 27017 --quiet
       interval: 5s
       timeout: 30s
@@ -63,7 +59,6 @@ services:
       retries: 30
     volumes:
       - mongo_data:/data/db
-
 
   typesense:
     image: typesense/typesense:28.0
@@ -80,7 +75,6 @@ services:
       - typesense_data:/data 
     logging:
       driver: "none"
-      
 
 volumes:
   mongo_data:

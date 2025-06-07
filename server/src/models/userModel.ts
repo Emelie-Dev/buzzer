@@ -3,7 +3,9 @@ import validator from 'validator';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { StoryFeedItem, StorySchema } from './storyModel.js';
-import locationSubschema from './subschemas/locationSubschema.js';
+import locationSubschema, {
+  ILocation,
+} from './subschemas/locationSubschema.js';
 
 export interface IUser extends Document {
   username: string;
@@ -19,13 +21,9 @@ export interface IUser extends Document {
   passwordResetToken: String | undefined;
   passwordResetTokenExpires: Date | undefined;
   storyFeed: Types.ObjectId[];
-  location: {
-    continent: String;
-    country: String;
-    state: String;
-    city: String;
-  };
+  location: ILocation;
   searchHistory: String[];
+  reelSounds: { name: string; src: string }[];
   settings: {
     general: {
       hiddenStories: Types.ObjectId[];
@@ -159,6 +157,15 @@ const UserSchema = new Schema<IUser>({
   },
   searchHistory: {
     type: [String],
+    default: [],
+  },
+  reelSounds: {
+    type: [
+      {
+        name: String,
+        src: String,
+      },
+    ],
     default: [],
   },
   passwordChangedAt: Date,

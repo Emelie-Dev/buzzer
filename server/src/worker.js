@@ -4,11 +4,11 @@ import fs from 'fs';
 import path from 'path';
 import { tmpdir } from 'os';
 import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+// import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+// import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-ffmpeg.setFfprobePath(ffprobeInstaller.path);
+// ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+// ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 const emitEvent = (message) => {
   return workerpool.workerEmit(message);
@@ -133,7 +133,7 @@ const processVideo = (filter, filePath, tempFilePath) => {
   });
 };
 
-const checkVideoFilesDuration = async (files, seconds) => {
+export const checkVideoFilesDuration = async (files, seconds) => {
   await Promise.all(
     files.map((file) => {
       return new Promise((resolve, reject) => {
@@ -168,7 +168,7 @@ const checkVideoFilesDuration = async (files, seconds) => {
   );
 };
 
-const processFiles = async (files, filters) => {
+export const processFiles = async (files, filters) => {
   let fileIndex = 0;
   const initialValues = {
     brightness: 1,
@@ -228,8 +228,121 @@ const processFiles = async (files, filters) => {
   );
 };
 
-// Register the function with workerpool
-workerpool.worker({
-  checkVideoFilesDuration,
-  processFiles,
-});
+export const transformReelFiles = async (files, position = {}, volume = {}) => {
+  // start pos, end pos, sound, cover photo
+
+  const { reel: reelFile, sound, cover } = files;
+  const { start = 0, end = 0 } = position;
+  const { original: originalVolume = 0, sound: soundVolume = 1 } = volume;
+
+  // Create a temporary file location
+  const ext = path.extname(reelFile[0].originalname);
+  const tempFilePath = path.join(
+    tmpdir(),
+    `processed-${Date.now()}-${Math.trunc(Math.random() * 1000000000)}${ext}`
+  );
+
+  return new Promise((resolve, reject) => {
+    // First, probe the video to check if it has audio
+    ffmpeg.ffprobe(reelFile[0].path, (err, metadata) => {
+      if (err) return reject(err);
+
+      const hasAudio = metadata.streams.some((s) => s.codec_type === 'audio');
+
+      const process = ffmpeg();
+      const complexFilter = [];
+      let inputIndex = 0;
+
+      // Input 0: cover image (optional)
+      if (cover.length > 0) {
+        process.input(cover[0].path).inputOptions(['-loop 1']);
+        complexFilter.push(
+          `[${inputIndex}:v]scale=720:1280:force_original_aspect_ratio=decrease,` +
+            `pad=720:1280:(ow-iw)/2:(oh-ih)/2,setsar=1,` +
+            `trim=duration=0.1,setpts=PTS-STARTPTS[cover]`
+        );
+        inputIndex++;
+      }
+
+      // Input 1: main trimmed video
+      process
+        .input(reelFile[0].path)
+        .setStartTime(start)
+        .setDuration(end - start);
+      const videoIndex = inputIndex;
+      complexFilter.push(
+        `[${videoIndex}:v]scale=720:1280:force_original_aspect_ratio=decrease,` +
+          `pad=720:1280:(ow-iw)/2:(oh-ih)/2,setsar=1,setpts=PTS-STARTPTS[video]`
+      );
+      inputIndex++;
+
+      // Input 2: optional background sound
+      if (sound.length > 0) {
+        process.input(sound[0].path);
+      }
+
+      // Video concat filter
+      if (cover.length > 0) {
+        complexFilter.push('[cover][video]concat=n=2:v=1:a=0[outv]');
+      } else {
+        complexFilter.push('[video]null[outv]');
+      }
+
+      // Audio filter logic
+      let audioFilter = '';
+      if (hasAudio) {
+        // Video has audio: mix video audio + background sound (if any)
+        if (sound.length > 0) {
+          audioFilter =
+            `[${videoIndex}:a]volume=${originalVolume}[a1];` +
+            `[${inputIndex}:a]volume=${soundVolume}[a2];` +
+            `[a1][a2]amix=inputs=2:duration=longest:dropout_transition=2[outa]`;
+        } else {
+          audioFilter = `[${videoIndex}:a]volume=${originalVolume}[outa]`;
+        }
+      } else {
+        // Video has NO audio: use only background sound with specified volume
+        if (sound.length > 0) {
+          audioFilter = `[${inputIndex}:a]volume=${soundVolume}[outa]`;
+        } else {
+          // No video audio and no background sound? Create silent audio (optional)
+          audioFilter = `anull[outa]`;
+        }
+      }
+
+      complexFilter.push(audioFilter);
+
+      // Total duration = video duration + cover duration if any
+      const totalDuration = end - start + (cover.length > 0 ? 0.1 : 0);
+
+      process
+        .complexFilter(complexFilter.join(';'))
+        .outputOptions([
+          '-map',
+          '[outv]',
+          '-map',
+          '[outa]',
+          '-t',
+          String(totalDuration),
+        ])
+        .output(tempFilePath)
+        .on('error', reject)
+        .on('end', () => {
+          fs.rename(tempFilePath, reelFile[0].path, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        })
+        .run();
+    });
+  });
+};
+
+// Register the functions only when this file is executed as a worker
+if (!workerpool.isMainThread) {
+  workerpool.worker({
+    checkVideoFilesDuration,
+    processFiles,
+    transformReelFiles,
+  });
+}

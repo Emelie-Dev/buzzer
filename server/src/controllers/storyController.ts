@@ -12,6 +12,8 @@ import Story, {
   StoryItem,
 } from '../models/storyModel.js';
 import multerConfig from '../utils/multerConfig.js';
+// @ts-ignore
+import { checkVideoFilesDuration } from '../worker.js';
 
 const upload = multerConfig('stories');
 
@@ -212,9 +214,11 @@ export const validateStoryFiles = asyncErrorHandler(
     ]);
 
     uploader(req, res, async (error: any) => {
-      const files = req.files as {
-        [fieldname: string]: Express.Multer.File[];
-      };
+      let files =
+        (req.files as {
+          [fieldname: string]: Express.Multer.File[];
+        }) || {};
+      files = { story: files.story || [], sound: files.sound || [] };
 
       try {
         if (error) {
@@ -237,7 +241,7 @@ export const validateStoryFiles = asyncErrorHandler(
             400
           );
 
-        const storyFiles = files.story || [];
+        const storyFiles = files.story;
         if (storyFiles.length === 0) {
           throw new CustomError(
             'You must upload at least one story file.',
@@ -250,8 +254,12 @@ export const validateStoryFiles = asyncErrorHandler(
           file.mimetype.startsWith('video')
         );
 
-        // Checks if video files duration are correct in the worker pool
-        await pool.exec('checkVideoFilesDuration', [videoFiles, 300]);
+        // Checks if video files duration is valid
+        if (process.env.NODE_ENV === 'development') {
+          await pool.exec('checkVideoFilesDuration', [videoFiles, 300]);
+        } else {
+          await checkVideoFilesDuration(videoFiles, 300);
+        }
 
         next();
       } catch (err) {
@@ -343,12 +351,10 @@ export const saveStory = asyncErrorHandler(
         '-__v -user -accessibility'
       );
 
-      // in production delete story files from server storage
       return res.status(201).end(
         JSON.stringify({
           status: 'success',
-          message: 'Story updated!',
-          story,
+          data: { story },
         })
       );
     } catch (err) {

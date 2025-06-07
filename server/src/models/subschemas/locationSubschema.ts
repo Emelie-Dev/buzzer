@@ -1,6 +1,13 @@
-import { Schema } from 'mongoose';
+import { Document, Schema } from 'mongoose';
 
-export default new Schema({
+export interface ILocation extends Document {
+  continent: String;
+  country: String;
+  state: String;
+  city: String;
+}
+
+export default new Schema<ILocation>({
   continent: String,
   country: String,
   state: String,

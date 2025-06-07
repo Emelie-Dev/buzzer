@@ -1,6 +1,9 @@
 # Base image
 FROM node:20-alpine
 
+# Install ffmpeg and ffprobe using apk (Alpine package manager)
+RUN apk add --no-cache ffmpeg
+
 # Set working directory
 WORKDIR /app
 
@@ -9,20 +12,24 @@ COPY package*.json ./
 
 # Use ARG to set NODE_ENV during build
 ARG NODE_ENV=development
-RUN if [ "$NODE_ENV" = "production" ]; then npm install --omit=optional --legacy-peer-deps; else npm install --legacy-peer-deps; fi
+RUN if [ "$NODE_ENV" = "production" ]; then \
+    npm install --omit=optional --legacy-peer-deps; \
+    else \
+    npm install --legacy-peer-deps; \
+    fi
 
 # Copy the entire source code
 COPY . .
 
 # Build only if in production
-RUN sh -c 'if [ "$NODE_ENV" = "production" ]; then \
+RUN if [ "$NODE_ENV" = "production" ]; then \
     npm run build && \
     mkdir -p /app/dist/public /app/dist/templates && \
     cp -r /app/src/public/* /app/dist/public/ && \
     cp -r /app/src/templates/* /app/dist/templates/ && \
     cp /app/src/worker.js /app/dist/ && \
     rm -rf /app/src; \
-    fi'
+    fi
 
 # Expose the port
 EXPOSE 5000
