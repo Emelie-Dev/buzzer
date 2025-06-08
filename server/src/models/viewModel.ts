@@ -15,7 +15,7 @@ const ViewSchema = new Schema<IView>({
   },
   collectionName: {
     type: String,
-    enum: ['content'],
+    enum: ['content', 'user', 'reel'],
     required: true,
   },
   documentId: {
@@ -27,11 +27,6 @@ const ViewSchema = new Schema<IView>({
     default: Date.now,
   },
 });
-
-// ViewSchema.index(
-//   { user: 1, collectionName: 1, documentId: 1 },
-//   { unique: true }
-// );
 
 const View = mongoose.model<IView>('View', ViewSchema);
 

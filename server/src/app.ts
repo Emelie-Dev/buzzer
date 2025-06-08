@@ -19,6 +19,7 @@ import requestIp from 'request-ip';
 
 // Custom Modules
 import './cron/expiredStoryCron.js';
+import './cron/profileViewCron.js';
 import authRouter from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import CustomError from './utils/CustomError.js';
