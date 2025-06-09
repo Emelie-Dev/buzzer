@@ -6,6 +6,8 @@ import Story from '../models/storyModel.js';
 import Like from '../models/likeModel.js';
 import Content from '../models/contentModel.js';
 import Comment from '../models/commentModel.js';
+import Notification from '../models/notificationModel.js';
+import Reel from '../models/reelModel.js';
 
 export const likeItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -19,6 +21,8 @@ export const likeItem = asyncErrorHandler(
         ? Content.findById(documentId)
         : collection === 'comment'
         ? Comment.findById(documentId)
+        : collection === 'reel'
+        ? Reel.findById(documentId)
         : null;
 
     const data = (await query) as Record<string, any>;
@@ -36,6 +40,62 @@ export const likeItem = asyncErrorHandler(
       collectionName: collection,
       documentId: data._id,
     });
+
+    // Handle notifications
+
+    // Get like notifications
+    const notifications = await Notification.find({
+      user: data.user,
+      type: ['like', collection],
+      documentId: data._id,
+    }).sort('-createdAt');
+
+    const batchNotification = await Notification.findOne({
+      user: data.user,
+      type: ['like', collection, 'batch'],
+      documentId: data._id,
+    });
+
+    if (notifications.length >= 20 && !batchNotification) {
+      await Notification.create({
+        user: data.user,
+        secondUser: req.user?._id,
+        type: ['like', collection, 'batch'],
+        documentId: data._id,
+        data: {
+          batchCount: 15,
+        },
+      });
+
+      // Deletes some previous notifications
+      const deleteArray = notifications
+        .slice(5, notifications.length)
+        .map((data) => data._id);
+
+      await Notification.deleteMany({
+        _id: { $in: deleteArray },
+      });
+    } else if (batchNotification) {
+      await Notification.findByIdAndUpdate(
+        batchNotification._id,
+        {
+          secondUser: req.user?._id,
+          $inc: { 'data.batchCount': 1 },
+        },
+        {
+          runValidators: true,
+        }
+      );
+    } else {
+      if (String(data.user) !== String(req.user?._id)) {
+        await Notification.create({
+          user: data.user,
+          type: ['like', collection],
+          secondUser: req.user?._id,
+          documentId: data._id,
+        });
+      }
+    }
 
     return res.status(201).json({
       status: 'success',
