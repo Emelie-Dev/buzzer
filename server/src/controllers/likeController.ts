@@ -8,6 +8,10 @@ import Content from '../models/contentModel.js';
 import Comment from '../models/commentModel.js';
 import Notification from '../models/notificationModel.js';
 import Reel from '../models/reelModel.js';
+import {
+  handleCreateNotifications,
+  handleDeleteNotifications,
+} from '../utils/handleNotifications.js';
 
 export const likeItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -42,60 +46,7 @@ export const likeItem = asyncErrorHandler(
     });
 
     // Handle notifications
-
-    // Get like notifications
-    const notifications = await Notification.find({
-      user: data.user,
-      type: ['like', collection],
-      documentId: data._id,
-    }).sort('-createdAt');
-
-    const batchNotification = await Notification.findOne({
-      user: data.user,
-      type: ['like', collection, 'batch'],
-      documentId: data._id,
-    });
-
-    if (notifications.length >= 20 && !batchNotification) {
-      await Notification.create({
-        user: data.user,
-        secondUser: req.user?._id,
-        type: ['like', collection, 'batch'],
-        documentId: data._id,
-        data: {
-          batchCount: 15,
-        },
-      });
-
-      // Deletes some previous notifications
-      const deleteArray = notifications
-        .slice(5, notifications.length)
-        .map((data) => data._id);
-
-      await Notification.deleteMany({
-        _id: { $in: deleteArray },
-      });
-    } else if (batchNotification) {
-      await Notification.findByIdAndUpdate(
-        batchNotification._id,
-        {
-          secondUser: req.user?._id,
-          $inc: { 'data.batchCount': 1 },
-        },
-        {
-          runValidators: true,
-        }
-      );
-    } else {
-      if (String(data.user) !== String(req.user?._id)) {
-        await Notification.create({
-          user: data.user,
-          type: ['like', collection],
-          secondUser: req.user?._id,
-          documentId: data._id,
-        });
-      }
-    }
+    await handleCreateNotifications('like', req.user?._id, data, collection);
 
     return res.status(201).json({
       status: 'success',
@@ -106,6 +57,9 @@ export const likeItem = asyncErrorHandler(
 
 export const dislikeItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    let { collection, documentId } = req.body;
+    collection = collection.toLowerCase();
+
     const like = await Like.findById(req.params.id);
 
     if (!like || String(like.user) !== String(req.user?._id)) {
@@ -113,6 +67,14 @@ export const dislikeItem = asyncErrorHandler(
     }
 
     await like.deleteOne();
+
+    // Handle notifications
+    await handleDeleteNotifications(
+      'like',
+      req.user?._id,
+      documentId,
+      collection
+    );
 
     return res.status(204).json({
       status: 'success',

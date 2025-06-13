@@ -12,6 +12,7 @@ import protectData from '../utils/protectData.js';
 import getUserLocation from '../utils/getUserLocation.js';
 // @ts-ignore
 import { checkVideoFilesDuration } from '../worker.js';
+import { handleMentionNotifications } from '../utils/handleNotifications.js';
 
 const upload = multerConfig('contents');
 
@@ -117,6 +118,9 @@ export const saveContent = asyncErrorHandler(
     const files = req.files as Express.Multer.File[];
 
     try {
+      const mentions = JSON.parse(req.body.mentions);
+      const settings = JSON.parse(req.body.settings);
+
       const filters = JSON.parse(req.body.filters).value;
       const fileDescriptions = JSON.parse(req.body.fileDescriptions).value;
 
@@ -155,8 +159,19 @@ export const saveContent = asyncErrorHandler(
           return undefined;
         })(),
         location,
-        settings: JSON.parse(req.body.settings),
+        settings,
       });
+
+      // send mention notifications
+      await handleMentionNotifications(
+        'create',
+        'content',
+        mentions,
+        { id: req.user?._id, name: req.user?.username },
+        content._id,
+        settings.accessibility,
+        { text: req.body.description }
+      );
 
       return res.status(201).end(
         JSON.stringify({
@@ -164,7 +179,7 @@ export const saveContent = asyncErrorHandler(
           data: { content },
         })
       );
-    } catch (err) {
+    } catch {
       await deleteContentFiles(files);
 
       return res.status(500).end(
@@ -179,6 +194,7 @@ export const saveContent = asyncErrorHandler(
 
 export const deleteContent = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const mentions = req.body.mentions;
     const content = await Content.findById(req.params.id);
 
     if (!content || String(req.user?._id) !== String(content.user)) {
@@ -187,6 +203,17 @@ export const deleteContent = asyncErrorHandler(
 
     // Delete user content
     await content.deleteOne();
+
+    // delete mention notifications
+    await handleMentionNotifications(
+      'delete',
+      'content',
+      mentions,
+      { id: req.user?._id, name: req.user?.username },
+      content._id,
+      null,
+      null
+    );
 
     // Deletes content files
     if (process.env.NODE_ENV === 'production') {

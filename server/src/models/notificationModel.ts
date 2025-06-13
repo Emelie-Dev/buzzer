@@ -15,7 +15,7 @@ interface INotification extends Document {
     - like user's comment
     - comments on user's comment
 
-  Mentions
+  Mentions (derive mentions from client)
     - user is mentioned in post description or comments
 
   Followers
@@ -65,4 +65,5 @@ const Notification = mongoose.model<INotification>(
   'Notification',
   NotificationSchema
 );
+
 export default Notification;

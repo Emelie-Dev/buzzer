@@ -32,6 +32,7 @@ const CommentSchema = new Schema<IComment>({
       receiver: {
         type: Schema.Types.ObjectId,
         ref: 'User',
+        required: true,
       },
       commentId: {
         type: Schema.Types.ObjectId,

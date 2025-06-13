@@ -14,6 +14,7 @@ import CustomEvent from '../utils/CustomEvent.js';
 import getUserLocation from '../utils/getUserLocation.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
+import { handleMentionNotifications } from '../utils/handleNotifications.js';
 
 const upload = multerConfig('reels');
 
@@ -214,6 +215,9 @@ export const saveReel = asyncErrorHandler(
     };
 
     try {
+      const mentions = JSON.parse(req.body.mentions);
+      const settings = JSON.parse(req.body.settings);
+
       const file = files.reel[0];
 
       // Get user's location
@@ -250,8 +254,19 @@ export const saveReel = asyncErrorHandler(
           return undefined;
         })(),
         location,
-        settings: JSON.parse(req.body.settings),
+        settings,
       });
+
+      // send mention notifications
+      await handleMentionNotifications(
+        'create',
+        'reel',
+        mentions,
+        { id: req.user?._id, name: req.user?.username },
+        reel._id,
+        settings.accessibility,
+        { text: req.body.description }
+      );
 
       return res.status(201).end(
         JSON.stringify({
@@ -424,6 +439,7 @@ export const excludeReelType = asyncErrorHandler(
 
 export const deleteReel = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const mentions = JSON.parse(req.body.mentions);
     const reel = await Reel.findById(req.params.id);
 
     if (!reel || String(reel.user) !== String(req.user?._id)) {
@@ -431,6 +447,17 @@ export const deleteReel = asyncErrorHandler(
     }
 
     await reel.deleteOne();
+
+    // delete mention notifications
+    await handleMentionNotifications(
+      'delete',
+      'reel',
+      mentions,
+      { id: req.user?._id, name: req.user?.username },
+      reel._id,
+      null,
+      null
+    );
 
     // Deletes reel files
     if (process.env.NODE_ENV === 'production') {

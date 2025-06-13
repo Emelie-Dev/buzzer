@@ -4,14 +4,25 @@ import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import CustomError from '../utils/CustomError.js';
 import Content from '../models/contentModel.js';
 import Comment from '../models/commentModel.js';
+import Reel from '../models/reelModel.js';
+import {
+  handleCreateNotifications,
+  handleDeleteNotifications,
+  handleMentionNotifications,
+} from '../utils/handleNotifications.js';
+import { ContentAccessibility } from '../models/storyModel.js';
 
 export const addComment = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    let { collection, documentId, text, reply } = req.body;
+    let { collection, documentId, text, reply, mentions } = req.body;
     collection = collection.toLowerCase();
 
     const query =
-      collection === 'content' ? Content.findById(documentId) : null;
+      collection === 'content'
+        ? Content.findById(documentId)
+        : collection === 'reel'
+        ? Reel.findById(documentId)
+        : null;
 
     const data = (await query) as Record<string, any>;
 
@@ -21,23 +32,50 @@ export const addComment = asyncErrorHandler(
     }
 
     // Check if content owner enabled commenting
-    if (collection === 'content') {
-      const disableComments = data.settings.disableComments;
-
-      if (disableComments) {
-        return next(
-          new CustomError(`Commenting is disabled for this ${collection}.`, 403)
-        );
-      } else {
-        await Comment.create({
-          user: req.user?._id,
-          collectionName: collection,
-          documentId: data._id,
-          text,
-          reply,
-        });
-      }
+    const disableComments = data.settings.disableComments;
+    if (disableComments) {
+      return next(
+        new CustomError(`Commenting is disabled for this ${collection}.`, 403)
+      );
     }
+
+    const comment = await Comment.create({
+      user: req.user?._id,
+      collectionName: collection,
+      documentId: data._id,
+      text,
+      reply,
+    });
+
+    // Handle notifications
+    if (reply) {
+      await handleCreateNotifications(
+        'reply',
+        req.user?._id,
+        { user: reply.receiver, _id: reply.commentId },
+        collection,
+        { text, commentId: comment._id, postId: data._id }
+      );
+    } else {
+      await handleCreateNotifications(
+        'comment',
+        req.user?._id,
+        data,
+        collection,
+        { text, commentId: comment._id }
+      );
+    }
+
+    // send mention notifications
+    await handleMentionNotifications(
+      'create',
+      'comment',
+      mentions,
+      { id: req.user?._id, name: req.user?.username },
+      comment._id,
+      ContentAccessibility.EVERYONE,
+      { text, collection, docId: documentId }
+    );
 
     return res.status(201).json({
       status: 'success',
@@ -48,6 +86,9 @@ export const addComment = asyncErrorHandler(
 
 export const deleteComment = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    let { collection, documentId, mentions, reply } = req.body;
+    collection = collection.toLowerCase();
+
     const comment = await Comment.findById(req.params.id);
 
     if (!comment || String(comment.user) !== String(req.user?._id)) {
@@ -55,6 +96,26 @@ export const deleteComment = asyncErrorHandler(
     }
 
     await comment.deleteOne();
+
+    // Handle notifications
+    await handleDeleteNotifications(
+      comment.reply ? 'reply' : 'comment',
+      req.user?._id,
+      comment.reply ? reply.commentId : documentId,
+      collection,
+      { commentId: comment._id }
+    );
+
+    // delete mention notifications
+    await handleMentionNotifications(
+      'delete',
+      'comment',
+      mentions,
+      { id: req.user?._id, name: req.user?.username },
+      comment._id,
+      null,
+      null
+    );
 
     return res.status(204).json({
       status: 'success',
