@@ -304,7 +304,7 @@ const Profile = () => {
                 onClick={() => setcategory('contents')}
               >
                 <MdOutlineGridOn className={styles['category-icon']} />
-                <span className={styles['category-text']}>Contents</span>
+                <span className={styles['category-text']}>Posts</span>
               </li>
               <li
                 className={`${styles['category-item']} ${

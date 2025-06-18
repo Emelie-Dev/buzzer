@@ -6,12 +6,12 @@ import Story from '../models/storyModel.js';
 import Like from '../models/likeModel.js';
 import Content from '../models/contentModel.js';
 import Comment from '../models/commentModel.js';
-import Notification from '../models/notificationModel.js';
 import Reel from '../models/reelModel.js';
 import {
   handleCreateNotifications,
   handleDeleteNotifications,
 } from '../utils/handleNotifications.js';
+import handleProfileDocuments from '../utils/handleProfileDocuments.js';
 
 export const likeItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -41,6 +41,7 @@ export const likeItem = asyncErrorHandler(
 
     await Like.create({
       user: req.user?._id,
+      creator: data.user,
       collectionName: collection,
       documentId: data._id,
     });
@@ -79,6 +80,23 @@ export const dislikeItem = asyncErrorHandler(
     return res.status(204).json({
       status: 'success',
       message: null,
+    });
+  }
+);
+
+export const getUserLikedPosts = asyncErrorHandler(
+  async (req: AuthRequest, res: Response) => {
+    const liked = await handleProfileDocuments(
+      req.user?._id,
+      'liked',
+      req.query
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        liked,
+      },
     });
   }
 );

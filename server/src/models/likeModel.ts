@@ -2,6 +2,7 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface ILike extends Document {
   user: Types.ObjectId;
+  creator: Types.ObjectId;
   collectionName: String;
   documentId: Types.ObjectId;
   likedAt: Date;
@@ -13,9 +14,14 @@ const LikeSchema = new Schema<ILike>({
     ref: 'User',
     required: true,
   },
+  creator: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   collectionName: {
     type: String,
-    enum: ['story', 'content', 'comment'],
+    enum: ['story', 'content', 'comment', 'reel'],
     required: true,
   },
   documentId: {

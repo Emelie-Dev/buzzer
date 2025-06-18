@@ -7,6 +7,13 @@ import locationSubschema, {
   ILocation,
 } from './subschemas/locationSubschema.js';
 
+export enum InboxSettings {
+  EVERYONE,
+  FRIENDS,
+  FOLLOWERS,
+  YOU,
+}
+
 export interface IUser extends Document {
   username: string;
   name: string;
@@ -28,6 +35,7 @@ export interface IUser extends Document {
     general: {
       hiddenStories: Types.ObjectId[];
     };
+    account: {};
     content: {
       notInterested: {
         content: Types.ObjectId[];
@@ -132,6 +140,38 @@ const UserSchema = new Schema<IUser>({
             default: [],
           },
         ],
+        display: {
+          type: String,
+          enum: ['light', 'dark', 'system'],
+          default: 'light',
+        },
+        inbox: {
+          type: Number,
+          default: InboxSettings.EVERYONE,
+        },
+        privacy: {
+          type: {
+            value: {
+              type: Boolean,
+              default: false,
+            },
+            users: [
+              {
+                type: Schema.Types.ObjectId,
+                ref: 'User',
+                default: [],
+              },
+            ],
+          },
+        },
+      },
+      account: {
+        type: {
+          emailVisibility: {
+            type: Boolean,
+            default: false,
+          },
+        },
       },
       content: {
         notInterested: {

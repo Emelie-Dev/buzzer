@@ -4,6 +4,7 @@ import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import Content from '../models/contentModel.js';
 import CustomError from '../utils/CustomError.js';
 import Bookmark from '../models/bookmarkModel.js';
+import handleProfileDocuments from '../utils/handleProfileDocuments.js';
 
 export const bookmarkItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -46,6 +47,23 @@ export const deleteBookmark = asyncErrorHandler(
     return res.status(204).json({
       status: 'success',
       message: null,
+    });
+  }
+);
+
+export const getUserBookmarks = asyncErrorHandler(
+  async (req: AuthRequest, res: Response) => {
+    const bookmarks = await handleProfileDocuments(
+      req.user?._id,
+      'bookmarks',
+      req.query
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        bookmarks,
+      },
     });
   }
 );

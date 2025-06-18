@@ -15,7 +15,7 @@ const BookmarkSchema = new Schema<IBookmark>({
   },
   collectionName: {
     type: String,
-    enum: ['content'],
+    enum: ['content', 'reel'],
     required: true,
   },
   documentId: {

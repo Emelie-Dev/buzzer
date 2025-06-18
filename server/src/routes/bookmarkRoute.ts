@@ -3,13 +3,14 @@ import protectRoute from '../middleware/protectRoute.js';
 import {
   bookmarkItem,
   deleteBookmark,
+  getUserBookmarks,
 } from '../controllers/bookmarkController.js';
 
 const router = express.Router();
 
 router.use(protectRoute);
 
-router.post('/', bookmarkItem);
+router.route('/').get(getUserBookmarks).post(bookmarkItem);
 
 router.delete('/:id', deleteBookmark);
 
