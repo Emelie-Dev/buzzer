@@ -25,6 +25,7 @@
     "react-router-dom": "^6.27.0",
     "react-slider": "^2.0.6",
     "react-toastify": "^10.0.6",
+    "ua-parser-js": "^2.0.4",
     "vite-plugin-pwa": "^0.21.2",
     "workbox-window": "^7.3.0"
   },

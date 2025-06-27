@@ -64,12 +64,7 @@ Server =>
   - Enable users to view sent friend requests
   - Handle duplicate documents in pagination
   - Delete failed processed files from cloudinary
-
-
-
-
-
-
+ 
 
  
 services:

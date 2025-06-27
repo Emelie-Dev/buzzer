@@ -4,7 +4,7 @@ import { NextFunction, Response } from 'express';
 import Email from '../utils/Email.js';
 import CustomError from '../utils/CustomError.js';
 import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -12,6 +12,9 @@ import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import protectData from '../utils/protectData.js';
 import { Document } from 'mongoose';
 import getUserLocation from '../utils/getUserLocation.js';
+import { UAParser } from 'ua-parser-js';
+import { randomUUID } from 'crypto';
+import Notification from '../models/notificationModel.js';
 
 const verifyResult = fs.readFileSync(
   join(
@@ -60,10 +63,82 @@ const sendEmail = async (
   }
 };
 
-const signToken = (id: unknown) => {
-  return jwt.sign({ id }, String(process.env.JWT_SECRET), {
+const signToken = (id: unknown, jwi: string) => {
+  return jwt.sign({ id, jwi }, String(process.env.JWT_SECRET), {
     expiresIn: Number(process.env.JWT_LOGIN_EXPIRES),
   });
+};
+
+const manageUserDevices = async (
+  user: IUser,
+  userAgent: string,
+  method: 'email' | 'google' | 'facebook',
+  jwi: string,
+  clientIp: string
+) => {
+  const sessions = user.settings.security.sessions || [];
+  const result = new UAParser(userAgent).getResult();
+
+  const { type, model, vendor } = result.device;
+  const { name, version } = result.os;
+
+  const deviceName =
+    model && vendor
+      ? `${vendor} ${model}`
+      : name && version
+      ? `${name} ${version}`
+      : result.ua.slice(0, result.ua.indexOf('/'));
+
+  const session = {
+    name: deviceName,
+    type: type ? type : name && version ? 'desktop' : 'api-client',
+    loginMethod: method,
+    jwi,
+    createdAt: new Date(),
+    lastUsed: new Date(),
+  };
+  sessions.unshift(session);
+
+  if (sessions.length > 10) sessions.pop();
+
+  const { city, country } = await getUserLocation(clientIp);
+
+  user = (await User.findByIdAndUpdate(
+    user._id,
+    {
+      settings: {
+        security: {
+          sessions,
+        },
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  )) as IUser;
+
+  // create notification
+  await Notification.create({
+    user: user._id,
+    type: ['security', 'login', 'new'],
+    data: {
+      deviceName,
+      city,
+      country,
+    },
+  });
+
+  if (sessions.length > 4) {
+    // create notification
+    await Notification.create({
+      user: user._id,
+      type: ['security', 'login', 'multiple'],
+      data: {
+        count: sessions.length,
+      },
+    });
+  }
 };
 
 export const checkIfDataExist = asyncErrorHandler(
@@ -140,7 +215,18 @@ export const verifyEmail = asyncErrorHandler(
 
       await user.save({ validateBeforeSave: false });
 
-      const jwtToken = signToken(user._id);
+      // Gets JWT ID
+      const jwi = randomUUID();
+
+      // Handles logged in devices
+      await manageUserDevices(
+        user,
+        req.get('user-agent')!,
+        'email',
+        jwi,
+        req.clientIp!
+      );
+
       const nonce = crypto.randomBytes(16).toString('base64');
 
       res.setHeader(
@@ -148,7 +234,7 @@ export const verifyEmail = asyncErrorHandler(
         `script-src 'self' 'nonce-${nonce}';`
       );
 
-      res.cookie('jwt', jwtToken, {
+      res.cookie('jwt', signToken(user._id, jwi), {
         maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
         httpOnly: true,
       });
@@ -185,6 +271,16 @@ export const login = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
 
+    const bearerToken = req.headers.authorization;
+    const jwtToken =
+      bearerToken && bearerToken.startsWith('Bearer')
+        ? bearerToken.split(' ')[1]
+        : req.cookies.jwt;
+
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30); // 24 hours ago
+    cutoff.setMilliseconds(0);
+
     if (!email || !password) {
       return next(
         new CustomError(
@@ -194,13 +290,29 @@ export const login = asyncErrorHandler(
       );
     }
 
-    const user = await User.findOne({
+    let user = (await User.findOne({
       email,
       __login: true,
-    });
+    })) as IUser;
+    const sessions = user.settings.security.sessions || [];
 
     if (!user || !(await user.comparePasswordInDb(password, user.password))) {
       return next(new CustomError('Incorrect email or password', 401));
+    }
+
+    if (!user.active) {
+      user = (await User.findOneAndUpdate(
+        { _id: user._id, __login: true },
+        { active: true },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )) as IUser;
+
+      try {
+        await new Email(user, '').sendReactivationEmail();
+      } catch {}
     }
 
     if (!user.emailVerified) {
@@ -218,11 +330,62 @@ export const login = asyncErrorHandler(
       }
     }
 
-    const token = signToken(user._id);
+    // delete expired sessions
+    user = (await User.findByIdAndUpdate(
+      user._id,
+      {
+        settings: {
+          security: {
+            sessions: sessions.filter((session) => session.createdAt > cutoff),
+          },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )) as IUser;
+
+    // check if user is logged in
+    if (jwtToken && sessions.length > 0) {
+      try {
+        // verify the token
+        const decodedToken = jwt.verify(
+          jwtToken,
+          process.env.JWT_SECRET as string
+        ) as JwtPayload;
+
+        const session = sessions.find(
+          (session) => session.jwi === decodedToken.jwi
+        );
+
+        if (session) {
+          return res.status(200).json({
+            status: 'success',
+            message: 'You are already logged in.',
+          });
+        }
+      } catch {}
+    }
+
+    // security alerts
+    // new login, muliple failed login, password changed, many devices logged in
+
+    // Gets JWT ID
+    const jwi = randomUUID();
+
+    // Handles logged in devices
+    await manageUserDevices(
+      user,
+      req.get('user-agent')!,
+      'email',
+      jwi,
+      req.clientIp!
+    );
 
     const userData = protectData(user, 'user');
 
-    res.cookie('jwt', token, {
+    res.cookie('jwt', signToken(user._id, jwi), {
       maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
       //  Prevents javascript access
       httpOnly: true,
@@ -232,7 +395,6 @@ export const login = asyncErrorHandler(
 
     return res.status(200).json({
       status: 'success',
-      token,
       data: {
         user: userData,
       },
@@ -241,9 +403,29 @@ export const login = asyncErrorHandler(
 );
 
 export const logout = asyncErrorHandler(
-  async (_: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
+    let sessions = req.user?.settings.security.sessions || [];
+    const id = req.params.id;
+
+    sessions = sessions.filter((device: any) => String(device._id) !== id);
+
+    await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        settings: {
+          security: {
+            sessions,
+          },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
     res.cookie('jwt', 'loggedout', {
-      maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
+      maxAge: Number(process.env.JWT_LOGOUT_EXPIRES),
       httpOnly: true,
       secure: true,
       sameSite: 'none',
@@ -351,6 +533,44 @@ export const resetPassword = asyncErrorHandler(
     return res.status(200).json({
       status: 'success',
       message: 'Your password has been reset successfully.',
+    });
+  }
+);
+
+export const removeSession = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    let sessions = req.user?.settings.security.sessions || [];
+    const id = req.params.id;
+
+    const session = sessions.find((device: any) => String(device._id) === id);
+
+    if (!session)
+      return next(new CustomError('This session does not exist!', 400));
+
+    sessions = sessions.filter((device: any) => String(device._id) !== id);
+
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        settings: {
+          security: {
+            sessions,
+          },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    const userData = protectData(user!, 'user');
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: userData,
+      },
     });
   }
 );

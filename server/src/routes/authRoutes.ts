@@ -5,6 +5,7 @@ import {
   forgotPassword,
   login,
   logout,
+  removeSession,
   resetPassword,
   signup,
   verifyEmail,
@@ -14,13 +15,16 @@ import protectRoute from '../middleware/protectRoute.js';
 const router = express.Router();
 
 router.get('/verify-email/:token', verifyEmail);
-router.get('/auth-check', protectRoute, authConfirmed);
 router.get('/check-data/:field/:value', checkIfDataExist);
-
-router.post('/signup', signup);
 router.post('/login', login);
-router.post('/logout', logout);
+router.post('/signup', signup);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
+
+router.use(protectRoute);
+
+router.get('/auth-check', authConfirmed);
+router.post('/logout/:id', logout);
+router.patch('/sessions/:id', removeSession);
 
 export default router;

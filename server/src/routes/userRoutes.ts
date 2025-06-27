@@ -1,5 +1,10 @@
 import express from 'express';
 import {
+  changePassword,
+  deactivateAccount,
+  deleteAccount,
+  getAccountToken,
+  getPasswordToken,
   getProfileData,
   getSuggestedUsers,
   getUserPosts,
@@ -21,5 +26,17 @@ router.get('/posts/:type', getUserPosts);
 router.patch('/private-audience', updatePrivateAudience);
 
 router.patch('/settings/:category', updateSettings);
+
+router.patch('/password', changePassword);
+
+router.get('/password-token', getPasswordToken);
+
+router.patch(
+  '/deactivate/:stage',
+  getAccountToken('deactivate'),
+  deactivateAccount
+);
+
+router.delete('/delete/:stage', getAccountToken('delete'), deleteAccount);
 
 export default router;

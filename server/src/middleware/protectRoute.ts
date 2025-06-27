@@ -24,7 +24,7 @@ export default asyncErrorHandler(
     ) as JwtPayload;
 
     // check if the user exists
-    const user = await User.findById(decodedToken.id);
+    let user = await User.findById(decodedToken.id);
 
     if (!user)
       return next(
@@ -36,15 +36,40 @@ export default asyncErrorHandler(
       decodedToken.iat as number
     );
 
-    if (isPasswordChanged)
+    if (isPasswordChanged) {
       return next(
         new CustomError(
           'Your password was recently changed. Please log in again.',
           401
         )
       );
+    }
 
-    req.user = user;
+    // Checks if user session is valid
+    const jwi = decodedToken.jwi;
+    const sessions = user.settings.security.sessions || [];
+    const session = sessions.find((session) => session.jwi === jwi);
+
+    if (!session) return next(new CustomError('This session is invalid.', 401));
+
+    session.lastUsed = new Date();
+
+    user = await User.findByIdAndUpdate(
+      user._id,
+      {
+        settings: {
+          security: {
+            sessions,
+          },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    req.user = user as Record<string, any>;
 
     // Allow the user access the route
     next();

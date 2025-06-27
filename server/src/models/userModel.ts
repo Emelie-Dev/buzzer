@@ -18,6 +18,12 @@ export interface IUser extends Document {
   username: string;
   name: string;
   email: string;
+  bio: string;
+  links: {
+    website: string;
+    youtube: string;
+    instagram: string;
+  };
   password: string;
   photo: string;
   active: boolean;
@@ -27,6 +33,12 @@ export interface IUser extends Document {
   passwordChangedAt: Date;
   passwordResetToken: String | undefined;
   passwordResetTokenExpires: Date | undefined;
+  passwordVerificationToken: String | undefined;
+  passwordVerificationTokenExpires: Date | undefined;
+  deactivateVerificationToken: String | undefined;
+  deactivateVerificationTokenExpires: Date | undefined;
+  deleteVerificationToken: String | undefined;
+  deleteVerificationTokenExpires: Date | undefined;
   storyFeed: Types.ObjectId[];
   location: ILocation;
   searchHistory: String[];
@@ -36,6 +48,16 @@ export interface IUser extends Document {
       hiddenStories: Types.ObjectId[];
     };
     account: {};
+    security: {
+      sessions: {
+        name: string;
+        type: string;
+        loginMethod: string;
+        jwi: string;
+        createdAt: Date;
+        lastUsed: Date;
+      }[];
+    };
     content: {
       notInterested: {
         content: Types.ObjectId[];
@@ -76,6 +98,22 @@ const UserSchema = new Schema<IUser>({
     lowercase: true,
     required: [true, 'Please provide a value for the email.'],
     validate: [validator.isEmail, 'Please provide a valid email.'],
+  },
+  bio: {
+    type: String,
+    trim: true,
+  },
+  links: {
+    type: {
+      website: String,
+      youtube: String,
+      instagram: String,
+    },
+    default: {
+      website: '',
+      youtube: '',
+      instagram: '',
+    },
   },
   password: {
     type: String,
@@ -173,6 +211,42 @@ const UserSchema = new Schema<IUser>({
           },
         },
       },
+      security: {
+        type: {
+          sessions: {
+            type: [
+              {
+                name: {
+                  type: String,
+                  required: true,
+                },
+                type: {
+                  type: String,
+                  required: true,
+                },
+                loginMethod: {
+                  type: String,
+                  enum: ['email', 'google', 'facebook'],
+                  required: true,
+                },
+                jwi: {
+                  type: String,
+                  required: true,
+                },
+                createdAt: {
+                  type: Date,
+                  default: Date.now,
+                },
+                lastUsed: {
+                  type: Date,
+                  default: Date.now,
+                },
+              },
+            ],
+            default: [],
+          },
+        },
+      },
       content: {
         notInterested: {
           content: [
@@ -213,6 +287,12 @@ const UserSchema = new Schema<IUser>({
   emailVerificationTokenExpires: Date,
   passwordResetToken: String,
   passwordResetTokenExpires: Date,
+  passwordVerificationToken: String,
+  passwordVerificationTokenExpires: Date,
+  deactivateVerificationToken: String,
+  deactivateVerificationTokenExpires: Date,
+  deleteVerificationToken: String,
+  deleteVerificationTokenExpires: Date,
 });
 
 // Middlewares

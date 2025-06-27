@@ -37,6 +37,22 @@ const resetPassword = fs.readFileSync(
   'utf-8'
 );
 
+const securityToken = fs.readFileSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../templates/emails/securityToken.html'
+  ),
+  'utf-8'
+);
+
+const reactivationEmail = fs.readFileSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../templates/emails/reactivationEmail.html'
+  ),
+  'utf-8'
+);
+
 class Email {
   private to: string;
   private username: string;
@@ -110,6 +126,39 @@ class Email {
   // Sends pasword reset email
   async sendPasswordReset() {
     await this.send(resetPassword, 'Reset your Password');
+  }
+
+  // Sends pasword reset email
+  async sendSecurityToken(type: 'password' | 'delete' | 'deactivate') {
+    const subject =
+      type === 'password'
+        ? 'Change your Password'
+        : type === 'delete'
+        ? 'Delete your account'
+        : 'Deactivate your account';
+
+    const text1 =
+      type === 'password'
+        ? 'change your password'
+        : type === 'delete'
+        ? 'delete your account'
+        : 'deactivate your account';
+
+    const template = securityToken
+      .replace('{{TEXT1}}', text1)
+      .replace(
+        '{{TEXT2}}',
+        type === 'password'
+          ? 'ignore this email'
+          : 'review your account security or change your password'
+      );
+
+    await this.send(template, subject);
+  }
+
+  // Sends reactivation email
+  async sendReactivationEmail() {
+    await this.send(reactivationEmail, 'Account Reactivation');
   }
 }
 
