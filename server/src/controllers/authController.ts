@@ -15,6 +15,7 @@ import getUserLocation from '../utils/getUserLocation.js';
 import { UAParser } from 'ua-parser-js';
 import { randomUUID } from 'crypto';
 import Notification from '../models/notificationModel.js';
+import LoginAttempt from '../models/loginAttemptModel.js';
 
 const verifyResult = fs.readFileSync(
   join(
@@ -269,7 +270,7 @@ export const verifyEmail = asyncErrorHandler(
 
 export const login = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
+    const { email, password, deviceId } = req.body;
 
     const bearerToken = req.headers.authorization;
     const jwtToken =
@@ -290,15 +291,74 @@ export const login = asyncErrorHandler(
       );
     }
 
+    if (!deviceId) return next(new CustomError('Invalid device ID.', 400));
+
     let user = (await User.findOne({
       email,
       __login: true,
     })) as IUser;
-    const sessions = user.settings.security.sessions || [];
+
+    const loginAttempt = await LoginAttempt.findOne({
+      email,
+      deviceId,
+    });
+
+    if (loginAttempt && loginAttempt.count === 5) {
+      if (!loginAttempt.blocked) {
+        await LoginAttempt.findByIdAndUpdate(
+          loginAttempt._id,
+          {
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            blocked: true,
+          },
+          {
+            runValidators: true,
+          }
+        );
+
+        if (user) {
+          await Notification.create({
+            user: user._id,
+            type: ['security', 'login', 'failed'],
+          });
+        }
+      }
+
+      const minutes =
+        new Date(loginAttempt.expiresAt.getTime() - Date.now()).getMinutes() ||
+        1;
+      const time = loginAttempt.blocked
+        ? `${minutes} minute${minutes !== 1 ? 's' : ''}`
+        : '1 hour';
+
+      return next(
+        new CustomError(
+          `Too many failed login attempts. Please try again in ${time}.`,
+          401
+        )
+      );
+    }
 
     if (!user || !(await user.comparePasswordInDb(password, user.password))) {
+      if (user) {
+        if (loginAttempt) {
+          loginAttempt.count += 1;
+          await loginAttempt.save();
+        } else {
+          await LoginAttempt.create({
+            email,
+            deviceId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          });
+        }
+      }
+
       return next(new CustomError('Incorrect email or password', 401));
     }
+
+    await loginAttempt?.deleteOne();
+
+    let sessions = user.settings.security.sessions || [];
 
     if (!user.active) {
       user = (await User.findOneAndUpdate(
@@ -330,46 +390,48 @@ export const login = asyncErrorHandler(
       }
     }
 
-    // delete expired sessions
-    user = (await User.findByIdAndUpdate(
-      user._id,
-      {
-        settings: {
-          security: {
-            sessions: sessions.filter((session) => session.createdAt > cutoff),
+    if (sessions.length > 0) {
+      // delete expired sessions
+      user = (await User.findByIdAndUpdate(
+        user._id,
+        {
+          settings: {
+            security: {
+              sessions: sessions.filter(
+                (session) => session.createdAt > cutoff
+              ),
+            },
           },
         },
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    )) as IUser;
-
-    // check if user is logged in
-    if (jwtToken && sessions.length > 0) {
-      try {
-        // verify the token
-        const decodedToken = jwt.verify(
-          jwtToken,
-          process.env.JWT_SECRET as string
-        ) as JwtPayload;
-
-        const session = sessions.find(
-          (session) => session.jwi === decodedToken.jwi
-        );
-
-        if (session) {
-          return res.status(200).json({
-            status: 'success',
-            message: 'You are already logged in.',
-          });
+        {
+          new: true,
+          runValidators: true,
         }
-      } catch {}
-    }
+      )) as IUser;
+      sessions = user.settings.security.sessions;
 
-    // security alerts
-    // new login, muliple failed login, password changed, many devices logged in
+      // check if user is logged in
+      if (jwtToken) {
+        try {
+          // verify the token
+          const decodedToken = jwt.verify(
+            jwtToken,
+            process.env.JWT_SECRET as string
+          ) as JwtPayload;
+
+          const session = sessions.find(
+            (session) => session.jwi === decodedToken.jwi
+          );
+
+          if (session) {
+            return res.status(200).json({
+              status: 'success',
+              message: 'You are already logged in.',
+            });
+          }
+        } catch {}
+      }
+    }
 
     // Gets JWT ID
     const jwi = randomUUID();
