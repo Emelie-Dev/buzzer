@@ -1,5 +1,5 @@
 # Base image
-FROM node:20-alpine
+FROM node:20-slim
 
 # Install ffmpeg and ffprobe using apk (Alpine package manager)
 RUN apk add --no-cache ffmpeg
