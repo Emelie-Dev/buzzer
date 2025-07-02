@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import mongoose from 'mongoose';
+import webpush from 'web-push';
 
 // Custom Modules
 import app from './app.js';
@@ -26,6 +27,8 @@ await mongoose.connect(
   }
 );
 
+console.log('\nDatabase Connection successfull....');
+
 // Initialize typesense
 const initTypesense = async () => {
   await createSchemasIfNeeded();
@@ -34,13 +37,22 @@ const initTypesense = async () => {
 };
 await initTypesense();
 
-console.log('\nDatabase Connection successfull....');
+console.log('\nTypesense is running....');
+
+// Enable push notifications
+webpush.setVapidDetails(
+  'mailto:buzzerapp2025@gmail.com',
+  process.env.VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+);
+
+console.log('\nPush notification enabled....');
 
 // Starting the server
 const port = process.env.PORT || 5000;
 
 const server = app.listen(port, () => {
-  console.log(`App is running on port - ${port}\n`);
+  console.log(`\nApp is running on port - ${port}\n`);
 });
 
 // Handles Promise Rejections

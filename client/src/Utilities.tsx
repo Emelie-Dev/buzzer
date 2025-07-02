@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 type FileData = {
   filter: string;
   adjustments: {
@@ -9,6 +11,15 @@ type FileData = {
     sepia: number;
   };
 };
+
+// Helper: Convert base64 public key to Uint8Array
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)));
+}
 
 export const filters = [
   {
@@ -171,4 +182,35 @@ export const getDate = (value: string) => {
   return `${
     monthLabels[date.getMonth()]
   } ${date.getDate()}, ${date.getFullYear()}`;
+};
+
+export const registerPush = async () => {
+  if (!('serviceWorker' in navigator)) {
+    console.warn('Service workers not supported in this browser');
+    return;
+  }
+
+  const key = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+  const registration = await navigator.serviceWorker.ready;
+  const existingSubscription = await registration.pushManager.getSubscription();
+
+  if (!existingSubscription) {
+    // ✅ Not subscribed yet — now create and send to backend
+    const newSubscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key),
+    });
+
+    await axios.post(
+      'http://127.0.0.1:5000/api/v1/notifications/push/subscribe',
+      newSubscription,
+      {
+        withCredentials: true,
+      }
+    );
+
+    console.log('New push subscription registered.');
+  } else {
+    console.log('Already subscribed to push.');
+  }
 };

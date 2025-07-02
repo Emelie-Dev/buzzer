@@ -36,7 +36,10 @@ export const viewItem = asyncErrorHandler(
         documentId: data._id,
       });
 
-      if (view || String(req.user?._id) === documentId) {
+      const allowNotifications =
+        data.settings.content.notifications.interactions.profileViews;
+
+      if (view || String(req.user?._id) === documentId || !allowNotifications) {
         return res.status(200).json({
           status: 'success',
           message: null,

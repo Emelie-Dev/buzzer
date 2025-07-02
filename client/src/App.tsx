@@ -14,7 +14,9 @@ import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
 import History from './pages/History';
 import { GeneralContext } from './Contexts';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { registerPush } from './Utilities';
+import axios from 'axios';
 
 const App = () => {
   const [settingsCategory, setSettingsCategory] = useState('');
@@ -23,6 +25,26 @@ const App = () => {
   >('content');
   const [scrollingUp, setScrollingUp] = useState<boolean | null>(null);
   const [showSearchPage, setShowSearchPage] = useState<boolean>(false);
+
+  useEffect(() => {
+    const a = async () => {
+      await axios.post(
+        'http://127.0.0.1:5000/api/v1/auth/login',
+        {
+          email: 'abc@gmail.com',
+          password: 'test@12345',
+          deviceId: '000000',
+        },
+        {
+          withCredentials: true,
+        }
+      );
+    };
+
+    a();
+
+    registerPush();
+  }, []);
 
   return (
     <>

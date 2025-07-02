@@ -78,11 +78,8 @@ const updateProfileDetails = async (
                 ? (file as any).secure_url
                 : path.basename(file.path)
               : photo,
-            settings: {
-              account: {
-                emailVisibility,
-              },
-            },
+            'settings.account.emailVisibility':
+              emailVisibility ?? req.user?.settings.account.emailVisibility,
           },
           {
             runValidators: true,
@@ -265,16 +262,19 @@ export const updatePrivateAudience = asyncErrorHandler(
 
 export const updateSettings = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const categories = ['general', 'account'];
+    const categories = ['general', 'account', 'notifications'];
     const category = req.params.category;
+    const body = req.body;
 
     if (!categories.includes(category)) {
       return next(new CustomError('Invalid request!', 400));
     }
 
-    const { general } = req.user?.settings;
+    const { general, content } = req.user?.settings;
 
     let data;
+
+    // Push Notification -
 
     switch (category) {
       case 'general':
@@ -283,13 +283,9 @@ export const updateSettings = asyncErrorHandler(
         data = await User.findByIdAndUpdate(
           req.user?._id,
           {
-            settings: {
-              general: {
-                display: req.body.display || display,
-                inbox: req.body.inbox || inbox,
-                'privacy.value': req.body.privacy || privacy.value,
-              },
-            },
+            'settings.general.display': body.display || display,
+            'settings.general.inbox': body.inbox || inbox,
+            'settings.general.privacy.value': body.privacy ?? privacy.value,
           },
           {
             new: true,
@@ -300,6 +296,36 @@ export const updateSettings = asyncErrorHandler(
 
       case 'account':
         data = await updateProfileDetails(req, res);
+        break;
+
+      case 'notifications':
+        const { push, email, interactions = {} } = content.notifications;
+        const { likes, comments, followers, mentions, profileViews, messages } =
+          interactions;
+
+        data = await User.findByIdAndUpdate(
+          req.user?._id,
+          {
+            'settings.content.notifications.push': body.push ?? push,
+            'settings.content.notifications.email': body.email ?? email,
+            'settings.content.notifications.interactions.likes':
+              body.interactions.likes ?? likes,
+            'settings.content.notifications.interactions.comments':
+              body.interactions.comments ?? comments,
+            'settings.content.notifications.interactions.followers':
+              body.interactions.followers ?? followers,
+            'settings.content.notifications.interactions.mentions':
+              body.interactions.mentions ?? mentions,
+            'settings.content.notifications.interactions.profileViews':
+              body.interactions.profileViews ?? profileViews,
+            'settings.content.notifications.interactions.messages':
+              body.interactions.messages ?? messages,
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
         break;
     }
 
@@ -354,7 +380,7 @@ export const getPasswordToken = asyncErrorHandler(
 
 export const changePassword = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const { code, currentPassword, newPassword, sessionId } = req.body;
+    const { code, currentPassword, newPassword } = req.body;
 
     const user = await User.findOne({
       passwordVerificationToken: code,

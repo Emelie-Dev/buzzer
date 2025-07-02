@@ -6,6 +6,9 @@ import { StoryFeedItem, StorySchema } from './storyModel.js';
 import locationSubschema, {
   ILocation,
 } from './subschemas/locationSubschema.js';
+import settingsSubschema, {
+  ISettings,
+} from './subschemas/settingsSubschema.js';
 
 export enum InboxSettings {
   EVERYONE,
@@ -43,28 +46,8 @@ export interface IUser extends Document {
   location: ILocation;
   searchHistory: String[];
   reelSounds: { name: string; src: string }[];
-  settings: {
-    general: {
-      hiddenStories: Types.ObjectId[];
-    };
-    account: {};
-    security: {
-      sessions: {
-        name: string;
-        type: string;
-        loginMethod: string;
-        jwi: string;
-        createdAt: Date;
-        lastUsed: Date;
-      }[];
-    };
-    content: {
-      notInterested: {
-        content: Types.ObjectId[];
-        reels: String[];
-      };
-    };
-  };
+  settings: ISettings;
+  pushSubscription: Object;
   createdAt: Date;
   generateToken: (type: 'email' | 'password') => string;
   comparePasswordInDb: (pswd: string, pswdDb: string) => Promise<boolean>;
@@ -168,106 +151,12 @@ const UserSchema = new Schema<IUser>({
     type: Date,
     default: Date.now,
   },
+  pushSubscription: {
+    type: Object,
+  },
   settings: {
-    type: {
-      general: {
-        hiddenStories: [
-          {
-            type: Schema.Types.ObjectId,
-            ref: 'User',
-            default: [],
-          },
-        ],
-        display: {
-          type: String,
-          enum: ['light', 'dark', 'system'],
-          default: 'light',
-        },
-        inbox: {
-          type: Number,
-          default: InboxSettings.EVERYONE,
-        },
-        privacy: {
-          type: {
-            value: {
-              type: Boolean,
-              default: false,
-            },
-            users: [
-              {
-                type: Schema.Types.ObjectId,
-                ref: 'User',
-                default: [],
-              },
-            ],
-          },
-        },
-      },
-      account: {
-        type: {
-          emailVisibility: {
-            type: Boolean,
-            default: false,
-          },
-        },
-      },
-      security: {
-        type: {
-          sessions: {
-            type: [
-              {
-                name: {
-                  type: String,
-                  required: true,
-                },
-                type: {
-                  type: String,
-                  required: true,
-                },
-                loginMethod: {
-                  type: String,
-                  enum: ['email', 'google', 'facebook'],
-                  required: true,
-                },
-                jwi: {
-                  type: String,
-                  required: true,
-                },
-                createdAt: {
-                  type: Date,
-                  default: Date.now,
-                },
-                lastUsed: {
-                  type: Date,
-                  default: Date.now,
-                },
-              },
-            ],
-            default: [],
-          },
-        },
-      },
-      content: {
-        notInterested: {
-          content: [
-            {
-              type: Schema.Types.ObjectId,
-              ref: 'User',
-              default: [],
-            },
-          ],
-          reels: {
-            type: [String],
-            default: [],
-          },
-        },
-      },
-    },
-    default: {
-      general: {
-        hiddenStories: [],
-      },
-    },
+    type: settingsSubschema,
+    default: {},
   },
   searchHistory: {
     type: [String],

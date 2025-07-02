@@ -11,7 +11,8 @@ import {
   handleMentionNotifications,
 } from '../utils/handleNotifications.js';
 import { ContentAccessibility } from '../models/storyModel.js';
-
+import User from '../models/userModel.js';
+// 08061500665
 export const addComment = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     let { collection, documentId, text, reply, mentions } = req.body;
@@ -24,7 +25,7 @@ export const addComment = asyncErrorHandler(
         ? Reel.findById(documentId)
         : null;
 
-    const data = (await query) as Record<string, any>;
+    const data = (await query!.populate('user')) as Record<string, any>;
 
     // Check if item exists
     if (!data) {
@@ -48,22 +49,28 @@ export const addComment = asyncErrorHandler(
     });
 
     // Handle notifications
-    if (reply) {
-      await handleCreateNotifications(
-        'reply',
-        req.user?._id,
-        { user: reply.receiver, _id: reply.commentId },
-        collection,
-        { text, commentId: comment._id, postId: data._id }
-      );
-    } else {
-      await handleCreateNotifications(
-        'comment',
-        req.user?._id,
-        data,
-        collection,
-        { text, commentId: comment._id }
-      );
+    const allowNotifications =
+      data.user.settings.content.notifications.interactions.likes;
+
+    if (allowNotifications) {
+      // Handle notifications
+      if (reply) {
+        await handleCreateNotifications(
+          'reply',
+          req.user?._id,
+          { user: { _id: reply.receiver }, _id: reply.commentId },
+          collection,
+          { text, commentId: comment._id, postId: data._id }
+        );
+      } else {
+        await handleCreateNotifications(
+          'comment',
+          req.user?._id,
+          data,
+          collection,
+          { text, commentId: comment._id }
+        );
+      }
     }
 
     // send mention notifications

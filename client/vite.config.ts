@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest', // use custom service worker
+      srcDir: 'src', // location of your custom SW
+      filename: 'sw.js',
       registerType: 'autoUpdate', // Auto-update service worker
       devOptions: { enabled: true }, // Enable in dev mode
       manifest: {

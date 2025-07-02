@@ -16,6 +16,7 @@ import { UAParser } from 'ua-parser-js';
 import { randomUUID } from 'crypto';
 import Notification from '../models/notificationModel.js';
 import LoginAttempt from '../models/loginAttemptModel.js';
+import webpush, { PushSubscription } from 'web-push';
 
 const verifyResult = fs.readFileSync(
   join(
@@ -279,7 +280,7 @@ export const login = asyncErrorHandler(
         : req.cookies.jwt;
 
     const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30); // 24 hours ago
+    cutoff.setDate(cutoff.getDate() - 30);
     cutoff.setMilliseconds(0);
 
     if (!email || !password) {
@@ -302,6 +303,16 @@ export const login = asyncErrorHandler(
       email,
       deviceId,
     });
+
+    // Send to user
+
+    // await webpush.sendNotification(
+    //   user.pushSubscription as PushSubscription,
+    //   JSON.stringify({
+    //     title: 'New Like!',
+    //     body: 'Someone liked your post 🎉',
+    //   })
+    // );
 
     if (loginAttempt && loginAttempt.count === 5) {
       if (!loginAttempt.blocked) {

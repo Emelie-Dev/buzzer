@@ -33,55 +33,60 @@ export const followUser = asyncErrorHandler(
       type: ['follow', 'batch'],
     });
 
-    if (notifications.length >= 20 && !batchNotification) {
-      // Deletes some previous notifications
-      const deleteArray = notifications
-        .slice(4, notifications.length)
-        .map((data) => data._id);
+    const allowNotifications =
+      user.settings.content.notifications.interactions.followers;
 
-      await Notification.create({
-        user: req.params.id,
-        type: ['follow'],
-        secondUser: req.user?._id,
-      });
+    if (allowNotifications) {
+      if (notifications.length >= 20 && !batchNotification) {
+        // Deletes some previous notifications
+        const deleteArray = notifications
+          .slice(4, notifications.length)
+          .map((data) => data._id);
 
-      await Notification.create({
-        user: req.params.id,
-        secondUser: notifications[4].secondUser,
-        type: ['follow', 'batch'],
-        data: {
-          batchCount: deleteArray.length - 1,
-        },
-      });
+        await Notification.create({
+          user: req.params.id,
+          type: ['follow'],
+          secondUser: req.user?._id,
+        });
 
-      await Notification.deleteMany({
-        _id: { $in: deleteArray },
-      });
-    } else if (batchNotification) {
-      await Notification.findByIdAndDelete(notifications[4]._id);
-
-      await Notification.create({
-        user: req.params.id,
-        type: ['follow'],
-        secondUser: req.user?._id,
-      });
-
-      await Notification.findByIdAndUpdate(
-        batchNotification._id,
-        {
+        await Notification.create({
+          user: req.params.id,
           secondUser: notifications[4].secondUser,
-          $inc: { 'data.batchCount': 1 },
-        },
-        {
-          runValidators: true,
-        }
-      );
-    } else {
-      await Notification.create({
-        user: req.params.id,
-        type: ['follow'],
-        secondUser: req.user?._id,
-      });
+          type: ['follow', 'batch'],
+          data: {
+            batchCount: deleteArray.length - 1,
+          },
+        });
+
+        await Notification.deleteMany({
+          _id: { $in: deleteArray },
+        });
+      } else if (batchNotification) {
+        await Notification.findByIdAndDelete(notifications[4]._id);
+
+        await Notification.create({
+          user: req.params.id,
+          type: ['follow'],
+          secondUser: req.user?._id,
+        });
+
+        await Notification.findByIdAndUpdate(
+          batchNotification._id,
+          {
+            secondUser: notifications[4].secondUser,
+            $inc: { 'data.batchCount': 1 },
+          },
+          {
+            runValidators: true,
+          }
+        );
+      } else {
+        await Notification.create({
+          user: req.params.id,
+          type: ['follow'],
+          secondUser: req.user?._id,
+        });
+      }
     }
 
     return res.status(201).json({

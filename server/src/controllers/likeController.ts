@@ -29,25 +29,33 @@ export const likeItem = asyncErrorHandler(
         ? Reel.findById(documentId)
         : null;
 
-    const data = (await query) as Record<string, any>;
+    const data = (await query!.populate('user')) as Record<string, any>;
 
     if (!data) {
       return next(new CustomError(`This ${collection} does not exist.`, 404));
     }
 
-    if (collection === 'story' && String(data.user) === String(req.user?._id)) {
+    if (
+      collection === 'story' &&
+      String(data.user._id) === String(req.user?._id)
+    ) {
       return next(new CustomError("You can't like your story.", 404));
     }
 
     await Like.create({
       user: req.user?._id,
-      creator: data.user,
+      creator: data.user._id,
       collectionName: collection,
       documentId: data._id,
     });
 
     // Handle notifications
-    await handleCreateNotifications('like', req.user?._id, data, collection);
+    const allowNotifications =
+      data.user.settings.content.notifications.interactions.likes;
+
+    if (allowNotifications) {
+      await handleCreateNotifications('like', req.user?._id, data, collection);
+    }
 
     return res.status(201).json({
       status: 'success',
@@ -61,7 +69,7 @@ export const dislikeItem = asyncErrorHandler(
     let { collection, documentId } = req.body;
     collection = collection.toLowerCase();
 
-    const like = await Like.findById(req.params.id);
+    const like = await Like.findById(req.params.id).populate('creator');
 
     if (!like || String(like.user) !== String(req.user?._id)) {
       return next(new CustomError('Could not dislike item.', 404));
@@ -69,7 +77,6 @@ export const dislikeItem = asyncErrorHandler(
 
     await like.deleteOne();
 
-    // Handle notifications
     await handleDeleteNotifications(
       'like',
       req.user?._id,

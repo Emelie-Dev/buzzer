@@ -10,15 +10,17 @@ export const handleCreateNotifications = async (
   collection: string,
   obj: Record<string, any> = {}
 ) => {
-  if (String(data.user) !== String(userId)) {
+  const ownerId = data.user._id;
+
+  if (String(ownerId) !== String(userId)) {
     const notifications = await Notification.find({
-      user: data.user,
+      user: ownerId,
       type: [type, collection],
       documentId: data._id,
     }).sort('-createdAt');
 
     const batchNotification = await Notification.findOne({
-      user: data.user,
+      user: ownerId,
       type: [type, collection, 'batch'],
       documentId: data._id,
     });
@@ -30,7 +32,7 @@ export const handleCreateNotifications = async (
         .map((data) => data._id);
 
       await Notification.create({
-        user: data.user,
+        user: ownerId,
         type: [type, collection],
         secondUser: userId,
         documentId: data._id,
@@ -40,7 +42,7 @@ export const handleCreateNotifications = async (
       });
 
       await Notification.create({
-        user: data.user,
+        user: ownerId,
         secondUser: notifications[4].secondUser,
         type: [type, collection, 'batch'],
         documentId: data._id,
@@ -56,7 +58,7 @@ export const handleCreateNotifications = async (
       await Notification.findByIdAndDelete(notifications[4]._id);
 
       await Notification.create({
-        user: data.user,
+        user: ownerId,
         type: [type, collection],
         secondUser: userId,
         documentId: data._id,
@@ -77,7 +79,7 @@ export const handleCreateNotifications = async (
       );
     } else {
       await Notification.create({
-        user: data.user,
+        user: ownerId,
         type: [type, collection],
         secondUser: userId,
         documentId: data._id,
@@ -147,91 +149,96 @@ export const handleMentionNotifications = async (
 
     const promises = mentions.map(async (username: string) => {
       if (username !== name) {
-        const userExists = await User.exists({ username });
+        const userExists = await User.findOne({ username });
 
         if (userExists) {
-          if (accessibility === ContentAccessibility.YOU) return;
-
-          if (accessibility === ContentAccessibility.FRIENDS) {
-            const isFriend = await Friend.findOne({
-              $or: [
-                { requester: id, recipient: userExists._id },
-                { requester: userExists._id, recipient: id },
-              ],
-            });
-
-            if (!isFriend) return;
-          }
-
           const batchNotification = await Notification.findOne({
             user: userExists._id,
             type: { $all: ['mention', 'batch'] },
           });
 
           if (action === 'create') {
-            const notifications = await Notification.find({
-              user: userExists._id,
-              type: {
-                $in: ['mention'],
-                $not: { $elemMatch: { $eq: 'batch' } },
-              },
-            }).sort('-createdAt');
+            const allowNotifications =
+              userExists.settings.content.notifications.interactions.mentions;
 
-            if (notifications.length >= 20 && !batchNotification) {
-              // Deletes some previous notifications
-              const deleteArray = notifications
-                .slice(4, notifications.length)
-                .map((data) => data._id);
+            if (allowNotifications) {
+              if (accessibility === ContentAccessibility.YOU) return;
 
-              await Notification.create({
+              if (accessibility === ContentAccessibility.FRIENDS) {
+                const isFriend = await Friend.findOne({
+                  $or: [
+                    { requester: id, recipient: userExists._id },
+                    { requester: userExists._id, recipient: id },
+                  ],
+                });
+
+                if (!isFriend) return;
+              }
+
+              const notifications = await Notification.find({
                 user: userExists._id,
-                type: ['mention', type],
-                secondUser: id,
-                documentId,
-                data,
-              });
-
-              await Notification.create({
-                user: userExists._id,
-                secondUser: notifications[4].secondUser,
-                type: ['mention', 'batch'],
-                data: {
-                  batchCount: deleteArray.length - 1,
+                type: {
+                  $in: ['mention'],
+                  $not: { $elemMatch: { $eq: 'batch' } },
                 },
-              });
+              }).sort('-createdAt');
 
-              await Notification.deleteMany({
-                _id: { $in: deleteArray },
-              });
-            } else if (batchNotification) {
-              await Notification.findByIdAndDelete(notifications[4]._id);
+              if (notifications.length >= 20 && !batchNotification) {
+                // Deletes some previous notifications
+                const deleteArray = notifications
+                  .slice(4, notifications.length)
+                  .map((data) => data._id);
 
-              await Notification.create({
-                user: userExists._id,
-                type: ['mention', type],
-                secondUser: id,
-                documentId,
-                data,
-              });
+                await Notification.create({
+                  user: userExists._id,
+                  type: ['mention', type],
+                  secondUser: id,
+                  documentId,
+                  data,
+                });
 
-              await Notification.findByIdAndUpdate(
-                batchNotification._id,
-                {
+                await Notification.create({
+                  user: userExists._id,
                   secondUser: notifications[4].secondUser,
-                  $inc: { 'data.batchCount': 1 },
-                },
-                {
-                  runValidators: true,
-                }
-              );
-            } else {
-              await Notification.create({
-                user: userExists._id,
-                type: ['mention', type],
-                secondUser: id,
-                documentId,
-                data,
-              });
+                  type: ['mention', 'batch'],
+                  data: {
+                    batchCount: deleteArray.length - 1,
+                  },
+                });
+
+                await Notification.deleteMany({
+                  _id: { $in: deleteArray },
+                });
+              } else if (batchNotification) {
+                await Notification.findByIdAndDelete(notifications[4]._id);
+
+                await Notification.create({
+                  user: userExists._id,
+                  type: ['mention', type],
+                  secondUser: id,
+                  documentId,
+                  data,
+                });
+
+                await Notification.findByIdAndUpdate(
+                  batchNotification._id,
+                  {
+                    secondUser: notifications[4].secondUser,
+                    $inc: { 'data.batchCount': 1 },
+                  },
+                  {
+                    runValidators: true,
+                  }
+                );
+              } else {
+                await Notification.create({
+                  user: userExists._id,
+                  type: ['mention', type],
+                  secondUser: id,
+                  documentId,
+                  data,
+                });
+              }
             }
           } else {
             const notification = await Notification.findOne({
