@@ -18,7 +18,7 @@ RUN if [ "$NODE_ENV" = "production" ]; then \
     npm install --legacy-peer-deps; \
     fi
 
-RUN  npm install --os=linux --cpu=x64 sharp --legacy-peer-deps
+RUN  npm install --os=linux --cpu=x64 sharp --omit=optional --legacy-peer-deps
 
 # Copy the entire source code
 COPY . .
