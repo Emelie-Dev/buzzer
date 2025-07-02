@@ -1,3 +1,5 @@
+self.__WB_MANIFEST;
+
 self.addEventListener('push', (event) => {
   const data = event.data?.json() || {};
   console.log('🔔 Push received:', data);
