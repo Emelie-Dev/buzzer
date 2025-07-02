@@ -61,7 +61,7 @@ export const viewItem = asyncErrorHandler(
 );
 
 export const getProfileViews = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response) => {
     const views = await View.aggregate([
       {
         $match: {

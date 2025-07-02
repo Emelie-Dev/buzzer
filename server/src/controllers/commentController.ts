@@ -11,7 +11,6 @@ import {
   handleMentionNotifications,
 } from '../utils/handleNotifications.js';
 import { ContentAccessibility } from '../models/storyModel.js';
-import User from '../models/userModel.js';
 // 08061500665
 export const addComment = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {

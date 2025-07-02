@@ -16,7 +16,6 @@ import { UAParser } from 'ua-parser-js';
 import { randomUUID } from 'crypto';
 import Notification from '../models/notificationModel.js';
 import LoginAttempt from '../models/loginAttemptModel.js';
-import webpush, { PushSubscription } from 'web-push';
 
 const verifyResult = fs.readFileSync(
   join(
