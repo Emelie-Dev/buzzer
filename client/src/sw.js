@@ -1,5 +1,3 @@
-self.__WB_MANIFEST;
-
 self.addEventListener('push', (event) => {
   const data = event.data?.json() || {};
   console.log('🔔 Push received:', data);
@@ -14,3 +12,5 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
+
+self.__WB_MANIFEST;

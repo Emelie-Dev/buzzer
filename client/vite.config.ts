@@ -9,6 +9,9 @@ export default defineConfig({
       strategies: 'injectManifest', // use custom service worker
       srcDir: 'src', // location of your custom SW
       filename: 'sw.js',
+      injectManifest: {
+        swSrc: 'src/sw.js', // Custom service worker source file
+      },
       registerType: 'autoUpdate', // Auto-update service worker
       devOptions: { enabled: true }, // Enable in dev mode
       manifest: {
