@@ -13,10 +13,12 @@ COPY package*.json ./
 # Use ARG to set NODE_ENV during build
 ARG NODE_ENV=development
 RUN if [ "$NODE_ENV" = "production" ]; then \
-    npm install --legacy-peer-deps; \
+    npm install --omit=optional --legacy-peer-deps; \
     else \
     npm install --legacy-peer-deps; \
     fi
+
+RUN  npm install --os=linux --cpu=x64 sharp
 
 # Copy the entire source code
 COPY . .
