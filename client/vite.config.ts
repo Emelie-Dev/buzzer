@@ -10,7 +10,8 @@ export default defineConfig({
       srcDir: 'src', // location of your custom SW
       filename: 'sw.js',
       injectManifest: {
-        swSrc: 'src/sw.js', // Custom service worker source file
+        swSrc: 'src/sw.js',
+        swDest: 'dist/sw.js', // explicitly different
       },
       registerType: 'autoUpdate', // Auto-update service worker
       devOptions: { enabled: true }, // Enable in dev mode
