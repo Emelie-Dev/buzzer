@@ -1,8 +1,8 @@
 # Base image
 FROM node:20-slim
 
-# Install ffmpeg and ffprobe using apk (Alpine package manager)
-RUN apk add --no-cache ffmpeg
+# Install ffmpeg (using apt for Debian-based image)
+RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
 
 # Set working directory
 WORKDIR /app
