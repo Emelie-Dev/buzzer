@@ -1,5 +1,5 @@
 # Base image
-FROM node:20-alpine
+FROM node:20-slim
 
 # Install ffmpeg (using apt for Debian-based image)
 RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
