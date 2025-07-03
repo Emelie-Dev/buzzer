@@ -1,26 +1,24 @@
 # Base image
-FROM node:20-slim
+FROM node:20-alpine
 
-# Install ffmpeg (Debian-based)
-RUN apt-get update && apt-get install -y ffmpeg && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install ffmpeg (using apt for Debian-based image)
+RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first
+# Copy package files and install dependencies
 COPY package*.json ./
 
 # Use ARG to set NODE_ENV during build
 ARG NODE_ENV=development
-
-# Install dependencies WITH sharp (inside container)
 RUN if [ "$NODE_ENV" = "production" ]; then \
-    npm install --imclude=optional  --legacy-peer-deps; \
+    npm install --omit=optional --legacy-peer-deps; \
     else \
-    npm install --include=optional --legacy-peer-deps; \
+    npm install --legacy-peer-deps; \
     fi
 
-# Copy source code
+# Copy the entire source code
 COPY . .
 
 # Build only if in production
@@ -36,5 +34,5 @@ RUN if [ "$NODE_ENV" = "production" ]; then \
 # Expose the port
 EXPOSE 5000
 
-# Dynamically set CMD
+# Dynamically set CMD based on NODE_ENV
 CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run dev; fi"]
