@@ -140,6 +140,28 @@ const manageUserDevices = async (
       },
     });
   }
+
+  const allowEmail = user.settings.content.notifications.email;
+
+  if (allowEmail) {
+    const url =
+      process.env.NODE_ENV === 'production'
+        ? 'https://buzzer-0z8q.onrender.com/settings'
+        : 'http://localhost:5173/settings';
+
+    // sends email to the user
+    try {
+      await new Email(user, url).sendSecurityEmail('new', {
+        device: deviceName,
+        location: `${city}, ${country}`,
+        time: new Date(),
+      });
+
+      if (sessions.length > 4) {
+        await new Email(user, url).sendSecurityEmail('multiple', {});
+      }
+    } catch {}
+  }
 };
 
 export const checkIfDataExist = asyncErrorHandler(
@@ -303,16 +325,6 @@ export const login = asyncErrorHandler(
       deviceId,
     });
 
-    // Send to user
-
-    // await webpush.sendNotification(
-    //   user.pushSubscription as PushSubscription,
-    //   JSON.stringify({
-    //     title: 'New Like!',
-    //     body: 'Someone liked your post 🎉',
-    //   })
-    // );
-
     if (loginAttempt && loginAttempt.count === 5) {
       if (!loginAttempt.blocked) {
         await LoginAttempt.findByIdAndUpdate(
@@ -327,10 +339,24 @@ export const login = asyncErrorHandler(
         );
 
         if (user) {
+          const allowEmail = user.settings.content.notifications.email;
+
           await Notification.create({
             user: user._id,
             type: ['security', 'login', 'failed'],
           });
+
+          if (allowEmail) {
+            const url =
+              process.env.NODE_ENV === 'production'
+                ? 'https://buzzer-0z8q.onrender.com/auth'
+                : 'http://localhost:5173/auth';
+
+            // sends email to the user
+            try {
+              await new Email(user, url).sendSecurityEmail('failed', { url });
+            } catch {}
+          }
         }
       }
 

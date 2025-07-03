@@ -54,7 +54,13 @@ export const likeItem = asyncErrorHandler(
       data.user.settings.content.notifications.interactions.likes;
 
     if (allowNotifications) {
-      await handleCreateNotifications('like', req.user?._id, data, collection);
+      await handleCreateNotifications(
+        'like',
+        req.user?._id,
+        data,
+        collection,
+        data.user.pushSubscription
+      );
     }
 
     return res.status(201).json({

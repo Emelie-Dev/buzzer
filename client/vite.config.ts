@@ -14,7 +14,6 @@ export default defineConfig({
         swDest: 'dist/sw.js', // explicitly different
       },
       registerType: 'autoUpdate', // Auto-update service worker
-      devOptions: { enabled: true }, // Enable in dev mode
       manifest: {
         name: 'Buzzer',
         short_name: 'Buzzer',

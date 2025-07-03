@@ -1,5 +1,15 @@
 import { precacheAndRoute } from 'workbox-precaching';
 
+self.addEventListener('install', (event) => {
+  console.log('[SW] Installed');
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activated');
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', (event) => {
   const data = event.data?.json() || {};
   console.log('🔔 Push received:', data);

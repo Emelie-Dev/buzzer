@@ -2,12 +2,14 @@ import Friend from '../models/friendModel.js';
 import Notification from '../models/notificationModel.js';
 import { ContentAccessibility } from '../models/storyModel.js';
 import User from '../models/userModel.js';
+import webpush, { PushSubscription } from 'web-push';
 
 export const handleCreateNotifications = async (
   type: 'like' | 'comment' | 'reply',
   userId: any,
   data: Record<string, any>,
   collection: string,
+  pushSubscription: PushSubscription,
   obj: Record<string, any> = {}
 ) => {
   const ownerId = data.user._id;
@@ -87,6 +89,16 @@ export const handleCreateNotifications = async (
           ...obj,
         },
       });
+    }
+
+    if (pushSubscription) {
+      await webpush.sendNotification(
+        pushSubscription as PushSubscription,
+        JSON.stringify({
+          title: type,
+          body: 'Someone liked your post 🎉',
+        })
+      );
     }
   }
 };

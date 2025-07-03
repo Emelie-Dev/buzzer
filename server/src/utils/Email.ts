@@ -53,6 +53,14 @@ const reactivationEmail = fs.readFileSync(
   'utf-8'
 );
 
+const securityEmail = fs.readFileSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../templates/emails/securityEmail.html'
+  ),
+  'utf-8'
+);
+
 class Email {
   private to: string;
   private username: string;
@@ -159,6 +167,53 @@ class Email {
   // Sends reactivation email
   async sendReactivationEmail() {
     await this.send(reactivationEmail, 'Account Reactivation');
+  }
+
+  // Sends reactivation email
+  async sendSecurityEmail(type: 'new' | 'multiple' | 'failed', data: any) {
+    const subject =
+      type === 'new'
+        ? 'New Log-in'
+        : type === 'multiple'
+        ? 'Multiple Devices'
+        : 'Failed Login';
+
+    const template =
+      type === 'new'
+        ? securityEmail
+            .replace(
+              '{{TEXT1}}',
+              `<p>We noticed a new login to your account:<br /></p>
+    <pre>Device: ${data.device}
+    Location: ${data.location} 
+    Time: ${data.time.toUTCString()}</pre>`
+            )
+            .replace(
+              '{{TEXT2}}',
+              `If this was you, no further action is needed.`
+            )
+        : type === 'multiple'
+        ? securityEmail
+            .replace(
+              '{{TEXT1}}',
+              'We noticed that your account is currently active on multiple devices.'
+            )
+            .replace(
+              '{{TEXT2}}',
+              `If this was you, no further action is needed.`
+            )
+        : securityEmail
+            .replace(
+              '{{TEXT1}}',
+              'We detected multiple unsuccessful login attempts on your account from a device.'
+            )
+            .replace(
+              '{{TEXT2}}',
+              `If this was you and you've forgotten your password, you can reset it here:
+<a href=${data.url} target=" _blank">Reset Password</a>.<br />`
+            );
+
+    await this.send(template, subject);
   }
 }
 
