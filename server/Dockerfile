@@ -1,50 +1,32 @@
-# Base image (Debian-based for better compatibility)
-FROM node:20-slim
+# Use Node.js 20 with full Debian (not slim) for better compatibility
+FROM node:20
 
-# Install sharp dependencies + ffmpeg
+# Install sharp system dependencies + ffmpeg
 RUN apt-get update && \
     apt-get install -y \
     ffmpeg \
     libvips-dev \
-    # Optional: Add build tools if needed for other native modules
+    # Required for some native modules:
     python3 \
     make \
     g++ && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
+# First install ONLY sharp with explicit platform flags
+RUN npm install --os=linux --cpu=x64 sharp
+
+# Then copy package.json and install other deps
 COPY package*.json ./
+RUN npm install --omit=optional
 
-# Use ARG to set NODE_ENV during build
-ARG NODE_ENV=development
-RUN if [ "$NODE_ENV" = "production" ]; then \
-    npm install --omit=optional --legacy-peer-deps; \
-    else \
-    npm install --legacy-peer-deps; \
-    fi
-
-# Rebuild sharp explicitly (ensure correct binaries)
-RUN npm rebuild sharp
-
-# Copy the entire source code
+# Copy app files
 COPY . .
 
-# Build only if in production
-RUN if [ "$NODE_ENV" = "production" ]; then \
-    npm run build && \
-    mkdir -p /app/dist/public /app/dist/templates && \
-    cp -r /app/src/public/* /app/dist/public/ && \
-    cp -r /app/src/templates/* /app/dist/templates/ && \
-    cp /app/src/worker.js /app/dist/ && \
-    rm -rf /app/src; \
-    fi
+# Build if needed (e.g., for TypeScript/Next.js)
+RUN if [ "$NODE_ENV" = "production" ]; then npm run build; fi
 
-# Expose the port
 EXPOSE 5000
-
-# Dynamically set CMD based on NODE_ENV
-CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run dev; fi"]
+CMD ["npm", "start"]
