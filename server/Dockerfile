@@ -15,7 +15,7 @@ ARG NODE_ENV=development
 
 # Install dependencies WITH sharp (inside container)
 RUN if [ "$NODE_ENV" = "production" ]; then \
-    npm install --omit=optional  --legacy-peer-deps; \
+    npm install --imclude=optional  --legacy-peer-deps; \
     else \
     npm install --include=optional --legacy-peer-deps; \
     fi
