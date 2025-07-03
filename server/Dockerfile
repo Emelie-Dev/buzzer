@@ -1,8 +1,17 @@
-# Base image
+# Base image (Debian-based for better compatibility)
 FROM node:20-slim
 
-# Install ffmpeg (using apt for Debian-based image)
-RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
+# Install sharp dependencies + ffmpeg
+RUN apt-get update && \
+    apt-get install -y \
+    ffmpeg \
+    libvips-dev \
+    # Optional: Add build tools if needed for other native modules
+    python3 \
+    make \
+    g++ && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -17,6 +26,9 @@ RUN if [ "$NODE_ENV" = "production" ]; then \
     else \
     npm install --legacy-peer-deps; \
     fi
+
+# Rebuild sharp explicitly (ensure correct binaries)
+RUN npm rebuild sharp
 
 # Copy the entire source code
 COPY . .
