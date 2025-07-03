@@ -16,11 +16,11 @@ RUN apt-get update && \
 WORKDIR /app
 
 # First install ONLY sharp with explicit platform flags
-RUN npm install --os=linux --cpu=x64 sharp
+RUN npm install --os=linux --cpu=x64 sharp --legacy-peer-deps
 
 # Then copy package.json and install other deps
 COPY package*.json ./
-RUN npm install --omit=optional
+RUN npm install --omit=optional --legacy-peer-deps
 
 # Copy app files
 COPY . .
