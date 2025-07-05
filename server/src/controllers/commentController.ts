@@ -59,7 +59,10 @@ export const addComment = asyncErrorHandler(
           req.user?._id,
           { user: { _id: reply.receiver }, _id: reply.commentId },
           collection,
-          data.user.pushSubscription,
+          {
+            value: data.user.settings.content.notifications.push,
+            subscription: data.user.pushSubscription,
+          },
           { text, commentId: comment._id, postId: data._id }
         );
       } else {
@@ -68,7 +71,10 @@ export const addComment = asyncErrorHandler(
           req.user?._id,
           data,
           collection,
-          data.user.pushSubscription,
+          {
+            value: data.user.settings.content.notifications.push,
+            subscription: data.user.pushSubscription,
+          },
           { text, commentId: comment._id }
         );
       }

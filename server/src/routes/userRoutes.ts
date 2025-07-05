@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   changePassword,
+  switchAccount,
   deactivateAccount,
   deleteAccount,
   getAccountToken,
@@ -9,6 +10,7 @@ import {
   getSuggestedUsers,
   getUserPosts,
   updatePrivateAudience,
+  updateScreenTime,
   updateSettings,
 } from '../controllers/userController.js';
 import protectRoute from '../middleware/protectRoute.js';
@@ -38,5 +40,9 @@ router.patch(
 );
 
 router.delete('/delete/:stage', getAccountToken('delete'), deleteAccount);
+
+router.patch('/screen-time', updateScreenTime);
+
+router.post('/switch-account', switchAccount);
 
 export default router;

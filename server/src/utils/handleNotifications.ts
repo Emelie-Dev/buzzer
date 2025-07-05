@@ -9,7 +9,7 @@ export const handleCreateNotifications = async (
   userId: any,
   data: Record<string, any>,
   collection: string,
-  pushSubscription: PushSubscription,
+  push: { value: Boolean; subscription: PushSubscription },
   obj: Record<string, any> = {}
 ) => {
   const ownerId = data.user._id;
@@ -91,14 +91,16 @@ export const handleCreateNotifications = async (
       });
     }
 
-    if (pushSubscription) {
-      await webpush.sendNotification(
-        pushSubscription as PushSubscription,
-        JSON.stringify({
-          title: type,
-          body: 'Someone liked your post 🎉',
-        })
-      );
+    if (push.value) {
+      if (push.subscription) {
+        await webpush.sendNotification(
+          push.subscription,
+          JSON.stringify({
+            title: type,
+            body: 'Someone liked your post 🎉',
+          })
+        );
+      }
     }
   }
 };

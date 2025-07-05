@@ -57,18 +57,16 @@ export default asyncErrorHandler(
     user = await User.findByIdAndUpdate(
       user._id,
       {
-        settings: {
-          security: {
-            sessions,
-          },
-        },
+        'settings.security.sessions': sessions,
       },
+
       {
         new: true,
         runValidators: true,
       }
     );
 
+    req.activeSession = session.jwi;
     req.user = user as Record<string, any>;
 
     // Allow the user access the route

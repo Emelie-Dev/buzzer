@@ -18,6 +18,8 @@ import Story from '../models/storyModel.js';
 import Comment from '../models/commentModel.js';
 import Bookmark from '../models/bookmarkModel.js';
 import Notification from '../models/notificationModel.js';
+import { randomUUID } from 'crypto';
+import { manageUserDevices, signToken } from './authController.js';
 
 const upload = multerConfig('contents');
 
@@ -262,7 +264,12 @@ export const updatePrivateAudience = asyncErrorHandler(
 
 export const updateSettings = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const categories = ['general', 'account', 'notifications'];
+    const categories = [
+      'general',
+      'account',
+      'notifications',
+      'timeManagement',
+    ];
     const category = req.params.category;
     const body = req.body;
 
@@ -273,8 +280,6 @@ export const updateSettings = asyncErrorHandler(
     const { general, content } = req.user?.settings;
 
     let data;
-
-    // Push Notification -
 
     switch (category) {
       case 'general':
@@ -320,6 +325,27 @@ export const updateSettings = asyncErrorHandler(
               body.interactions.profileViews ?? profileViews,
             'settings.content.notifications.interactions.messages':
               body.interactions.messages ?? messages,
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+        break;
+
+      case 'timeManagement':
+        const { dailyLimit, scrollBreak, sleepReminders } =
+          content.timeManagement;
+
+        data = await User.findByIdAndUpdate(
+          req.user?._id,
+          {
+            'settings.content.timeManagement.dailyLimit':
+              body.dailyLimit || dailyLimit,
+            'settings.content.timeManagement.scrollBreak':
+              body.scrollBreak || scrollBreak,
+            'settings.content.timeManagement.sleepReminders':
+              body.sleepReminders || sleepReminders,
           },
           {
             new: true,
@@ -631,6 +657,135 @@ export const deleteAccount = asyncErrorHandler(
     return res.status(204).json({
       status: 'success',
       message: null,
+    });
+  }
+);
+
+export const updateScreenTime = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const value = req.body.value;
+
+    if (!value) {
+      return next(new CustomError('The value field is missing!', 400));
+    }
+
+    const summary = req.user?.settings.content.timeManagement.summary;
+    const newSummary: Record<string, any> = {};
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+
+      const day = date.toISOString().split('T')[0];
+      const data = summary[day] || 0;
+
+      newSummary[day] =
+        date.getDate() === new Date().getDate() ? data + value : data;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        'settings.content.timeManagement.summary': newSummary,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    const userData = protectData(user!, 'user');
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: userData,
+      },
+    });
+  }
+);
+
+export const switchAccount = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { id, loginDate } = req.body;
+
+    if (!(id || loginDate)) {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    if (String(id).trim() === String(req.user?._id)) {
+      return next(
+        new CustomError('You are already logged in with this account.', 400)
+      );
+    }
+
+    const date = new Date(loginDate);
+    if (String(date) === 'Invalid Date') {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return next(new CustomError('This user does not exist!', 404));
+    }
+
+    const passwordChangedAt = user.passwordChangedAt;
+    if (passwordChangedAt) {
+      if (date < passwordChangedAt) {
+        return next(
+          new CustomError(
+            'The password has changed since your last login. Please log in again.',
+            401
+          )
+        );
+      }
+    }
+
+    const sessions = req.user?.settings.security.sessions || [];
+    const currentSession = req.activeSession;
+
+    // deletes current session
+    await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        'settings.security.sessions': sessions.filter(
+          (device: any) => device.jwi !== currentSession
+        ),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    // Gets JWT ID
+    const jwi = randomUUID();
+
+    // Handles logged in devices
+    await manageUserDevices(
+      user,
+      req.get('user-agent')!,
+      'email',
+      jwi,
+      req.clientIp!,
+      true
+    );
+
+    const userData = protectData(user, 'user');
+
+    res.cookie('jwt', signToken(user._id, jwi), {
+      maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
+      //  Prevents javascript access
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: userData,
+      },
     });
   }
 );

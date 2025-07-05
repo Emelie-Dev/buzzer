@@ -64,18 +64,19 @@ const sendEmail = async (
   }
 };
 
-const signToken = (id: unknown, jwi: string) => {
+export const signToken = (id: unknown, jwi: string) => {
   return jwt.sign({ id, jwi }, String(process.env.JWT_SECRET), {
     expiresIn: Number(process.env.JWT_LOGIN_EXPIRES),
   });
 };
 
-const manageUserDevices = async (
+export const manageUserDevices = async (
   user: IUser,
   userAgent: string,
   method: 'email' | 'google' | 'facebook',
   jwi: string,
-  clientIp: string
+  clientIp: string,
+  switchAccount: Boolean = false
 ) => {
   const sessions = user.settings.security.sessions || [];
   const result = new UAParser(userAgent).getResult();
@@ -107,11 +108,7 @@ const manageUserDevices = async (
   user = (await User.findByIdAndUpdate(
     user._id,
     {
-      settings: {
-        security: {
-          sessions,
-        },
-      },
+      'settings.security.sessions': sessions,
     },
     {
       new: true,
@@ -119,48 +116,50 @@ const manageUserDevices = async (
     }
   )) as IUser;
 
-  // create notification
-  await Notification.create({
-    user: user._id,
-    type: ['security', 'login', 'new'],
-    data: {
-      deviceName,
-      city,
-      country,
-    },
-  });
-
-  if (sessions.length > 4) {
+  if (!switchAccount) {
     // create notification
     await Notification.create({
       user: user._id,
-      type: ['security', 'login', 'multiple'],
+      type: ['security', 'login', 'new'],
       data: {
-        count: sessions.length,
+        deviceName,
+        city,
+        country,
       },
     });
-  }
 
-  const allowEmail = user.settings.content.notifications.email;
-
-  if (allowEmail) {
-    const url =
-      process.env.NODE_ENV === 'production'
-        ? 'https://buzzer-0z8q.onrender.com/settings'
-        : 'http://localhost:5173/settings';
-
-    // sends email to the user
-    try {
-      await new Email(user, url).sendSecurityEmail('new', {
-        device: deviceName,
-        location: `${city}, ${country}`,
-        time: new Date(),
+    if (sessions.length > 4) {
+      // create notification
+      await Notification.create({
+        user: user._id,
+        type: ['security', 'login', 'multiple'],
+        data: {
+          count: sessions.length,
+        },
       });
+    }
 
-      if (sessions.length > 4) {
-        await new Email(user, url).sendSecurityEmail('multiple', {});
-      }
-    } catch {}
+    const allowEmail = user.settings.content.notifications.email;
+
+    if (allowEmail) {
+      const url =
+        process.env.NODE_ENV === 'production'
+          ? 'https://buzzer-0z8q.onrender.com/settings'
+          : 'http://localhost:5173/settings';
+
+      // sends email to the user
+      try {
+        await new Email(user, url).sendSecurityEmail('new', {
+          device: deviceName,
+          location: `${city}, ${country}`,
+          time: new Date(),
+        });
+
+        if (sessions.length > 4) {
+          await new Email(user, url).sendSecurityEmail('multiple', {});
+        }
+      } catch {}
+    }
   }
 };
 
@@ -510,11 +509,7 @@ export const logout = asyncErrorHandler(
     await User.findByIdAndUpdate(
       req.user?._id,
       {
-        settings: {
-          security: {
-            sessions,
-          },
-        },
+        'settings.security.sessions': sessions,
       },
       {
         new: true,

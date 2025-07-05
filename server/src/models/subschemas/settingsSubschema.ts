@@ -47,10 +47,31 @@ export interface ISettings extends Document {
         messages: Boolean;
       };
     };
+    timeManagement: {
+      dailyLimit: {
+        enabled: Boolean;
+        value: Number;
+        notified: Boolean;
+      };
+      scrollBreak: {
+        enabled: Boolean;
+        value: Number;
+      };
+      sleepReminders: {
+        enabled: Boolean;
+        value: {
+          startTime: Number;
+          endTime: Number;
+          days: Number[];
+        };
+        notified: Boolean;
+      };
+      summary: {};
+    };
   };
 }
 
-export default new Schema({
+export default new Schema<ISettings>({
   general: {
     hiddenStories: [
       {
@@ -117,6 +138,27 @@ export default new Schema({
         profileViews: { type: Boolean, default: true },
         messages: { type: Boolean, default: true },
       },
+    },
+    timeManagement: {
+      dailyLimit: {
+        enabled: { type: Boolean, default: false },
+        value: { type: Number, min: 10, max: 410, default: 120 },
+        notified: { type: Boolean, default: false },
+      },
+      scrollBreak: {
+        enabled: { type: Boolean, default: false },
+        value: { type: Number, min: 5, max: 120, default: 60 },
+      },
+      sleepReminders: {
+        enabled: { type: Boolean, default: false },
+        value: {
+          startTime: { type: Number, min: 19, max: 22, default: 20 },
+          endTime: { type: Number, min: 4, max: 7, default: 5 },
+          days: [{ type: Number, min: 0, max: 6 }],
+        },
+        notified: { type: Boolean, default: false },
+      },
+      summary: { type: Object, default: {} },
     },
   },
 });
