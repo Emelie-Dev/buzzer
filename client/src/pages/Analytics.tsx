@@ -13,7 +13,7 @@ import { GeneralContext } from '../Contexts';
 
 const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
 
-const Settings = () => {
+const Analytics = () => {
   const [isMediumSize, setIsMediumSize] = useState<boolean>(mediumSize);
   const [category, setCategory] = useState<
     'Engagement' | 'Content' | 'Followers'
@@ -103,4 +103,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default Analytics;

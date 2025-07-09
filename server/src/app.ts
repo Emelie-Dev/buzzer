@@ -35,6 +35,7 @@ import searchRouter from './routes/searchRoutes.js';
 import friendRouter from './routes/friendRoutes.js';
 import reelRouter from './routes/reelRoutes.js';
 import notificationRouter from './routes/notificationRoutes.js';
+import analyticsRouter from './routes/analyticsRoutes.js';
 
 const app = express();
 
@@ -146,6 +147,7 @@ app.use('/api/v1/search', searchRouter);
 app.use('/api/v1/friends', friendRouter);
 app.use('/api/v1/reels', reelRouter);
 app.use('/api/v1/notifications', notificationRouter);
+app.use('/api/v1/analytics', analyticsRouter);
 
 // For wrong endpoints
 app.all('*', (req, _, next) => {

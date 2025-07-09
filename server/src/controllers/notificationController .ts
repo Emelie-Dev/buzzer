@@ -4,7 +4,7 @@ import CustomError from '../utils/CustomError.js';
 
 export const subscribeToPushNotifications = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const subscription = req.body;
+    const subscription = req.body.subscription;
     const user = req.user!;
 
     if (!subscription)

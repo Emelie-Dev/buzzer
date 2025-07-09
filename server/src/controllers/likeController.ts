@@ -72,7 +72,7 @@ export const dislikeItem = asyncErrorHandler(
     let { collection, documentId } = req.body;
     collection = collection.toLowerCase();
 
-    const like = await Like.findById(req.params.id).populate('creator');
+    const like = await Like.findById(req.params.id);
 
     if (!like || String(like.user) !== String(req.user?._id)) {
       return next(new CustomError('Could not dislike item.', 404));

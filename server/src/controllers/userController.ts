@@ -713,7 +713,7 @@ export const switchAccount = asyncErrorHandler(
       return next(new CustomError('Invalid request!', 400));
     }
 
-    if (String(id).trim() === String(req.user?._id)) {
+    if (id === String(req.user?._id)) {
       return next(
         new CustomError('You are already logged in with this account.', 400)
       );

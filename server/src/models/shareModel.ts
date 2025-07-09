@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-interface IView extends Document {
+interface IShare extends Document {
   user: Types.ObjectId;
   creator: Types.ObjectId;
   collectionName: String;
@@ -8,7 +8,7 @@ interface IView extends Document {
   createdAt: Date;
 }
 
-const ViewSchema = new Schema<IView>({
+const ShareSchema = new Schema<IShare>({
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -21,7 +21,7 @@ const ViewSchema = new Schema<IView>({
   },
   collectionName: {
     type: String,
-    enum: ['content', 'user', 'reel'],
+    enum: ['content', 'reel'],
     required: true,
   },
   documentId: {
@@ -34,6 +34,6 @@ const ViewSchema = new Schema<IView>({
   },
 });
 
-const View = mongoose.model<IView>('View', ViewSchema);
+const Share = mongoose.model<IShare>('Share', ShareSchema);
 
-export default View;
+export default Share;

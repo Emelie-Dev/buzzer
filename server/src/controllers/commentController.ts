@@ -41,6 +41,7 @@ export const addComment = asyncErrorHandler(
 
     const comment = await Comment.create({
       user: req.user?._id,
+      creator: data.user._id,
       collectionName: collection,
       documentId: data._id,
       text,

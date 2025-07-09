@@ -54,7 +54,7 @@ const EngagementAnalytics = () => {
     labels: monthLabels,
     datasets: [
       {
-        data: [2, 3, 2, 3, 1, 5, 7, 2, 3, 4, 1, 6, 1],
+        data: [2, 3, 2, 3, 1, 5, 7, 2, 3, 4, 1, 6],
         fill: `#a855f7`,
         backgroundColor: `#a855f7`,
         borderColor: `#a855f7`,

@@ -49,6 +49,7 @@ export const viewItem = asyncErrorHandler(
 
     await View.create({
       user: req.user?._id,
+      creator: collection === 'user' ? data._id : data.user,
       collectionName: collection,
       documentId: data._id,
     });
