@@ -158,6 +158,8 @@ export const handleMentionNotifications = async (
   accessibility: ContentAccessibility | null,
   data: {} | null
 ) => {
+  if (mentions.length < 1) return;
+
   try {
     const { id, name } = user;
 

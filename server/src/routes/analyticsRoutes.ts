@@ -3,6 +3,8 @@ import protectRoute from '../middleware/protectRoute.js';
 import {
   getEngagementStats,
   getMonthlyEngagementStats,
+  getPosts,
+  getPostStats,
 } from '../controllers/analyticsController.js';
 
 const router = express.Router();
@@ -11,6 +13,10 @@ router.use(protectRoute);
 
 router.get('/engagements', getMonthlyEngagementStats);
 
-router.get('/engagements/:type', getEngagementStats);
+router.post('/engagements/:type', getEngagementStats);
+
+router.post('/posts', getPosts);
+
+router.get('/posts/:id', getPostStats);
 
 export default router;

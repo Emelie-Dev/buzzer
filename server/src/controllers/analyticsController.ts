@@ -7,6 +7,9 @@ import Comment from '../models/commentModel.js';
 import Like from '../models/likeModel.js';
 import { Model, PipelineStage } from 'mongoose';
 import Share from '../models/shareModel.js';
+import Content from '../models/contentModel.js';
+import Reel from '../models/reelModel.js';
+import User from '../models/userModel.js';
 
 const monthLabels = [
   'Jan',
@@ -294,10 +297,7 @@ export const getEngagementStats = asyncErrorHandler(
         break;
 
       case 'all':
-        const firstDocument = await model
-          .findOne({ creator: req.user?._id })
-          .sort({ [timeField]: 1 });
-        startDate = firstDocument[timeField];
+        startDate = new Date(null!);
         range = getRange(String(startDate), String(endDate));
         break;
 
@@ -439,6 +439,197 @@ export const getMonthlyEngagementStats = asyncErrorHandler(
 
       return accumulator;
     }, {} as any);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        stats,
+      },
+    });
+  }
+);
+
+export const getPosts = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { sort, period, order, cursor } = req.body;
+
+    const allowedSort = ['likes', 'views', 'createdAt'];
+    const allowedPeriod = ['1y', '1m', '1w', '1d', 'all'];
+    const allowedOrder = ['up', 'down'];
+
+    if (
+      !(
+        allowedSort.includes(sort) &&
+        allowedOrder.includes(order) &&
+        (allowedPeriod.includes(period) || (period.start && period.end))
+      )
+    ) {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    let startDate = period.start ? new Date(period.start) : new Date();
+    const endDate = period.end ? new Date(period.end) : new Date();
+    const cursorDate = new Date(cursor as string);
+    const timestamp = sort === 'liked' ? 'likedAt' : 'createdAt';
+    const operator = order === 'up' ? '$gt' : '$lt';
+    const limit = 20;
+
+    if (
+      period instanceof Object &&
+      (String(startDate) === 'Invalid Date' ||
+        String(endDate) === 'Invalid Date')
+    ) {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    switch (period) {
+      case '1y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        startDate.setDate(1);
+        break;
+
+      case '1m':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+
+      case '1w':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+
+      case '1d':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+
+      case 'all':
+        startDate = new Date(null!);
+        break;
+    }
+    if (period === '1d') startDate.setMinutes(0, 0, 0);
+    else startDate.setHours(0, 0, 0, 0);
+
+    const sortObj: Record<string, 1 | -1> = { [sort]: order === 'up' ? 1 : -1 };
+    if (sort !== 'createdAt') sortObj.createdAt = -1;
+
+    const cursorObj =
+      String(cursorDate) !== 'Invalid Date'
+        ? sort !== 'createdAt'
+          ? {
+              $or: [
+                { [sort]: { [operator]: +req.body[sort] } },
+                { [sort]: +req.body[sort], [timestamp]: { $lt: cursorDate } },
+              ],
+            }
+          : { [timestamp]: { [operator]: cursorDate } }
+        : {};
+
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          user: req.user?._id,
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $lookup: {
+          from: 'views',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'views',
+        },
+      },
+      {
+        $addFields: {
+          views: { $size: '$views' },
+          likes: sort === 'likes' ? { $size: '$likes' } : null,
+        },
+      },
+      { $match: cursorObj },
+      { $sort: sortObj },
+      { $limit: limit },
+      {
+        $project: {
+          settings: 0,
+          keywords: 0,
+          location: 0,
+          __v: 0,
+        },
+      },
+    ];
+
+    if (sort === 'likes') {
+      pipeline.splice(2, 0, {
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'likes',
+        },
+      });
+    }
+
+    const result = await Promise.all(
+      [Content, Reel].map(
+        async (model, index) =>
+          await model.aggregate([
+            ...pipeline,
+            {
+              $addFields: {
+                type: index === 0 ? 'content' : 'reel',
+              },
+            },
+          ])
+      )
+    );
+
+    const posts = result
+      .flat()
+      .sort((a, b) => {
+        if (sort !== 'createdAt') {
+          if (b[sort] !== a[sort]) {
+            return order === 'up' ? a[sort] - b[sort] : b[sort] - a[sort];
+          }
+
+          return +new Date(b[timestamp]) - +new Date(a[timestamp]);
+        } else {
+          return order === 'up'
+            ? +new Date(a.createdAt) - +new Date(b.createdAt)
+            : +new Date(b.createdAt) - +new Date(a.createdAt);
+        }
+      })
+      .slice(0, limit);
+
+    return res.status(200).json({
+      status: 'sucess',
+      data: {
+        posts,
+      },
+    });
+  }
+);
+
+export const getPostStats = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const type = req.query.type;
+    const id = req.params.id;
+
+    if (type !== 'reel' && type !== 'content') {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    const model: Model<any> = type === 'reel' ? Reel : Content;
+    const document = await model.findById(id);
+
+    if (!document || String(document.user) !== String(req.user?._id)) {
+      return next(new CustomError(`This ${type} does not exist!`, 404));
+    }
+
+    const stats = await User.aggregate([
+      {
+        $match: {
+          _id: req.user?._id,
+        },
+      },
+    ]);
 
     return res.status(200).json({
       status: 'success',

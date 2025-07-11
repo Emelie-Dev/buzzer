@@ -231,7 +231,7 @@ export const processFiles = async (files, filters) => {
 export const transformReelFiles = async (files, position = {}, volume = {}) => {
   // start pos, end pos, sound, cover photo
 
-  const { reel: reelFile, sound, cover } = files;
+  const { reel: reelFile, sound = [], cover = [] } = files;
   const { start = 0, end = 0 } = position;
   const { original: originalVolume = 0, sound: soundVolume = 1 } = volume;
 
@@ -306,7 +306,7 @@ export const transformReelFiles = async (files, position = {}, volume = {}) => {
           audioFilter = `[${inputIndex}:a]volume=${soundVolume}[outa]`;
         } else {
           // No video audio and no background sound? Create silent audio (optional)
-          audioFilter = `anull[outa]`;
+          audioFilter = null;
         }
       }
 
@@ -315,16 +315,17 @@ export const transformReelFiles = async (files, position = {}, volume = {}) => {
       // Total duration = video duration + cover duration if any
       const totalDuration = end - start + (cover.length > 0 ? 0.1 : 0);
 
+      process.complexFilter(complexFilter.join(';'));
+
+      const outputOpts = ['-map', '[outv]', '-t', String(totalDuration)];
+
+      // Only map audio if we have a valid audio filter
+      if (sound.length > 0 || hasAudio) {
+        outputOpts.push('-map', '[outa]');
+      }
+
       process
-        .complexFilter(complexFilter.join(';'))
-        .outputOptions([
-          '-map',
-          '[outv]',
-          '-map',
-          '[outa]',
-          '-t',
-          String(totalDuration),
-        ])
+        .outputOptions(outputOpts)
         .output(tempFilePath)
         .on('error', reject)
         .on('end', () => {

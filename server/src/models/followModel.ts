@@ -3,6 +3,8 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 interface IFollow extends Document {
   follower: Types.ObjectId;
   following: Types.ObjectId;
+  collectionName: String;
+  documentId: Types.ObjectId;
   followedAt: Date;
 }
 
@@ -16,6 +18,13 @@ const FollowSchema = new Schema<IFollow>({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  collectionName: {
+    type: String,
+    enum: ['content', 'reel'],
+  },
+  documentId: {
+    type: Schema.Types.ObjectId,
   },
   followedAt: {
     type: Date,

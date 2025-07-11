@@ -9,6 +9,8 @@ import Notification from '../models/notificationModel.js';
 export const followUser = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const user = await User.findById(req.params.id);
+    let { collection, documentId } = req.body;
+    if (collection) collection = collection.toLowerCase();
 
     if (!user) {
       return next(new CustomError('This user does not exist!', 404));
@@ -21,6 +23,8 @@ export const followUser = asyncErrorHandler(
     await Follow.create({
       follower: req.user?._id,
       following: req.params.id,
+      collectionName: collection,
+      documentId,
     });
 
     const notifications = await Notification.find({
