@@ -1,7 +1,7 @@
 # Base image
 FROM node:20-slim
 
-# Install ffmpeg (using apt for Debian-based image)
+# Install system dependencies (for ffmpeg and bcrypt build)
 RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
 
 # Set working directory

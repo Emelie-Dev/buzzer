@@ -12,6 +12,7 @@ import {
   updatePrivateAudience,
   updateScreenTime,
   updateSettings,
+  getWatchHistory,
 } from '../controllers/userController.js';
 import protectRoute from '../middleware/protectRoute.js';
 
@@ -44,5 +45,7 @@ router.delete('/delete/:stage', getAccountToken('delete'), deleteAccount);
 router.patch('/screen-time', updateScreenTime);
 
 router.post('/switch-account', switchAccount);
+
+router.post('/watch-history', getWatchHistory);
 
 export default router;

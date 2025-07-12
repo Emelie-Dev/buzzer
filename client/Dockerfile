@@ -1,5 +1,5 @@
 # Stage 1: Build React app
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 COPY package*.json ./
@@ -12,7 +12,7 @@ RUN if [ "$NODE_ENV" = "production" ]; then npm run build; fi
 
 
 # Stage 3: Development mode with Vite
-FROM node:20-alpine AS development
+FROM node:20-slim AS development
 WORKDIR /app
 COPY --from=builder /app .
 EXPOSE 5173

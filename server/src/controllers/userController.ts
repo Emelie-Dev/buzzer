@@ -20,6 +20,7 @@ import Bookmark from '../models/bookmarkModel.js';
 import Notification from '../models/notificationModel.js';
 import { randomUUID } from 'crypto';
 import { manageUserDevices, signToken } from './authController.js';
+import View from '../models/viewModel.js';
 
 const upload = multerConfig('contents');
 
@@ -786,6 +787,119 @@ export const switchAccount = asyncErrorHandler(
       data: {
         user: userData,
       },
+    });
+  }
+);
+
+export const getWatchHistory = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { cursor, period } = req.body;
+    const allowedPeriod = ['1y', '1m', '1w', '1d', 'all'];
+
+    if (!(allowedPeriod.includes(period) || (period.start && period.end))) {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    let startDate = period.start ? new Date(period.start) : new Date();
+    const endDate = period.end ? new Date(period.end) : new Date();
+    const cursorDate = cursor ? new Date(cursor) : new Date();
+    const limit = 20;
+
+    if (
+      period instanceof Object &&
+      (String(startDate) === 'Invalid Date' ||
+        String(endDate) === 'Invalid Date')
+    ) {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    if (period === '1d') startDate.setMinutes(0, 0, 0);
+    else startDate.setHours(0, 0, 0, 0);
+
+    switch (period) {
+      case '1y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        startDate.setDate(1);
+        break;
+
+      case '1m':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+
+      case '1w':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+
+      case '1d':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+
+      case 'all':
+        const firstDocument = await View.findOne({
+          user: req.user?._id,
+          collectionName: { $ne: 'user' },
+        }).sort({ createdAt: 1 });
+        startDate = firstDocument ? firstDocument.createdAt : new Date();
+        break;
+    }
+
+    const history = await View.aggregate([
+      {
+        $match: {
+          user: req.user?._id,
+          collectionName: { $ne: 'user' },
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: '$documentId',
+          createdAt: { $first: '$createdAt' },
+          type: { $first: '$collectionName' },
+        },
+      },
+      {
+        $match: {
+          createdAt: { $lt: cursorDate },
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'contents',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'content',
+        },
+      },
+      {
+        $lookup: {
+          from: 'reels',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'reel',
+        },
+      },
+      {
+        $addFields: {
+          reel: { $first: '$reel' },
+          content: { $first: '$content' },
+        },
+      },
+      {
+        $project: {
+          createdAt: 1,
+          'reel.src': 1,
+          'content.media': 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      status: 'success',
+      data: { history },
     });
   }
 );

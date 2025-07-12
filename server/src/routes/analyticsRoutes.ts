@@ -2,6 +2,7 @@ import express from 'express';
 import protectRoute from '../middleware/protectRoute.js';
 import {
   getEngagementStats,
+  getFollowersStats,
   getMonthlyEngagementStats,
   getPosts,
   getPostStats,
@@ -18,5 +19,7 @@ router.post('/engagements/:type', getEngagementStats);
 router.post('/posts', getPosts);
 
 router.get('/posts/:id', getPostStats);
+
+router.post('/followers', getFollowersStats);
 
 export default router;

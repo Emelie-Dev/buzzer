@@ -9,6 +9,7 @@ import {
   getContent,
 } from '../controllers/contentController.js';
 import protectRoute from '../middleware/protectRoute.js';
+import updatePost from '../utils/updatePost.js';
 
 const router = express.Router();
 
@@ -19,7 +20,11 @@ router
   .get(getContents)
   .post(validateContentFiles, processContentFiles, saveContent);
 
-router.route('/:id').get(getContent).delete(deleteContent);
+router
+  .route('/:id')
+  .get(getContent)
+  .patch(updatePost('content'))
+  .delete(deleteContent);
 
 router.patch('/not-interested/:id', excludeContent);
 

@@ -246,7 +246,8 @@ export const verifyEmail = asyncErrorHandler(
         req.get('user-agent')!,
         'email',
         jwi,
-        req.clientIp!
+        req.clientIp!,
+        true
       );
 
       const nonce = crypto.randomBytes(16).toString('base64');

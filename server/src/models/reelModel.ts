@@ -11,6 +11,8 @@ interface IReel extends Document {
   collaborators: Types.ObjectId[];
   location: ILocation;
   keywords: String[];
+  playTime: Number;
+  watchedFully: Number;
   settings: {
     accessibility: Number;
     disableComments: Boolean;
@@ -48,6 +50,14 @@ const ReelSchema = new Schema<IReel>({
   location: {
     type: locationSubschema,
     required: true,
+  },
+  playTime: {
+    type: Number,
+    default: 0,
+  },
+  watchedFully: {
+    type: Number,
+    default: 0,
   },
   settings: {
     type: {

@@ -152,7 +152,7 @@ export const handleDeleteNotifications = async (
 export const handleMentionNotifications = async (
   action: 'create' | 'delete',
   type: 'content' | 'reel' | 'comment',
-  mentions: string[],
+  mentions: string[] = [],
   user: { id: string; name: string },
   documentId: any,
   accessibility: ContentAccessibility | null,

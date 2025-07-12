@@ -9,7 +9,7 @@ import { Model, PipelineStage } from 'mongoose';
 import Share from '../models/shareModel.js';
 import Content from '../models/contentModel.js';
 import Reel from '../models/reelModel.js';
-import User from '../models/userModel.js';
+import Follow from '../models/followModel.js';
 
 const monthLabels = [
   'Jan',
@@ -50,10 +50,11 @@ const getStats = async (
   range: (string | number)[],
   startDate: Date,
   endDate: Date,
-  timeField: 'likedAt' | 'createdAt',
+  timeField: 'likedAt' | 'createdAt' | 'followedAt',
   matchObj: {}
 ) => {
   const [value, type] = range;
+  const userField = timeField === 'followedAt' ? 'following' : 'creator';
 
   const format =
     type === 'y'
@@ -69,7 +70,7 @@ const getStats = async (
   const pipeline: PipelineStage[] = [
     {
       $match: {
-        creator: creatorId,
+        [userField]: creatorId,
         [timeField]: {
           $gte: startDate,
           $lte: endDate,
@@ -297,7 +298,25 @@ export const getEngagementStats = asyncErrorHandler(
         break;
 
       case 'all':
-        startDate = new Date(null!);
+        const firstDocument = await model
+          .findOne({
+            creator: req.user?._id,
+            ...matchObj,
+          })
+          .sort({ [timeField]: 1 });
+        startDate = firstDocument ? firstDocument[timeField] : new Date();
+
+        if (
+          Date.parse(String(endDate)) - Date.parse(String(startDate)) <
+          86_400_000
+        ) {
+          startDate = new Date();
+          startDate.setDate(startDate.getDate() - 1);
+          startDate.setMinutes(0, 0, 0);
+        } else {
+          startDate.setHours(0, 0, 0, 0);
+        }
+
         range = getRange(String(startDate), String(endDate));
         break;
 
@@ -501,7 +520,18 @@ export const getPosts = asyncErrorHandler(
         break;
 
       case 'all':
-        startDate = new Date(null!);
+        const [firstContent, firstReel] = await Promise.all([
+          Content.findOne({ user: req.user?._id }).sort({ createdAt: 1 }),
+          Reel.findOne({ user: req.user?._id }).sort({ createdAt: 1 }),
+        ]);
+        startDate = new Date(
+          Math.min(
+            Date.parse(
+              String(firstContent ? firstContent?.createdAt : new Date())
+            ),
+            Date.parse(String(firstReel ? firstReel?.createdAt : new Date()))
+          )
+        );
         break;
     }
     if (period === '1d') startDate.setMinutes(0, 0, 0);
@@ -623,13 +653,177 @@ export const getPostStats = asyncErrorHandler(
       return next(new CustomError(`This ${type} does not exist!`, 404));
     }
 
-    const stats = await User.aggregate([
+    const stats = await model.aggregate([
       {
         $match: {
-          _id: req.user?._id,
+          _id: document._id,
+        },
+      },
+      {
+        $lookup: {
+          from: 'views',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'views',
+        },
+      },
+      {
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'likes',
+        },
+      },
+      {
+        $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'comments',
+        },
+      },
+      {
+        $lookup: {
+          from: 'shares',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'shares',
+        },
+      },
+      {
+        $lookup: {
+          from: 'follows',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'followers',
+        },
+      },
+      {
+        $project: {
+          likes: { $size: '$likes' },
+          comments: { $size: '$comments' },
+          shares: { $size: '$shares' },
+          followers: { $size: '$followers' },
+          viewers: {
+            $size: {
+              $setUnion: [
+                {
+                  $map: {
+                    input: '$views',
+                    as: 'view',
+                    in: '$$view.user',
+                  },
+                },
+                [],
+              ],
+            },
+          },
+          views: { $size: '$views' },
+          totalPlayTime: '$playTime',
+          avgPlayTime: {
+            $divide: ['$playTime', { $max: [{ $size: '$views' }, 1] }],
+          },
+          watchedFully: {
+            $multiply: [
+              {
+                $divide: ['$watchedFully', { $max: [{ $size: '$views' }, 1] }],
+              },
+              100,
+            ],
+          },
         },
       },
     ]);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        stats: stats[0],
+      },
+    });
+  }
+);
+
+export const getFollowersStats = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const period = req.body.period;
+    const allowedPeriod = ['1y', '1m', '1w', '1d', 'all'];
+
+    if (!(allowedPeriod.includes(period) || (period.start && period.end))) {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    let startDate = period.start ? new Date(period.start) : new Date();
+    const endDate = period.end ? new Date(period.end) : new Date();
+    let range;
+
+    if (
+      period instanceof Object &&
+      (String(startDate) === 'Invalid Date' ||
+        String(endDate) === 'Invalid Date')
+    ) {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    if (period === '1d') startDate.setMinutes(0, 0, 0);
+    else startDate.setHours(0, 0, 0, 0);
+
+    switch (period) {
+      case '1y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        startDate.setDate(1);
+        range = [1, 'm'];
+        break;
+
+      case '1m':
+        startDate.setMonth(startDate.getMonth() - 1);
+        range = [2, 'd'];
+        break;
+
+      case '1w':
+        startDate.setDate(startDate.getDate() - 7);
+        range = [1, 'd'];
+        break;
+
+      case '1d':
+        startDate.setDate(startDate.getDate() - 1);
+        range = [1, 'h'];
+        break;
+
+      case 'all':
+        const firstDocument = await Follow.findOne({
+          following: req.user?._id,
+        }).sort({ followedAt: 1 });
+        startDate = firstDocument ? firstDocument.followedAt : new Date();
+
+        if (
+          Date.parse(String(endDate)) - Date.parse(String(startDate)) <
+          86_400_000
+        ) {
+          startDate = new Date();
+          startDate.setDate(startDate.getDate() - 1);
+          startDate.setMinutes(0, 0, 0);
+        } else {
+          startDate.setHours(0, 0, 0, 0);
+        }
+
+        range = getRange(String(startDate), String(endDate));
+        break;
+
+      default:
+        range = getRange(String(startDate), String(endDate));
+    }
+
+    const stats = await getStats(
+      req.user?._id,
+      Follow,
+      range,
+      startDate,
+      endDate,
+      'followedAt',
+      {}
+    );
 
     return res.status(200).json({
       status: 'success',

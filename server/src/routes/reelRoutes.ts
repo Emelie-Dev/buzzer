@@ -11,6 +11,7 @@ import {
   deleteReel,
   getReel,
 } from '../controllers/reelController.js';
+import updatePost from '../utils/updatePost.js';
 
 const router = express.Router();
 
@@ -26,6 +27,6 @@ router.delete('/sounds/:id', deleteReelSound);
 
 router.patch('/not-interested/:id', excludeReelType);
 
-router.route('/:id').delete(deleteReel).get(getReel);
+router.route('/:id').delete(deleteReel).get(getReel).patch(updatePost('reel'));
 
 export default router;

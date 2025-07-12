@@ -18,6 +18,8 @@ interface IContent extends Document {
   description: String;
   collaborators: Types.ObjectId[];
   location: ILocation;
+  playTime: Number;
+  watchedFully: Number;
   settings: {
     accessibility: Number;
     disableComments: Boolean;
@@ -80,6 +82,14 @@ const ContentSchema = new Schema<IContent>({
   location: {
     type: locationSubschema,
     required: true,
+  },
+  playTime: {
+    type: Number,
+    default: 0,
+  },
+  watchedFully: {
+    type: Number,
+    default: 0,
   },
   settings: {
     type: {
