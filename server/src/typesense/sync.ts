@@ -5,6 +5,7 @@ import { CollectionCreateSchema } from 'typesense/lib/Typesense/Collections.js';
 import Search from '../models/searchModel.js';
 import User from '../models/userModel.js';
 import Content from '../models/contentModel.js';
+import Reel from '../models/reelModel.js';
 
 export const transformDocument = (doc: any) => {
   const document = doc instanceof Document ? doc.toObject() : doc;
@@ -52,6 +53,7 @@ export async function syncAllCollections() {
     { model: Search, schemaName: 'searches' },
     { model: User, schemaName: 'users' },
     { model: Content, schemaName: 'contents' },
+    { model: Reel, schemaName: 'reels' },
   ];
 
   for (const { model, schemaName } of collections) {

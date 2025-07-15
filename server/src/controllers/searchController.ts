@@ -7,10 +7,9 @@ import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
 import mongoose, { Document } from 'mongoose';
 import queryFromTypesense from '../utils/queryFromTypesense.js';
-import Follow from '../models/followModel.js';
 import Content from '../models/contentModel.js';
+import Reel from '../models/reelModel.js';
 import { ContentAccessibility } from '../models/storyModel.js';
-import View from '../models/viewModel.js';
 
 const getQueriesArray = (arr: any[]) => {
   const queries = [...new Set(arr.map(({ query }) => query))];
@@ -19,22 +18,12 @@ const getQueriesArray = (arr: any[]) => {
 
 export const handleSearch = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
-    let {
-      query,
-      page,
-      firstUserCreatedAt,
-      lastUserCreatedAt,
-      firstContentCreatedAt,
-      lastContentCreatedAt,
-    } = req.query;
+    let { query, page } = req.query;
     query = String(query).toLowerCase().trim();
 
     // Check is search exists
     const userSearch = await Search.findOne({
       query,
-      searchedAt: {
-        $gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
-      },
     });
 
     if (userSearch) {
@@ -56,8 +45,7 @@ export const handleSearch = asyncErrorHandler(
     searchHistory.add(query);
 
     if (searchHistory.size > 10) {
-      const firstElem = Array.from(searchHistory)[0];
-      searchHistory.delete(firstElem);
+      searchHistory.delete(Array.from(searchHistory)[0]);
     }
 
     const user = await User.findByIdAndUpdate(
@@ -73,130 +61,425 @@ export const handleSearch = asyncErrorHandler(
     const userData = protectData(user as Document, 'user');
 
     // Get reels, contents, users
-
-    // Get users
-    const matchedUsers = await queryFromTypesense(
-      'users',
-      {
-        q: query,
-        query_by: 'username,name',
-        filter_by:
-          Number(page) === 1
-            ? `id:!=${String(req.user?._id)}`
-            : `id:!=${String(req.user?._id)} && createdAt:>${Number(
-                firstUserCreatedAt
-              )} && createdAt:<${Number(lastUserCreatedAt)}`,
-        page: Number(page),
-        per_page: 30,
-        sort_by: 'createdAt:desc',
-      },
-      ['username', 'photo', 'name', 'createdAt']
-    );
-
-    // Get users followers and contents
-    const followersData = await Follow.aggregate([
-      {
-        $match: {
-          following: {
-            $in: matchedUsers?.map((user) =>
-              mongoose.Types.ObjectId.createFromHexString(user.id)
-            ),
-          },
+    const [matchedUsers, matchedContents, matchedReels] = await Promise.all([
+      queryFromTypesense(
+        'users',
+        {
+          q: query,
+          query_by: 'username,name',
+          filter_by: `id:!=${String(req.user?._id)}`,
+          page: Number(page),
+          per_page: 20,
         },
-      },
-      {
-        $group: {
-          _id: '$following',
-          followers: { $sum: 1 },
+        ['username', 'photo', 'name', 'createdAt']
+      ),
+      queryFromTypesense(
+        'contents',
+        {
+          q: query,
+          query_by: 'description',
+          filter_by: `id:!=${String(req.user?._id)}`,
+          page: Number(page),
+          per_page: 10,
         },
-      },
+        ['user', 'description', 'createdAt', 'media']
+      ),
+      queryFromTypesense(
+        'reels',
+        {
+          q: query,
+          query_by: 'description',
+          filter_by: `id:!=${String(req.user?._id)}`,
+          page: Number(page),
+          per_page: 10,
+        },
+        ['user', 'description', 'createdAt', 'src']
+      ),
     ]);
-    const users = await Promise.all(
-      matchedUsers?.map(async (user, index) => {
-        const followerObj = followersData.find(
-          (doc) => String(doc._id) === user.id
-        );
-        user.followers = followerObj ? followerObj.followers : 0;
 
-        if (Number(page) === 1) {
-          if (index === 0 || index === 1 || index === 2) {
-            // - Check if user is friend
-            user.latestContents = await Content.find({
-              user: user.id,
-              'settings.accessibility': ContentAccessibility.EVERYONE,
-            })
-              .sort({ createdAt: -1 })
-              .limit(2);
-          }
-        }
+    const results = async () => {
+      const results = await Promise.all([
+        User.aggregate([
+          {
+            $match: {
+              _id: {
+                $in: matchedUsers?.map(
+                  (user) => new mongoose.Types.ObjectId(String(user.id))
+                ),
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: 'follows',
+              localField: '_id',
+              foreignField: 'following',
+              as: 'followers',
+            },
+          },
+          {
+            $project: {
+              username: 1,
+              name: 1,
+              photo: 1,
+              createdAt: 1,
+              isFollowing: { $in: [req.user?._id, '$followers.follower'] },
+              followers: { $size: '$followers' },
+            },
+          },
+        ]),
+        Content.aggregate([
+          {
+            $match: {
+              _id: {
+                $in: matchedContents?.map(
+                  (content) => new mongoose.Types.ObjectId(String(content.id))
+                ),
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: 'users',
+              let: {
+                userId: '$user',
+                viewerId: req.user?._id,
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$_id', '$$userId'] },
+                        {
+                          $cond: [
+                            { $eq: ['$settings.general.privacy.value', true] },
+                            {
+                              $cond: [
+                                {
+                                  $in: [
+                                    '$$viewerId',
+                                    '$settings.general.privacy.users',
+                                  ],
+                                },
+                                true,
+                                { $eq: ['$_id', '$$viewerId'] },
+                              ],
+                            },
+                            true,
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'owner',
+            },
+          },
+          {
+            $match: {
+              owner: { $ne: [] },
+            },
+          },
+          {
+            $lookup: {
+              from: 'friends',
+              let: {
+                userId: '$user',
+                viewerId: req.user?._id,
+                accessibility: '$settings.accessibility',
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $cond: [
+                        {
+                          $eq: [
+                            '$$accessibility',
+                            ContentAccessibility.FRIENDS,
+                          ],
+                        },
+                        {
+                          $or: [
+                            {
+                              $and: [
+                                { $eq: ['$requester', '$$userId'] },
+                                { $eq: ['$recipient', '$$viewerId'] },
+                              ],
+                            },
+                            {
+                              $and: [
+                                { $eq: ['$requester', '$$viewerId'] },
+                                { $eq: ['$recipient', '$$userId'] },
+                              ],
+                            },
+                          ],
+                        },
+                        false,
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'friend',
+            },
+          },
+          {
+            $match: {
+              $or: [
+                {
+                  $and: [
+                    { 'settings.accessibility': ContentAccessibility.YOU },
+                    { user: req.user?._id },
+                  ],
+                },
+                {
+                  $and: [
+                    { 'settings.accessibility': ContentAccessibility.FRIENDS },
+                    { friend: { $ne: [] } },
+                  ],
+                },
+                { 'settings.accessibility': ContentAccessibility.EVERYONE },
+              ],
+            },
+          },
+          {
+            $lookup: {
+              from: 'views',
+              localField: '_id',
+              foreignField: 'documentId',
+              as: 'views',
+            },
+          },
+          {
+            $addFields: {
+              owner: { $first: '$owner' },
+            },
+          },
+          {
+            $project: {
+              'owner._id': 1,
+              'owner.photo': 1,
+              'owner.username': 1,
+              media: 1,
+              description: 1,
+              createdAt: 1,
+              views: { $size: '$views' },
+              type: 'content',
+            },
+          },
+        ]),
+        Reel.aggregate([
+          {
+            $match: {
+              _id: {
+                $in: matchedReels?.map(
+                  (content) => new mongoose.Types.ObjectId(String(content.id))
+                ),
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: 'users',
+              let: {
+                userId: '$user',
+                viewerId: req.user?._id,
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$_id', '$$userId'] },
+                        {
+                          $cond: [
+                            { $eq: ['$settings.general.privacy.value', true] },
+                            {
+                              $cond: [
+                                {
+                                  $in: [
+                                    '$$viewerId',
+                                    '$settings.general.privacy.users',
+                                  ],
+                                },
+                                true,
+                                { $eq: ['$_id', '$$viewerId'] },
+                              ],
+                            },
+                            true,
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'owner',
+            },
+          },
+          {
+            $match: {
+              owner: { $ne: [] },
+            },
+          },
+          {
+            $lookup: {
+              from: 'friends',
+              let: {
+                userId: '$user',
+                viewerId: req.user?._id,
+                accessibility: '$settings.accessibility',
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $cond: [
+                        {
+                          $eq: [
+                            '$$accessibility',
+                            ContentAccessibility.FRIENDS,
+                          ],
+                        },
+                        {
+                          $or: [
+                            {
+                              $and: [
+                                { $eq: ['$requester', '$$userId'] },
+                                { $eq: ['$recipient', '$$viewerId'] },
+                              ],
+                            },
+                            {
+                              $and: [
+                                { $eq: ['$requester', '$$viewerId'] },
+                                { $eq: ['$recipient', '$$userId'] },
+                              ],
+                            },
+                          ],
+                        },
+                        false,
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'friend',
+            },
+          },
+          {
+            $match: {
+              $or: [
+                {
+                  $and: [
+                    { 'settings.accessibility': ContentAccessibility.YOU },
+                    { user: req.user?._id },
+                  ],
+                },
+                {
+                  $and: [
+                    { 'settings.accessibility': ContentAccessibility.FRIENDS },
+                    { friend: { $ne: [] } },
+                  ],
+                },
+                { 'settings.accessibility': ContentAccessibility.EVERYONE },
+              ],
+            },
+          },
+          {
+            $lookup: {
+              from: 'views',
+              localField: '_id',
+              foreignField: 'documentId',
+              as: 'views',
+            },
+          },
+          {
+            $addFields: {
+              owner: { $first: '$owner' },
+            },
+          },
+          {
+            $project: {
+              'owner._id': 1,
+              'owner.photo': 1,
+              'owner.username': 1,
+              media: 1,
+              description: 1,
+              createdAt: 1,
+              views: { $size: '$views' },
+              type: 'reel',
+            },
+          },
+        ]),
+      ]);
 
+      let users = results[0].map((user) => {
+        user.score = matchedUsers?.find(
+          (obj) => obj.id === String(user._id)
+        ).score;
         return user;
-      })!
-    );
+      });
+      users.sort((a, b) => {
+        if (a.score === b.score) {
+          if (a.followers === b.followers) {
+            return +new Date(b.createdAt) - +new Date(a.createdAt);
+          }
+          return b.followers - a.followers;
+        }
+        return b.score - a.score;
+      });
 
-    // Get contents
-    const matchedContents = await queryFromTypesense(
-      'contents',
-      {
-        q: query,
-        query_by: 'description',
-        filter_by:
-          Number(page) === 1
-            ? `user:!=${String(req.user?._id)}`
-            : `user:!=${String(req.user?._id)} && createdAt:>${Number(
-                firstContentCreatedAt
-              )} && createdAt:<${Number(lastContentCreatedAt)}`,
-        page: Number(page),
-        per_page: 30,
-        sort_by: 'createdAt:desc',
-      },
-      ['user', 'description', 'createdAt', 'media']
-    );
+      const posts = [...results[1], ...results[2]].map((post) => {
+        const arr = post.type === 'reel' ? matchedReels : matchedContents;
+        post.score = arr?.find((obj) => obj.id === String(post._id)).score;
+        return post;
+      });
+      posts.sort((a, b) => {
+        if (a.score === b.score) {
+          if (a.views === b.views) {
+            return +new Date(b.createdAt) - +new Date(a.createdAt);
+          }
+          return b.views - a.views;
+        }
+        return b.score - a.score;
+      });
 
-    // Get contents owners details
-    const contentsOwners = await User.find({
-      _id: { $in: matchedContents?.map(({ user }) => user) },
-    }).select('username photo');
+      if (Number(page) === 1) {
+        users = await Promise.all(
+          users.map(async (user, index) => {
+            if (index === 0 || index === 1 || index === 2) {
+              const contents = await Content.find({ user: user._id })
+                .sort({ createdAt: -1 })
+                .select('media createdAt')
+                .limit(2);
 
-    // Get contents views
-    const viewCounts = await View.aggregate([
-      {
-        $match: {
-          collectionName: 'content',
-          documentId: {
-            $in: matchedContents?.map((user) =>
-              mongoose.Types.ObjectId.createFromHexString(user.id)
-            ),
-          },
-        },
-      },
-      {
-        $group: {
-          _id: { documentId: '$documentId' },
-          views: { $sum: 1 },
-        },
-      },
-    ]);
+              const reels = await Reel.find({ user: user._id })
+                .sort({ createdAt: -1 })
+                .select('src createdAt')
+                .limit(2);
 
-    const contents = matchedContents?.map((content) => {
-      const user = contentsOwners.find(
-        (user) => String(user._id) === content.user
-      );
-      const views = viewCounts.find(
-        (data) => String(data._id.documentId) === content.id
-      ).views;
-      const media = JSON.parse(content.media)[0];
+              const posts = [...contents, ...reels];
+              posts
+                .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+                .splice(2);
 
-      return { ...content, user, media, views };
-    });
+              user.posts = posts;
+              return user;
+            }
+          })
+        );
+      }
+
+      return { users, posts };
+    };
 
     return res.status(200).json({
       status: 'success',
       data: {
-        result: {
-          users,
-          contents,
-        },
+        results: await results(),
         user: userData,
       },
     });

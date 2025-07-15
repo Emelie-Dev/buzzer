@@ -31,4 +31,17 @@ export default [
       { name: 'createdAt', type: 'int64' },
     ],
   },
+  {
+    name: 'reels',
+    fields: [
+      { name: 'id', type: 'string' },
+      { name: 'user', type: 'string' },
+      { name: 'description', type: 'string' },
+      {
+        name: 'src',
+        type: 'string',
+      },
+      { name: 'createdAt', type: 'int64' },
+    ],
+  },
 ];

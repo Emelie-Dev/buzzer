@@ -1,4 +1,5 @@
 import Content from '../models/contentModel.js';
+import Reel from '../models/reelModel.js';
 import Search from '../models/searchModel.js';
 import User from '../models/userModel.js';
 import typesense from './client.js';
@@ -14,6 +15,8 @@ export default () => {
         ? User
         : name === 'contents'
         ? Content
+        : name === 'reels'
+        ? Reel
         : null;
 
     const changeStream = model!.watch([], { fullDocument: 'updateLookup' });
