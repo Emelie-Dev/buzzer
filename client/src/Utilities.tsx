@@ -12,6 +12,16 @@ type FileData = {
   };
 };
 
+const serverUrl =
+  import.meta.env.MODE === 'production'
+    ? import.meta.env.VITE_BACKEND_URL
+    : import.meta.env.VITE_LOCAL_BACKEND_URL;
+
+export const apiClient = axios.create({
+  baseURL: serverUrl,
+  withCredentials: true,
+});
+
 // Helper: Convert base64 public key to Uint8Array
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -201,16 +211,33 @@ export const registerPush = async () => {
       applicationServerKey: urlBase64ToUint8Array(key),
     });
 
-    await axios.post(
-      'http://127.0.0.1:5000/api/v1/notifications/push/subscribe',
-      newSubscription,
-      {
-        withCredentials: true,
-      }
-    );
+    await apiClient.post('/api/v1/notifications/push/subscribe', {
+      subscription: newSubscription,
+    });
 
     console.log('New push subscription registered.');
   } else {
     console.log('Already subscribed to push.');
   }
 };
+
+export const debounce = <T extends (...args: unknown[]) => unknown>(
+  func: T,
+  delay: number
+) => {
+  let timeout: ReturnType<typeof setTimeout>;
+
+  return function async(...args: Parameters<T>) {
+    clearTimeout(timeout);
+
+    return new Promise((resolve) => {
+      timeout = setTimeout(async () => {
+        const result = await func(...args);
+
+        resolve(result);
+      }, delay);
+    });
+  };
+};
+
+export default debounce;

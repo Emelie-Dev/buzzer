@@ -184,7 +184,8 @@ class Email {
             .replace(
               '{{TEXT1}}',
               `<p>We noticed a new login to your account:<br /></p>
-    <pre>Device: ${data.device}
+    <pre>
+    Device: ${data.device}
     Location: ${data.location} 
     Time: ${data.time.toUTCString()}</pre>`
             )

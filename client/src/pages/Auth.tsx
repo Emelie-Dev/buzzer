@@ -5,6 +5,14 @@ import { FaFacebookSquare } from 'react-icons/fa';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
 import { useNavigate } from 'react-router-dom';
 import { GeneralContext } from '../Contexts';
+import debounce, { apiClient } from '../Utilities';
+import LoadingAnimation from '../components/LoadingAnimation';
+import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
+
+type AuthProps = {
+  leftStatus?: 'signin' | 'forgot' | 'reset';
+};
 
 type SignupType = {
   username: string;
@@ -18,17 +26,47 @@ type SigninType = {
 };
 
 type statusType = {
-  username: 'empty' | 'invalid' | 'loading' | 'exist' | 'valid';
-  email: 'empty' | 'invalid' | 'loading' | 'exist' | 'valid';
+  username: 'empty' | 'invalid' | 'loading' | 'exist' | 'valid' | 'error';
+  email: 'empty' | 'invalid' | 'loading' | 'exist' | 'valid' | 'error';
   password: 'empty' | 'valid' | 'invalid';
 };
 
 type AuthValidType = {
   signup: boolean;
   signin: boolean;
+  forgot?: boolean;
+  reset?: boolean;
 };
 
-const Auth = () => {
+const checkFieldAvailability = async (
+  ...data: unknown[]
+): Promise<statusType> => {
+  const [field, value, status, setter] = data;
+  const state = status as statusType;
+  const stateSetter = setter as React.Dispatch<
+    React.SetStateAction<statusType>
+  >;
+
+  stateSetter((prevValue) => ({
+    ...prevValue,
+    [field as string]: 'loading',
+  }));
+
+  try {
+    await apiClient(`api/v1/auth/check-data/${field}/${value}`);
+    return { ...state, [field as string]: 'valid' };
+  } catch (err: any) {
+    if (!err.response) {
+      return { ...state, [field as string]: 'error' };
+    } else {
+      return { ...state, [field as string]: 'exist' };
+    }
+  }
+};
+
+const fieldValidator = debounce(checkFieldAvailability, 300);
+
+const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [signupData, setSignupData] = useState<SignupType>({
     username: '',
@@ -52,8 +90,16 @@ const Auth = () => {
     signup: false,
     signin: false,
   });
+  const [loading, setLoading] = useState<AuthValidType>({
+    signup: false,
+    signin: false,
+    forgot: false,
+    reset: false,
+  });
+  const [resetData, setResetData] = useState<string>('');
 
   const { setShowSearchPage } = useContext(GeneralContext);
+  const [searchParams] = useSearchParams();
 
   const navigate = useNavigate();
 
@@ -63,33 +109,89 @@ const Auth = () => {
   useEffect(() => {
     document.title = 'Buzzer - Authentication';
 
+    const checkUserAuth = async () => {
+      try {
+        await apiClient('api/v1/auth/auth-check');
+        navigate('/home');
+        // eslint-disable-next-line no-empty
+      } catch {}
+    };
+
+    checkUserAuth();
+
     return () => {
       setShowSearchPage(false);
     };
   }, []);
 
   useEffect(() => {
-    const { username, email, password } = signupData;
+    const { email, password } = signinData;
 
     const validateData = () => {
-      let newData: statusType = { ...dataStatus };
+      if (email.trim().length >= 1 && password.length >= 1) {
+        setAuthValid({ ...authValid, signin: true });
+      } else {
+        setAuthValid({ ...authValid, signin: false });
+      }
+    };
 
+    validateData();
+  }, [signinData]);
+
+  useEffect(() => {
+    const validateData = () => {
+      if (resetData.trim().length >= 1) {
+        setAuthValid({ ...authValid, [leftStatus]: true });
+      } else {
+        setAuthValid({ ...authValid, [leftStatus]: false });
+      }
+    };
+
+    validateData();
+  }, [resetData]);
+
+  const addToRef =
+    (ref: React.MutableRefObject<HTMLInputElement[]>) =>
+    (el: HTMLInputElement) => {
+      if (el && !ref.current.includes(el)) {
+        ref.current.push(el);
+      }
+    };
+
+  const validateData = async (
+    type: 'username' | 'email' | 'password',
+    signupData: SignupType
+  ) => {
+    const { username, email, password } = signupData;
+    let newData: statusType = { ...dataStatus };
+
+    if (type === 'username') {
       if (username.length === 0) {
         newData = { ...newData, username: 'empty' };
       } else if (username.match(/\W/g)) {
         newData = { ...newData, username: 'invalid' };
       } else {
-        newData = { ...newData, username: 'valid' };
+        newData = (await fieldValidator(
+          'username',
+          signupData.username,
+          dataStatus,
+          setDataStatus
+        )) as statusType;
       }
-
+    } else if (type === 'email') {
       if (email.length === 0) {
         newData = { ...newData, email: 'empty' };
       } else if (!emailRef.current.validity.valid) {
         newData = { ...newData, email: 'invalid' };
       } else {
-        newData = { ...newData, email: 'valid' };
+        newData = (await fieldValidator(
+          'email',
+          signupData.email,
+          dataStatus,
+          setDataStatus
+        )) as statusType;
       }
-
+    } else {
       if (password.length === 0) {
         newData = { ...newData, password: 'empty' };
         checkBoxRef.current.forEach(
@@ -113,36 +215,100 @@ const Auth = () => {
         if (isValid) newData = { ...newData, password: 'valid' };
         else newData = { ...newData, password: 'invalid' };
       }
+    }
 
-      setDataStatus(newData);
-      setAuthValid({
-        ...authValid,
-        signup: Object.values(newData).every((field) => field === 'valid'),
-      });
-    };
+    setDataStatus(newData);
+    setAuthValid({
+      ...authValid,
+      signup: Object.values(newData).every((field) => field === 'valid'),
+    });
+  };
 
-    validateData();
-  }, [signupData]);
+  const handleAuth =
+    (type: 'signup' | 'signin') =>
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!authValid[type]) return;
 
-  useEffect(() => {
-    const { email, password } = signinData;
+      const { username, email, password } =
+        type === 'signup' ? signupData : (signinData as SignupType);
 
-    const validateData = () => {
-      if (email.trim().length >= 1 && password.length >= 1) {
-        setAuthValid({ ...authValid, signin: true });
-      } else {
-        setAuthValid({ ...authValid, signin: false });
+      setLoading((prevValue) => ({ ...prevValue, [type]: true }));
+
+      try {
+        const response = await apiClient.post(
+          `api/v1/auth/${type === 'signup' ? type : 'login'}`,
+          {
+            username,
+            email,
+            password,
+            name: '',
+            deviceId: localStorage.getItem('deviceId'),
+          }
+        );
+
+        if (type === 'signup') {
+          setSignupData({
+            username: '',
+            email: '',
+            password: '',
+          });
+        } else {
+          setSigninData({
+            email: '',
+            password: '',
+          });
+        }
+
+        if (type === 'signup') toast.success(response.data.message);
+        else navigate('/home');
+      } catch (err: any) {
+        if (!err.response) {
+          toast.error(
+            `Could not ${
+              type === 'signup' ? 'create account' : 'sign in'
+            }. Please Try again.`
+          );
+        } else {
+          toast.error(err.response.data.message);
+        }
+      } finally {
+        setLoading((prevValue) => ({ ...prevValue, [type]: false }));
       }
     };
 
-    validateData();
-  }, [signinData]);
+  const handlePassword =
+    (type: 'forgot' | 'reset') =>
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!authValid[type]) return;
 
-  const addToRef =
-    (ref: React.MutableRefObject<HTMLInputElement[]>) =>
-    (el: HTMLInputElement) => {
-      if (el && !ref.current.includes(el)) {
-        ref.current.push(el);
+      setLoading((prevValue) => ({ ...prevValue, [type]: true }));
+
+      const field = type === 'forgot' ? 'email' : 'password';
+      const url =
+        type === 'forgot'
+          ? 'forgot-password'
+          : `reset-password/${searchParams.get('token')}`;
+
+      try {
+        const response = await apiClient.post(`api/v1/auth/${url}`, {
+          [field]: resetData,
+        });
+
+        toast.success(response.data.message, {
+          duration: 3000,
+        });
+
+        if (type === 'reset') setTimeout(() => navigate('/auth'), 3000);
+      } catch (err: any) {
+        if (!err.response) {
+          toast.error('Could not complete request. Please Try again');
+        } else {
+          toast.error(err.response.data.message);
+        }
+      } finally {
+        setLoading((prevValue) => ({ ...prevValue, [type]: false }));
       }
     };
 
@@ -156,7 +322,7 @@ const Auth = () => {
         <div
           className={`${styles['form-container']} ${styles['sign-up-container']}`}
         >
-          <form className={styles.form} action="#">
+          <form className={styles.form} onSubmit={handleAuth('signup')}>
             <div className={styles['logo-head']}>
               <img
                 src="../../assets/logo.png"
@@ -186,15 +352,20 @@ const Auth = () => {
                   type="text"
                   placeholder="Username"
                   value={signupData.username}
-                  onChange={(e) =>
-                    setSignupData({ ...signupData, username: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setSignupData({ ...signupData, username: e.target.value });
+                    validateData('username', {
+                      ...signupData,
+                      username: e.target.value,
+                    });
+                  }}
                   maxLength={50}
                 />
                 <span
                   className={`${styles['input-text']}  ${
                     dataStatus.username === 'exist' ||
-                    dataStatus.username === 'invalid'
+                    dataStatus.username === 'invalid' ||
+                    dataStatus.username === 'error'
                       ? styles['invalid-text']
                       : dataStatus.username === 'loading'
                       ? styles['loading-text']
@@ -205,6 +376,8 @@ const Auth = () => {
                 >
                   {dataStatus.username === 'exist'
                     ? 'This username already exists.'
+                    : dataStatus.username === 'error'
+                    ? 'Could not verify username. Try again.'
                     : dataStatus.username === 'invalid'
                     ? 'This username is invalid.'
                     : dataStatus.username === 'loading'
@@ -221,16 +394,21 @@ const Auth = () => {
                   type="email"
                   placeholder="Email"
                   value={signupData.email}
-                  onChange={(e) =>
-                    setSignupData({ ...signupData, email: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setSignupData({ ...signupData, email: e.target.value });
+                    validateData('email', {
+                      ...signupData,
+                      email: e.target.value,
+                    });
+                  }}
                   ref={emailRef}
                 />
 
                 <span
                   className={`${styles['input-text']}  ${
                     dataStatus.email === 'exist' ||
-                    dataStatus.email === 'invalid'
+                    dataStatus.email === 'invalid' ||
+                    dataStatus.email === 'error'
                       ? styles['invalid-text']
                       : dataStatus.email === 'loading'
                       ? styles['loading-text']
@@ -241,6 +419,8 @@ const Auth = () => {
                 >
                   {dataStatus.email === 'exist'
                     ? 'This email already exists.'
+                    : dataStatus.email === 'error'
+                    ? 'Could not verify email. Try again.'
                     : dataStatus.email === 'invalid'
                     ? 'This email is invalid.'
                     : dataStatus.email === 'loading'
@@ -258,9 +438,16 @@ const Auth = () => {
                     type={showPassword.signup ? 'text' : 'password'}
                     placeholder="Password"
                     value={signupData.password}
-                    onChange={(e) =>
-                      setSignupData({ ...signupData, password: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setSignupData({
+                        ...signupData,
+                        password: e.target.value,
+                      });
+                      validateData('password', {
+                        ...signupData,
+                        password: e.target.value,
+                      });
+                    }}
                   />
 
                   {showPassword.signup ? (
@@ -333,130 +520,359 @@ const Auth = () => {
                 </span>
               </span>
 
-              <button
-                className={`${styles.button} ${styles['btn']} ${
-                  !authValid.signup ? styles['disable-btn'] : ''
-                }`}
-                onClick={() => navigate('/home')}
-              >
-                Sign Up
-              </button>
+              <span className={styles['loader-box']}>
+                <button
+                  className={`${styles.button} ${styles['btn']} ${
+                    !authValid.signup || loading.signup
+                      ? styles['disable-btn']
+                      : ''
+                  }`}
+                  type="submit"
+                >
+                  <span
+                    className={`${loading.signup ? styles['hide-text'] : ''}`}
+                  >
+                    Sign up
+                  </span>
+                </button>
+
+                {loading.signup ? (
+                  <LoadingAnimation
+                    style={{
+                      position: 'absolute',
+                      zIndex: 2,
+                      bottom: '2.1rem',
+                      width: 70,
+                      height: 70,
+                      opacity: 0.7,
+                    }}
+                  />
+                ) : (
+                  ''
+                )}
+              </span>
             </div>
           </form>
         </div>
-        <div
-          className={`${styles['form-container']} ${styles['sign-in-container']}`}
-        >
-          <form className={styles.form} action="#">
-            <div className={styles['logo-head']}>
-              <img
-                src="../../assets/logo.png"
-                alt="Buzzer Logo"
-                className={styles.logo}
-              />
-              <span className={styles['logo-text']}>Buzzer</span>
-            </div>
 
-            <div className={styles['form-div']}>
-              <h1 className={styles.head}>Sign in</h1>
-              <div className={styles['social-container']}>
-                <span className={`${styles['social']}`}>
-                  <FcGoogle className={styles.google} />
-                </span>
-                <span className={`${styles['social']}`}>
-                  <FaFacebookSquare className={styles.facebook} />
-                </span>
-              </div>
-              <span className={styles.span}>or use your account</span>
-              <span className={styles['input-box']}>
-                <input
-                  className={styles.input}
-                  type="email"
-                  placeholder="Email"
-                  value={signinData.email}
-                  onChange={(e) =>
-                    setSigninData({ ...signinData, email: e.target.value })
-                  }
+        {leftStatus === 'signin' ? (
+          <div
+            className={`${styles['form-container']} ${styles['sign-in-container']}`}
+          >
+            <form className={styles.form} onSubmit={handleAuth('signin')}>
+              <div className={styles['logo-head']}>
+                <img
+                  src="../../assets/logo.png"
+                  alt="Buzzer Logo"
+                  className={styles.logo}
                 />
-              </span>
-              <span className={styles['input-box']}>
-                <span className={styles['input-span']}>
+                <span className={styles['logo-text']}>Buzzer</span>
+              </div>
+
+              <div className={styles['form-div']}>
+                <h1 className={styles.head}>Sign in</h1>
+                <div className={styles['social-container']}>
+                  <span className={`${styles['social']}`}>
+                    <FcGoogle className={styles.google} />
+                  </span>
+                  <span className={`${styles['social']}`}>
+                    <FaFacebookSquare className={styles.facebook} />
+                  </span>
+                </div>
+                <span className={styles.span}>or use your account</span>
+                <span className={styles['input-box']}>
                   <input
-                    className={styles.input2}
-                    type={showPassword.signin ? 'text' : 'password'}
-                    placeholder="Password"
-                    value={signinData.password}
+                    className={styles.input}
+                    type="email"
+                    placeholder="Email"
+                    value={signinData.email}
                     onChange={(e) =>
-                      setSigninData({ ...signinData, password: e.target.value })
+                      setSigninData({ ...signinData, email: e.target.value })
                     }
                   />
-
-                  {showPassword.signin ? (
-                    <IoMdEye
-                      className={styles['eye-icon']}
-                      onClick={() =>
-                        setShowPassword({
-                          ...showPassword,
-                          signin: !showPassword.signin,
+                </span>
+                <span className={styles['input-box']}>
+                  <span className={styles['input-span']}>
+                    <input
+                      className={styles.input2}
+                      type={showPassword.signin ? 'text' : 'password'}
+                      placeholder="Password"
+                      value={signinData.password}
+                      onChange={(e) =>
+                        setSigninData({
+                          ...signinData,
+                          password: e.target.value,
                         })
                       }
+                    />
+
+                    {showPassword.signin ? (
+                      <IoMdEye
+                        className={styles['eye-icon']}
+                        onClick={() =>
+                          setShowPassword({
+                            ...showPassword,
+                            signin: !showPassword.signin,
+                          })
+                        }
+                      />
+                    ) : (
+                      <IoMdEyeOff
+                        className={styles['eye-icon']}
+                        onClick={() =>
+                          setShowPassword({
+                            ...showPassword,
+                            signin: !showPassword.signin,
+                          })
+                        }
+                      />
+                    )}
+                  </span>
+                </span>
+
+                <a className={styles.link} href="/forgot-password">
+                  Forgot your password?
+                </a>
+                <span className={styles['alt-auth']}>
+                  Don't have an account?{' '}
+                  <span
+                    className={styles['alt-link']}
+                    onClick={() => setAuthMode('signup')}
+                  >
+                    Sign up
+                  </span>
+                </span>
+
+                <span className={styles['loader-box']}>
+                  <button
+                    className={`${styles.button} ${styles['btn']} ${
+                      styles['btn2']
+                    }  ${
+                      !authValid.signin || loading.signin
+                        ? styles['disable-btn']
+                        : ''
+                    }`}
+                    type="submit"
+                  >
+                    <span
+                      className={`${loading.signin ? styles['hide-text'] : ''}`}
+                    >
+                      Sign In
+                    </span>
+                  </button>
+
+                  {loading.signin ? (
+                    <LoadingAnimation
+                      style={{
+                        position: 'absolute',
+                        zIndex: 2,
+                        bottom: '2.1rem',
+                        width: 70,
+                        height: 70,
+                        opacity: 0.7,
+                      }}
                     />
                   ) : (
-                    <IoMdEyeOff
-                      className={styles['eye-icon']}
-                      onClick={() =>
-                        setShowPassword({
-                          ...showPassword,
-                          signin: !showPassword.signin,
-                        })
-                      }
-                    />
+                    ''
                   )}
                 </span>
-              </span>
+              </div>
+            </form>
+          </div>
+        ) : leftStatus === 'forgot' ? (
+          <div
+            className={`${styles['form-container']} ${styles['sign-in-container']}`}
+          >
+            <form className={styles.form} onSubmit={handlePassword('forgot')}>
+              <div className={styles['logo-head']}>
+                <img
+                  src="../../assets/logo.png"
+                  alt="Buzzer Logo"
+                  className={styles.logo}
+                />
+                <span className={styles['logo-text']}>Buzzer</span>
+              </div>
 
-              <a href="#" className={styles.link}>
-                Forgot your password?
-              </a>
-              <span className={styles['alt-auth']}>
-                Don't have an account?{' '}
-                <span
-                  className={styles['alt-link']}
-                  onClick={() => setAuthMode('signup')}
-                >
-                  Sign up
+              <div className={styles['form-div']}>
+                <h1 className={styles.head2}>Forgot password</h1>
+
+                <span className={styles['password-text']}>
+                  Enter your email address:
                 </span>
-              </span>
 
-              <button
-                className={`${styles.button} ${styles['btn']} ${
-                  styles['btn2']
-                }  ${!authValid.signin ? styles['disable-btn'] : ''}`}
-                onClick={() => navigate('/home')}
-              >
-                Sign In
-              </button>
-            </div>
-          </form>
-        </div>
+                <span
+                  className={`${styles['input-box']} ${styles['input-box2']}`}
+                >
+                  <input
+                    className={styles.input}
+                    type="email"
+                    placeholder="Email"
+                    value={resetData}
+                    onChange={(e) => setResetData(e.target.value)}
+                  />
+                </span>
+
+                <span className={styles['loader-box']}>
+                  <button
+                    className={`${styles.button} ${styles['btn']} ${
+                      styles['btn2']
+                    }  ${
+                      !authValid.forgot || loading.forgot
+                        ? styles['disable-btn']
+                        : ''
+                    }`}
+                    type="submit"
+                  >
+                    <span
+                      className={`${loading.forgot ? styles['hide-text'] : ''}`}
+                    >
+                      Next
+                    </span>
+                  </button>
+
+                  {loading.forgot ? (
+                    <LoadingAnimation
+                      style={{
+                        position: 'absolute',
+                        zIndex: 2,
+                        bottom: '2.1rem',
+                        width: 70,
+                        height: 70,
+                        opacity: 0.7,
+                      }}
+                    />
+                  ) : (
+                    ''
+                  )}
+                </span>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div
+            className={`${styles['form-container']} ${styles['sign-in-container']}`}
+          >
+            <form className={styles.form} onSubmit={handlePassword('reset')}>
+              <div className={styles['logo-head']}>
+                <img
+                  src="../../assets/logo.png"
+                  alt="Buzzer Logo"
+                  className={styles.logo}
+                />
+                <span className={styles['logo-text']}>Buzzer</span>
+              </div>
+
+              <div className={styles['form-div']}>
+                <h1 className={styles.head2}>Reset password</h1>
+
+                <span className={styles['password-text']}>
+                  Enter your new password:
+                </span>
+
+                <span className={styles['input-box']}>
+                  <span className={styles['input-span']}>
+                    <input
+                      className={styles.input2}
+                      type={showPassword.reset ? 'text' : 'password'}
+                      placeholder="Password"
+                      value={resetData}
+                      onChange={(e) => setResetData(e.target.value)}
+                    />
+
+                    {showPassword.reset ? (
+                      <IoMdEye
+                        className={styles['eye-icon']}
+                        onClick={() =>
+                          setShowPassword({
+                            ...showPassword,
+                            reset: !showPassword.reset,
+                          })
+                        }
+                      />
+                    ) : (
+                      <IoMdEyeOff
+                        className={styles['eye-icon']}
+                        onClick={() =>
+                          setShowPassword({
+                            ...showPassword,
+                            reset: !showPassword.reset,
+                          })
+                        }
+                      />
+                    )}
+                  </span>
+                </span>
+
+                <span className={styles['loader-box']}>
+                  <button
+                    className={`${styles.button} ${styles['btn']} ${
+                      styles['btn2']
+                    }  ${
+                      !authValid.reset || loading.reset
+                        ? styles['disable-btn']
+                        : ''
+                    }`}
+                    type="submit"
+                  >
+                    <span
+                      className={`${loading.reset ? styles['hide-text'] : ''}`}
+                    >
+                      Done
+                    </span>
+                  </button>
+
+                  {loading.reset ? (
+                    <LoadingAnimation
+                      style={{
+                        position: 'absolute',
+                        zIndex: 2,
+                        bottom: '2.1rem',
+                        width: 70,
+                        height: 70,
+                        opacity: 0.7,
+                      }}
+                    />
+                  ) : (
+                    ''
+                  )}
+                </span>
+              </div>
+            </form>
+          </div>
+        )}
 
         <div className={styles['overlay-container']}>
           <div className={styles['overlay']}>
             <div
               className={`${styles['overlay-panel']} ${styles['overlay-left']}`}
             >
-              <h1 className={styles.head}>Welcome Back!</h1>
+              <h1 className={styles.head}>
+                {leftStatus === 'forgot'
+                  ? 'Need a New Password?'
+                  : leftStatus === 'reset'
+                  ? 'Pick a New Password'
+                  : 'Welcome Back!'}
+              </h1>
               <p className={styles.paragraph}>
-                Sign in to reconnect and catch up on all the latest buzz with
-                friends and community.
+                {leftStatus === 'forgot'
+                  ? `No worries — just enter your email and we’ll send you a link to reset your password and get you back in.`
+                  : leftStatus === 'reset'
+                  ? `Set a new password and jump right back into the buzz with your friends.`
+                  : `Sign in to reconnect and catch up on all the latest buzz with
+                friends and community.`}
               </p>
               <button
                 className={`${styles['ghost']} ${styles.button}`}
                 onClick={() => setAuthMode('signin')}
               >
-                Sign In
+                {leftStatus === 'forgot'
+                  ? 'Forgot Password'
+                  : leftStatus === 'reset'
+                  ? 'Reset Password'
+                  : 'Sign In'}
               </button>
             </div>
+
             <div
               className={`${styles['overlay-panel']} ${styles['overlay-right']}`}
             >

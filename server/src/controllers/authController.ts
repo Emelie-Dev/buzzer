@@ -47,7 +47,7 @@ const sendEmail = async (
     return res.status(200).json({
       status: 'success',
       message:
-        'A verification email has been sent to you. Click the link in the email to complete your signup process.',
+        'A verification email has been sent. Please click the link to complete your signup.',
     });
   } catch {
     // Removes verification token from user data
@@ -260,6 +260,8 @@ export const verifyEmail = asyncErrorHandler(
       res.cookie('jwt', signToken(user._id, jwi), {
         maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
         httpOnly: true,
+        secure: true,
+        sameSite: 'none',
       });
 
       const resultPage = verifyResult
@@ -547,13 +549,7 @@ export const forgotPassword = asyncErrorHandler(
     // Get user from email
     const user = await User.findOne({ email: req.body.email });
 
-    if (!user)
-      return next(
-        new CustomError(
-          `We couldn't find a user associated with the email you provided. Please check and try again.`,
-          404
-        )
-      );
+    if (!user) return next(new CustomError(`This user does not exist!`, 404));
 
     // Generate reset token
     const passwordResetToken = user.generateToken('password');
@@ -565,7 +561,7 @@ export const forgotPassword = asyncErrorHandler(
         process.env.NODE_ENV === 'production'
           ? 'https://buzzer-0z8q.onrender.com'
           : 'http://localhost:5173'
-      }/reset-password/${passwordResetToken}`;
+      }/reset-password?token=${passwordResetToken}`;
 
       // Sends email to user with token
       await new Email(user, resetUrl).sendPasswordReset();
@@ -621,6 +617,7 @@ export const resetPassword = asyncErrorHandler(
     user.passwordResetToken = undefined;
     user.passwordResetTokenExpires = undefined;
     user.passwordChangedAt = new Date();
+    user.settings.security.sessions = [];
 
     await user.save({ validateBeforeSave: false });
 

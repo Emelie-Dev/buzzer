@@ -44,3 +44,11 @@ body {
   font-family: appFontMedium;
   font-size: 0.95rem;
 }
+
+/* This class is applied to each toast */
+
+div[data-icon],
+div[data-title] {
+  color: var(--app-theme-color) !important;
+  font-size: 0.95rem;
+}

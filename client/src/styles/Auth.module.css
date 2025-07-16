@@ -14,6 +14,12 @@
   margin: 0;
 }
 
+.head2 {
+  font-weight: bold;
+  margin: 0;
+  margin-bottom: 5rem;
+}
+
 .paragraph {
   font-size: 1rem;
   font-weight: 100;
@@ -34,10 +40,19 @@
   text-decoration: none;
   margin: 1.1rem 0;
   margin-bottom: 0;
+  cursor: pointer;
 }
 
 .link:hover {
   font-weight: 600;
+}
+
+.loader-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .button {
@@ -91,12 +106,22 @@
   padding: 0 3.125rem;
 }
 
+.password-text {
+  margin-right: auto;
+  margin-left: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
 .input-box {
   width: 100%;
   display: flex;
   margin: 0.7rem 0 0.3rem;
   flex-direction: column;
   align-items: flex-start;
+}
+
+.input-box2 {
+  margin-bottom: 1rem;
 }
 
 .input-span {
@@ -371,6 +396,10 @@
 .disable-btn {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.hide-text {
+  visibility: hidden;
 }
 
 .alt-auth {

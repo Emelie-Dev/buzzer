@@ -69,3 +69,8 @@ export const GeneralContext = createContext<{
 export const SettingsContext = createContext<{
   setMainCategory: React.Dispatch<React.SetStateAction<string>>;
 }>(null!);
+
+export const AuthContext = createContext<{
+  user: object;
+  setUser: React.Dispatch<React.SetStateAction<object>>;
+}>(null!);

@@ -13,10 +13,10 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
 import History from './pages/History';
-import { GeneralContext } from './Contexts';
-import { useState, useEffect } from 'react';
-import { registerPush } from './Utilities';
-import axios from 'axios';
+import { AuthContext, GeneralContext } from './Contexts';
+import { useEffect, useState } from 'react';
+import ProtectedRoute from './components/ProtectedRoute';
+import { Toaster } from 'sonner';
 
 const App = () => {
   const [settingsCategory, setSettingsCategory] = useState('');
@@ -25,58 +25,89 @@ const App = () => {
   >('content');
   const [scrollingUp, setScrollingUp] = useState<boolean | null>(null);
   const [showSearchPage, setShowSearchPage] = useState<boolean>(false);
+  const [user, setUser] = useState<object>(null!);
 
   useEffect(() => {
-    const a = async () => {
-      await axios.post(
-        'http://127.0.0.1:5000/api/v1/auth/login',
-        {
-          email: 'abc@gmail.com',
-          password: 'test@12345',
-          deviceId: '000000',
-        },
-        {
-          withCredentials: true,
-        }
-      );
-    };
-
-    a();
-
-    registerPush();
+    const deviceId = crypto.randomUUID();
+    const id = localStorage.getItem('deviceId');
+    if (!id) localStorage.setItem('deviceId', deviceId);
   }, []);
 
   return (
     <>
-      <GeneralContext.Provider
-        value={{
-          settingsCategory,
-          setSettingsCategory,
-          createCategory,
-          setCreateCategory,
-          scrollingUp,
-          setScrollingUp,
-          showSearchPage,
-          setShowSearchPage,
-        }}
-      >
-        <Routes>
-          <Route path="/" element={<Auth />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/following" element={<Following />} />
-          <Route path="/friends" element={<Friends />} />
-          <Route path="/reels" element={<Reels />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/inbox" element={<Inbox />} />
-          <Route path="/create" element={<Create />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/history" element={<History />} />
-        </Routes>
-      </GeneralContext.Provider>
+      <Toaster
+        expand
+        visibleToasts={1}
+        position="top-right"
+        toastOptions={{}}
+      />
+
+      <AuthContext.Provider value={{ user, setUser }}>
+        <GeneralContext.Provider
+          value={{
+            settingsCategory,
+            setSettingsCategory,
+            createCategory,
+            setCreateCategory,
+            scrollingUp,
+            setScrollingUp,
+            showSearchPage,
+            setShowSearchPage,
+          }}
+        >
+          <Routes>
+            <Route path="/" element={<Auth />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/forgot-password"
+              element={<Auth leftStatus="forgot" />}
+            />
+            <Route
+              path="/reset-password"
+              element={<Auth leftStatus="reset" />}
+            />
+            <Route path="/home" element={<ProtectedRoute element={Home} />} />
+            <Route
+              path="/search"
+              element={<ProtectedRoute element={Search} />}
+            />
+            <Route
+              path="/following"
+              element={<ProtectedRoute element={Following} />}
+            />
+            <Route
+              path="/friends"
+              element={<ProtectedRoute element={Friends} />}
+            />
+            <Route path="/reels" element={<ProtectedRoute element={Reels} />} />
+            <Route
+              path="/notifications"
+              element={<ProtectedRoute element={Notifications} />}
+            />
+            <Route path="/inbox" element={<ProtectedRoute element={Inbox} />} />
+            <Route
+              path="/create"
+              element={<ProtectedRoute element={Create} />}
+            />
+            <Route
+              path="/profile"
+              element={<ProtectedRoute element={Profile} />}
+            />
+            <Route
+              path="/settings"
+              element={<ProtectedRoute element={Settings} />}
+            />
+            <Route
+              path="/analytics"
+              element={<ProtectedRoute element={Analytics} />}
+            />
+            <Route
+              path="/history"
+              element={<ProtectedRoute element={History} />}
+            />
+          </Routes>
+        </GeneralContext.Provider>
+      </AuthContext.Provider>
     </>
   );
 };
