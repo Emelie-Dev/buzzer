@@ -2,7 +2,6 @@ import mongoose, { Schema, Document, Query, Types } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { StoryFeedItem, StorySchema } from './storyModel.js';
 import locationSubschema, {
   ILocation,
 } from './subschemas/locationSubschema.js';
