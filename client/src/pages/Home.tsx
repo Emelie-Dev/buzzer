@@ -4,7 +4,7 @@ import styles from '../styles/Home.module.css';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
-import { ContentContext, GeneralContext } from '../Contexts';
+import { ContentContext, GeneralContext, AuthContext } from '../Contexts';
 import StoryModal from '../components/StoryModal';
 import { DataItem } from './Following';
 import useScrollHandler from '../hooks/useScrollHandler';
@@ -14,6 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
+import { apiClient } from '../Utilities';
+import Skeleton from 'react-loading-skeleton';
 
 export interface User {
   name: string;
@@ -24,28 +26,28 @@ export interface Arrow {
   right: boolean;
 }
 
-const users: User[] = [
-  { name: 'userOne' },
-  { name: 'coolGuy' },
-  { name: 'happy123' },
-  { name: 'sunshineGirl' },
-  { name: 'codeMaster' },
-  { name: 'skyWalker' },
-  { name: 'theArtist' },
-  { name: 'jungleKing' },
-  { name: 'dreamer_98' },
-  { name: 'techieDude' },
-  { name: 'cityExplorer' },
-  { name: 'natureLover' },
-  { name: 'mountainView' },
-  { name: 'coffeeAddict' },
-  { name: 'chefTom' },
-  { name: 'oceanWave' },
-  { name: 'bookworm101' },
-  { name: 'fastRunner' },
-  { name: 'digitalNomad' },
-  { name: 'starGazer' },
-];
+// const users: User[] = [
+//   { name: 'userOne' },
+//   { name: 'coolGuy' },
+//   { name: 'happy123' },
+//   { name: 'sunshineGirl' },
+//   { name: 'codeMaster' },
+//   { name: 'skyWalker' },
+//   { name: 'theArtist' },
+//   { name: 'jungleKing' },
+//   { name: 'dreamer_98' },
+//   { name: 'techieDude' },
+//   { name: 'cityExplorer' },
+//   { name: 'natureLover' },
+//   { name: 'mountainView' },
+//   { name: 'coffeeAddict' },
+//   { name: 'chefTom' },
+//   { name: 'oceanWave' },
+//   { name: 'bookworm101' },
+//   { name: 'fastRunner' },
+//   { name: 'digitalNomad' },
+//   { name: 'starGazer' },
+// ];
 
 const data: Content[] = [
   {
@@ -210,10 +212,15 @@ const Home = () => {
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [storyIndex, setStoryIndex] = useState<number>(0);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
+  const [stories, setStories] = useState<any[]>(null!);
+  const [userStory, setUserStory] = useState<any[]>(null!);
+  const [storyItems, setStoryItems] = useState<any[]>(null!);
 
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
-  const { setCreateCategory, setShowSearchPage } = useContext(GeneralContext);
+  const { setCreateCategory, setShowSearchPage, serverUrl } =
+    useContext(GeneralContext);
+  const { setUser, user } = useContext(AuthContext);
 
   const storyRef = useRef<HTMLDivElement>(null!);
 
@@ -224,10 +231,36 @@ const Home = () => {
 
     scrollHandler();
 
+    const getStories = async () => {
+      try {
+        const { data } = await apiClient('api/v1/stories');
+        setUser(data.data.user);
+        setStories([...data.data.users]);
+        setUserStory(data.data.userStories);
+      } catch {
+        setStories([]);
+        setUserStory([]);
+      }
+    };
+
+    getStories();
+
     return () => {
       setShowSearchPage(false);
     };
   }, []);
+
+  useEffect(() => {
+    const target = storyRef.current;
+
+    setShowArrow({
+      left: target.scrollLeft > 30,
+      right: !(
+        target.scrollLeft + target.clientWidth >=
+        target.scrollWidth - 5
+      ),
+    });
+  }, [stories]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
@@ -241,12 +274,32 @@ const Home = () => {
     });
   };
 
+  const handleStoryItems = (itemIndex: number) => {
+    let start;
+    const end = itemIndex + 2;
+
+    if (itemIndex == 0) start = 0;
+    else start = itemIndex - 1;
+
+    setStoryItems(
+      stories.map((item, index) => {
+        if (index >= start && index < end) return item;
+        else return null;
+      })
+    );
+  };
+
   return (
     <>
       <NavBar page="home" />
 
       {viewStory && (
-        <StoryModal setViewStory={setViewStory} itemIndex={storyIndex} />
+        <StoryModal
+          setViewStory={setViewStory}
+          itemIndex={storyIndex}
+          stories={stories}
+          storiesSet={storyItems}
+        />
       )}
 
       <section className={styles.main}>
@@ -268,51 +321,144 @@ const Home = () => {
               ref={storyRef}
               onScroll={handleScroll}
             >
-              <article
-                className={`${styles.user}`}
-                onClick={() => {
-                  setCreateCategory('story');
-                  navigate('/create');
-                }}
-              >
-                <span className={styles['add-story']}>
-                  <span className={styles['add-story-box']}>
-                    <GoPlus className={styles['add-story-icon']} />
-                  </span>
-                </span>
+              {stories === null ? (
+                <div className={styles['story-skeleton-container']}>
+                  <Skeleton
+                    count={7}
+                    height={66}
+                    width={66}
+                    circle
+                    inline
+                    className={styles['story-skeleton']}
+                  />
+                  <Skeleton
+                    count={7}
+                    height={15}
+                    width={66}
+                    inline
+                    className={styles['story-skeleton']}
+                  />
+                </div>
+              ) : stories.length === 0 ? (
+                userStory.length > 0 ? (
+                  <article
+                    className={styles.user}
+                    onClick={() => {
+                      setStoryIndex(-1);
+                      setViewStory(true);
+                    }}
+                  >
+                    <span className={styles['user-pics-box']}>
+                      <img
+                        src={`${serverUrl}users/${user.photo}`}
+                        alt={user.username}
+                        className={styles['user-pics']}
+                      />
+                    </span>
 
-                <span
-                  className={`${styles['user-name']} ${styles['owner-name']}`}
-                >
-                  Your Story
-                </span>
-              </article>
+                    <span
+                      className={`${styles['user-name']} ${styles['owner-name']}`}
+                    >
+                      Your Story
+                    </span>
+                  </article>
+                ) : (
+                  <article
+                    className={`${styles.user}`}
+                    onClick={() => {
+                      setCreateCategory('story');
+                      navigate('/create');
+                    }}
+                  >
+                    <span className={styles['add-story']}>
+                      <span className={styles['add-story-box']}>
+                        <GoPlus className={styles['add-story-icon']} />
+                      </span>
+                    </span>
 
-              {users.map(({ name }, index) => (
-                <article
-                  key={index}
-                  className={styles.user}
-                  onClick={() => {
-                    setStoryIndex(index);
-                    setViewStory(true);
-                  }}
-                >
-                  <span className={styles['user-pics-box']}>
-                    <img
-                      src={`../../assets/images/users/user${index + 1}.jpeg`}
-                      alt={name}
-                      className={styles['user-pics']}
-                    />
-                  </span>
+                    <span
+                      className={`${styles['user-name']} ${styles['owner-name']}`}
+                    >
+                      Your Story
+                    </span>
+                  </article>
+                )
+              ) : (
+                <>
+                  {userStory.length > 0 ? (
+                    <article
+                      className={styles.user}
+                      onClick={() => {
+                        setStoryIndex(-1);
+                        setViewStory(true);
+                      }}
+                    >
+                      <span className={styles['user-pics-box']}>
+                        <img
+                          src={`${serverUrl}users/${user.photo}`}
+                          alt={user.username}
+                          className={styles['user-pics']}
+                        />
+                      </span>
 
-                  <span className={styles['user-name']}>{name}</span>
-                </article>
-              ))}
+                      <span
+                        className={`${styles['user-name']} ${styles['owner-name']}`}
+                      >
+                        Your Story
+                      </span>
+                    </article>
+                  ) : (
+                    <article
+                      className={`${styles.user}`}
+                      onClick={() => {
+                        setCreateCategory('story');
+                        navigate('/create');
+                      }}
+                    >
+                      <span className={styles['add-story']}>
+                        <span className={styles['add-story-box']}>
+                          <GoPlus className={styles['add-story-icon']} />
+                        </span>
+                      </span>
+
+                      <span
+                        className={`${styles['user-name']} ${styles['owner-name']}`}
+                      >
+                        Your Story
+                      </span>
+                    </article>
+                  )}
+
+                  {stories.map(({ user }, index) => (
+                    <article
+                      key={index}
+                      className={styles.user}
+                      onClick={() => {
+                        handleStoryItems(index);
+                        setStoryIndex(index);
+                        setViewStory(true);
+                      }}
+                    >
+                      <span className={styles['user-pics-box']}>
+                        <img
+                          src={`${serverUrl}users/${user.photo}`}
+                          alt={user.username}
+                          className={styles['user-pics']}
+                        />
+                      </span>
+
+                      <span className={styles['user-name']}>
+                        {user.username}
+                      </span>
+                    </article>
+                  ))}
+                </>
+              )}
             </div>
 
             <span
               className={`${styles['right-arrow-box']}  ${
-                !showArrow.right ? styles['hide-icon'] : ''
+                !showArrow.right || stories === null ? styles['hide-icon'] : ''
               }`}
               onClick={() => (storyRef.current.scrollLeft += 300)}
             >

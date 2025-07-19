@@ -64,6 +64,7 @@ export const GeneralContext = createContext<{
   setScrollingUp: React.Dispatch<React.SetStateAction<boolean | null>>;
   showSearchPage: boolean;
   setShowSearchPage: React.Dispatch<React.SetStateAction<boolean>>;
+  serverUrl: string;
 }>(null!);
 
 export const SettingsContext = createContext<{
@@ -71,6 +72,6 @@ export const SettingsContext = createContext<{
 }>(null!);
 
 export const AuthContext = createContext<{
-  user: object;
-  setUser: React.Dispatch<React.SetStateAction<object>>;
+  user: any;
+  setUser: React.Dispatch<React.SetStateAction<any>>;
 }>(null!);

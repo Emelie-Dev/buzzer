@@ -22,7 +22,7 @@ import { randomUUID } from 'crypto';
 import { manageUserDevices, signToken } from './authController.js';
 import View from '../models/viewModel.js';
 
-const upload = multerConfig('contents');
+const upload = multerConfig('users');
 
 const updateProfileDetails = async (
   req: AuthRequest,

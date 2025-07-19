@@ -64,6 +64,10 @@
   animation: lineWidth 10s linear 0s 1 normal both;
 }
 
+.pause-animation {
+  animation-play-state: paused !important;
+}
+
 .details-box {
   position: absolute;
   display: flex;

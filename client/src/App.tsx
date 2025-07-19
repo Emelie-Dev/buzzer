@@ -1,4 +1,4 @@
-import 'react-toastify/dist/ReactToastify.css';
+import 'react-loading-skeleton/dist/skeleton.css';
 import { Routes, Route } from 'react-router-dom';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
@@ -17,6 +17,7 @@ import { AuthContext, GeneralContext } from './Contexts';
 import { useEffect, useState } from 'react';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from 'sonner';
+import { serverUrl } from './Utilities';
 
 const App = () => {
   const [settingsCategory, setSettingsCategory] = useState('');
@@ -25,7 +26,7 @@ const App = () => {
   >('content');
   const [scrollingUp, setScrollingUp] = useState<boolean | null>(null);
   const [showSearchPage, setShowSearchPage] = useState<boolean>(false);
-  const [user, setUser] = useState<object>(null!);
+  const [user, setUser] = useState<any>(null!);
 
   useEffect(() => {
     const deviceId = crypto.randomUUID();
@@ -53,6 +54,7 @@ const App = () => {
             setScrollingUp,
             showSearchPage,
             setShowSearchPage,
+            serverUrl,
           }}
         >
           <Routes>

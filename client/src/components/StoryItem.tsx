@@ -11,9 +11,10 @@ import { FaRegHeart } from 'react-icons/fa';
 import { AiOutlineSend } from 'react-icons/ai';
 import { useEffect, useRef, useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
-import { Story } from './StoryModal';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
+import { serverUrl } from '../Utilities';
+import { useNavigate } from 'react-router-dom';
 
 export interface StoryContent {
   type: 'image' | 'video';
@@ -21,8 +22,7 @@ export interface StoryContent {
 }
 
 type StoryItemProps = {
-  active: boolean;
-  data: Story;
+  data: any;
   itemIndex: number;
   isOperative: boolean;
   totalLength: number;
@@ -38,7 +38,6 @@ type StoryItemProps = {
 };
 
 const StoryItem = ({
-  active,
   data,
   itemIndex,
   storyIndex,
@@ -47,7 +46,7 @@ const StoryItem = ({
   moveToStory,
   setViewStory,
 }: StoryItemProps) => {
-  const { name, time, content } = data;
+  const { user, stories } = data || {};
 
   const [like, setLike] = useState<boolean>(false);
   const [showMenu, setShowMenu] = useState<boolean>(false);
@@ -57,8 +56,10 @@ const StoryItem = ({
   const [contentIndex, setContentIndex] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [loading, setLoading] = useState<
-    boolean | 'error' | 'empty' | 'notfound'
+    boolean | 'error' | 'empty' | 'waiting'
   >(true);
+
+  const navigate = useNavigate();
 
   const itemRef = useRef<HTMLDivElement>(null!);
   const menuRef = useRef<HTMLDivElement>(null!);
@@ -122,17 +123,19 @@ const StoryItem = ({
 
   useEffect(() => {
     setLoading(true);
-    if (content[contentIndex].type === 'video') {
-      if (videoRef.current)
-        videoRef.current.src = `../../assets/images/content/${content[contentIndex].src}.mp4`;
-    }
+    if (stories) {
+      if (stories[contentIndex].media.mediaType === 'video') {
+        if (videoRef.current)
+          videoRef.current.src = `${serverUrl}stories/${stories[contentIndex].media.src}`;
+      }
 
-    setPause(false);
-    setDuration(() => {
-      if (content[contentIndex].type === 'image') return 7;
-      else return 0;
-    });
-  }, [contentIndex, storyIndex, content]);
+      setPause(false);
+      setDuration(() => {
+        if (stories[contentIndex].media.mediaType === 'image') return 7;
+        else return 0;
+      });
+    }
+  }, [contentIndex, storyIndex, stories]);
 
   useEffect(() => {
     if (progressRef.current) {
@@ -153,10 +156,43 @@ const StoryItem = ({
     }
   }, [pause]);
 
-  const getTime = () => {
-    const arr = time.split(' ');
+  const getTime = (date: string, full: boolean = false) => {
+    const diff = Date.now() - Date.parse(date);
+    let value, type;
 
-    return `${arr[0]}${arr[1][0]}`;
+    if (diff > 86_400_000) {
+      value = Math.floor(diff / 86_400_000);
+      type = 'd';
+    } else if (diff > 3_600_000) {
+      value = Math.floor(diff / 3_600_000);
+      type = 'h';
+    } else if (diff > 60_000) {
+      value = Math.floor(diff / 60_000);
+      type = 'm';
+    } else if (diff > 1000) {
+      value = Math.floor(diff / 1000);
+      type = 's';
+    } else {
+      value = 1;
+      type = 's';
+    }
+
+    const fullForm =
+      type === 's'
+        ? 'second'
+        : type === 'h'
+        ? 'hour'
+        : type === 'm'
+        ? 'minute'
+        : 'day';
+
+    const result = full
+      ? `${
+          value === 1 ? `${value} ${fullForm} ago` : `${value} ${fullForm}s ago`
+        }`
+      : `${value}${type}`;
+
+    return result;
   };
 
   const handleVideoDuration = () => {
@@ -171,7 +207,7 @@ const StoryItem = ({
       const isMobileDevice2 = window.matchMedia('(max-width: 800px)').matches;
 
       if (isMobileDevice) {
-        if (content[contentIndex].type === 'video') {
+        if (stories[contentIndex].media.mediaType === 'video') {
           if (type === 'start') setPause(true);
           else setPause(false);
         }
@@ -209,7 +245,7 @@ const StoryItem = ({
         moveToStory(
           itemIndex + 1,
           contentIndex,
-          content.length - 1,
+          stories.length - 1,
           setContentIndex,
           'next'
         )();
@@ -217,7 +253,7 @@ const StoryItem = ({
         moveToStory(
           itemIndex - 1,
           contentIndex,
-          content.length - 1,
+          stories.length - 1,
           setContentIndex,
           'prev'
         )();
@@ -225,7 +261,27 @@ const StoryItem = ({
     }
   };
 
-  return active ? (
+  const showLoader = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    // Check if we're really out of buffer
+
+    const target = e.target as HTMLVideoElement;
+    const buffered = target.buffered;
+    const currentTime = target.currentTime;
+    let isBuffered = false;
+
+    for (let i = 0; i < buffered.length; i++) {
+      if (currentTime >= buffered.start(i) && currentTime <= buffered.end(i)) {
+        isBuffered = true;
+        break;
+      }
+    }
+
+    if (!isBuffered) {
+      setLoading('waiting');
+    }
+  };
+
+  return storyIndex === itemIndex ? (
     <article className={styles['current-story']} ref={itemRef}>
       {!(itemIndex === 0 && contentIndex === 0) && (
         <span
@@ -233,7 +289,7 @@ const StoryItem = ({
           onClick={moveToStory(
             itemIndex - 1,
             contentIndex,
-            content.length - 1,
+            stories.length - 1,
             setContentIndex,
             'prev'
           )}
@@ -249,19 +305,19 @@ const StoryItem = ({
         onClick={handleClick}
       >
         <div className={styles['line-container']}>
-          {content.map((item, index) => (
-            <span key={`${index}-${item.type}`} className={styles['line-box']}>
+          {stories.map((item: any, index: number) => (
+            <span key={`${item._id}`} className={styles['line-box']}>
               <span
                 className={`${styles['line-item']} ${
                   index < contentIndex ? styles['viewed-item'] : ''
                 } ${
                   index === contentIndex ? styles['current-viewed-item'] : ''
-                }`}
+                } ${loading ? styles['pause-animation'] : ''}`}
                 ref={index === contentIndex ? progressRef : null}
                 onAnimationEnd={moveToStory(
                   itemIndex + 1,
                   contentIndex,
-                  content.length - 1,
+                  stories.length - 1,
                   setContentIndex,
                   'next'
                 )}
@@ -274,19 +330,24 @@ const StoryItem = ({
 
         <div className={styles['details-box']}>
           <div className={styles['story-details']}>
-            <span className={styles['name-box']}>
+            <span
+              className={styles['name-box']}
+              onClick={() => navigate(`/@${user.username}`)}
+            >
               <img
                 className={styles['user-pic']}
-                src={`../../assets/images/users/user${itemIndex + 1}.jpeg`}
+                src={`${serverUrl}users/${user.photo}`}
               />
-              <span className={styles['user-name']}>{name}</span>
+              <span className={styles['user-name']}>{user.username}</span>
             </span>
             <BsDot className={styles.dot} />
-            <time className={styles['time-sent']}>{getTime()}</time>
+            <time className={styles['time-sent']}>
+              {getTime(stories[contentIndex].createdAt)}
+            </time>
           </div>
 
           <div className={styles['menu-details']}>
-            {content[contentIndex].type === 'video' && (
+            {stories[contentIndex].media.mediaType === 'video' && (
               <>
                 {mute ? (
                   <BiSolidVolumeMute
@@ -342,12 +403,12 @@ const StoryItem = ({
         </div>
 
         <div className={styles['content-div']}>
-          {content[contentIndex].type === 'image' ? (
+          {stories[contentIndex].media.mediaType === 'image' ? (
             <img
               className={`${styles.content} ${
                 loading ? styles['hide-item'] : ''
               }`}
-              src={`../../assets/images/content/${content[contentIndex].src}.jpeg`}
+              src={`${serverUrl}stories/${stories[contentIndex].media.src}`}
               onLoad={() => setLoading(false)}
               onError={() => setLoading('error')}
               onAbort={() => setLoading('error')}
@@ -355,7 +416,7 @@ const StoryItem = ({
           ) : (
             <video
               className={`${styles.content} ${
-                loading ? styles['hide-item'] : ''
+                loading && loading !== 'waiting' ? styles['hide-item'] : ''
               }`}
               ref={videoRef}
               autoPlay
@@ -364,18 +425,17 @@ const StoryItem = ({
               onCanPlay={() => setLoading(false)}
               onError={() => setLoading('error')}
               onAbort={() => setLoading('error')}
-              onEmptied={() => setLoading('notfound')}
               onStalled={() => setLoading('empty')}
+              onWaiting={showLoader}
             >
               <source
-                src={`../../assets/images/content/${content[contentIndex].src}.mp4`}
-                type="video/mp4"
+                src={`${serverUrl}stories/${stories[contentIndex].media.src}`}
               />
               Your browser does not support playing video.
             </video>
           )}
 
-          {loading === true ? (
+          {loading === true || loading === 'waiting' ? (
             <div className={styles.loader}></div>
           ) : loading === 'error' ? (
             <span className={styles['error-box']}>
@@ -386,13 +446,6 @@ const StoryItem = ({
             <span className={styles['error-box']}>
               <BiSolidErrorAlt className={styles['error-icon']} />
               Unable to load media.
-            </span>
-          ) : loading === 'notfound' &&
-            videoRef.current.src ===
-              `../../assets/images/content/${content[contentIndex].src}.mp4` ? (
-            <span className={styles['error-box']}>
-              <BiSolidErrorAlt className={styles['error-icon']} />
-              This media no longer exists.
             </span>
           ) : (
             ''
@@ -423,14 +476,14 @@ const StoryItem = ({
       </div>
 
       {!(
-        itemIndex === totalLength - 1 && contentIndex === content.length - 1
+        itemIndex === totalLength - 1 && contentIndex === stories.length - 1
       ) && (
         <span
           className={styles['right-arrow-box']}
           onClick={moveToStory(
             itemIndex + 1,
             contentIndex,
-            content.length - 1,
+            stories.length - 1,
             setContentIndex,
             'next'
           )}
@@ -439,21 +492,23 @@ const StoryItem = ({
         </span>
       )}
     </article>
+  ) : data === null ? (
+    <article className={styles['next-story']}></article>
   ) : (
     <article className={styles['next-story']}>
       <div
         className={styles['next-content-div']}
         onClick={moveToStory(itemIndex, null, null, null, 'jump')}
       >
-        {content[0].type === 'image' ? (
+        {stories[contentIndex].media.mediaType === 'image' ? (
           <img
             className={styles['next-content']}
-            src={`../../assets/images/content/${content[0].src}.jpeg`}
+            src={`${serverUrl}stories/${stories[0].media.src}`}
           />
         ) : (
           <video className={styles['next-content']} autoPlay muted>
             <source
-              src={`../../assets/images/content/${content[0].src}.mp4`}
+              src={`${serverUrl}stories/${stories[contentIndex].media.src}`}
               type="video/mp4"
             />
             Your browser does not support playing video.
@@ -461,14 +516,16 @@ const StoryItem = ({
         )}
 
         <div className={styles['next-story-content']}>
-          <time className={styles['next-story-time']}>{time}</time>
+          <time className={styles['next-story-time']}>
+            {getTime(stories[contentIndex].createdAt, true)}
+          </time>
           <span className={styles['next-story-img-box']}>
             <img
               className={styles['next-story-img']}
-              src={`../../assets/images/users/user${itemIndex + 1}.jpeg`}
+              src={`${serverUrl}users/${user.photo}`}
             />
           </span>
-          <span className={styles['next-story-username']}>{name}</span>
+          <span className={styles['next-story-username']}>{user.username}</span>
         </div>
       </div>
     </article>

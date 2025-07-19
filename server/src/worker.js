@@ -229,13 +229,10 @@ export const processFiles = async (files, filters) => {
 };
 
 export const transformReelFiles = async (files, position = {}, volume = {}) => {
-  // start pos, end pos, sound, cover photo
-
   const { reel: reelFile, sound = [], cover = [] } = files;
   const { start = 0, end = 0 } = position;
   const { original: originalVolume = 0, sound: soundVolume = 1 } = volume;
 
-  // Create a temporary file location
   const ext = path.extname(reelFile[0].originalname);
   const tempFilePath = path.join(
     tmpdir(),
@@ -243,7 +240,6 @@ export const transformReelFiles = async (files, position = {}, volume = {}) => {
   );
 
   return new Promise((resolve, reject) => {
-    // First, probe the video to check if it has audio
     ffmpeg.ffprobe(reelFile[0].path, (err, metadata) => {
       if (err) return reject(err);
 
@@ -253,7 +249,7 @@ export const transformReelFiles = async (files, position = {}, volume = {}) => {
       const complexFilter = [];
       let inputIndex = 0;
 
-      // Input 0: cover image (optional)
+      // Cover image input
       if (cover.length > 0) {
         process.input(cover[0].path).inputOptions(['-loop 1']);
         complexFilter.push(
@@ -264,7 +260,7 @@ export const transformReelFiles = async (files, position = {}, volume = {}) => {
         inputIndex++;
       }
 
-      // Input 1: main trimmed video
+      // Main video input
       process
         .input(reelFile[0].path)
         .setStartTime(start)
@@ -276,22 +272,21 @@ export const transformReelFiles = async (files, position = {}, volume = {}) => {
       );
       inputIndex++;
 
-      // Input 2: optional background sound
+      // Background sound input (optional)
       if (sound.length > 0) {
         process.input(sound[0].path);
       }
 
-      // Video concat filter
+      // Video stream merge
       if (cover.length > 0) {
         complexFilter.push('[cover][video]concat=n=2:v=1:a=0[outv]');
       } else {
         complexFilter.push('[video]null[outv]');
       }
 
-      // Audio filter logic
+      // Audio stream logic
       let audioFilter = '';
       if (hasAudio) {
-        // Video has audio: mix video audio + background sound (if any)
         if (sound.length > 0) {
           audioFilter =
             `[${videoIndex}:a]volume=${originalVolume}[a1];` +
@@ -301,28 +296,32 @@ export const transformReelFiles = async (files, position = {}, volume = {}) => {
           audioFilter = `[${videoIndex}:a]volume=${originalVolume}[outa]`;
         }
       } else {
-        // Video has NO audio: use only background sound with specified volume
         if (sound.length > 0) {
           audioFilter = `[${inputIndex}:a]volume=${soundVolume}[outa]`;
         } else {
-          // No video audio and no background sound? Create silent audio (optional)
-          audioFilter = null;
+          // Silent fallback
+          const silentAudioIndex = inputIndex;
+          process.input('anullsrc=r=44100:cl=stereo').inputFormat('lavfi');
+          audioFilter = `[${silentAudioIndex}:a]anull[outa]`;
+          inputIndex++;
         }
       }
 
-      complexFilter.push(audioFilter);
+      if (audioFilter) complexFilter.push(audioFilter);
 
-      // Total duration = video duration + cover duration if any
       const totalDuration = end - start + (cover.length > 0 ? 0.1 : 0);
 
       process.complexFilter(complexFilter.join(';'));
 
-      const outputOpts = ['-map', '[outv]', '-t', String(totalDuration)];
-
-      // Only map audio if we have a valid audio filter
-      if (sound.length > 0 || hasAudio) {
-        outputOpts.push('-map', '[outa]');
-      }
+      const outputOpts = [
+        '-map',
+        '[outv]',
+        '-t',
+        String(totalDuration),
+        '-preset',
+        'ultrafast',
+      ];
+      outputOpts.push('-map', '[outa]');
 
       process
         .outputOptions(outputOpts)

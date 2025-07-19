@@ -60,7 +60,7 @@ const sendEmail = async (
       ? 'An error occurred while sending the verification email. Please try logging in with the credentials you entered.'
       : 'An error occurred while sending the verification email. Please try again later.';
 
-    return next(new CustomError(message, 500));
+    return next(new CustomError(message, 500, { emailError: true }));
   }
 };
 
@@ -172,6 +172,7 @@ export const checkIfDataExist = asyncErrorHandler(
 
     const user = await User.findOne({
       [field]: value,
+      __login: true,
     });
 
     if (user) {

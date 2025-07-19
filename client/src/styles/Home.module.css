@@ -24,7 +24,6 @@
 .scroll-div {
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
 .stories-container::-webkit-scrollbar {
@@ -40,6 +39,17 @@
   margin: 0 1rem;
   display: flex;
   align-items: center;
+}
+
+.story-skeleton-container {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.5rem;
+  cursor: pointer;
+}
+
+.story-skeleton {
+  margin: 0 0.5rem;
 }
 
 .owner {

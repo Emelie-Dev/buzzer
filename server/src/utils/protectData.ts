@@ -14,14 +14,28 @@ export default (
         '__v',
         'active',
         'passwordChangedAt',
+        'settings.security',
       ];
     }
   }
 
   const data = plain ? document : document.toObject();
 
-  const protectedData = Object.fromEntries(
-    Object.entries(data).filter(([key]) => !fields.includes(key))
-  );
+  const protectedData = { ...data };
+  fields.forEach((field) => {
+    const keys = field.split('.');
+
+    let data = protectedData;
+    let i = 0;
+
+    while (i < keys.length - 1) {
+      if (data[keys[i]] == null) return;
+      data = data[keys[i]];
+      i++;
+    }
+
+    delete data[keys[keys.length - 1]];
+  });
+
   return protectedData;
 };

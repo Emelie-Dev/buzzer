@@ -253,6 +253,11 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
             email: '',
             password: '',
           });
+          setDataStatus({
+            username: 'empty',
+            email: 'empty',
+            password: 'empty',
+          });
         } else {
           setSigninData({
             email: '',
@@ -271,6 +276,35 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
           );
         } else {
           toast.error(err.response.data.message);
+
+          if (err.response.data.data.emailError) {
+            setSignupData({
+              username: '',
+              email: '',
+              password: '',
+            });
+
+            setSigninData({
+              email: '',
+              password: '',
+            });
+
+            setDataStatus({
+              username: 'empty',
+              email: 'empty',
+              password: 'empty',
+            });
+
+            setAuthMode('signin');
+            setAuthValid({
+              signin: false,
+              signup: false,
+            });
+
+            checkBoxRef.current.forEach(
+              (el: HTMLInputElement) => (el.checked = false)
+            );
+          }
         }
       } finally {
         setLoading((prevValue) => ({ ...prevValue, [type]: false }));
@@ -523,7 +557,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
               <span className={styles['loader-box']}>
                 <button
                   className={`${styles.button} ${styles['btn']} ${
-                    !authValid.signup || loading.signup
+                    !authValid.signup || loading.signup || loading.signin
                       ? styles['disable-btn']
                       : ''
                   }`}
@@ -648,7 +682,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                     className={`${styles.button} ${styles['btn']} ${
                       styles['btn2']
                     }  ${
-                      !authValid.signin || loading.signin
+                      !authValid.signin || loading.signin || loading.signup
                         ? styles['disable-btn']
                         : ''
                     }`}
@@ -717,7 +751,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                     className={`${styles.button} ${styles['btn']} ${
                       styles['btn2']
                     }  ${
-                      !authValid.forgot || loading.forgot
+                      !authValid.forgot || loading.forgot || loading.signup
                         ? styles['disable-btn']
                         : ''
                     }`}
@@ -808,7 +842,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                     className={`${styles.button} ${styles['btn']} ${
                       styles['btn2']
                     }  ${
-                      !authValid.reset || loading.reset
+                      !authValid.reset || loading.reset || loading.signup
                         ? styles['disable-btn']
                         : ''
                     }`}

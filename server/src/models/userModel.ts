@@ -42,7 +42,13 @@ export interface IUser extends Document {
   deactivateVerificationTokenExpires: Date | undefined;
   deleteVerificationToken: String | undefined;
   deleteVerificationTokenExpires: Date | undefined;
-  storyFeed: Types.ObjectId[];
+  storyFeed: {
+    feedExpires: Date;
+    feed: {
+      user: Types.ObjectId;
+      watched: Types.ObjectId[];
+    }[];
+  };
   location: ILocation;
   searchHistory: String[];
   reelSounds: { name: string; src: string }[];
@@ -126,22 +132,24 @@ const UserSchema = new Schema<IUser>({
     default: false,
   },
   storyFeed: {
-    type: [
-      {
-        user: Schema.Types.ObjectId,
-        username: String,
-        name: String,
-        photo: String,
-        story: [StorySchema],
-      },
-    ],
-    default: [],
-    validate: {
-      validator: (value: StoryFeedItem[]) => {
-        return value.length <= 20;
-      },
-      message: 'Story feed must not exceed 20 items.',
+    type: {
+      feedExpires: Date,
+      feed: [
+        {
+          user: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+          },
+          watched: [
+            {
+              type: Schema.Types.ObjectId,
+              ref: 'User',
+            },
+          ],
+        },
+      ],
     },
+    default: {},
   },
   location: {
     type: locationSubschema,

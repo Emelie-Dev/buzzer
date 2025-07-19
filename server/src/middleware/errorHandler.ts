@@ -5,6 +5,7 @@ const devErrorHandler = (error: any, res: Response) => {
     status: error.status,
     message: error.message,
     stackTrace: error.stack,
+    data: error.data,
     error,
   });
 };

@@ -14,252 +14,19 @@ export interface Story {
 type StoryModalProps = {
   setViewStory: React.Dispatch<React.SetStateAction<boolean>>;
   itemIndex: number;
+  stories: any[];
+  storiesSet: any[];
 };
 
-const stories: Story[] = [
-  {
-    name: 'userOne',
-    content: [
-      { type: 'video', src: 'content20' },
-      { type: 'image', src: 'content10' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content20' },
-      { type: 'video', src: 'content6' },
-      { type: 'image', src: 'content8' },
-      { type: 'image', src: 'content14' },
-    ],
-    time: '23 seconds ago',
-  },
-  {
-    name: 'coolGuy',
-    content: [
-      { type: 'image', src: 'content8' },
-      { type: 'video', src: 'content6' },
-      { type: 'video', src: 'content21' },
-      { type: 'video', src: 'content20' },
-      { type: 'video', src: 'content20' },
-    ],
-    time: '12 hours ago',
-  },
-  {
-    name: 'happy123',
-    content: [
-      { type: 'image', src: 'content7' },
-      { type: 'image', src: 'content3' },
-      { type: 'image', src: 'content14' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content24' },
-      { type: 'video', src: 'content6' },
-      { type: 'video', src: 'content20' },
-    ],
-    time: '19 seconds ago',
-  },
-  {
-    name: 'sunshineGirl',
-    content: [
-      { type: 'image', src: 'content16' },
-      { type: 'video', src: 'content6' },
-    ],
-    time: '17 hours ago',
-  },
-  {
-    name: 'codeMaster',
-    content: [
-      { type: 'image', src: 'content15' },
-      { type: 'image', src: 'content10' },
-      { type: 'image', src: 'content2' },
-      { type: 'video', src: 'content20' },
-      { type: 'image', src: 'content1' },
-      { type: 'image', src: 'content5' },
-      { type: 'image', src: 'content22' },
-      { type: 'video', src: 'content25' },
-      { type: 'image', src: 'content18' },
-    ],
-    time: '13 hours ago',
-  },
-  {
-    name: 'skyWalker',
-    content: [
-      { type: 'image', src: 'content5' },
-      { type: 'image', src: 'content7' },
-      { type: 'image', src: 'content3' },
-      { type: 'video', src: 'content21' },
-      { type: 'image', src: 'content13' },
-      { type: 'image', src: 'content5' },
-      { type: 'video', src: 'content20' },
-    ],
-    time: '15 hours ago',
-  },
-  {
-    name: 'theArtist',
-    content: [
-      { type: 'video', src: 'content24' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content20' },
-      { type: 'image', src: 'content8' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content21' },
-      { type: 'video', src: 'content6' },
-      { type: 'image', src: 'content2' },
-      { type: 'video', src: 'content24' },
-      { type: 'image', src: 'content12' },
-    ],
-    time: '12 hours ago',
-  },
-  {
-    name: 'jungleKing',
-    content: [
-      { type: 'video', src: 'content21' },
-      { type: 'image', src: 'content3' },
-    ],
-    time: '17 hours ago',
-  },
-  {
-    name: 'dreamer_98',
-    content: [
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content25' },
-      { type: 'image', src: 'content10' },
-      { type: 'image', src: 'content11' },
-      { type: 'video', src: 'content6' },
-      { type: 'video', src: 'content21' },
-      { type: 'video', src: 'content24' },
-      { type: 'video', src: 'content24' },
-      { type: 'image', src: 'content3' },
-    ],
-    time: '12 minutes ago',
-  },
-  {
-    name: 'techieDude',
-    content: [{ type: 'video', src: 'content24' }],
-    time: '20 hours ago',
-  },
-  {
-    name: 'cityExplorer',
-    content: [
-      { type: 'video', src: 'content21' },
-      { type: 'image', src: 'content22' },
-      { type: 'video', src: 'content6' },
-    ],
-    time: '15 minutes ago',
-  },
-  {
-    name: 'natureLover',
-    content: [
-      { type: 'image', src: 'content19' },
-      { type: 'image', src: 'content22' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content25' },
-      { type: 'image', src: 'content13' },
-      { type: 'video', src: 'content6' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content21' },
-    ],
-    time: '13 seconds ago',
-  },
-  {
-    name: 'mountainView',
-    content: [
-      { type: 'image', src: 'content15' },
-      { type: 'image', src: 'content1' },
-      { type: 'video', src: 'content20' },
-      { type: 'video', src: 'content24' },
-    ],
-    time: '22 hours ago',
-  },
-  {
-    name: 'coffeeAddict',
-    content: [
-      { type: 'image', src: 'content10' },
-      { type: 'image', src: 'content8' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content20' },
-      { type: 'image', src: 'content3' },
-      { type: 'image', src: 'content13' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content20' },
-    ],
-    time: '18 minutes ago',
-  },
-  {
-    name: 'chefTom',
-    content: [
-      { type: 'image', src: 'content8' },
-      { type: 'image', src: 'content10' },
-      { type: 'video', src: 'content20' },
-      { type: 'image', src: 'content10' },
-      { type: 'image', src: 'content8' },
-      { type: 'video', src: 'content21' },
-      { type: 'image', src: 'content2' },
-      { type: 'image', src: 'content19' },
-      { type: 'video', src: 'content6' },
-      { type: 'image', src: 'content5' },
-    ],
-    time: '15 seconds ago',
-  },
-  {
-    name: 'oceanWave',
-    content: [
-      { type: 'video', src: 'content21' },
-      { type: 'video', src: 'content21' },
-      { type: 'image', src: 'content8' },
-    ],
-    time: '6 seconds ago',
-  },
-  {
-    name: 'bookworm101',
-    content: [
-      { type: 'video', src: 'content6' },
-      { type: 'video', src: 'content6' },
-      { type: 'video', src: 'content24' },
-      { type: 'image', src: 'content9' },
-      { type: 'video', src: 'content24' },
-      { type: 'video', src: 'content6' },
-      { type: 'video', src: 'content20' },
-    ],
-    time: '17 seconds ago',
-  },
-  {
-    name: 'fastRunner',
-    content: [
-      { type: 'image', src: 'content22' },
-      { type: 'video', src: 'content25' },
-      { type: 'video', src: 'content25' },
-      { type: 'image', src: 'content17' },
-      { type: 'video', src: 'content24' },
-      { type: 'video', src: 'content25' },
-    ],
-    time: '17 minutes ago',
-  },
-  {
-    name: 'digitalNomad',
-    content: [
-      { type: 'video', src: 'content24' },
-      { type: 'video', src: 'content25' },
-      { type: 'image', src: 'content17' },
-      { type: 'image', src: 'content18' },
-      { type: 'image', src: 'content18' },
-      { type: 'image', src: 'content7' },
-      { type: 'image', src: 'content9' },
-    ],
-    time: '6 seconds ago',
-  },
-  {
-    name: 'starGazer',
-    content: [
-      { type: 'image', src: 'content2' },
-      { type: 'image', src: 'content19' },
-      { type: 'video', src: 'content24' },
-      { type: 'image', src: 'content18' },
-      { type: 'video', src: 'content6' },
-    ],
-    time: '20 hours ago',
-  },
-];
-
-const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
+const StoryModal = ({
+  setViewStory,
+  itemIndex,
+  stories,
+  storiesSet,
+}: StoryModalProps) => {
   const [currentIndex, setCurrentIndex] = useState<number>(itemIndex);
   const [isOperative, setIsOperative] = useState<boolean>(false);
+  const [storyItems, setStoryItems] = useState<any[]>(storiesSet);
 
   const carouselRef = useRef<HTMLDivElement>(null!);
 
@@ -271,6 +38,21 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
     if (carouselRef.current)
       carouselRef.current.style.scrollBehavior = 'smooth';
   }, []);
+
+  useEffect(() => {
+    let start;
+    const end = currentIndex + 2;
+
+    if (currentIndex == 0) start = 0;
+    else start = currentIndex - 1;
+
+    setStoryItems(
+      stories.map((item, index) => {
+        if (index >= start && index < end) return item;
+        else return null;
+      })
+    );
+  }, [currentIndex]);
 
   const moveToStory = useCallback(
     (
@@ -294,9 +76,12 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
         if (type === 'next') {
           setIsOperative(true);
           if (storyItemIndex === contentLength) {
-            setCurrentIndex(index);
-            carouselRef.current.scrollLeft =
-              index * Math.round(carouselRef.current.offsetWidth * ratio);
+            if (index === stories.length) setViewStory(false);
+            else {
+              setCurrentIndex(index);
+              carouselRef.current.scrollLeft =
+                index * Math.round(carouselRef.current.offsetWidth * ratio);
+            }
           } else {
             if (setContentIndex) setContentIndex((prev) => prev + 1);
           }
@@ -333,11 +118,10 @@ const StoryModal = ({ setViewStory, itemIndex }: StoryModalProps) => {
       <div className={styles['story-container']} ref={carouselRef}>
         <article className={styles['void-next-story']}></article>
 
-        {stories.map((data, index) => (
+        {storyItems.map((data, index) => (
           <StoryItem
             key={index}
             itemIndex={index}
-            active={currentIndex === index}
             storyIndex={currentIndex}
             isOperative={isOperative}
             moveToStory={moveToStory}

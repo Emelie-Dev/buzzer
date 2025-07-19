@@ -14,8 +14,18 @@ import Story, {
 import multerConfig from '../utils/multerConfig.js';
 // @ts-ignore
 import { checkVideoFilesDuration } from '../worker.js';
+import Follow from '../models/followModel.js';
+import { Document } from 'mongoose';
 
 const upload = multerConfig('stories');
+
+const shuffleArray = (array: any[]) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
 
 const deleteStoryFiles = async (files: {
   [fieldname: string]: Express.Multer.File[];
@@ -43,128 +53,635 @@ export const getStories = asyncErrorHandler(
 
     // Check if users are in the client hidden stories
     const hiddenStories = req.user?.settings.general.hiddenStories || [];
+    const { feedExpires, feed } = req.user?.storyFeed;
+    let stories,
+      user = req.user as Document<unknown, any, any> | null;
 
-    const stories = await Story.aggregate([
-      //  Filter only public stories not from the current user
-      {
-        $match: {
-          user: { $ne: req.user?._id },
-          accessibility: ContentAccessibility.EVERYONE,
+    if (!feedExpires || new Date(feedExpires) < new Date()) {
+      const followingStories = await Follow.aggregate([
+        {
+          $match: {
+            $and: [
+              { follower: req.user?._id },
+              { following: { $nin: hiddenStories } },
+            ],
+          },
         },
-      },
-
-      //  Get distinct users with public stories
-      {
-        $group: {
-          _id: '$user', // group by user ID to get unique users
-        },
-      },
-
-      // return users who are not hidden
-      {
-        $match: {
-          _id: { $nin: hiddenStories },
-        },
-      },
-
-      //  Randomly sample 20 users
-      {
-        $sample: { size: 20 },
-      },
-
-      //  Re-join all their stories (again) using $lookup
-      {
-        $lookup: {
-          from: 'stories', // collection name in DB (lowercase plural)
-          localField: '_id', // _id is the userId from step 2
-          foreignField: 'user', // user field in the Story collection
-          as: 'story',
-        },
-      },
-
-      //  Filter only public stories inside the joined stories array
-      {
-        $project: {
-          story: {
-            $map: {
-              input: {
-                $filter: {
-                  input: '$story',
-                  as: 'story',
-                  cond: {
-                    $eq: [
-                      '$$story.accessibility',
-                      ContentAccessibility.EVERYONE,
+        {
+          $lookup: {
+            from: 'stories',
+            let: { followingId: '$following' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$followingId'] },
+                      { $ne: ['$accessibility', ContentAccessibility.YOU] },
                     ],
                   },
                 },
               },
-              as: 'story',
-              in: {
-                _id: '$$story._id',
-                createdAt: '$$story.createdAt',
-                media: '$$story.media',
-                disableComments: '$$story.disableComments',
-                // Add/remove fields as needed
+              {
+                $lookup: {
+                  from: 'friends',
+                  let: {
+                    viewerId: req.user?._id,
+                    storyOwnerId: '$user',
+                    access: '$accessibility',
+                  },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$$access', ContentAccessibility.FRIENDS] },
+                            {
+                              $or: [
+                                {
+                                  $and: [
+                                    { $eq: ['$requester', '$$storyOwnerId'] },
+                                    { $eq: ['$recipient', '$$viewerId'] },
+                                  ],
+                                },
+                                {
+                                  $and: [
+                                    { $eq: ['$requester', '$$viewerId'] },
+                                    { $eq: ['$recipient', '$$storyOwnerId'] },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                  as: 'isFriend',
+                },
               },
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.FRIENDS,
+                            ],
+                          },
+                          { $gt: [{ $size: '$isFriend' }, 0] },
+                        ],
+                      },
+                      {
+                        $eq: ['$accessibility', ContentAccessibility.EVERYONE],
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                $project: {
+                  isFriend: 0,
+                  user: 0,
+                  __v: 0,
+                },
+              },
+            ],
+            as: 'stories',
+          },
+        },
+        {
+          $match: { stories: { $ne: [] } },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'following',
+            foreignField: '_id',
+            let: { followingId: '$following', viewerId: req.user?._id },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$_id', '$$followingId'] },
+                      {
+                        $cond: [
+                          { $eq: ['$settings.general.privacy.value', true] },
+                          {
+                            $cond: [
+                              {
+                                $in: [
+                                  '$$viewerId',
+                                  '$settings.general.privacy.users',
+                                ],
+                              },
+                              true,
+                              false,
+                            ],
+                          },
+                          true,
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'user',
+          },
+        },
+        { $match: { user: { $ne: [] } } },
+        { $sample: { size: 10 } },
+        {
+          $addFields: {
+            user: { $first: '$user' },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            stories: 1,
+            user: {
+              _id: 1,
+              username: 1,
+              name: 1,
+              photo: 1,
             },
           },
         },
-      },
-      // Sort each user's stories by createdAt ascending
-      {
-        $addFields: {
-          story: {
-            $sortArray: {
-              input: '$story',
-              sortBy: { createdAt: 1 },
+      ]);
+      const followingIds =
+        followingStories.length > 0
+          ? followingStories.map((user) => user.user._id)
+          : [];
+
+      const followerStories = await Follow.aggregate([
+        {
+          $match: {
+            $and: [
+              { following: req.user?._id },
+              { follower: { $nin: [...followingIds, ...hiddenStories] } },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: 'stories',
+            let: { followerId: '$follower' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$followerId'] },
+                      { $ne: ['$accessibility', ContentAccessibility.YOU] },
+                    ],
+                  },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'friends',
+                  let: {
+                    viewerId: req.user?._id,
+                    storyOwnerId: '$user',
+                    access: '$accessibility',
+                  },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$$access', ContentAccessibility.FRIENDS] },
+                            {
+                              $or: [
+                                {
+                                  $and: [
+                                    { $eq: ['$requester', '$$storyOwnerId'] },
+                                    { $eq: ['$recipient', '$$viewerId'] },
+                                  ],
+                                },
+                                {
+                                  $and: [
+                                    { $eq: ['$requester', '$$viewerId'] },
+                                    { $eq: ['$recipient', '$$storyOwnerId'] },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                  as: 'isFriend',
+                },
+              },
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.FRIENDS,
+                            ],
+                          },
+                          { $gt: [{ $size: '$isFriend' }, 0] },
+                        ],
+                      },
+                      {
+                        $eq: ['$accessibility', ContentAccessibility.EVERYONE],
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                $project: {
+                  isFriend: 0,
+                  user: 0,
+                  __v: 0,
+                },
+              },
+            ],
+            as: 'stories',
+          },
+        },
+        {
+          $match: { stories: { $ne: [] } },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            let: { followerId: '$follower', viewerId: req.user?._id },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$_id', '$$followerId'] },
+                      {
+                        $cond: [
+                          { $eq: ['$settings.general.privacy.value', true] },
+                          {
+                            $cond: [
+                              {
+                                $in: [
+                                  '$$viewerId',
+                                  '$settings.general.privacy.users',
+                                ],
+                              },
+                              true,
+                              false,
+                            ],
+                          },
+                          true,
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'user',
+          },
+        },
+        { $match: { user: { $ne: [] } } },
+        { $sample: { size: 5 + (10 - followingStories.length) } },
+        {
+          $addFields: {
+            user: { $first: '$user' },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            stories: 1,
+            user: {
+              _id: 1,
+              username: 1,
+              name: 1,
+              photo: 1,
             },
           },
         },
-      },
+      ]);
+      const usersArr1 = [...followingStories, ...followerStories];
+      const followerIds =
+        usersArr1.length > 0 ? usersArr1.map((user) => user.user._id) : [];
 
-      //  Lookup user info (username, name, photo) from the users collection
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id', // _id is the userId
-          foreignField: '_id',
-          as: 'userInfo',
+      const otherStories = await User.aggregate([
+        {
+          $match: {
+            $and: [
+              { _id: { $ne: req.user?._id } },
+              { _id: { $nin: [...followerIds, ...hiddenStories] } },
+            ],
+          },
         },
-      },
-
-      //  Unwrap the userInfo array
-      {
-        $unwind: '$userInfo',
-      },
-
-      //  Final shape of the result
-      {
-        $project: {
-          _id: 0,
-          user: '$_id',
-          username: '$userInfo.username',
-          name: '$userInfo.name',
-          photo: '$userInfo.photo',
-          story: 1,
+        {
+          $match: {
+            $expr: {
+              $cond: [
+                { $eq: ['$settings.general.privacy.value', true] },
+                {
+                  $cond: [
+                    {
+                      $in: [req.user?._id, '$settings.general.privacy.users'],
+                    },
+                    true,
+                    false,
+                  ],
+                },
+                true,
+              ],
+            },
+          },
         },
-      },
-    ]);
+        {
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$userId'] },
+                      { $ne: ['$accessibility', ContentAccessibility.YOU] },
+                    ],
+                  },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'friends',
+                  let: {
+                    viewerId: req.user?._id,
+                    storyOwnerId: '$user',
+                    access: '$accessibility',
+                  },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$$access', ContentAccessibility.FRIENDS] },
+                            {
+                              $or: [
+                                {
+                                  $and: [
+                                    { $eq: ['$requester', '$$storyOwnerId'] },
+                                    { $eq: ['$recipient', '$$viewerId'] },
+                                  ],
+                                },
+                                {
+                                  $and: [
+                                    { $eq: ['$requester', '$$viewerId'] },
+                                    { $eq: ['$recipient', '$$storyOwnerId'] },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                  as: 'isFriend',
+                },
+              },
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.FRIENDS,
+                            ],
+                          },
+                          { $gt: [{ $size: '$isFriend' }, 0] },
+                        ],
+                      },
+                      {
+                        $eq: ['$accessibility', ContentAccessibility.EVERYONE],
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                $project: {
+                  isFriend: 0,
+                  user: 0,
+                  __v: 0,
+                },
+              },
+            ],
+            as: 'stories',
+          },
+        },
+        {
+          $match: { stories: { $ne: [] } },
+        },
+        { $sample: { size: 5 + (15 - usersArr1.length) } },
+        {
+          $project: {
+            _id: 0,
+            stories: 1,
+            user: {
+              _id: '$_id',
+              username: '$username',
+              name: '$name',
+              photo: '$photo',
+            },
+          },
+        },
+      ]);
 
-    const user = await User.findByIdAndUpdate(
-      req.user?._id,
-      {
-        storyFeed: stories,
-      },
-      { new: true, runValidators: true }
-    );
+      stories = shuffleArray([
+        ...followingStories,
+        ...followerStories,
+        ...otherStories,
+      ]);
+
+      user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+          'storyFeed.feedExpires': Date.now() + 24 * 60 * 60 * 1000,
+          'storyFeed.feed': stories.map((story) => ({
+            user: story.user,
+            watched: [],
+          })),
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    } else {
+      const userFeed = feed.map(({ user }: { user: string }) => user);
+
+      const usersStories = await Story.aggregate([
+        {
+          $match: {
+            user: { $in: userFeed },
+            accessibility: { $ne: ContentAccessibility.YOU },
+          },
+        },
+        {
+          $lookup: {
+            from: 'friends',
+            let: {
+              viewerId: req.user?._id,
+              storyOwnerId: '$user',
+              access: '$accessibility',
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$$access', ContentAccessibility.FRIENDS] },
+                      {
+                        $or: [
+                          {
+                            $and: [
+                              { $eq: ['$requester', '$$storyOwnerId'] },
+                              { $eq: ['$recipient', '$$viewerId'] },
+                            ],
+                          },
+                          {
+                            $and: [
+                              { $eq: ['$requester', '$$viewerId'] },
+                              { $eq: ['$recipient', '$$storyOwnerId'] },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'friends',
+          },
+        },
+        {
+          $match: {
+            $expr: {
+              $or: [
+                {
+                  $and: [
+                    {
+                      $eq: ['$accessibility', ContentAccessibility.FRIENDS],
+                    },
+                    { $gt: [{ $size: '$friends' }, 0] },
+                  ],
+                },
+                {
+                  $eq: ['$accessibility', ContentAccessibility.EVERYONE],
+                },
+              ],
+            },
+          },
+        },
+        {
+          $project: {
+            friends: 0,
+          },
+        },
+        {
+          $group: {
+            _id: '$user',
+            stories: { $push: '$$ROOT' },
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            let: { userId: '$_id', viewerId: req.user?._id },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$_id', '$$userId'] },
+                      {
+                        $cond: [
+                          { $eq: ['$settings.general.privacy.value', true] },
+                          {
+                            $cond: [
+                              {
+                                $in: [
+                                  '$$viewerId',
+                                  '$settings.general.privacy.users',
+                                ],
+                              },
+                              true,
+                              false,
+                            ],
+                          },
+                          true,
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'users',
+          },
+        },
+        { $match: { users: { $ne: [] } } },
+        {
+          $addFields: {
+            user: { $first: '$users' },
+          },
+        },
+        {
+          $project: {
+            users: 0,
+            _id: 0,
+          },
+        },
+        {
+          $project: {
+            'user._id': 1,
+            'user.name': 1,
+            'user.username': 1,
+            'user.photo': 1,
+            stories: 1,
+          },
+        },
+      ]);
+
+      stories = feed
+        .map(({ user }: { user: string }) =>
+          usersStories.find((obj: any) => String(obj.user._id) === String(user))
+        )
+        .filter((user: any) => user);
+    }
 
     const userData = protectData(user!, 'user');
+    const userStories = await Story.find({ user: req.user?._id });
 
     return res.status(200).json({
       status: 'success',
       data: {
         user: userData,
+        userStories,
+        users: stories,
       },
     });
   }
@@ -338,10 +855,11 @@ export const saveStory = asyncErrorHandler(
         },
         disableComments,
         accessibility,
-        sound:
-          process.env.NODE_ENV === 'production'
+        sound: files.sound
+          ? process.env.NODE_ENV === 'production'
             ? (files.sound[0] as any).secure_url
-            : path.basename(files.sound[0].path),
+            : path.basename(files.sound[0].path)
+          : '',
         volume,
       }));
 
@@ -358,6 +876,7 @@ export const saveStory = asyncErrorHandler(
         })
       );
     } catch (err) {
+      console.log(err);
       await deleteStoryFiles(files);
 
       return res.status(500).end(
