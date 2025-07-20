@@ -1,9 +1,10 @@
 import styles from '../styles/StoryModal.module.css';
 import { IoClose } from 'react-icons/io5';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import StoryItem from './StoryItem';
 import { StoryContent } from './StoryItem';
 import ReactDOM from 'react-dom';
+import { StoryContext } from '../Contexts';
 
 export interface Story {
   name: string;
@@ -12,19 +13,13 @@ export interface Story {
 }
 
 type StoryModalProps = {
-  setViewStory: React.Dispatch<React.SetStateAction<boolean>>;
-  itemIndex: number;
   stories: any[];
   storiesSet: any[];
 };
 
-const StoryModal = ({
-  setViewStory,
-  itemIndex,
-  stories,
-  storiesSet,
-}: StoryModalProps) => {
-  const [currentIndex, setCurrentIndex] = useState<number>(itemIndex);
+const StoryModal = ({ stories, storiesSet }: StoryModalProps) => {
+  const { storyIndex, setViewStory } = useContext(StoryContext);
+  const [currentIndex, setCurrentIndex] = useState<number>(storyIndex);
   const [isOperative, setIsOperative] = useState<boolean>(false);
   const [storyItems, setStoryItems] = useState<any[]>(storiesSet);
 
@@ -125,9 +120,9 @@ const StoryModal = ({
             storyIndex={currentIndex}
             isOperative={isOperative}
             moveToStory={moveToStory}
-            totalLength={stories.length}
             data={data}
-            setViewStory={setViewStory}
+            setStoryItems={setStoryItems}
+            setCurrentIndex={setCurrentIndex}
           />
         ))}
 

@@ -42,50 +42,61 @@ export const likeItem = asyncErrorHandler(
       return next(new CustomError("You can't like your story.", 404));
     }
 
-    await Like.create({
+    const like = await Like.create({
       user: req.user?._id,
       creator: data.user._id,
       collectionName: collection,
       documentId: data._id,
     });
 
-    // Handle notifications
-    const allowNotifications =
-      data.user.settings.content.notifications.interactions.likes;
+    if (collection !== 'story') {
+      // Handle notifications
+      const allowNotifications =
+        data.user.settings.content.notifications.interactions.likes;
 
-    if (allowNotifications) {
-      await handleCreateNotifications('like', req.user?._id, data, collection, {
-        value: data.user.settings.content.notifications.push,
-        subscription: data.user.pushSubscription,
-      });
+      if (allowNotifications) {
+        await handleCreateNotifications(
+          'like',
+          req.user?._id,
+          data,
+          collection,
+          {
+            value: data.user.settings.content.notifications.push,
+            subscription: data.user.pushSubscription,
+          }
+        );
+      }
     }
 
     return res.status(201).json({
       status: 'success',
-      message: 'Liked successfully!',
+      data: { like },
     });
   }
 );
 
 export const dislikeItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    let { collection, documentId } = req.body;
+    let { collection, documentId } = req.params;
     collection = collection.toLowerCase();
+    const id = String(req.query.id);
 
-    const like = await Like.findById(req.params.id);
+    const like = await Like.findById(id);
 
     if (!like || String(like.user) !== String(req.user?._id)) {
-      return next(new CustomError('Could not dislike item.', 404));
+      return next(new CustomError('Could not remove like.', 404));
     }
 
     await like.deleteOne();
 
-    await handleDeleteNotifications(
-      'like',
-      req.user?._id,
-      documentId,
-      collection
-    );
+    if (collection !== 'story') {
+      await handleDeleteNotifications(
+        'like',
+        req.user?._id,
+        documentId,
+        collection
+      );
+    }
 
     return res.status(204).json({
       status: 'success',

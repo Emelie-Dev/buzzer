@@ -143,6 +143,30 @@ export const getStories = asyncErrorHandler(
                 },
               },
               {
+                $lookup: {
+                  from: 'likes',
+                  let: { viewerId: req.user?._id, storyId: '$_id' },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$$storyId', '$documentId'] },
+                            { $eq: ['$$viewerId', '$user'] },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                  as: 'like',
+                },
+              },
+              {
+                $addFields: {
+                  like: { $first: '$like' },
+                },
+              },
+              {
                 $project: {
                   isFriend: 0,
                   user: 0,
@@ -301,6 +325,30 @@ export const getStories = asyncErrorHandler(
                       },
                     ],
                   },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'likes',
+                  let: { viewerId: req.user?._id, storyId: '$_id' },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$$storyId', '$documentId'] },
+                            { $eq: ['$$viewerId', '$user'] },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                  as: 'like',
+                },
+              },
+              {
+                $addFields: {
+                  like: { $first: '$like' },
                 },
               },
               {
@@ -481,6 +529,30 @@ export const getStories = asyncErrorHandler(
                 },
               },
               {
+                $lookup: {
+                  from: 'likes',
+                  let: { viewerId: req.user?._id, storyId: '$_id' },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$$storyId', '$documentId'] },
+                            { $eq: ['$$viewerId', '$user'] },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                  as: 'like',
+                },
+              },
+              {
+                $addFields: {
+                  like: { $first: '$like' },
+                },
+              },
+              {
                 $project: {
                   isFriend: 0,
                   user: 0,
@@ -599,6 +671,30 @@ export const getStories = asyncErrorHandler(
         {
           $project: {
             friends: 0,
+          },
+        },
+        {
+          $lookup: {
+            from: 'likes',
+            let: { viewerId: req.user?._id, storyId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$$storyId', '$documentId'] },
+                      { $eq: ['$$viewerId', '$user'] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'like',
+          },
+        },
+        {
+          $addFields: {
+            like: { $first: '$like' },
           },
         },
         {
@@ -908,24 +1004,51 @@ export const deleteStory = asyncErrorHandler(
           fs.promises.unlink(`src/public/stories/${story.media.src}`),
         ];
 
-        if (!(await Story.findOne({ sound: story.sound }))) {
-          deleteArray.push(
-            fs.promises.unlink(`src/public/stories/${story.sound}`)
-          );
+        if (story.sound) {
+          if (!(await Story.findOne({ sound: story.sound }))) {
+            deleteArray.push(
+              fs.promises.unlink(`src/public/stories/${story.sound}`)
+            );
+          }
         }
 
         await Promise.allSettled(deleteArray);
       } catch {}
     }
 
-    const userStory = await Story.find({ user: req.user?._id }).select(
-      '-__v -user -accessibility'
-    );
+    return res.status(200).json({
+      status: 'success',
+      message: null,
+    });
+  }
+);
+
+export const updatetory = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    let story = (await Story.findById(req.params.id)) as StoryItem;
+
+    if (!story || String(story.user) !== String(req.user?._id)) {
+      return next(new CustomError('This story does not exist!', 404));
+    }
+
+    const { accessibility, disableComments } = story;
+
+    story = (await Story.findByIdAndUpdate(
+      story._id,
+      {
+        accessibility: req.body.accessibility ?? accessibility,
+        disableComments: req.body.comments ?? disableComments,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )) as StoryItem;
 
     return res.status(200).json({
       status: 'success',
       data: {
-        story: userStory,
+        story,
       },
     });
   }

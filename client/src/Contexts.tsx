@@ -64,7 +64,6 @@ export const GeneralContext = createContext<{
   setScrollingUp: React.Dispatch<React.SetStateAction<boolean | null>>;
   showSearchPage: boolean;
   setShowSearchPage: React.Dispatch<React.SetStateAction<boolean>>;
-  serverUrl: string;
 }>(null!);
 
 export const SettingsContext = createContext<{
@@ -74,4 +73,15 @@ export const SettingsContext = createContext<{
 export const AuthContext = createContext<{
   user: any;
   setUser: React.Dispatch<React.SetStateAction<any>>;
+}>(null!);
+
+export const StoryContext = createContext<{
+  viewStory: boolean;
+  setViewStory: React.Dispatch<React.SetStateAction<boolean>>;
+  storyIndex: number;
+  setStoryIndex: React.Dispatch<React.SetStateAction<number>>;
+  stories: any[];
+  userStory: any[];
+  setUserStory: React.Dispatch<React.SetStateAction<any[]>>;
+  setStories: React.Dispatch<React.SetStateAction<any[]>>;
 }>(null!);

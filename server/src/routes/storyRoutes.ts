@@ -7,6 +7,7 @@ import {
   processStoryFiles,
   deleteStory,
   hideStory,
+  updatetory,
 } from '../controllers/storyController.js';
 import protectRoute from '../middleware/protectRoute.js';
 
@@ -19,7 +20,7 @@ router
   .get(getStories)
   .post(validateStoryFiles, processStoryFiles, saveStory);
 
-router.route('/:id').get(getStory).delete(deleteStory);
+router.route('/:id').get(getStory).delete(deleteStory).patch(updatetory);
 
 router.patch('/hide/:id', hideStory);
 

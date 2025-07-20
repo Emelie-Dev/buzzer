@@ -4,8 +4,12 @@ import styles from '../styles/Home.module.css';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
-import { ContentContext, GeneralContext, AuthContext } from '../Contexts';
-import StoryModal from '../components/StoryModal';
+import {
+  ContentContext,
+  GeneralContext,
+  AuthContext,
+  StoryContext,
+} from '../Contexts';
 import { DataItem } from './Following';
 import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
@@ -14,8 +18,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
-import { apiClient } from '../Utilities';
 import Skeleton from 'react-loading-skeleton';
+import { serverUrl } from '../Utilities';
 
 export interface User {
   name: string;
@@ -209,18 +213,14 @@ const Home = () => {
     left: false,
     right: true,
   });
-  const [viewStory, setViewStory] = useState<boolean>(false);
-  const [storyIndex, setStoryIndex] = useState<number>(0);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
-  const [stories, setStories] = useState<any[]>(null!);
-  const [userStory, setUserStory] = useState<any[]>(null!);
-  const [storyItems, setStoryItems] = useState<any[]>(null!);
 
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
-  const { setCreateCategory, setShowSearchPage, serverUrl } =
-    useContext(GeneralContext);
-  const { setUser, user } = useContext(AuthContext);
+  const { setCreateCategory, setShowSearchPage } = useContext(GeneralContext);
+  const { user } = useContext(AuthContext);
+  const { stories, userStory, setStoryIndex, setViewStory } =
+    useContext(StoryContext);
 
   const storyRef = useRef<HTMLDivElement>(null!);
 
@@ -230,20 +230,6 @@ const Home = () => {
     document.title = 'Buzzer - Home';
 
     scrollHandler();
-
-    const getStories = async () => {
-      try {
-        const { data } = await apiClient('api/v1/stories');
-        setUser(data.data.user);
-        setStories([...data.data.users]);
-        setUserStory(data.data.userStories);
-      } catch {
-        setStories([]);
-        setUserStory([]);
-      }
-    };
-
-    getStories();
 
     return () => {
       setShowSearchPage(false);
@@ -274,33 +260,9 @@ const Home = () => {
     });
   };
 
-  const handleStoryItems = (itemIndex: number) => {
-    let start;
-    const end = itemIndex + 2;
-
-    if (itemIndex == 0) start = 0;
-    else start = itemIndex - 1;
-
-    setStoryItems(
-      stories.map((item, index) => {
-        if (index >= start && index < end) return item;
-        else return null;
-      })
-    );
-  };
-
   return (
     <>
       <NavBar page="home" />
-
-      {viewStory && (
-        <StoryModal
-          setViewStory={setViewStory}
-          itemIndex={storyIndex}
-          stories={stories}
-          storiesSet={storyItems}
-        />
-      )}
 
       <section className={styles.main}>
         <section className={styles['main-container']} onScroll={scrollHandler}>
@@ -344,7 +306,7 @@ const Home = () => {
                   <article
                     className={styles.user}
                     onClick={() => {
-                      setStoryIndex(-1);
+                      setStoryIndex(0);
                       setViewStory(true);
                     }}
                   >
@@ -389,7 +351,7 @@ const Home = () => {
                     <article
                       className={styles.user}
                       onClick={() => {
-                        setStoryIndex(-1);
+                        setStoryIndex(0);
                         setViewStory(true);
                       }}
                     >
@@ -434,8 +396,7 @@ const Home = () => {
                       key={index}
                       className={styles.user}
                       onClick={() => {
-                        handleStoryItems(index);
-                        setStoryIndex(index);
+                        setStoryIndex(userStory.length > 0 ? index + 1 : index);
                         setViewStory(true);
                       }}
                     >

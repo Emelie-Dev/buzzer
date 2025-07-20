@@ -149,7 +149,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 1.5rem;
+  padding: 1rem 1.5rem;
   z-index: 1;
 }
 
@@ -199,7 +199,7 @@
 
 .content {
   width: 100%;
-  max-height: 100%;
+  max-height: calc(100% - 50px);
   object-fit: cover;
 }
 
@@ -431,6 +431,175 @@
 
 .close-icon:hover {
   color: var(--app-theme-color);
+}
+
+.delete-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  cursor: pointer;
+}
+
+.delete-icon:hover {
+  fill: red;
+}
+
+.owner-div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  column-gap: 1.5rem;
+}
+
+.add-story-btn {
+  background: var(--app-theme-color);
+  color: white;
+  border: none;
+  outline: none;
+  font-family: appFontMedium;
+  font-size: 1rem;
+  width: 100%;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s;
+  padding: 0.7rem 0;
+}
+
+.add-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.5rem;
+}
+
+.add-story-btn:hover {
+  opacity: 0.85;
+}
+
+.settings-div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  cursor: pointer;
+}
+
+.settings-icon:hover,
+.settings-icon2 {
+  fill: var(--app-theme-color);
+}
+
+.settings-container {
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  position: absolute;
+  background: rgba(255, 255, 255, 1);
+  right: -10%;
+  bottom: 75px;
+  z-index: 2;
+  box-shadow: 1px 1px 10px -5px black;
+  border-radius: 8px;
+  color: black;
+  padding: 1rem 1.25rem;
+}
+
+.show-settings {
+  display: flex;
+}
+
+.settings-box {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.accessibility-text {
+  font-family: appFontMedium;
+  font-size: 1rem;
+}
+
+.accessibility-select {
+  outline: none;
+  border: 2px solid var(--app-theme-color);
+  border-radius: 5px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  font-family: appFont;
+  font-size: 0.95rem;
+}
+
+.settings-checkbox {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--app-theme-color);
+  margin-right: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-reply-text {
+  font-family: appFontMedium;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.save-btn-div {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.updating-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-btn {
+  background: var(--app-theme-color);
+  color: white;
+  border: none;
+  outline: none;
+  font-family: appFontMedium;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  padding: 0.4rem 0.8em;
+}
+
+.save-btn:hover {
+  opacity: 0.8;
+}
+
+.loading-box {
+  display: flex;
+  position: relative;
+  width: 1.3rem;
+  height: 1.3rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.disable-btn {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.hide-text {
+  visibility: hidden;
 }
 
 /* Animation */

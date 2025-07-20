@@ -12,6 +12,6 @@ router.use(protectRoute);
 
 router.route('/').get(getUserLikedPosts).post(likeItem);
 
-router.delete('/:id', dislikeItem);
+router.delete('/:collection/:documentId', dislikeItem);
 
 export default router;
