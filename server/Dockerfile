@@ -18,20 +18,21 @@ RUN if [ "$NODE_ENV" = "production" ]; then \
     npm install --legacy-peer-deps; \
     fi
 
-RUN npm install --cpu=x64 --os=linux --libc=glibc sharp --legacy-peer-deps --omit=optional
-
-# Copy the entire source code
+    
+    # Copy the entire source code
 COPY . .
 
 # Build only if in production
 RUN if [ "$NODE_ENV" = "production" ]; then \
-    npm run build && \
+npm run build && \
     mkdir -p /app/dist/public /app/dist/templates && \
     cp -r /app/src/public/* /app/dist/public/ && \
     cp -r /app/src/templates/* /app/dist/templates/ && \
     cp /app/src/worker.js /app/dist/ && \
     rm -rf /app/src; \
     fi
+
+RUN npm install --cpu=x64 --os=linux --libc=glibc sharp --legacy-peer-deps 
 
 # Expose the port
 EXPOSE 5000
