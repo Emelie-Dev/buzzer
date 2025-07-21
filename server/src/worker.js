@@ -4,11 +4,21 @@ import fs from 'fs';
 import path from 'path';
 import { tmpdir } from 'os';
 import ffmpeg from 'fluent-ffmpeg';
+import axios from 'axios';
 // import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 // import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 
 // ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 // ffmpeg.setFfprobePath(ffprobeInstaller.path);
+
+const sharpFromUrl = async (url) => {
+  const response = await axios.get(url, {
+    responseType: 'arraybuffer', // Get the image as binary
+  });
+
+  const imageBuffer = Buffer.from(response.data, 'binary');
+  return sharp(imageBuffer); // Now use this as normal sharp input
+};
 
 const emitEvent = (message) => {
   return workerpool.workerEmit(message);
@@ -43,8 +53,16 @@ const processImage = async (filter, filePath, tempFilePath) => {
     blur,
   } = filter;
 
+  let sharpInstance;
+
+  if (process.env.NODE_ENV === 'production') {
+    sharpInstance = await sharpFromUrl(filePath);
+  } else {
+    sharpInstance = sharp(filePath);
+  }
+
   // Process image and write it to the temp file
-  const processedFile = sharp(filePath)
+  const processedFile = sharpInstance
     .modulate({ brightness, saturation: saturate, hue })
     .linear(contrast, 0)
     .recomb([
