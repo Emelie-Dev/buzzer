@@ -5,7 +5,7 @@ import { FaFacebookSquare } from 'react-icons/fa';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
 import { useNavigate } from 'react-router-dom';
 import { GeneralContext } from '../Contexts';
-import debounce, { apiClient } from '../Utilities';
+import debounce, { apiClient, serverUrl } from '../Utilities';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
@@ -123,6 +123,8 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
       setShowSearchPage(false);
     };
   }, []);
+
+  console.log(serverUrl);
 
   useEffect(() => {
     const { email, password } = signinData;
