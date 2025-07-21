@@ -16,7 +16,7 @@ export default (folder: String) => {
         format: ext, // Use the original file extension as format
         public_id: `${
           (req as AuthRequest).user?._id
-        }-${Date.now()}-${Math.trunc(Math.random() * 1000000000)}${ext}`, // Unique name
+        }-${Date.now()}-${Math.trunc(Math.random() * 1000000000)}`, // Unique name
       };
     },
   });

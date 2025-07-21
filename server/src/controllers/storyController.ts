@@ -16,6 +16,7 @@ import multerConfig from '../utils/multerConfig.js';
 import { checkVideoFilesDuration } from '../worker.js';
 import Follow from '../models/followModel.js';
 import { Document } from 'mongoose';
+import cloudinary from '../utils/cloudinary.js';
 
 const upload = multerConfig('stories');
 
@@ -31,17 +32,29 @@ const deleteStoryFiles = async (files: {
   [fieldname: string]: Express.Multer.File[];
 }) => {
   const paths = Object.entries(files).reduce((accumulator, field) => {
-    accumulator.push(...field[1].map((data) => data.path));
+    accumulator.push(
+      ...field[1].map((data) => {
+        if (process.env.NODE_ENV === 'production') return data.filename;
+        else return data.path;
+      })
+    );
     return accumulator;
-  }, [] as String[]);
+  }, [] as string[]);
 
   await Promise.allSettled(
     paths.map((path): Promise<void> => {
       return new Promise((resolve, reject) => {
-        fs.unlink(path as fs.PathLike, (err) => {
-          if (err) reject();
-          resolve();
-        });
+        if (process.env.NODE_ENV === 'production') {
+          cloudinary.uploader.destroy(path, (err: any) => {
+            if (err) reject();
+            resolve();
+          });
+        } else {
+          fs.unlink(path as fs.PathLike, (err) => {
+            if (err) reject();
+            resolve();
+          });
+        }
       });
     })
   );
