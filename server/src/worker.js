@@ -300,13 +300,13 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
 
       const hasAudio = metadata.streams.some((s) => s.codec_type === 'audio');
 
-      const process = ffmpeg();
+      const transformProcess = ffmpeg();
       const complexFilter = [];
       let inputIndex = 0;
 
       // Cover image input
       if (cover.length > 0) {
-        process.input(cover[0].path).inputOptions(['-loop 1']);
+        transformProcess.input(cover[0].path).inputOptions(['-loop 1']);
         complexFilter.push(
           `[${inputIndex}:v]scale=720:1280:force_original_aspect_ratio=decrease,` +
             `pad=720:1280:(ow-iw)/2:(oh-ih)/2,setsar=1,` +
@@ -316,7 +316,7 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
       }
 
       // Main video input
-      process
+      transformProcess
         .input(reelFile[0].path)
         .setStartTime(start)
         .setDuration(end - start);
@@ -329,7 +329,7 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
 
       // Background sound input (optional)
       if (sound.length > 0) {
-        process.input(sound[0].path);
+        transformProcess.input(sound[0].path);
       }
 
       // Video stream merge
@@ -356,7 +356,9 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
         } else {
           // Silent fallback
           const silentAudioIndex = inputIndex;
-          process.input('anullsrc=r=44100:cl=stereo').inputFormat('lavfi');
+          transformProcess
+            .input('anullsrc=r=44100:cl=stereo')
+            .inputFormat('lavfi');
           audioFilter = `[${silentAudioIndex}:a]anull[outa]`;
           inputIndex++;
         }
@@ -366,7 +368,7 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
 
       const totalDuration = end - start + (cover.length > 0 ? 0.1 : 0);
 
-      process.complexFilter(complexFilter.join(';'));
+      transformProcess.complexFilter(complexFilter.join(';'));
 
       const outputOpts = [
         '-map',
@@ -378,7 +380,7 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
       ];
       outputOpts.push('-map', '[outa]');
 
-      process
+      transformProcess
         .outputOptions(outputOpts)
         .output(tempFilePath)
         .on('error', reject)
