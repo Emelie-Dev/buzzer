@@ -1,7 +1,6 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Analytics.module.css';
 import { useContext, useEffect, useState } from 'react';
-import StoryModal from '../components/StoryModal';
 import SwitchAccount from '../components/SwitchAccount';
 import EngagementAnalytics from '../components/EngagementAnalytics';
 import ContentAnalytics from '../components/ContentAnalytics';
@@ -18,7 +17,6 @@ const Analytics = () => {
   const [category, setCategory] = useState<
     'Engagement' | 'Content' | 'Followers'
   >('Engagement');
-  const [viewStory, setViewStory] = useState<boolean>(false);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const { setShowSearchPage } = useContext(GeneralContext);
@@ -95,8 +93,6 @@ const Analytics = () => {
           <FollowersAnalytics />
         )}
       </section>
-
-      {viewStory && <StoryModal setViewStory={setViewStory} itemIndex={0} />}
 
       {switchAccount && <SwitchAccount setSwitchAccount={setSwitchAccount} />}
     </>

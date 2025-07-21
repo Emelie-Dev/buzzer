@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import styles from '../styles/History.module.css';
 import NavBar from '../components/NavBar';
-import StoryModal from '../components/StoryModal';
 import SwitchAccount from '../components/SwitchAccount';
 import AsideHeader from '../components/AsideHeader';
 import { PeriodComponent } from '../components/PeriodComponent';
@@ -14,7 +13,6 @@ const mediumSize = window.matchMedia('(max-width: 900px)').matches;
 
 const History = () => {
   const [isMediumSize, setIsMediumSize] = useState<boolean>(mediumSize);
-  const [viewStory, setViewStory] = useState<boolean>(false);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
   const [selectCount, setSelectCount] = useState<number>(0);
 
@@ -193,8 +191,6 @@ const History = () => {
           </div>
         </div>
       </section>
-
-      {viewStory && <StoryModal setViewStory={setViewStory} itemIndex={0} />}
 
       {switchAccount && <SwitchAccount setSwitchAccount={setSwitchAccount} />}
     </>

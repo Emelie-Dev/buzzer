@@ -4,7 +4,6 @@ import styles from '../styles/Search.module.css';
 import { HiPlus } from 'react-icons/hi';
 import { PiCheckFatFill } from 'react-icons/pi';
 import { FaPlay } from 'react-icons/fa6';
-import StoryModal from '../components/StoryModal';
 import SwitchAccount from '../components/SwitchAccount';
 import AsideHeader from '../components/AsideHeader';
 import { IoClose, IoSearchSharp, IoArrowBack } from 'react-icons/io5';
@@ -16,7 +15,6 @@ const mediumSize = window.matchMedia('(max-width: 1100px)').matches;
 const Search = () => {
   const [isMediumSize, setIsMediumSize] = useState<boolean>(mediumSize);
   const [category, setCategory] = useState<'all' | 'users' | 'contents'>('all');
-  const [viewStory, setViewStory] = useState<boolean>(false);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
   const [overlaySearch, setOverlaySearch] = useState<boolean>(false);
@@ -789,8 +787,6 @@ const Search = () => {
           </div>
         )}
       </section>
-
-      {viewStory && <StoryModal setViewStory={setViewStory} itemIndex={0} />}
 
       {switchAccount && <SwitchAccount setSwitchAccount={setSwitchAccount} />}
     </>
