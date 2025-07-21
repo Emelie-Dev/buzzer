@@ -922,9 +922,7 @@ export const processStoryFiles = asyncErrorHandler(
       );
 
       next();
-    } catch (err) {
-      console.log(err);
-
+    } catch {
       await deleteStoryFiles(files);
 
       res.status(500).end(
@@ -986,8 +984,7 @@ export const saveStory = asyncErrorHandler(
           data: { story },
         })
       );
-    } catch (err) {
-      console.log(err);
+    } catch {
       await deleteStoryFiles(files);
 
       return res.status(500).end(
