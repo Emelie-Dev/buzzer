@@ -17,6 +17,11 @@ export default (folder: String) => {
         public_id: `${
           (req as AuthRequest).user?._id
         }-${Date.now()}-${Math.trunc(Math.random() * 1000000000)}`, // Unique name
+        resource_type: file.mimetype.startsWith('video')
+          ? 'video'
+          : file.mimetype.startsWith('image')
+          ? 'image'
+          : 'raw',
       };
     },
   });
