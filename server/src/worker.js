@@ -79,7 +79,7 @@ const processImage = async (filter, filePath, tempFilePath) => {
   // Overwrite the original file with the processed one
   await new Promise((resolve, reject) =>
     fs.rename(tempFilePath, filePath, (err) => {
-      if (err) return reject();
+      if (err) return reject(err);
       resolve();
     })
   );
