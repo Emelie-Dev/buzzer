@@ -42,7 +42,7 @@ const getGrayscaleMatrix = (intensity) => {
   );
 };
 
-const processImage = async (filter, filePath, tempFilePath) => {
+const processImage = async (filter, filePath, tempFilePath, filename) => {
   const {
     brightness,
     contrast,
@@ -77,15 +77,30 @@ const processImage = async (filter, filePath, tempFilePath) => {
   await processedFile.toFile(tempFilePath); // Save to temp file
 
   // Overwrite the original file with the processed one
-  await new Promise((resolve, reject) =>
-    fs.rename(tempFilePath, filePath, (err) => {
-      if (err) return reject(err);
-      resolve();
-    })
-  );
+  if (process.env.NODE_ENV === 'production') {
+    await cloudinary.uploader.upload(tempFilePath, {
+      public_id: filename,
+      resource_type: 'image',
+      overwrite: true,
+    });
+
+    await new Promise((resolve, reject) =>
+      fs.unlink(tempFilePath, (err) => {
+        if (err) return reject(err);
+        resolve();
+      })
+    );
+  } else {
+    await new Promise((resolve, reject) =>
+      fs.rename(tempFilePath, filePath, (err) => {
+        if (err) return reject(err);
+        resolve();
+      })
+    );
+  }
 };
 
-const processVideo = (filter, filePath, tempFilePath) => {
+const processVideo = (filter, filePath, tempFilePath, filename) => {
   const {
     brightness,
     contrast,
@@ -141,10 +156,31 @@ const processVideo = (filter, filePath, tempFilePath) => {
       .videoFilters(complexFilter)
       .output(tempFilePath)
       .on('end', () => {
-        fs.rename(tempFilePath, filePath, (err) => {
-          if (err) return reject(err);
-          else resolve();
-        });
+        if (process.env.NODE_ENV === 'production') {
+          cloudinary.uploader.upload(
+            tempFilePath,
+            {
+              public_id: filename,
+              resource_type: 'video',
+              overwrite: true,
+            },
+            (error) => {
+              if (error) {
+                reject(error);
+              } else {
+                fs.unlink(tempFilePath, (err) => {
+                  if (err) return reject(err);
+                  resolve();
+                });
+              }
+            }
+          );
+        } else {
+          fs.rename(tempFilePath, filePath, (err) => {
+            if (err) return reject(err);
+            else resolve();
+          });
+        }
       })
       .on('error', reject)
       .run();
@@ -228,11 +264,11 @@ export const processFiles = async (files, filters) => {
         );
 
         if (file.mimetype.startsWith('video')) {
-          await processVideo(filter, file.path, tempFilePath);
+          await processVideo(filter, file.path, tempFilePath, file.filename);
         }
 
         if (file.mimetype.startsWith('image')) {
-          await processImage(filter, file.path, tempFilePath);
+          await processImage(filter, file.path, tempFilePath, file.filename);
         }
       }
 
@@ -246,7 +282,7 @@ export const processFiles = async (files, filters) => {
   );
 };
 
-export const transformReelFiles = async (files, position = {}, volume = {}) => {
+export const transformReelFiles = (files, position = {}, volume = {}) => {
   const { reel: reelFile, sound = [], cover = [] } = files;
   const { start = 0, end = 0 } = position;
   const { original: originalVolume = 0, sound: soundVolume = 1 } = volume;
@@ -346,10 +382,31 @@ export const transformReelFiles = async (files, position = {}, volume = {}) => {
         .output(tempFilePath)
         .on('error', reject)
         .on('end', () => {
-          fs.rename(tempFilePath, reelFile[0].path, (err) => {
-            if (err) reject(err);
-            else resolve();
-          });
+          if (process.env.NODE_ENV === 'production') {
+            cloudinary.uploader.upload(
+              tempFilePath,
+              {
+                public_id: reelFile[0].filename,
+                resource_type: 'video',
+                overwrite: true,
+              },
+              (error) => {
+                if (error) {
+                  reject(error);
+                } else {
+                  fs.unlink(tempFilePath, (err) => {
+                    if (err) return reject(err);
+                    resolve();
+                  });
+                }
+              }
+            );
+          } else {
+            fs.rename(tempFilePath, reelFile[0].path, (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          }
         })
         .run();
     });
