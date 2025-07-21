@@ -17,9 +17,9 @@ export default async (ip: String = '') => {
 
   const { data: location } =
     process.env.NODE_ENV === 'production'
-      ? await axios.get(`https://ipinfo.io/${ip}/json`)
+      ? await axios.get(`https://ipwho.is/${ip}`)
       : await axios.get(
-          `https://ipinfo.io/${ips[Math.floor(Math.random() * 10)]}/json`
+          `https://ipwho.is/${ips[Math.floor(Math.random() * 10)]}`
         );
 
   const locationDetails = countryLookup.byIso(location.country);
