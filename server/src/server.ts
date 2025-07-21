@@ -4,8 +4,8 @@ import webpush from 'web-push';
 
 // Custom Modules
 import app from './app.js';
-import { createSchemasIfNeeded, syncAllCollections } from './typesense/sync.js';
-import watcher from './typesense/watcher.js';
+// import { createSchemasIfNeeded, syncAllCollections } from './typesense/sync.js';
+// import watcher from './typesense/watcher.js';
 
 // Set environmental variables
 config({ path: './config.env' });
@@ -30,12 +30,12 @@ await mongoose.connect(
 console.log('\nDatabase Connection successfull....');
 
 // Initialize typesense
-const initTypesense = async () => {
-  await createSchemasIfNeeded();
-  await syncAllCollections();
-  watcher();
-};
-await initTypesense();
+// const initTypesense = async () => {
+//   await createSchemasIfNeeded();
+//   await syncAllCollections();
+//   watcher();
+// };
+// await initTypesense();
 
 console.log('\nTypesense is running....');
 
