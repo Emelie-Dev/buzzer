@@ -4,15 +4,15 @@ import webpush from 'web-push';
 
 // Custom Modules
 import app from './app.js';
-// import { createSchemasIfNeeded, syncAllCollections } from './typesense/sync.js';
-// import watcher from './typesense/watcher.js';
+import { createSchemasIfNeeded, syncAllCollections } from './typesense/sync.js';
+import watcher from './typesense/watcher.js';
 
 // Set environmental variables
 config({ path: './config.env' });
 
 // Handles uncaught exceptions(No business with the server)
 process.on('uncaughtException', (err) => {
-  console.log('\nError ', { name: err.name, message: err.message }, err);
+  console.log('\nError ', { name: err.name, message: err.message });
   console.log('\nUncaught Exception Occured! Shutting down....\n');
   process.exit(1);
 });
@@ -30,12 +30,12 @@ await mongoose.connect(
 console.log('\nDatabase Connection successfull....');
 
 // Initialize typesense
-// const initTypesense = async () => {
-//   await createSchemasIfNeeded();
-//   await syncAllCollections();
-//   watcher();
-// };
-// await initTypesense();
+const initTypesense = async () => {
+  await createSchemasIfNeeded();
+  await syncAllCollections();
+  watcher();
+};
+await initTypesense();
 
 console.log('\nTypesense is running....');
 
