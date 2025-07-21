@@ -124,8 +124,6 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
     };
   }, []);
 
-  console.log(serverUrl);
-
   useEffect(() => {
     const { email, password } = signinData;
 
