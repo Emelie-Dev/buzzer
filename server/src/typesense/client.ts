@@ -15,7 +15,7 @@ const typesenseDev = new Typesense.Client({
 const typesenseProd = new Typesense.Client({
   nodes: [
     {
-      host: 'r8k3i62abdcspxu4p-1.a1.typesense.net',
+      host: 'obs7ivm4gf9waueqp-1.a1.typesense.net',
       port: 443,
       protocol: 'https',
     },

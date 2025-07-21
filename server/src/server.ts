@@ -14,9 +14,7 @@ config({ path: './config.env' });
 process.on('uncaughtException', (err) => {
   console.log('\nError ', { name: err.name, message: err.message });
   console.log('\nUncaught Exception Occured! Shutting down....\n');
-  server.close(() => {
-    process.exit(1);
-  });
+  process.exit(1);
 });
 
 // Connects to database
