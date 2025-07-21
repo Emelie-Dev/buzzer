@@ -63,8 +63,6 @@ export async function syncAllCollections() {
         : await model.find();
     const typesenseDocs = docs.map((doc: any) => transformDocument(doc));
 
-    console.log(await model.find(), schemaName);
-
     await typesense
       .collections(schemaName)
       .documents()
