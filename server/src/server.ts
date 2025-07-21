@@ -12,7 +12,7 @@ config({ path: './config.env' });
 
 // Handles uncaught exceptions(No business with the server)
 process.on('uncaughtException', (err) => {
-  console.log('\nError ', { name: err.name, message: err.message });
+  console.log('\nError ', { name: err.name, message: err.message }, err);
   console.log('\nUncaught Exception Occured! Shutting down....\n');
   process.exit(1);
 });
