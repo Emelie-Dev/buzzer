@@ -5,6 +5,7 @@ import path from 'path';
 import { tmpdir } from 'os';
 import ffmpeg from 'fluent-ffmpeg';
 import axios from 'axios';
+import cloudinary from 'cloudinary';
 // import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 // import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 
