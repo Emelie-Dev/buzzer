@@ -83,7 +83,7 @@ const updateProfileDetails = async (
             links: JSON.parse(links),
             photo: file
               ? process.env.NODE_ENV === 'production'
-                ? (file as any).secure_url
+                ? file.path
                 : path.basename(file.path)
               : photo,
             'settings.account.emailVisibility':

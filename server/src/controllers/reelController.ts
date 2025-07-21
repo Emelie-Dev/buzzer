@@ -39,7 +39,6 @@ const deleteReelFiles = async (
       );
     return accumulator;
   }, [] as String[]);
-  console.log(paths);
 
   await Promise.allSettled(
     paths.map((path) => {
