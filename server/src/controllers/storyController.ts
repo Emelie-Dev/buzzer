@@ -910,6 +910,8 @@ export const processStoryFiles = asyncErrorHandler(
 
       next();
     } catch (err) {
+      console.log(err);
+
       await deleteStoryFiles(files);
 
       res.status(500).end(
