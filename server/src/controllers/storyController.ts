@@ -955,7 +955,7 @@ export const saveStory = asyncErrorHandler(
         media: {
           src:
             process.env.NODE_ENV === 'production'
-              ? (file as any).secure_url
+              ? file.path
               : path.basename(file.path),
           mediaType: file.mimetype.startsWith('video')
             ? 'video'
@@ -968,7 +968,7 @@ export const saveStory = asyncErrorHandler(
         accessibility,
         sound: files.sound
           ? process.env.NODE_ENV === 'production'
-            ? (files.sound[0] as any).secure_url
+            ? files.sound[0].path
             : path.basename(files.sound[0].path)
           : '',
         volume,
