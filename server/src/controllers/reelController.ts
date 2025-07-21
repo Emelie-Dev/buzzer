@@ -15,6 +15,7 @@ import getUserLocation from '../utils/getUserLocation.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
 import { handleMentionNotifications } from '../utils/handleNotifications.js';
+import cloudinary from '../utils/cloudinary.js';
 
 const upload = multerConfig('reels');
 
@@ -30,12 +31,23 @@ const deleteReelFiles = async (
 
   const paths = Object.entries(files).reduce((accumulator, field) => {
     if (!excluded?.includes(field[0]))
-      accumulator.push(...field[1].map((data) => data.path));
+      accumulator.push(
+        ...field[1].map((data) => {
+          if (process.env.NODE_ENV === 'production') return data.filename;
+          else return data.path;
+        })
+      );
     return accumulator;
   }, [] as String[]);
 
   await Promise.allSettled(
-    paths.map((path) => fs.promises.unlink(path as fs.PathLike))
+    paths.map((path) => {
+      if (process.env.NODE_ENV === 'production') {
+        return cloudinary.uploader.destroy(String(path));
+      } else {
+        return fs.promises.unlink(path as fs.PathLike);
+      }
+    })
   );
 };
 
@@ -227,7 +239,7 @@ export const saveReel = asyncErrorHandler(
         user: req.user?._id,
         src:
           process.env.NODE_ENV === 'production'
-            ? (file as any).secure_url
+            ? file.path
             : path.basename(file.path),
         description: req.body.description,
         keywords: (() => {
@@ -322,7 +334,7 @@ export const saveReelSound = asyncErrorHandler(
           name: file.originalname,
           src:
             process.env.NODE_ENV === 'production'
-              ? (file as any).secure_url
+              ? file.path
               : path.basename(file.path),
         });
 
@@ -345,7 +357,13 @@ export const saveReelSound = asyncErrorHandler(
           },
         });
       } catch (err) {
-        if (file) await fs.promises.unlink(file.path as fs.PathLike);
+        if (file) {
+          if (process.env.NODE_ENV === 'production') {
+            await cloudinary.uploader.destroy(file.filename);
+          } else {
+            await fs.promises.unlink(file.path as fs.PathLike);
+          }
+        }
         return next(err);
       }
     });
@@ -363,7 +381,15 @@ export const deleteReelSound = asyncErrorHandler(
 
     // Also delte from cloudinary in production
     try {
-      await fs.promises.unlink(`src/public/reels/${sound.src as fs.PathLike}`);
+      if (process.env.NODE_ENV === 'production') {
+        await cloudinary.uploader.destroy(
+          `reels/${path.basename(String(sound.src))}`
+        );
+      } else {
+        await fs.promises.unlink(
+          `src/public/reels/${sound.src as fs.PathLike}`
+        );
+      }
     } catch {}
 
     reelSounds = reelSounds.filter((file: any) => String(file._id) !== id);
@@ -460,13 +486,15 @@ export const deleteReel = asyncErrorHandler(
     );
 
     // Deletes reel files
-    if (process.env.NODE_ENV === 'production') {
-      // Delete from cloudinary
-    } else {
-      try {
-        await fs.promises.unlink(`src/public/reels/${reel.src}`);
-      } catch {}
-    }
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        await cloudinary.uploader.destroy(
+          `reels/${path.basename(String(reel.src))}`
+        );
+      } else {
+        await fs.promises.unlink(`src/public/reels/${reel.src as fs.PathLike}`);
+      }
+    } catch {}
 
     return res.status(204).json({
       status: 'success',

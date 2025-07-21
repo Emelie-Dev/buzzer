@@ -13,19 +13,30 @@ import getUserLocation from '../utils/getUserLocation.js';
 // @ts-ignore
 import { checkVideoFilesDuration } from '../worker.js';
 import { handleMentionNotifications } from '../utils/handleNotifications.js';
+import cloudinary from '../utils/cloudinary.js';
 
 const upload = multerConfig('contents');
 
 const deleteContentFiles = async (files: Express.Multer.File[]) => {
-  const paths = files.map((file) => file.path);
+  const paths = files.map((file) => {
+    if (process.env.NODE_ENV === 'production') return file.filename;
+    else return file.path;
+  });
 
   await Promise.allSettled(
     paths.map((path): Promise<void> => {
       return new Promise((resolve, reject) => {
-        fs.unlink(path as fs.PathLike, (err) => {
-          if (err) reject();
-          resolve();
-        });
+        if (process.env.NODE_ENV === 'production') {
+          cloudinary.uploader.destroy(path, (err: any) => {
+            if (err) reject();
+            resolve();
+          });
+        } else {
+          fs.unlink(path as fs.PathLike, (err) => {
+            if (err) reject();
+            resolve();
+          });
+        }
       });
     })
   );
@@ -100,7 +111,7 @@ export const processContentFiles = asyncErrorHandler(
       );
 
       next();
-    } catch (err) {
+    } catch {
       await deleteContentFiles(files);
 
       res.status(500).end(
@@ -127,7 +138,7 @@ export const saveContent = asyncErrorHandler(
       const contentItems = files.map((file, index) => ({
         src:
           process.env.NODE_ENV === 'production'
-            ? (file as any).secure_url
+            ? file.path
             : path.basename(file.path),
         mediaType: file.mimetype.startsWith('video')
           ? 'video'
@@ -216,16 +227,23 @@ export const deleteContent = asyncErrorHandler(
     );
 
     // Deletes content files
-    if (process.env.NODE_ENV === 'production') {
-    } else {
-      const paths = content.media.map((file) => file.src);
+    const paths = content.media.map((file) => file.src);
 
-      try {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        await Promise.allSettled(
+          paths.map((src) =>
+            cloudinary.uploader.destroy(
+              `contents/${path.basename(String(src))}`
+            )
+          )
+        );
+      } else {
         await Promise.allSettled(
           paths.map((src) => fs.promises.unlink(`src/public/contents/${src}`))
         );
-      } catch {}
-    }
+      }
+    } catch {}
 
     return res.status(204).json({
       status: 'success',

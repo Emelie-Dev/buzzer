@@ -21,6 +21,7 @@ import Notification from '../models/notificationModel.js';
 import { randomUUID } from 'crypto';
 import { manageUserDevices, signToken } from './authController.js';
 import View from '../models/viewModel.js';
+import cloudinary from '../utils/cloudinary.js';
 
 const upload = multerConfig('users');
 
@@ -59,7 +60,11 @@ const updateProfileDetails = async (
             try {
               // => Add for cloudinary (production) later
 
-              if (process.env.NODE_ENV !== 'production') {
+              if (process.env.NODE_ENV === 'production') {
+                await cloudinary.uploader.destroy(
+                  `users/${path.basename(photo)}`
+                );
+              } else {
                 await fs.promises.unlink(`src/public/users/${photo}`);
               }
             } catch {}
@@ -92,7 +97,13 @@ const updateProfileDetails = async (
 
         resolve(user);
       } catch (err) {
-        if (file) await fs.promises.unlink(file.path as fs.PathLike);
+        if (file) {
+          if (process.env.NODE_ENV === 'production') {
+            await cloudinary.uploader.destroy(file.filename);
+          } else {
+            await fs.promises.unlink(file.path as fs.PathLike);
+          }
+        }
         reject(err);
       }
     });
@@ -576,16 +587,27 @@ export const deleteAccount = asyncErrorHandler(
       try {
         // => Add for cloudinary (production) later
 
-        if (process.env.NODE_ENV !== 'production')
+        if (process.env.NODE_ENV === 'production') {
+          await cloudinary.uploader.destroy(
+            `users/${path.basename(user.photo)}`
+          );
+        } else {
           await fs.promises.unlink(`src/public/users/${user.photo}`);
+        }
       } catch {}
     }
 
     if (user.reelSounds.length > 0) {
       await Promise.allSettled(
-        user.reelSounds.map((sound) =>
-          fs.promises.unlink(`src/public/reels/${sound.src}`)
-        )
+        user.reelSounds.map((sound) => {
+          if (process.env.NODE_ENV === 'production') {
+            return cloudinary.uploader.destroy(
+              `reels/${path.basename(sound.src)}`
+            );
+          } else {
+            return fs.promises.unlink(`src/public/reels/${sound.src}`);
+          }
+        })
       );
     }
 
@@ -596,10 +618,13 @@ export const deleteAccount = asyncErrorHandler(
 
           await Promise.allSettled(
             paths.map((src) => {
-              if (process.env.NODE_ENV !== 'production') {
+              if (process.env.NODE_ENV === 'production') {
+                return cloudinary.uploader.destroy(
+                  `contents/${path.basename(src)}`
+                );
+              } else {
                 return fs.promises.unlink(`src/public/contents/${src}`);
               }
-              return Promise.resolve();
             })
           );
         })
@@ -609,10 +634,13 @@ export const deleteAccount = asyncErrorHandler(
     if (reels.length > 0) {
       await Promise.allSettled(
         reels.map(({ src }) => {
-          if (process.env.NODE_ENV !== 'production') {
+          if (process.env.NODE_ENV === 'production') {
+            return cloudinary.uploader.destroy(
+              `reels/${path.basename(String(src))}`
+            );
+          } else {
             return fs.promises.unlink(`src/public/reels/${src}`);
           }
-          return Promise.resolve();
         })
       );
     }
@@ -620,10 +648,13 @@ export const deleteAccount = asyncErrorHandler(
     if (stories.length > 0) {
       await Promise.allSettled(
         stories.map(({ media }) => {
-          if (process.env.NODE_ENV !== 'production') {
+          if (process.env.NODE_ENV === 'production') {
+            return cloudinary.uploader.destroy(
+              `stories/${path.basename(String(media.src))}`
+            );
+          } else {
             return fs.promises.unlink(`src/public/stories/${media.src}`);
           }
-          return Promise.resolve();
         })
       );
     }
@@ -631,10 +662,13 @@ export const deleteAccount = asyncErrorHandler(
     if (storySounds.length > 0) {
       await Promise.allSettled(
         storySounds.map((src) => {
-          if (process.env.NODE_ENV !== 'production') {
+          if (process.env.NODE_ENV === 'production') {
+            return cloudinary.uploader.destroy(
+              `stories/${path.basename(String(src))}`
+            );
+          } else {
             return fs.promises.unlink(`src/public/stories/${src}`);
           }
-          return Promise.resolve();
         })
       );
     }

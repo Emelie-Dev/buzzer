@@ -1008,13 +1008,30 @@ export const deleteStory = asyncErrorHandler(
     // Deletes user story
     await story.deleteOne();
 
-    // Deletes user story and music file
-    if (process.env.NODE_ENV === 'production') {
-    } else {
-      try {
-        const deleteArray = [
-          fs.promises.unlink(`src/public/stories/${story.media.src}`),
-        ];
+    let deleteArray = [];
+
+    try {
+      // Deletes user story and music file
+      if (process.env.NODE_ENV === 'production') {
+        deleteArray.push(
+          cloudinary.uploader.destroy(
+            `stories/${path.basename(String(story.media.src))}`
+          )
+        );
+
+        if (story.sound) {
+          if (!(await Story.findOne({ sound: story.sound }))) {
+            deleteArray.push(
+              cloudinary.uploader.destroy(
+                `stories/${path.basename(String(story.sound))}`
+              )
+            );
+          }
+        }
+      } else {
+        deleteArray.push(
+          fs.promises.unlink(`src/public/stories/${story.media.src}`)
+        );
 
         if (story.sound) {
           if (!(await Story.findOne({ sound: story.sound }))) {
@@ -1023,10 +1040,9 @@ export const deleteStory = asyncErrorHandler(
             );
           }
         }
-
-        await Promise.allSettled(deleteArray);
-      } catch {}
-    }
+      }
+      await Promise.allSettled(deleteArray);
+    } catch {}
 
     return res.status(200).json({
       status: 'success',
@@ -1090,11 +1106,7 @@ export const hideStory = asyncErrorHandler(
     const updatedUser = await User.findByIdAndUpdate(
       req.user?._id,
       {
-        settings: {
-          general: {
-            hiddenStories: [...hiddenStories],
-          },
-        },
+        'settings.general.hiddenStories': [...hiddenStories],
       },
       {
         new: true,
