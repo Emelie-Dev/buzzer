@@ -2,9 +2,9 @@ import styles from '../styles/AsideHeader.module.css';
 import { HiPlusSm } from 'react-icons/hi';
 import { BiMessageDetail } from 'react-icons/bi';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import StoryModal from './StoryModal';
+import { useContext, useEffect, useState } from 'react';
 import SwitchAccount from './SwitchAccount';
+import { StoryContext } from '../Contexts';
 
 type AsideHeaderProps = {
   activeVideo?: HTMLVideoElement | null;
@@ -12,7 +12,7 @@ type AsideHeaderProps = {
 };
 
 const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
-  const [viewStory, setViewStory] = useState<boolean>(false);
+  const { viewStory, setViewStory } = useContext(StoryContext);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const navigate = useNavigate();
@@ -140,7 +140,6 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
           </div>
         </div>
       )}
-      {viewStory && <StoryModal setViewStory={setViewStory} itemIndex={0} />}
 
       {switchAccount && <SwitchAccount setSwitchAccount={setSwitchAccount} />}
     </>
