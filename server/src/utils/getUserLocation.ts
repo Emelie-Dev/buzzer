@@ -1,5 +1,5 @@
 import axios from 'axios';
-import countryLookup from 'country-code-lookup';
+// import countryLookup from 'country-code-lookup';
 
 export default async (ip: String = '') => {
   const ips = [
@@ -22,11 +22,11 @@ export default async (ip: String = '') => {
           `https://ipwho.is/${ips[Math.floor(Math.random() * 10)]}`
         );
 
-  const locationDetails = countryLookup.byIso(location.country);
+  // const locationDetails = countryLookup.byIso(location.country);
 
   return {
-    continent: locationDetails?.continent,
-    country: locationDetails?.country,
+    continent: location.continent,
+    country: location.country,
     state: location.region,
     city: location.city,
   };
