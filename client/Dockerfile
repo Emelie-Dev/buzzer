@@ -6,6 +6,10 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
+# Accept Vite env variable at build time
+ARG VITE_BACKEND_URL
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
 # Build only in production mode
 ARG NODE_ENV=development
 RUN if [ "$NODE_ENV" = "production" ]; then npm run build; fi
