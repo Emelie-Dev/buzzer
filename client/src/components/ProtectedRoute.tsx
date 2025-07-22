@@ -106,9 +106,12 @@ const ProtectedRoute = ({
       {authCheck === 'loading' ? (
         <div className={styles['loader-box']}>
           <LoadingAnimation
-            style={{ width: '7.5rem', height: '7.5rem', transform: 'scale(2)' }}
+            style={{
+              width: '11rem',
+              height: '11rem',
+              transform: 'scale(2)',
+            }}
           />
-          <span className={styles['app-name']}>Buzzer</span>
         </div>
       ) : authCheck === 'success' ? (
         <Component {...props} />

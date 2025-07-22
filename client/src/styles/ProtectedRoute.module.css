@@ -1,15 +1,8 @@
 .loader-box {
+  width: 100vw;
+  height: 80vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 7rem;
-}
-
-.app-name {
-  color: var(--app-theme-color);
-  font-size: 2.5rem;
-  font-family: logoFont;
-  font-weight: 600;
-  margin-top: 1rem;
 }

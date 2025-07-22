@@ -5,7 +5,7 @@ import { FaFacebookSquare } from 'react-icons/fa';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
 import { useNavigate } from 'react-router-dom';
 import { GeneralContext } from '../Contexts';
-import debounce, { apiClient } from '../Utilities';
+import { debounce, apiClient } from '../Utilities';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';

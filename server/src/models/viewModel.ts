@@ -21,7 +21,7 @@ const ViewSchema = new Schema<IView>({
   },
   collectionName: {
     type: String,
-    enum: ['content', 'user', 'reel'],
+    enum: ['content', 'user', 'reel', 'story'],
     required: true,
   },
   documentId: {

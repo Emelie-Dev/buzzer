@@ -17,7 +17,7 @@ import {
   MdDelete,
 } from 'react-icons/md';
 import { IoClose, IoSettingsSharp } from 'react-icons/io5';
-import { apiClient, serverUrl } from '../Utilities';
+import { apiClient, serverUrl, getUrl } from '../Utilities';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext, GeneralContext, StoryContext } from '../Contexts';
 import { toast } from 'sonner';
@@ -634,7 +634,7 @@ const StoryItem = ({
                 >
                   <img
                     className={styles['user-pic']}
-                    src={`${serverUrl}users/${user.photo}`}
+                    src={getUrl(user.photo, 'users')}
                   />
                   <span className={styles['user-name']}>{user.username}</span>
                 </span>
@@ -732,7 +732,7 @@ const StoryItem = ({
                     loading ? styles['hide-item'] : ''
                   }`}
                   ref={imgRef}
-                  src={`${serverUrl}stories/${stories[contentIndex].media.src}`}
+                  src={getUrl(stories[contentIndex].media.src, 'stories')}
                   onLoad={() => setLoading(false)}
                   onError={() => setLoading('error')}
                   onAbort={() => setLoading('error')}
@@ -753,7 +753,7 @@ const StoryItem = ({
                   onWaiting={showLoader}
                 >
                   <source
-                    src={`${serverUrl}stories/${stories[contentIndex].media.src}`}
+                    src={getUrl(stories[contentIndex].media.src, 'stories')}
                   />
                   Your browser does not support playing video.
                 </video>
@@ -934,12 +934,12 @@ const StoryItem = ({
             {stories[contentIndex].media.mediaType === 'image' ? (
               <img
                 className={styles['next-content']}
-                src={`${serverUrl}stories/${stories[0].media.src}`}
+                src={getUrl(stories[contentIndex].media.src, 'stories')}
               />
             ) : (
               <video className={styles['next-content']} autoPlay muted>
                 <source
-                  src={`${serverUrl}stories/${stories[contentIndex].media.src}`}
+                  src={getUrl(stories[contentIndex].media.src, 'stories')}
                   type="video/mp4"
                 />
                 Your browser does not support playing video.
@@ -953,7 +953,7 @@ const StoryItem = ({
               <span className={styles['next-story-img-box']}>
                 <img
                   className={styles['next-story-img']}
-                  src={`${serverUrl}users/${user.photo}`}
+                  src={getUrl(user.photo, 'users')}
                 />
               </span>
               <span className={styles['next-story-username']}>

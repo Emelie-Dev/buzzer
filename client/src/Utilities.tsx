@@ -240,4 +240,8 @@ export const debounce = <T extends (...args: unknown[]) => unknown>(
   };
 };
 
-export default debounce;
+export const getUrl = (path: string, resource: string) => {
+  return import.meta.env.MODE === 'production'
+    ? path
+    : `${serverUrl}${resource}/${path}`;
+};

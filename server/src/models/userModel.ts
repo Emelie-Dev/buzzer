@@ -43,10 +43,7 @@ export interface IUser extends Document {
   deleteVerificationTokenExpires: Date | undefined;
   storyFeed: {
     feedExpires: Date;
-    feed: {
-      user: Types.ObjectId;
-      watched: Types.ObjectId[];
-    }[];
+    feed: Types.ObjectId[];
   };
   location: ILocation;
   searchHistory: String[];
@@ -135,16 +132,8 @@ const UserSchema = new Schema<IUser>({
       feedExpires: Date,
       feed: [
         {
-          user: {
-            type: Schema.Types.ObjectId,
-            ref: 'User',
-          },
-          watched: [
-            {
-              type: Schema.Types.ObjectId,
-              ref: 'User',
-            },
-          ],
+          type: Schema.Types.ObjectId,
+          ref: 'User',
         },
       ],
     },

@@ -117,14 +117,72 @@ export const getSuggestedUsers = asyncErrorHandler(
 
     const users = await User.aggregate([
       { $match: { _id: { $nin: [req.user?._id, ...excludedUsers] } } },
+      {
+        $lookup: {
+          from: 'follows',
+          let: { userId: '$_id', viewerId: req.user?._id },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$viewerId', '$follower'] },
+                    { $eq: ['$$userId', '$following'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'follows',
+        },
+      },
+      {
+        $match: {
+          follows: [],
+        },
+      },
       { $sample: { size: 50 } },
       {
+        $lookup: {
+          from: 'stories',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: { $expr: { $eq: ['$$userId', '$user'] } },
+            },
+            {
+              $lookup: {
+                from: 'views',
+                let: { viewerId: req.user?._id, storyId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$collectionName', 'story'] },
+                          { $eq: ['$documentId', '$$storyId'] },
+                          { $eq: ['$user', '$$viewerId'] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+                as: 'hasViewed',
+              },
+            },
+            {
+              $addFields: { hasViewed: { $gt: [{ $size: '$hasViewed' }, 0] } },
+            },
+          ],
+          as: 'stories',
+        },
+      },
+      {
         $project: {
-          location: 0,
-          settings: 0,
-          storyFeed: 0,
-          searchHistory: 0,
-          createdAt: 0,
+          name: 1,
+          username: 1,
+          photo: 1,
+          stories: 1,
         },
       },
     ]);

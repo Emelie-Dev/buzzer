@@ -611,10 +611,7 @@ export const getStories = asyncErrorHandler(
         req.user?._id,
         {
           'storyFeed.feedExpires': Date.now() + 24 * 60 * 60 * 1000,
-          'storyFeed.feed': stories.map((story) => ({
-            user: story.user,
-            watched: [],
-          })),
+          'storyFeed.feed': stories.map((story) => story.user),
         },
         {
           new: true,
@@ -622,7 +619,7 @@ export const getStories = asyncErrorHandler(
         }
       );
     } else {
-      const userFeed = feed.map(({ user }: { user: string }) => user);
+      const userFeed = feed.map((user: string) => user);
 
       const usersStories = await Story.aggregate([
         {
@@ -783,7 +780,7 @@ export const getStories = asyncErrorHandler(
       ]);
 
       stories = feed
-        .map(({ user }: { user: string }) =>
+        .map((user: string) =>
           usersStories.find((obj: any) => String(obj.user._id) === String(user))
         )
         .filter((user: any) => user);

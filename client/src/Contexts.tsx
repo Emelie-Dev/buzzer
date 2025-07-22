@@ -64,6 +64,8 @@ export const GeneralContext = createContext<{
   setScrollingUp: React.Dispatch<React.SetStateAction<boolean | null>>;
   showSearchPage: boolean;
   setShowSearchPage: React.Dispatch<React.SetStateAction<boolean>>;
+  suggestedUsers: any[];
+  setSuggestedUsers: React.Dispatch<React.SetStateAction<any[]>>;
 }>(null!);
 
 export const SettingsContext = createContext<{

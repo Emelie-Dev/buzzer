@@ -6,6 +6,7 @@ import CustomError from '../utils/CustomError.js';
 import View from '../models/viewModel.js';
 import User from '../models/userModel.js';
 import Reel from '../models/reelModel.js';
+import Story from '../models/storyModel.js';
 
 export const viewItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -14,7 +15,9 @@ export const viewItem = asyncErrorHandler(
     documentId = documentId.toLowerCase();
 
     const query =
-      collection === 'content'
+      collection === 'story'
+        ? Story.findById(documentId)
+        : collection === 'content'
         ? Content.findById(documentId)
         : collection === 'user'
         ? User.findById(documentId)
@@ -40,6 +43,19 @@ export const viewItem = asyncErrorHandler(
         data.settings.content.notifications.interactions.profileViews;
 
       if (view || String(req.user?._id) === documentId || !allowNotifications) {
+        return res.status(200).json({
+          status: 'success',
+          message: null,
+        });
+      }
+    } else if (collection === 'story') {
+      const view = await View.findOne({
+        user: req.user?._id,
+        collectionName: 'story',
+        documentId: data._id,
+      });
+
+      if (view || String(req.user?._id) === String(data.user)) {
         return res.status(200).json({
           status: 'success',
           message: null,

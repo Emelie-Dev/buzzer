@@ -19,7 +19,10 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
 import Skeleton from 'react-loading-skeleton';
-import { serverUrl } from '../Utilities';
+import { apiClient, getUrl } from '../Utilities';
+import Engagements from '../components/Engagements';
+import { toast } from 'sonner';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 export interface User {
   name: string;
@@ -217,10 +220,19 @@ const Home = () => {
 
   const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
     useScrollHandler();
-  const { setCreateCategory, setShowSearchPage } = useContext(GeneralContext);
+  const {
+    setCreateCategory,
+    setShowSearchPage,
+    suggestedUsers,
+    setSuggestedUsers,
+  } = useContext(GeneralContext);
   const { user } = useContext(AuthContext);
   const { stories, userStory, setStoryIndex, setViewStory } =
     useContext(StoryContext);
+  const [engagementModal, setEngagementModal] = useState<
+    'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
+  >(null);
+  const [followList, setFollowList] = useState<Set<string>>(new Set());
 
   const storyRef = useRef<HTMLDivElement>(null!);
 
@@ -228,7 +240,6 @@ const Home = () => {
 
   useEffect(() => {
     document.title = 'Buzzer - Home';
-
     scrollHandler();
 
     return () => {
@@ -258,6 +269,33 @@ const Home = () => {
         target.scrollWidth - 5
       ),
     });
+  };
+
+  const hasViewedAll = (stories: any[]) => {
+    return stories.every((story) => story.hasViewed);
+  };
+
+  const followUser = async (id: string) => {
+    const newList = new Set(followList);
+    newList.add(id);
+    setFollowList(newList);
+
+    try {
+      await apiClient.post(`api/v1/follow/${id}`);
+
+      setSuggestedUsers((prevValue) =>
+        prevValue.filter((user) => user._id !== id)
+      );
+    } catch (err: any) {
+      if (!err.response) {
+        toast.error(`Could not follow user. Please Try again.`);
+      } else {
+        toast.error(err.response.data.message);
+      }
+    } finally {
+      newList.delete(id);
+      setFollowList(new Set(newList));
+    }
   };
 
   return (
@@ -312,7 +350,7 @@ const Home = () => {
                   >
                     <span className={styles['user-pics-box']}>
                       <img
-                        src={`${serverUrl}users/${user.photo}`}
+                        src={getUrl(user.photo, 'users')}
                         alt={user.username}
                         className={styles['user-pics']}
                       />
@@ -357,7 +395,7 @@ const Home = () => {
                     >
                       <span className={styles['user-pics-box']}>
                         <img
-                          src={`${serverUrl}users/${user.photo}`}
+                          src={getUrl(user.photo, 'users')}
                           alt={user.username}
                           className={styles['user-pics']}
                         />
@@ -402,7 +440,7 @@ const Home = () => {
                     >
                       <span className={styles['user-pics-box']}>
                         <img
-                          src={`${serverUrl}users/${user.photo}`}
+                          src={getUrl(user.photo, 'users')}
                           alt={user.username}
                           className={styles['user-pics']}
                         />
@@ -452,144 +490,98 @@ const Home = () => {
             <span className={styles['suggested-text']}>Suggested for you</span>
 
             <div className={styles['suggested-users']}>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
+              {suggestedUsers === null ? (
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className={styles['suggested-skeleton-box']}>
+                    <Skeleton circle height={48} width={48} />
+                    <div className={styles['suggested-skeleton-box2']}>
+                      <Skeleton height={14} width="50%" />
+                      <Skeleton height={14} width="80%" />
+                    </div>
+                    <Skeleton height={30} width={60} />
+                  </div>
+                ))
+              ) : suggestedUsers.length === 0 ? (
+                <div className={styles['no-data-text']}>
+                  We couldn’t find any users at the moment.
+                </div>
+              ) : (
+                suggestedUsers.slice(0, 10).map((user) => (
+                  <article
+                    key={user._id}
+                    className={styles['suggested-user']}
+                    onClick={() => navigate(`/@${user.username}`)}
+                  >
+                    <span
+                      className={`${styles['suggested-img-box']} ${
+                        user.stories.length > 0
+                          ? hasViewedAll(user.stories)
+                            ? styles['suggested-img-box2']
+                            : styles['suggested-img-box3']
+                          : ''
+                      }`}
+                    >
+                      <img
+                        src={getUrl(user.photo, 'users')}
+                        className={styles['suggested-user-img']}
+                      />
+                    </span>
 
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
+                    <span className={styles['suggested-user-names']}>
+                      <span className={styles['suggested-user-username']}>
+                        {user.name}
+                      </span>
+                      <span className={styles['suggested-user-handle']}>
+                        @{user.username}
+                      </span>
+                    </span>
 
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
+                    <span
+                      className={styles['follow-btn-box']}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        className={`${styles['follow-btn']} ${
+                          followList.has(user._id) ? styles['disable-btn'] : ''
+                        }`}
+                        onClick={() => followUser(user._id)}
+                      >
+                        <span
+                          className={`${
+                            followList.has(user._id) ? styles['follow-txt'] : ''
+                          } `}
+                        >
+                          Follow
+                        </span>
+                      </button>
 
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
+                      {followList.has(user._id) && (
+                        <LoadingAnimation
+                          style={{
+                            position: 'absolute',
+                            zIndex: 2,
+                            width: 60,
+                            height: 60,
+                            opacity: 0.7,
+                          }}
+                        />
+                      )}
+                    </span>
+                  </article>
+                ))
+              )}
             </div>
+
+            {suggestedUsers && suggestedUsers.length > 10 && (
+              <div>
+                <span
+                  className={styles['more-users-text']}
+                  onClick={() => setEngagementModal('suggested')}
+                >
+                  Show more
+                </span>
+              </div>
+            )}
           </div>
         </section>
       </section>
@@ -599,6 +591,10 @@ const Home = () => {
           showMobileMenu={showMobileMenu}
           setShowMobileMenu={setShowMobileMenu}
         />
+      )}
+
+      {engagementModal && (
+        <Engagements value={engagementModal} setValue={setEngagementModal} />
       )}
     </>
   );

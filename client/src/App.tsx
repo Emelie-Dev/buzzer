@@ -17,6 +17,7 @@ import { AuthContext, GeneralContext, StoryContext } from './Contexts';
 import { useEffect, useState } from 'react';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from 'sonner';
+import { apiClient } from './Utilities';
 
 const App = () => {
   const [settingsCategory, setSettingsCategory] = useState('');
@@ -30,11 +31,23 @@ const App = () => {
   const [userStory, setUserStory] = useState<any[]>(null!);
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [storyIndex, setStoryIndex] = useState<number>(0);
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>(null!);
 
   useEffect(() => {
     const deviceId = crypto.randomUUID();
     const id = localStorage.getItem('deviceId');
     if (!id) localStorage.setItem('deviceId', deviceId);
+
+    const getSuggestedUsers = async () => {
+      try {
+        const { data } = await apiClient('api/v1/users/suggested');
+        setSuggestedUsers(data.data.users);
+      } catch {
+        setSuggestedUsers([]);
+      }
+    };
+
+    getSuggestedUsers();
   }, []);
 
   return (
@@ -57,6 +70,8 @@ const App = () => {
             setScrollingUp,
             showSearchPage,
             setShowSearchPage,
+            suggestedUsers,
+            setSuggestedUsers,
           }}
         >
           <StoryContext.Provider

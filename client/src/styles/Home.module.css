@@ -52,6 +52,39 @@
   margin: 0 0.5rem;
 }
 
+.suggested-skeleton-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.suggested-skeleton-box2 {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  row-gap: 4px;
+}
+
+.no-data-text {
+  margin: 1rem 0.5rem;
+  color: gray;
+  font-family: appFontMedium;
+}
+
+.more-users-text {
+  color: var(--app-theme-color);
+  font-family: appFontSemi;
+  padding: 0 1.5rem;
+  cursor: pointer;
+}
+
+.more-users-text:hover {
+  text-decoration: underline;
+}
+
 .owner {
   position: sticky;
   left: 0;
@@ -231,6 +264,28 @@
   height: 3rem;
   object-fit: cover;
   border-radius: 50%;
+  border: 3px solid white;
+}
+
+.suggested-img-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.17rem;
+  border-radius: 50%;
+  background: white;
+}
+
+.suggested-img-box2 {
+  background: rgba(43, 48, 54, 0.3);
+}
+
+.suggested-img-box3 {
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
 }
 
 .suggested-user-names {
@@ -257,6 +312,14 @@
   overflow: hidden;
 }
 
+.follow-btn-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-left: auto;
+}
+
 .follow-btn {
   background: var(--app-theme-color);
   color: white;
@@ -265,7 +328,6 @@
   font-family: appFontMedium;
   font-size: 0.8rem;
   border-radius: 5px;
-  margin-left: auto;
   padding: 0.3rem 0.5rem;
   cursor: pointer;
   transition: color 0.3s;
@@ -275,8 +337,16 @@
   color: black;
 }
 
+.follow-txt {
+  visibility: hidden;
+}
+
 .suggested-user:hover {
   background: rgba(168, 85, 247, 0.2);
+}
+
+.disable-btn {
+  opacity: 0.5;
 }
 
 /* Media Queries */
