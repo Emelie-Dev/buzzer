@@ -13,27 +13,34 @@ import getUserLocation from '../utils/getUserLocation.js';
 // @ts-ignore
 import { checkVideoFilesDuration } from '../worker.js';
 import { handleMentionNotifications } from '../utils/handleNotifications.js';
-import cloudinary from '../utils/cloudinary.js';
+import handleCloudinary from '../utils/handleCloudinary.js';
 
 const upload = multerConfig('contents');
 
 const deleteContentFiles = async (files: Express.Multer.File[]) => {
   const paths = files.map((file) => {
-    if (process.env.NODE_ENV === 'production') return file.filename;
-    else return file.path;
+    if (process.env.NODE_ENV === 'production')
+      return {
+        path: file.filename,
+        type: file.mimetype.startsWith('video')
+          ? 'video'
+          : file.mimetype.startsWith('image')
+          ? 'image'
+          : 'raw',
+      };
+    else return { path: file.path };
   });
 
   await Promise.allSettled(
-    paths.map((path): Promise<void> => {
+    paths.map(({ path, type }): Promise<void> => {
       return new Promise((resolve, reject) => {
         if (process.env.NODE_ENV === 'production') {
-          cloudinary.uploader.destroy(path, (err: any) => {
-            if (err) reject();
-            resolve();
-          });
+          handleCloudinary('delete', path, type as 'image' | 'video' | 'raw')
+            .then(() => resolve())
+            .catch((err) => reject(err));
         } else {
           fs.unlink(path as fs.PathLike, (err) => {
-            if (err) reject();
+            if (err) reject(err);
             resolve();
           });
         }
@@ -227,20 +234,27 @@ export const deleteContent = asyncErrorHandler(
     );
 
     // Deletes content files
-    const paths = content.media.map((file) => file.src);
+    const paths = content.media.map((file) => ({
+      src: file.src,
+      type: file.mediaType,
+    }));
 
     try {
       if (process.env.NODE_ENV === 'production') {
         await Promise.allSettled(
-          paths.map((src) =>
-            cloudinary.uploader.destroy(
-              `contents/${path.basename(String(src))}`
+          paths.map(({ src, type }) =>
+            handleCloudinary(
+              'delete',
+              `contents/${path.basename(String(src))}`,
+              type
             )
           )
         );
       } else {
         await Promise.allSettled(
-          paths.map((src) => fs.promises.unlink(`src/public/contents/${src}`))
+          paths.map(({ src }) =>
+            fs.promises.unlink(`src/public/contents/${src}`)
+          )
         );
       }
     } catch {}

@@ -16,7 +16,7 @@ import multerConfig from '../utils/multerConfig.js';
 import { checkVideoFilesDuration } from '../worker.js';
 import Follow from '../models/followModel.js';
 import { Document } from 'mongoose';
-import cloudinary from '../utils/cloudinary.js';
+import handleCloudinary from '../utils/handleCloudinary.js';
 
 const upload = multerConfig('stories');
 
@@ -34,21 +34,28 @@ const deleteStoryFiles = async (files: {
   const paths = Object.entries(files).reduce((accumulator, field) => {
     accumulator.push(
       ...field[1].map((data) => {
-        if (process.env.NODE_ENV === 'production') return data.filename;
-        else return data.path;
+        if (process.env.NODE_ENV === 'production')
+          return {
+            path: data.filename,
+            type: data.mimetype.startsWith('video')
+              ? 'video'
+              : data.mimetype.startsWith('image')
+              ? 'image'
+              : 'raw',
+          };
+        else return { path: data.path };
       })
     );
     return accumulator;
-  }, [] as string[]);
+  }, [] as { path: string; type?: string }[]);
 
   await Promise.allSettled(
-    paths.map((path): Promise<void> => {
+    paths.map(({ path, type }): Promise<void> => {
       return new Promise((resolve, reject) => {
         if (process.env.NODE_ENV === 'production') {
-          cloudinary.uploader.destroy(path, (err: any) => {
-            if (err) reject();
-            resolve();
-          });
+          handleCloudinary('delete', path, type as 'image' | 'video' | 'raw')
+            .then(() => resolve())
+            .catch((err) => reject(err));
         } else {
           fs.unlink(path as fs.PathLike, (err) => {
             if (err) reject();
@@ -1014,16 +1021,20 @@ export const deleteStory = asyncErrorHandler(
       // Deletes user story and music file
       if (process.env.NODE_ENV === 'production') {
         deleteArray.push(
-          cloudinary.uploader.destroy(
-            `stories/${path.basename(String(story.media.src))}`
+          handleCloudinary(
+            'delete',
+            `stories/${path.basename(String(story.media.src))}`,
+            story.media.mediaType
           )
         );
 
         if (story.sound) {
           if (!(await Story.findOne({ sound: story.sound }))) {
             deleteArray.push(
-              cloudinary.uploader.destroy(
-                `stories/${path.basename(String(story.sound))}`
+              handleCloudinary(
+                'delete',
+                `stories/${path.basename(String(story.sound))}`,
+                'raw'
               )
             );
           }

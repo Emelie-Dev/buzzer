@@ -15,7 +15,7 @@ import getUserLocation from '../utils/getUserLocation.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
 import { handleMentionNotifications } from '../utils/handleNotifications.js';
-import cloudinary from '../utils/cloudinary.js';
+import handleCloudinary from '../utils/handleCloudinary.js';
 
 const upload = multerConfig('reels');
 
@@ -27,23 +27,33 @@ const deleteReelFiles = async (
   },
   excluded?: string[]
 ) => {
-  //=> Handle for cloudinary(failed processed files)
-
   const paths = Object.entries(files).reduce((accumulator, field) => {
     if (!excluded?.includes(field[0]))
       accumulator.push(
         ...field[1].map((data) => {
-          if (process.env.NODE_ENV === 'production') return data.filename;
-          else return data.path;
+          if (process.env.NODE_ENV === 'production')
+            return {
+              path: data.filename,
+              type: data.mimetype.startsWith('video')
+                ? 'video'
+                : data.mimetype.startsWith('image')
+                ? 'image'
+                : 'raw',
+            };
+          else return { path: data.path };
         })
       );
     return accumulator;
-  }, [] as String[]);
+  }, [] as { path: string; type?: string }[]);
 
   await Promise.allSettled(
-    paths.map((path) => {
+    paths.map(({ path, type }) => {
       if (process.env.NODE_ENV === 'production') {
-        return cloudinary.uploader.destroy(String(path));
+        return handleCloudinary(
+          'delete',
+          String(path),
+          (type as 'image' | 'video' | 'raw')!
+        );
       } else {
         return fs.promises.unlink(path as fs.PathLike);
       }
@@ -359,7 +369,7 @@ export const saveReelSound = asyncErrorHandler(
       } catch (err) {
         if (file) {
           if (process.env.NODE_ENV === 'production') {
-            await cloudinary.uploader.destroy(file.filename);
+            await handleCloudinary('delete', file.filename, 'raw');
           } else {
             await fs.promises.unlink(file.path as fs.PathLike);
           }
@@ -379,11 +389,12 @@ export const deleteReelSound = asyncErrorHandler(
 
     if (!sound) return next(new CustomError('This sound does not exist!', 404));
 
-    // Also delte from cloudinary in production
     try {
       if (process.env.NODE_ENV === 'production') {
-        await cloudinary.uploader.destroy(
-          `reels/${path.basename(String(sound.src))}`
+        await handleCloudinary(
+          'delete',
+          `reels/${path.basename(String(sound.src))}`,
+          'raw'
         );
       } else {
         await fs.promises.unlink(
@@ -488,8 +499,10 @@ export const deleteReel = asyncErrorHandler(
     // Deletes reel files
     try {
       if (process.env.NODE_ENV === 'production') {
-        await cloudinary.uploader.destroy(
-          `reels/${path.basename(String(reel.src))}`
+        await handleCloudinary(
+          'delete',
+          `reels/${path.basename(String(reel.src))}`,
+          'video'
         );
       } else {
         await fs.promises.unlink(`src/public/reels/${reel.src as fs.PathLike}`);

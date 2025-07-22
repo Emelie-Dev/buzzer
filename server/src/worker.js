@@ -5,7 +5,7 @@ import path from 'path';
 import { tmpdir } from 'os';
 import ffmpeg from 'fluent-ffmpeg';
 import axios from 'axios';
-import cloudinary from './utils/cloudinary.js';
+import handleCloudinary from './utils/handleCloudinary.js';
 // import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 // import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 
@@ -79,11 +79,7 @@ const processImage = async (filter, filePath, tempFilePath, filename) => {
 
   // Overwrite the original file with the processed one
   if (process.env.NODE_ENV === 'production') {
-    await cloudinary.uploader.upload(tempFilePath, {
-      public_id: filename,
-      resource_type: 'image',
-      overwrite: true,
-    });
+    await handleCloudinary('upload', filename, 'image', tempFilePath);
 
     await new Promise((resolve, reject) =>
       fs.unlink(tempFilePath, (err) => {
@@ -158,24 +154,14 @@ const processVideo = (filter, filePath, tempFilePath, filename) => {
       .output(tempFilePath)
       .on('end', () => {
         if (process.env.NODE_ENV === 'production') {
-          cloudinary.uploader.upload(
-            tempFilePath,
-            {
-              public_id: filename,
-              resource_type: 'video',
-              overwrite: true,
-            },
-            (error) => {
-              if (error) {
-                reject(error);
-              } else {
-                fs.unlink(tempFilePath, (err) => {
-                  if (err) return reject(err);
-                  resolve();
-                });
-              }
-            }
-          );
+          handleCloudinary('upload', filename, 'video', tempFilePath)
+            .then(() => {
+              fs.unlink(tempFilePath, (err) => {
+                if (err) return reject(err);
+                resolve();
+              });
+            })
+            .catch((err) => reject(err));
         } else {
           fs.rename(tempFilePath, filePath, (err) => {
             if (err) return reject(err);
@@ -386,24 +372,19 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
         .on('error', reject)
         .on('end', () => {
           if (process.env.NODE_ENV === 'production') {
-            cloudinary.uploader.upload(
-              tempFilePath,
-              {
-                public_id: reelFile[0].filename,
-                resource_type: 'video',
-                overwrite: true,
-              },
-              (error) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  fs.unlink(tempFilePath, (err) => {
-                    if (err) return reject(err);
-                    resolve();
-                  });
-                }
-              }
-            );
+            handleCloudinary(
+              'upload',
+              reelFile[0].filename,
+              'video',
+              tempFilePath
+            )
+              .then(() => {
+                fs.unlink(tempFilePath, (err) => {
+                  if (err) return reject(err);
+                  resolve();
+                });
+              })
+              .catch((err) => reject(err));
           } else {
             fs.rename(tempFilePath, reelFile[0].path, (err) => {
               if (err) reject(err);

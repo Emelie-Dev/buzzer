@@ -21,7 +21,7 @@ import Notification from '../models/notificationModel.js';
 import { randomUUID } from 'crypto';
 import { manageUserDevices, signToken } from './authController.js';
 import View from '../models/viewModel.js';
-import cloudinary from '../utils/cloudinary.js';
+import handleCloudinary from '../utils/handleCloudinary.js';
 
 const upload = multerConfig('users');
 
@@ -58,11 +58,11 @@ const updateProfileDetails = async (
           // Delete previous photo
           if (photo !== 'default.jpeg') {
             try {
-              // => Add for cloudinary (production) later
-
               if (process.env.NODE_ENV === 'production') {
-                await cloudinary.uploader.destroy(
-                  `users/${path.basename(photo)}`
+                await handleCloudinary(
+                  'delete',
+                  `users/${path.basename(photo)}`,
+                  'image'
                 );
               } else {
                 await fs.promises.unlink(`src/public/users/${photo}`);
@@ -99,7 +99,7 @@ const updateProfileDetails = async (
       } catch (err) {
         if (file) {
           if (process.env.NODE_ENV === 'production') {
-            await cloudinary.uploader.destroy(file.filename);
+            await handleCloudinary('delete', file.filename, 'image');
           } else {
             await fs.promises.unlink(file.path as fs.PathLike);
           }
@@ -585,11 +585,11 @@ export const deleteAccount = asyncErrorHandler(
 
     if (user.photo !== 'default.jpeg') {
       try {
-        // => Add for cloudinary (production) later
-
         if (process.env.NODE_ENV === 'production') {
-          await cloudinary.uploader.destroy(
-            `users/${path.basename(user.photo)}`
+          await handleCloudinary(
+            'delete',
+            `users/${path.basename(user.photo)}`,
+            'image'
           );
         } else {
           await fs.promises.unlink(`src/public/users/${user.photo}`);
@@ -601,8 +601,10 @@ export const deleteAccount = asyncErrorHandler(
       await Promise.allSettled(
         user.reelSounds.map((sound) => {
           if (process.env.NODE_ENV === 'production') {
-            return cloudinary.uploader.destroy(
-              `reels/${path.basename(sound.src)}`
+            return handleCloudinary(
+              'delete',
+              `reels/${path.basename(sound.src)}`,
+              'raw'
             );
           } else {
             return fs.promises.unlink(`src/public/reels/${sound.src}`);
@@ -614,13 +616,18 @@ export const deleteAccount = asyncErrorHandler(
     if (contents.length > 0) {
       await Promise.allSettled(
         contents.map(async (content) => {
-          const paths = content.media.map((file) => file.src);
+          const paths = content.media.map((file) => ({
+            src: file.src,
+            type: file.mediaType,
+          }));
 
           await Promise.allSettled(
-            paths.map((src) => {
+            paths.map(({ src, type }) => {
               if (process.env.NODE_ENV === 'production') {
-                return cloudinary.uploader.destroy(
-                  `contents/${path.basename(src)}`
+                return handleCloudinary(
+                  'delete',
+                  `contents/${path.basename(src)}`,
+                  type
                 );
               } else {
                 return fs.promises.unlink(`src/public/contents/${src}`);
@@ -635,8 +642,10 @@ export const deleteAccount = asyncErrorHandler(
       await Promise.allSettled(
         reels.map(({ src }) => {
           if (process.env.NODE_ENV === 'production') {
-            return cloudinary.uploader.destroy(
-              `reels/${path.basename(String(src))}`
+            return handleCloudinary(
+              'delete',
+              `reels/${path.basename(String(src))}`,
+              'video'
             );
           } else {
             return fs.promises.unlink(`src/public/reels/${src}`);
@@ -649,8 +658,10 @@ export const deleteAccount = asyncErrorHandler(
       await Promise.allSettled(
         stories.map(({ media }) => {
           if (process.env.NODE_ENV === 'production') {
-            return cloudinary.uploader.destroy(
-              `stories/${path.basename(String(media.src))}`
+            return handleCloudinary(
+              'delete',
+              `stories/${path.basename(String(media.src))}`,
+              media.mediaType
             );
           } else {
             return fs.promises.unlink(`src/public/stories/${media.src}`);
@@ -663,8 +674,10 @@ export const deleteAccount = asyncErrorHandler(
       await Promise.allSettled(
         storySounds.map((src) => {
           if (process.env.NODE_ENV === 'production') {
-            return cloudinary.uploader.destroy(
-              `stories/${path.basename(String(src))}`
+            return handleCloudinary(
+              'delete',
+              `stories/${path.basename(String(src))}`,
+              'raw'
             );
           } else {
             return fs.promises.unlink(`src/public/stories/${src}`);
