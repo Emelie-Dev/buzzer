@@ -233,6 +233,7 @@ const Home = () => {
     'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
   >(null);
   const [followList, setFollowList] = useState<Set<string>>(new Set());
+  const [contents, setContents] = useState<any[]>(null!);
 
   const storyRef = useRef<HTMLDivElement>(null!);
 
@@ -241,6 +242,18 @@ const Home = () => {
   useEffect(() => {
     document.title = 'Buzzer - Home';
     scrollHandler();
+
+    const getContents = async () => {
+      try {
+        const { data } = await apiClient('v1/contents?category=home');
+        setContents(data.data.contents);
+      } catch {
+        setContents([]);
+        toast.error(`Error loading posts. Refresh to try again`);
+      }
+    };
+
+    getContents();
 
     return () => {
       setShowSearchPage(false);
@@ -281,7 +294,7 @@ const Home = () => {
     setFollowList(newList);
 
     try {
-      await apiClient.post(`api/v1/follow/${id}`);
+      await apiClient.post(`v1/follow/${id}`);
 
       setSuggestedUsers((prevValue) =>
         prevValue.filter((user) => user._id !== id)
@@ -469,14 +482,54 @@ const Home = () => {
             value={{ contentRef, activeVideo, setActiveVideo }}
           >
             <div className={styles['content-container']}>
-              {dataList.map((data, index) => (
-                <ContentBox
-                  key={index}
-                  data={data}
-                  contentType="home"
-                  setShowMobileMenu={setShowMobileMenu}
-                />
-              ))}
+              {contents === null ? (
+                Array.from({ length: 2 }).map((_, index) => (
+                  <div key={index} className={styles['content-skeleton-div']}>
+                    <div className={styles['top-content-skeleton']}>
+                      <Skeleton inline height={22} />
+                      <Skeleton inline height={10} />
+                    </div>
+                    <div className={styles['bottom-content-skeleton']}>
+                      <Skeleton inline height={500} />
+                      <div className={styles['engagement-content-skeleton']}>
+                        <Skeleton circle width={50} height={50} />
+                        <br />
+                        <span className={styles['engagement-skeleton-box']}>
+                          <Skeleton circle width={40} height={40} />
+                          <Skeleton width={30} height={12} />
+                        </span>
+                        <span className={styles['engagement-skeleton-box']}>
+                          <Skeleton circle width={40} height={40} />
+                          <Skeleton width={30} height={12} />
+                        </span>
+                        <span className={styles['engagement-skeleton-box']}>
+                          <Skeleton circle width={40} height={40} />
+                          <Skeleton width={30} height={12} />
+                        </span>
+                        <span className={styles['engagement-skeleton-box']}>
+                          <Skeleton circle width={40} height={40} />
+                          <Skeleton width={30} height={12} />
+                        </span>
+                      </div>
+                    </div>
+                    <Skeleton inline width={'80%'} height={40} />
+                  </div>
+                ))
+              ) : contents.length === 0 ? (
+                <div className={styles['no-data-text']}>
+                  Something went wrong while loading contents. Please refresh
+                  the page or check your connection.
+                </div>
+              ) : (
+                dataList.map((data, index) => (
+                  <ContentBox
+                    key={index}
+                    data={data}
+                    contentType="home"
+                    setShowMobileMenu={setShowMobileMenu}
+                  />
+                ))
+              )}
             </div>
           </ContentContext.Provider>
 

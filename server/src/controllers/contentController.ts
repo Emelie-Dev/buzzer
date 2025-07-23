@@ -14,6 +14,7 @@ import getUserLocation from '../utils/getUserLocation.js';
 import { checkVideoFilesDuration } from '../worker.js';
 import { handleMentionNotifications } from '../utils/handleNotifications.js';
 import handleCloudinary from '../utils/handleCloudinary.js';
+import { ContentAccessibility } from '../models/storyModel.js';
 
 const upload = multerConfig('contents');
 
@@ -320,6 +321,7 @@ export const getContents = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const categories = ['home', 'following', 'friends'];
     const category = String(req.query.category).trim();
+    const viewerId = req.user?._id;
 
     if (!categories.includes(category)) {
       return next(new CustomError('Invalid request!', 400));
@@ -327,20 +329,204 @@ export const getContents = asyncErrorHandler(
 
     const excludedUsers =
       req.user?.settings.content.notInterested.content || [];
-    excludedUsers.push(req.user?._id);
+    excludedUsers.push(viewerId);
 
     let contents;
 
     switch (category) {
       case 'home':
         contents = await Content.aggregate([
-          { $match: { user: { $nin: excludedUsers } } },
+          {
+            $match: {
+              user: { $nin: excludedUsers },
+              'settings.accessibility': {
+                $in: [
+                  ContentAccessibility.EVERYONE,
+                  ContentAccessibility.FRIENDS,
+                ],
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: 'views',
+              let: { contentId: '$_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$documentId', '$$contentId'] },
+                        { $eq: ['$user', viewerId] },
+                      ],
+                    },
+                  },
+                },
+                { $limit: 1 },
+                { $project: { _id: 1 } },
+              ],
+              as: 'viewed',
+            },
+          },
+          { $match: { viewed: [] } },
+          {
+            $lookup: {
+              from: 'friends',
+              let: { ownerId: '$user' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $or: [
+                        {
+                          $and: [
+                            { $eq: ['$requester', '$$ownerId'] },
+                            { $eq: ['$recipient', viewerId] },
+                          ],
+                        },
+                        {
+                          $and: [
+                            { $eq: ['$requester', viewerId] },
+                            { $eq: ['$recipient', '$$ownerId'] },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'isFriend',
+            },
+          },
+          {
+            $match: {
+              $or: [
+                { 'settings.accessibility': ContentAccessibility.EVERYONE },
+                { isFriend: { $ne: [] } },
+              ],
+            },
+          },
           { $sample: { size: 10 } },
           {
-            $project: {
-              location: 0,
-              settings: 0,
-              __v: 0,
+            $lookup: {
+              from: 'users',
+              localField: 'user',
+              foreignField: '_id',
+              as: 'user',
+              pipeline: [{ $project: { username: 1, name: 1, photo: 1 } }],
+            },
+          },
+          {
+            $lookup: {
+              from: 'stories',
+              let: { userId: '$user' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
+                  },
+                },
+                {
+                  $lookup: {
+                    from: 'views',
+                    let: { storyId: '$_id' },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $and: [
+                              { $eq: ['$documentId', '$$storyId'] },
+                              { $eq: ['$user', viewerId] },
+                            ],
+                          },
+                        },
+                      },
+                      { $project: { _id: 1 } },
+                    ],
+                    as: 'storyView',
+                  },
+                },
+                { $project: { _id: 1 } },
+              ],
+              as: 'stories',
+            },
+          },
+          {
+            $lookup: {
+              from: 'comments',
+              localField: '_id',
+              foreignField: 'documentId',
+              as: 'comments',
+            },
+          },
+          {
+            $lookup: {
+              from: 'shares',
+              localField: '_id',
+              foreignField: 'documentId',
+              as: 'shares',
+            },
+          },
+          {
+            $lookup: {
+              from: 'likes',
+              localField: '_id',
+              foreignField: 'documentId',
+              as: 'likes',
+            },
+          },
+          {
+            $lookup: {
+              from: 'bookmarks',
+              localField: '_id',
+              foreignField: 'documentId',
+              as: 'bookmarks',
+            },
+          },
+          {
+            $addFields: {
+              user: { $first: '$user' },
+              commentsCount: { $size: '$comments' },
+              sharesCount: { $size: '$shares' },
+              likesCount: { $size: '$likes' },
+              bookmarksCount: { $size: '$bookmarks' },
+              userLike: {
+                $first: {
+                  $filter: {
+                    input: '$likes',
+                    as: 'like',
+                    cond: { $eq: ['$$like.user', viewerId] },
+                  },
+                },
+              },
+              userBookmark: {
+                $first: {
+                  $filter: {
+                    input: '$bookmarks',
+                    as: 'bookmark',
+                    cond: { $eq: ['$$bookmark.user', viewerId] },
+                  },
+                },
+              },
+              hasStory: {
+                $gt: [{ $size: '$stories' }, 0],
+              },
+              hasUnviewedStory: {
+                $anyElementTrue: {
+                  $map: {
+                    input: '$stories',
+                    as: 'story',
+                    in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+                  },
+                },
+              },
+              comments: '$$REMOVE',
+              shares: '$$REMOVE',
+              likes: '$$REMOVE',
+              bookmarks: '$$REMOVE',
+              stories: '$$REMOVE',
+              isFriend: '$$REMOVE',
+              viewed: '$$REMOVE',
             },
           },
         ]);

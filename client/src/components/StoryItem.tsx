@@ -238,7 +238,7 @@ const StoryItem = ({
 
       const deleteStory = async () => {
         try {
-          await apiClient.delete(`api/v1/stories/${id}`);
+          await apiClient.delete(`v1/stories/${id}`);
 
           setUserStory(newStories);
 
@@ -446,10 +446,7 @@ const StoryItem = ({
     setUpdatingList(newSet);
 
     try {
-      const { data } = await apiClient.patch(
-        `api/v1/stories/${id}`,
-        updateData
-      );
+      const { data } = await apiClient.patch(`v1/stories/${id}`, updateData);
       const updatedStory = data.data.story;
       const updatedUserStory = userStory.map((value) => {
         let story = { ...value };
@@ -506,14 +503,14 @@ const StoryItem = ({
 
     try {
       if (like) {
-        const { data } = await apiClient.post('api/v1/likes', {
+        const { data } = await apiClient.post('v1/likes', {
           collection: 'story',
           documentId: id,
         });
         likeObj = data.data.like;
       } else {
         await apiClient.delete(
-          `api/v1/likes/story/${id}?id=${stories[contentIndex].like._id}`
+          `v1/likes/story/${id}?id=${stories[contentIndex].like._id}`
         );
       }
 

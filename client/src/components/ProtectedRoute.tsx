@@ -33,7 +33,7 @@ const ProtectedRoute = ({
 
     const checkUserAuth = async () => {
       try {
-        const response = await apiClient('api/v1/auth/auth-check');
+        const response = await apiClient('v1/auth/auth-check');
         setUser(response.data.data.user);
         setAuthCheck('success');
       } catch {
@@ -48,7 +48,7 @@ const ProtectedRoute = ({
     if (authCheck === 'success') {
       const getStories = async () => {
         try {
-          const { data } = await apiClient('api/v1/stories');
+          const { data } = await apiClient('v1/stories');
 
           setUser(data.data.user);
           setStories(data.data.users);

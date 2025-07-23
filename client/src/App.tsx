@@ -40,7 +40,7 @@ const App = () => {
 
     const getSuggestedUsers = async () => {
       try {
-        const { data } = await apiClient('api/v1/users/suggested');
+        const { data } = await apiClient('v1/users/suggested');
         setSuggestedUsers(data.data.users);
       } catch {
         setSuggestedUsers([]);

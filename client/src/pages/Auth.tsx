@@ -53,7 +53,7 @@ const checkFieldAvailability = async (
   }));
 
   try {
-    await apiClient(`api/v1/auth/check-data/${field}/${value}`);
+    await apiClient(`v1/auth/check-data/${field}/${value}`);
     return { ...state, [field as string]: 'valid' };
   } catch (err: any) {
     if (!err.response) {
@@ -111,7 +111,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
 
     const checkUserAuth = async () => {
       try {
-        await apiClient('api/v1/auth/auth-check');
+        await apiClient('v1/auth/auth-check');
         navigate('/home');
         // eslint-disable-next-line no-empty
       } catch {}
@@ -237,7 +237,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
 
       try {
         const response = await apiClient.post(
-          `api/v1/auth/${type === 'signup' ? type : 'login'}`,
+          `v1/auth/${type === 'signup' ? type : 'login'}`,
           {
             username,
             email,
@@ -326,7 +326,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
           : `reset-password/${searchParams.get('token')}`;
 
       try {
-        const response = await apiClient.post(`api/v1/auth/${url}`, {
+        const response = await apiClient.post(`v1/auth/${url}`, {
           [field]: resetData,
         });
 

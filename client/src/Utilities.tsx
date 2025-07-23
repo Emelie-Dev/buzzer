@@ -18,7 +18,7 @@ export const serverUrl =
     : import.meta.env.VITE_LOCAL_BACKEND_URL;
 
 export const apiClient = axios.create({
-  baseURL: serverUrl,
+  baseURL: `${serverUrl}api/`,
   withCredentials: true,
 });
 
@@ -211,7 +211,7 @@ export const registerPush = async () => {
       applicationServerKey: urlBase64ToUint8Array(key),
     });
 
-    await apiClient.post('/api/v1/notifications/push/subscribe', {
+    await apiClient.post('v1/notifications/push/subscribe', {
       subscription: newSubscription,
     });
 

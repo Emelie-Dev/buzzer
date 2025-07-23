@@ -222,6 +222,49 @@
   padding: 0 4rem;
 }
 
+.content-skeleton-div {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2rem;
+}
+
+.top-content-skeleton {
+  border-top: 1px solid rgb(128, 128, 128, 0.3);
+  width: 100%;
+  display: grid;
+  grid-template-columns: 65% 5%;
+  grid-template-rows: auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+}
+
+.bottom-content-skeleton {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 80% 10%;
+  grid-template-rows: auto;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.engagement-content-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0;
+  row-gap: 0.5rem;
+}
+
+.engagement-skeleton-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 0.2rem;
+}
+
 .aside {
   padding: 1.5rem 0 2rem;
   width: 100%;
