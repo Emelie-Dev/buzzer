@@ -15,7 +15,7 @@ import handleProfileDocuments from '../utils/handleProfileDocuments.js';
 
 export const likeItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    let { collection, documentId } = req.body;
+    let { collection, documentId, data: dataObj } = req.body;
     collection = collection.toLowerCase();
 
     const query =
@@ -47,6 +47,7 @@ export const likeItem = asyncErrorHandler(
       creator: data.user._id,
       collectionName: collection,
       documentId: data._id,
+      data: dataObj,
     });
 
     if (collection !== 'story') {

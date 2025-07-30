@@ -1100,16 +1100,15 @@ export const hideStory = asyncErrorHandler(
     if (String(req.user?._id) === id)
       return next(new CustomError('You cannot hide your story.', 400));
 
-    const hiddenStories = new Set(
-      req.user?.settings.general.hiddenStories || []
-    );
+    let list = req.user?.settings.general.hiddenStories || [];
+    if (list.length > 0) list = list.map((value: string) => String(value));
 
-    if (hiddenStories.size === 100) {
-      const firstItem = [...hiddenStories].shift();
-      hiddenStories.delete(firstItem);
-    }
-
+    const hiddenStories = new Set(list);
     hiddenStories.add(id);
+
+    if (hiddenStories.size > 100) {
+      hiddenStories.delete(list[0]);
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user?._id,

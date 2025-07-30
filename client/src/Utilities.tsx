@@ -245,3 +245,40 @@ export const getUrl = (path: string, resource: string) => {
     ? path
     : `${serverUrl}${resource}/${path}`;
 };
+
+export const getTime = (time: string, comment = false) => {
+  const date = new Date(time);
+  const diff = new Date().getTime() - Date.parse(time);
+  let value;
+
+  if (diff > 31_536_000_000) {
+    value = value = comment
+      ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+          2,
+          '0'
+        )}-${String(date.getDate()).padStart(2, '0')}`
+      : `${
+          monthLabels[date.getMonth()]
+        } ${date.getDate()}, ${date.getFullYear()}`;
+  } else if (diff > 2_592_000_000) {
+    value = comment
+      ? `${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+          date.getDate()
+        ).padStart(2, '0')}`
+      : `${monthLabels[date.getMonth()]} ${date.getDate()}`;
+  } else if (diff > 604_800_000) {
+    value = `${Math.floor(diff / 604_800_000)}w`;
+  } else if (diff > 86_400_000) {
+    value = `${Math.floor(diff / 86_400_000)}d`;
+  } else if (diff > 3_600_000) {
+    value = `${Math.floor(diff / 3_600_000)}h`;
+  } else if (diff > 60_000) {
+    value = `${Math.floor(diff / 60_000)}m`;
+  } else if (diff > 1000) {
+    value = `${Math.floor(diff / 1000)}s`;
+  } else {
+    value = '1s';
+  }
+
+  return value;
+};

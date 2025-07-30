@@ -1,9 +1,9 @@
 import ReactDOM from 'react-dom';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import styles from '../styles/CommentBox.module.css';
-import CarouselItem, { Content } from './CarouselItem';
+import CarouselItem from './CarouselItem';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
-import { FaHeart, FaCommentDots, FaShare } from 'react-icons/fa';
+import { FaCommentDots, FaShare } from 'react-icons/fa';
 import { IoBookmark } from 'react-icons/io5';
 import CommentContent from './CommentContent';
 import { PiCheckFatFill } from 'react-icons/pi';
@@ -12,33 +12,22 @@ import { IoClose } from 'react-icons/io5';
 import { FaArrowUp } from 'react-icons/fa';
 import Carousel from './Carousel';
 import { ContentContext, LikeContext } from '../Contexts';
+import { apiClient, getUrl } from '../Utilities';
+import { toast } from 'sonner';
+import { IoMdHeart } from 'react-icons/io';
+import LoadingAnimation from './LoadingAnimation';
+import { CommentData } from './ContentBox';
 
 type CommentBoxProps = {
-  data:
-    | {
-        media: Content[];
-        username: string;
-        name?: string;
-        photo: string;
-        aspectRatio: number;
-        type: 'carousel';
-      }
-    | {
-        media: string;
-        username: string;
-        name?: string;
-        photo: string;
-        aspectRatio: number;
-        type: 'image' | 'video';
-      };
+  data: CommentData;
   setViewComment: React.Dispatch<React.SetStateAction<boolean>>;
   isFollowing: boolean;
   saved: boolean;
-  hideLike: boolean;
   setSaved: React.Dispatch<React.SetStateAction<boolean>>;
   setShareMedia: React.Dispatch<React.SetStateAction<boolean>>;
   reels?: boolean;
   description?: string;
+  engagementObj: any;
 };
 
 const followers = [
@@ -74,13 +63,26 @@ const CommentBox = ({
   setViewComment,
   isFollowing,
   saved,
-  hideLike,
   reels,
   description,
   setSaved,
   setShareMedia,
+  engagementObj,
 }: CommentBoxProps) => {
-  const { media, username, name, photo, aspectRatio, type } = data;
+  const { postId, media, user, aspectRatio, type } = data;
+  const { username, name, photo } = user;
+  const {
+    handleUserFollow,
+    excludeContent,
+    loading,
+    handleLike,
+    getEngagementValue,
+    comments,
+    setComments,
+    hasStory,
+    hasUnviewedStory,
+    collaborators,
+  } = engagementObj;
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [hideMenu, setHideMenu] = useState<boolean>(true);
   const [newComment, setNewComment] = useState<string>('');
@@ -92,7 +94,12 @@ const CommentBox = ({
   const [scrollHeight, setScrollHeight] = useState<number>(0);
   const [hideData, setHideData] = useState<boolean>(false);
   const { setActiveVideo } = useContext(ContentContext);
-  const { like, setLike, setHideLike } = useContext(LikeContext);
+  const { like } = useContext(LikeContext);
+  const [cursor, setCursor] = useState<string>(null!);
+  const [loadingComments, setLoadingComments] = useState({
+    value: false,
+    end: false,
+  });
 
   const menuRef = useRef<HTMLDivElement>(null!);
   const listRef = useRef<HTMLUListElement>(null!);
@@ -102,6 +109,53 @@ const CommentBox = ({
   const commentRef = useRef<HTMLDivElement>(null!);
 
   const target = document.getElementById('comment-portal') || document.body;
+
+  const getComments = async () => {
+    if (cursor) {
+      setLoadingComments({ ...loadingComments, value: true });
+    } else {
+      setComments((prevValue: any) => ({ ...prevValue, value: null }));
+    }
+
+    try {
+      const { data } = await apiClient(
+        `v1/comments?collection=${
+          reels ? 'reel' : 'content'
+        }&documentId=${postId}&cursor=${cursor}`
+      );
+
+      const commentsArr = data.data.comments;
+
+      setComments((prevValue: any) => ({
+        totalCount: data.data.totalCount,
+        value: cursor ? [...prevValue.value, ...commentsArr] : commentsArr,
+      }));
+
+      setCursor(data.data.nextCursor ? data.data.nextCursor : cursor);
+
+      setLoadingComments({ value: false, end: commentsArr.length < 20 });
+    } catch {
+      setComments((prevValue: any) => ({ ...prevValue, value: 'error' }));
+      setLoadingComments({ ...loadingComments, value: false });
+    }
+  };
+
+  useEffect(() => {
+    getComments();
+  }, []);
+
+  useEffect(() => {
+    const container = commentRef.current;
+
+    if (
+      comments.value !== null &&
+      container &&
+      container.scrollHeight <= container.clientHeight &&
+      !loadingComments.end
+    ) {
+      getComments();
+    }
+  }, [comments]);
 
   useEffect(() => {
     const clickHandler = (e: Event) => {
@@ -115,6 +169,8 @@ const CommentBox = ({
         }
       }
     };
+
+    window.removeEventListener('click', clickHandler);
 
     window.addEventListener('click', clickHandler);
 
@@ -158,6 +214,8 @@ const CommentBox = ({
         animation.onfinish = () => setHideMenu(true);
       }
     }
+
+    window.removeEventListener('click', clickHandler);
 
     window.addEventListener('click', clickHandler);
 
@@ -352,6 +410,17 @@ const CommentBox = ({
     }
   };
 
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    setScrollHeight(target.scrollTop);
+    setShowMenu(false);
+
+    const isBottom =
+      target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
+
+    if (isBottom && !loadingComments.end) getComments();
+  };
+
   return ReactDOM.createPortal(
     <section className={styles.section} onClick={handleClick}>
       <span
@@ -398,23 +467,31 @@ const CommentBox = ({
         <div
           className={styles['comment-container']}
           ref={commentRef}
-          onScroll={(e: React.UIEvent<HTMLDivElement>) =>
-            setScrollHeight((e.target as HTMLDivElement).scrollTop)
-          }
+          onScroll={handleScroll}
         >
           <div className={styles['comment-header']}>
             <div className={styles['comment-header-details']}>
-              <span className={styles['profile-img-box']}>
-                <img
-                  className={styles['profile-img']}
-                  src={`../../assets/images/users/${photo}`}
-                />
-              </span>
+              <a className={styles['user-link']} href={`/@${username}`}>
+                <span
+                  className={`${styles['profile-img-box']} ${
+                    hasStory && hasUnviewedStory
+                      ? styles['profile-img-box3']
+                      : hasStory
+                      ? styles['profile-img-box2']
+                      : ''
+                  }`}
+                >
+                  <img
+                    className={styles['profile-img']}
+                    src={getUrl(photo, 'users')}
+                  />
+                </span>
 
-              <span className={styles['name-box']}>
-                <span className={styles['name']}>{name}</span>
-                <span className={styles['username']}>{username}</span>
-              </span>
+                <span className={styles['name-box']}>
+                  <span className={styles['name']}>{name}</span>
+                  <span className={styles['username']}>@{username}</span>
+                </span>
+              </a>
             </div>
 
             <div className={styles['menu-div']} ref={menuRef}>
@@ -432,18 +509,42 @@ const CommentBox = ({
                 <ul className={styles['menu-list']} ref={listRef}>
                   <li
                     className={`${styles['menu-item']} ${styles['menu-red']}`}
+                    onClick={() => {
+                      setShowMenu(false);
+                      handleUserFollow();
+                    }}
                   >
                     {isFollowing ? 'Unfollow' : 'Follow'}
                   </li>
                   <li
                     className={`${styles['menu-item']} ${styles['menu-red']}`}
+                    onClick={() => {
+                      setShowMenu(false);
+                      toast.success(
+                        'Thanks for reporting. We’ll review and take action if necessary.'
+                      );
+                    }}
                   >
                     Report
                   </li>
-                  <li className={styles['menu-item']}>Not interested</li>
-                  <li className={styles['menu-item']}>Add to story</li>
-                  <li className={styles['menu-item']}>Go to post</li>
-                  <li className={styles['menu-item']}>Clear display</li>
+                  <li
+                    className={styles['menu-item']}
+                    onClick={() => {
+                      setShowMenu(false);
+                      excludeContent();
+                    }}
+                  >
+                    Not interested
+                  </li>
+                  <li
+                    className={styles['menu-item']}
+                    onClick={() => {
+                      setHideData(true);
+                      setShowMenu(false);
+                    }}
+                  >
+                    Clear display
+                  </li>
                 </ul>
               )}
             </div>
@@ -451,30 +552,25 @@ const CommentBox = ({
 
           <div className={styles['engage-div']}>
             <div className={styles['menu-box']}>
-              {!hideLike ? (
-                <img
-                  src="../../assets/images/Animation - 1731349965809.gif"
-                  className={styles['like-icon']}
+              <span
+                className={`${styles['menu-icon-box']} ${
+                  loading.like ? styles['menu-icon-box2'] : ''
+                }`}
+                title="Like"
+                onClick={handleLike}
+              >
+                <IoMdHeart
+                  className={`${styles['menu-icon']} ${styles['like-icon']} ${
+                    like.value ? styles['red-icon'] : ''
+                  } ${loading.like ? styles['like-skeleton'] : ''}`}
                 />
-              ) : (
-                <span
-                  className={styles['menu-icon-box']}
-                  title="Like"
-                  onClick={() => {
-                    setLike(!like);
-                    setHideLike(like === true ? true : false);
-                  }}
-                >
-                  <FaHeart
-                    className={`${styles['menu-icon']} ${
-                      like ? styles['red-icon'] : ''
-                    }`}
-                  />
-                </span>
-              )}
+              </span>
 
-              <span className={styles['menu-text']}>21K</span>
+              <span className={styles['menu-text']}>
+                {getEngagementValue(like.count)}
+              </span>
             </div>
+
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -483,8 +579,11 @@ const CommentBox = ({
               >
                 <FaCommentDots className={styles['menu-icon']} />
               </span>
-              <span className={styles['menu-text']}>2345</span>
+              <span className={styles['menu-text']}>
+                {getEngagementValue(comments.totalCount)}
+              </span>
             </div>
+
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -511,12 +610,63 @@ const CommentBox = ({
             </div>
           </div>
 
-          <div className={styles['comment-div']}>
-            <div className={styles['comments-head']}>Comments (512)</div>
+          <div
+            className={`${styles['comment-div']} ${
+              comments.value === null ||
+              comments.value === 'error' ||
+              comments.value.length === 0
+                ? styles['loading-div']
+                : ''
+            }`}
+          >
+            <div className={styles['comments-head']}>
+              Comments ({comments.totalCount})
+            </div>
 
-            {new Array(5).fill(0).map((value) => (
-              <CommentContent key={value} />
-            ))}
+            {comments.value === null ? (
+              <div className={styles['loader-box']}>
+                <LoadingAnimation
+                  style={{
+                    width: '10rem',
+                    height: '10rem',
+                  }}
+                />
+              </div>
+            ) : comments.value === 'error' ? (
+              <div className={styles['empty-comments']}>
+                Oops! We couldn't load the comments. Please click the button to
+                retry.
+                <button className={styles['retry-btn']} onClick={getComments}>
+                  Retry
+                </button>
+              </div>
+            ) : comments.value.length === 0 ? (
+              <div className={styles['empty-comments']}>
+                No comments for now — start the conversation!
+              </div>
+            ) : (
+              comments.value.map((comment: any) => (
+                <CommentContent
+                  key={comment._id}
+                  creator={{ user, hasStory, hasUnviewedStory }}
+                  data={comment}
+                  setComments={setComments}
+                  collaborators={collaborators}
+                />
+              ))
+            )}
+
+            {loadingComments.value && (
+              <div className={styles['loader-box2']}>
+                <LoadingAnimation
+                  style={{
+                    width: '2rem',
+                    height: '2rem',
+                    transform: 'scale(2.5)',
+                  }}
+                />
+              </div>
+            )}
 
             {scrollHeight > 150 && (
               <span

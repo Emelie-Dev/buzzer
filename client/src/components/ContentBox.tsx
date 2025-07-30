@@ -5,39 +5,40 @@ import {
   HiOutlineDotsVertical,
 } from 'react-icons/hi';
 import Carousel from '../components/Carousel';
-import { FaHeart, FaCommentDots, FaShare } from 'react-icons/fa';
+import { FaCommentDots, FaShare } from 'react-icons/fa';
 import { IoBookmark } from 'react-icons/io5';
 import styles from '../styles/ContentBox.module.css';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { PiCheckFatFill } from 'react-icons/pi';
-import { ContentContext, LikeContext } from '../Contexts';
+import { AuthContext, ContentContext, LikeContext } from '../Contexts';
 import CommentBox from './CommentBox';
 import ShareMedia from '../components/ShareMedia';
-import { DataItem } from '../pages/Following';
-
 import { Content } from '../components/CarouselItem';
 import ContentItem from './ContentItem';
+import { apiClient, getTime, getUrl } from '../Utilities';
+import LoadingAnimation from '../components/LoadingAnimation';
+import { toast } from 'sonner';
+import { IoMdHeart } from 'react-icons/io';
 
 type ContentBoxProps = {
-  data: DataItem;
+  data: any;
   contentType: 'following' | 'home' | 'reels';
+  setContents: React.Dispatch<React.SetStateAction<any[]>>;
   setShowMobileMenu?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export type CommentData =
   | {
+      postId: string;
       media: Content[];
-      username: string;
-      name?: string;
-      photo: string;
+      user: any;
       aspectRatio: number;
       type: 'carousel';
     }
   | {
+      postId: string;
       media: string;
-      username: string;
-      name?: string;
-      photo: string;
+      user: any;
       aspectRatio: number;
       type: 'image' | 'video';
     };
@@ -45,24 +46,56 @@ export type CommentData =
 const ContentBox = ({
   data,
   contentType,
+  setContents,
   setShowMobileMenu,
 }: ContentBoxProps) => {
-  const { media, description, username, name, time, photo, aspectRatio, type } =
-    data;
-
+  const {
+    _id: contentId,
+    user,
+    createdAt,
+    collaborators,
+    aspectRatio,
+    media,
+    description,
+    hasUnviewedStory,
+    hasStory,
+    userLike,
+    likesCount,
+    commentsCount,
+  } = data;
+  const type = media.length === 1 ? media[0].mediaType : 'carousel';
   const [showMore, setShowMore] = useState<boolean>(false);
   const [descriptionWidth, setDescriptionWidth] = useState<number>(0);
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [hideMenu, setHideMenu] = useState<boolean>(true);
-  const [isFollowing, setIsFollowing] = useState<boolean>(false);
-  const [like, setLike] = useState<boolean>(false);
-  const [hideLike, setHideLike] = useState<boolean>(true);
+  const [like, setLike] = useState<{ value: boolean; obj: any; count: number }>(
+    {
+      value: Boolean(userLike),
+      obj: userLike,
+      count: likesCount,
+    }
+  );
+  const [isFollowing, setIsFollowing] = useState<any>(user.isFollowing);
+  const [follow, setFollow] = useState<any>(Boolean(user.isFollowing));
+  const [excludeValue, setExcludeValue] = useState<any>(false);
   const [saved, setSaved] = useState<boolean>(false);
   const [shareMedia, setShareMedia] = useState<boolean>(false);
   const [viewComment, setViewComment] = useState<boolean>(false);
   const [hideMore, setHideMore] = useState<boolean>(false);
   const [hideData, setHideData] = useState<boolean>(false);
   const { activeVideo, setActiveVideo } = useContext(ContentContext);
+  const [followList, setFollowList] = useState<Set<string>>(new Set());
+  const [followersList, setFollowersList] = useState<any[]>(
+    collaborators
+      .map((user: any) => user.isFollowing)
+      .filter((data: any) => data)
+  );
+  const { setUser } = useContext(AuthContext);
+  const [loading, setLoading] = useState({ like: false });
+  const [comments, setComments] = useState<{
+    totalCount: number;
+    value: any[] | 'error';
+  }>({ totalCount: commentsCount, value: null! });
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -71,10 +104,28 @@ const ContentBox = ({
   const reelMenuRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
+    setLike({
+      value: Boolean(userLike),
+      obj: userLike,
+      count: likesCount,
+    });
+  }, [likesCount, userLike]);
+
+  useEffect(() => {
+    setComments({ totalCount: commentsCount, value: null! });
+  }, [commentsCount]);
+
+  useEffect(() => {
     if (descriptionRef.current) {
       descriptionRef.current.innerHTML = description!;
     }
-  }, []);
+
+    setFollowersList(
+      collaborators
+        .map((user: any) => user.isFollowing)
+        .filter((data: any) => data)
+    );
+  }, [collaborators]);
 
   useEffect(() => {
     if (descriptionRef.current) {
@@ -83,14 +134,6 @@ const ContentBox = ({
       }
     }
   }, [descriptionWidth]);
-
-  useEffect(() => {
-    if (like) {
-      setTimeout(() => {
-        setHideLike(true);
-      }, 400);
-    }
-  }, [like]);
 
   useEffect(() => {
     const clickHandler = (e: Event) => {
@@ -116,7 +159,7 @@ const ContentBox = ({
           },
           {
             fill: 'both',
-            duration: 150,
+            duration: 100,
           }
         );
       } else {
@@ -126,7 +169,7 @@ const ContentBox = ({
           },
           {
             fill: 'both',
-            duration: 150,
+            duration: 100,
           }
         );
         animation.onfinish = () => setHideMenu(true);
@@ -154,17 +197,262 @@ const ContentBox = ({
     setShowMore(true);
   };
 
+  const getFollowText = (id: string) => {
+    const user = followersList.find((data) => data.following === id);
+    return user ? 'Unfollow' : 'Follow';
+  };
+
+  const handleFollow = async (
+    e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+    id: string
+  ) => {
+    e.preventDefault();
+
+    const action = getFollowText(id);
+    const newList = new Set(followList);
+    newList.add(id);
+    setFollowList(newList);
+
+    try {
+      if (action === 'Follow') {
+        const { data } = await apiClient.post(`v1/follow/${id}`, {
+          collection: 'content',
+          documentId: contentId,
+        });
+        const follow = data.data.follow;
+
+        setFollowersList((prevValue) => [...prevValue, follow]);
+      } else {
+        const followId = followersList.find(
+          (data) => data.following === id
+        )._id;
+        await apiClient.delete(`v1/follow/${followId}`);
+
+        setFollowersList((prevValue) =>
+          prevValue.filter((follow) => follow._id !== followId)
+        );
+      }
+    } catch (err: any) {
+      if (!err.response) {
+        toast.error(
+          `Could not ${action.toLowerCase()} user. Please Try again.`
+        );
+      } else {
+        toast.error(err.response.data.message);
+      }
+    } finally {
+      newList.delete(id);
+      setFollowList(new Set(newList));
+    }
+  };
+
+  const getNames = () => {
+    if (collaborators.length === 1) {
+      const secondUser = collaborators[0];
+
+      return (
+        <>
+          <span className={styles.collaborators}>
+            <a className={styles['user-link']} href={`/@${user.username}`}>
+              {user.username}
+            </a>
+          </span>{' '}
+          &nbsp;and &nbsp;
+          <span className={styles.collaborators}>
+            <a
+              className={styles['user-link']}
+              href={`/@${secondUser.username}`}
+            >
+              {secondUser.username}
+            </a>
+          </span>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <span className={styles.collaborators}>
+            <a className={styles['user-link']} href={`/@${user.username}`}>
+              {user.username}
+            </a>
+          </span>{' '}
+          &nbsp;and &nbsp;
+          <div className={styles.collaborators}>
+            {collaborators.length} others
+            <ul className={styles['collaborators-list']}>
+              {collaborators.map((user: any) => (
+                <li key={user._id} className={styles['collaborators-item']}>
+                  <a
+                    className={styles['collaborators-link']}
+                    href={`/@${user.username}`}
+                  >
+                    <img
+                      className={styles['collaborators-img']}
+                      src={getUrl(user.photo, 'users')}
+                    />
+
+                    <span className={styles['collaborators-names']}>
+                      <span className={styles['collaborators-name']}>
+                        {user.name}
+                      </span>
+                      <span className={styles['collaborators-username']}>
+                        @{user.username}
+                      </span>
+                    </span>
+
+                    <span
+                      className={styles['follow-btn-box']}
+                      onClick={(e) => handleFollow(e, user._id)}
+                    >
+                      <button
+                        className={`${styles['follow-btn']} ${
+                          followList.has(user._id) ? styles['disable-btn'] : ''
+                        }`}
+                      >
+                        <span
+                          className={`${
+                            followList.has(user._id) ? styles['follow-txt'] : ''
+                          } `}
+                        >
+                          {getFollowText(user._id)}
+                        </span>
+                      </button>
+
+                      {followList.has(user._id) && (
+                        <LoadingAnimation
+                          style={{
+                            position: 'absolute',
+                            zIndex: 2,
+                            width: 60,
+                            height: 60,
+                            opacity: 0.7,
+                          }}
+                        />
+                      )}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      );
+    }
+  };
+
+  const handleUserFollow = async () => {
+    setShowMenu(false);
+    setFollow(!follow);
+
+    if (Boolean(isFollowing) !== follow) return;
+
+    try {
+      if (!isFollowing) {
+        const { data } = await apiClient.post(`v1/follow/${user._id}`, {
+          collection: 'content',
+          documentId: contentId,
+        });
+        const follow = data.data.follow;
+
+        setIsFollowing(follow);
+      } else {
+        await apiClient.delete(`v1/follow/${isFollowing._id}`);
+        setIsFollowing(null);
+      }
+    } catch (err: any) {
+      setFollow(!follow);
+
+      if (!err.response) {
+        toast.error(
+          `Could not ${
+            isFollowing ? 'unfollow' : 'follow'
+          } user. Please Try again.`
+        );
+      } else {
+        toast.error(err.response.data.message);
+      }
+    }
+  };
+
+  const excludeContent = async () => {
+    setShowMenu(false);
+    if (excludeValue) return;
+
+    setExcludeValue(true);
+
+    try {
+      const { data } = await apiClient.patch(
+        `v1/contents/not-interested/${user._id}`
+      );
+
+      setUser(data.data.user);
+      setContents((prevValue) =>
+        prevValue.filter((content) => content._id !== contentId)
+      );
+
+      toast.success(`We'll show you fewer posts like this.`);
+    } catch (err: any) {
+      setExcludeValue(false);
+
+      if (!err.response) {
+        toast.error(`Could not complete action. Please Try again.`);
+      } else {
+        toast.error(err.response.data.message);
+      }
+    }
+  };
+
+  const handleLike = async () => {
+    setLoading({ like: true });
+
+    try {
+      if (!like.value) {
+        const { data } = await apiClient.post('v1/likes', {
+          collection: 'content',
+          documentId: contentId,
+        });
+
+        setLike({ value: true, count: like.count + 1, obj: data.data.like });
+      } else {
+        await apiClient.delete(
+          `v1/likes/content/${contentId}?id=${like.obj._id}`
+        );
+        setLike({ value: false, count: like.count - 1, obj: null });
+      }
+    } catch (err: any) {
+      if (!err.response) {
+        toast.error(`Could not like content. Please Try again.`);
+      } else {
+        toast.error(err.response.data.message);
+      }
+    } finally {
+      setLoading({ like: false });
+    }
+  };
+
+  const getEngagementValue = (field: number) => {
+    if (field > 1_000_000_000) {
+      return `${Number((field / 1_000_000_000).toFixed(1))}B`;
+    } else if (field > 1_000_000) {
+      return `${Number((field / 1_000_000).toFixed(1))}M`;
+    } else if (field > 9999) {
+      return `${Number((field / 1_000).toFixed(1))}K`;
+    } else {
+      return field;
+    }
+  };
+
   return (
     <LikeContext.Provider
       value={{
         like,
         setLike,
-        setHideLike,
         setShowMenu,
         setHideMenu,
         reelMenuRef,
         viewComment,
         setShowMobileMenu,
+        handleLike,
       }}
     >
       {shareMedia && (
@@ -174,23 +462,32 @@ const ContentBox = ({
       {viewComment && (
         <CommentBox
           setViewComment={setViewComment}
-          data={
-            {
-              username,
-              name,
-              photo,
-              aspectRatio,
-              type,
-              media,
-            } as CommentData
-          }
+          data={{
+            postId: contentId,
+            user,
+            aspectRatio,
+            type,
+            media: media.length === 1 ? media[0].src : media,
+          }}
           isFollowing={isFollowing}
           saved={saved}
-          hideLike={hideLike}
           setSaved={setSaved}
           setShareMedia={setShareMedia}
           reels={contentType === 'reels'}
           description={description}
+          engagementObj={{
+            handleUserFollow,
+            excludeContent,
+            loading,
+            handleLike,
+            getEngagementValue,
+            commentsCount,
+            comments,
+            setComments,
+            hasStory,
+            hasUnviewedStory,
+            collaborators,
+          }}
         />
       )}
 
@@ -203,12 +500,29 @@ const ContentBox = ({
         {contentType !== 'reels' && (
           <h1 className={styles['content-head']}>
             <span className={styles['content-head-box']}>
-              <span className={styles['content-name-box']}>
-                <span className={styles['content-nickname']}>{name}</span>
-                <span className={styles['content-username']}>{username}</span>
-              </span>
+              {collaborators.length === 0 ? (
+                <span className={styles['content-name-box']}>
+                  <a
+                    className={styles['user-link']}
+                    href={`/@${user.username}`}
+                  >
+                    <span className={styles['content-nickname']}>
+                      {user.name}
+                    </span>
+                    <span className={styles['content-username']}>
+                      @{user.username}
+                    </span>
+                  </a>
+                </span>
+              ) : (
+                <span className={styles['content-name-box2']}>
+                  {getNames()}
+                </span>
+              )}
               <BsDot className={styles.dot} />
-              <span className={styles['content-time']}>{time}</span>
+              <span className={styles['content-time']}>
+                {getTime(createdAt)}
+              </span>
             </span>
 
             <div className={styles['menu-div']} ref={menuRef}>
@@ -233,17 +547,34 @@ const ContentBox = ({
                 <ul className={styles['menu-list']} ref={listRef}>
                   <li
                     className={`${styles['menu-item']} ${styles['menu-red']}`}
+                    onClick={handleUserFollow}
                   >
                     {isFollowing ? 'Unfollow' : 'Follow'}
                   </li>
                   <li
                     className={`${styles['menu-item']} ${styles['menu-red']}`}
+                    onClick={() => {
+                      setShowMenu(false);
+                      toast.success(
+                        'Thanks for reporting. We’ll review and take action if necessary.'
+                      );
+                    }}
                   >
                     Report
                   </li>
-                  <li className={styles['menu-item']}>Not interested</li>
-                  <li className={styles['menu-item']}>Add to story</li>
-                  <li className={styles['menu-item']}>Clear display</li>
+                  <li className={styles['menu-item']} onClick={excludeContent}>
+                    Not interested
+                  </li>
+                  {/* <li className={styles['menu-item']}>Add to story</li> */}
+                  <li
+                    className={styles['menu-item']}
+                    onClick={() => {
+                      setHideData(true);
+                      setShowMenu(false);
+                    }}
+                  >
+                    Clear display
+                  </li>
                 </ul>
               )}
             </div>
@@ -267,13 +598,13 @@ const ContentBox = ({
               />
             ) : (
               <ContentItem
-                src={media}
+                src={media[0].src}
                 aspectRatio={aspectRatio}
                 setDescriptionWidth={setDescriptionWidth}
                 type={type}
                 contentType={contentType === 'reels' ? 'reels' : 'single'}
-                description={description}
-                name={name}
+                description={media[0].description}
+                name={user.name}
                 hideData={hideData}
                 setHideData={setHideData}
               />
@@ -321,19 +652,27 @@ const ContentBox = ({
                 contentType === 'reels' ? styles['hide-profile-box'] : ''
               }`}
             >
-              <span className={styles['profile-img-span']}>
+              <span
+                className={`${styles['profile-img-span']} ${
+                  hasStory && hasUnviewedStory
+                    ? styles['profile-img-span3']
+                    : hasStory
+                    ? styles['profile-img-span2']
+                    : ''
+                }`}
+              >
                 <img
-                  src={`../../assets/images/users/${photo}`}
+                  src={getUrl(user.photo, 'users')}
                   className={styles['profile-img']}
                 />
               </span>
 
               {contentType !== 'following' ? (
-                isFollowing ? (
+                follow ? (
                   <span
                     className={styles['profile-icon-box2']}
                     title="Unfollow"
-                    onClick={() => setIsFollowing(!isFollowing)}
+                    onClick={handleUserFollow}
                   >
                     <PiCheckFatFill className={styles['profile-icon2']} />{' '}
                   </span>
@@ -341,7 +680,7 @@ const ContentBox = ({
                   <span
                     className={styles['profile-icon-box']}
                     title="Follow"
-                    onClick={() => setIsFollowing(!isFollowing)}
+                    onClick={handleUserFollow}
                   >
                     <HiPlus className={styles['profile-icon']} />
                   </span>
@@ -352,30 +691,25 @@ const ContentBox = ({
             </div>
 
             <div className={styles['menu-box']}>
-              {!hideLike ? (
-                <img
-                  src="../../assets/images/Animation - 1731349965809.gif"
-                  className={styles['like-icon']}
+              <span
+                className={`${styles['menu-icon-box']} ${
+                  loading.like ? styles['menu-icon-box2'] : ''
+                }`}
+                title="Like"
+                onClick={handleLike}
+              >
+                <IoMdHeart
+                  className={`${styles['menu-icon']} ${styles['like-icon']} ${
+                    like.value ? styles['red-icon'] : ''
+                  } ${loading.like ? styles['like-skeleton'] : ''}`}
                 />
-              ) : (
-                <span
-                  className={styles['menu-icon-box']}
-                  title="Like"
-                  onClick={() => {
-                    setLike(!like);
-                    setHideLike(like === true ? true : false);
-                  }}
-                >
-                  <FaHeart
-                    className={`${styles['menu-icon']} ${
-                      like ? styles['red-icon'] : ''
-                    }`}
-                  />
-                </span>
-              )}
+              </span>
 
-              <span className={styles['menu-text']}>21K</span>
+              <span className={styles['menu-text']}>
+                {getEngagementValue(like.count)}
+              </span>
             </div>
+
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -388,8 +722,11 @@ const ContentBox = ({
               >
                 <FaCommentDots className={styles['menu-icon']} />
               </span>
-              <span className={styles['menu-text']}>2345</span>
+              <span className={styles['menu-text']}>
+                {getEngagementValue(comments.totalCount)}
+              </span>
             </div>
+
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -417,7 +754,6 @@ const ContentBox = ({
               </span>
               <span className={styles['menu-text']}>217</span>
             </div>
-
             <HiOutlineDotsHorizontal
               className={`${styles['reel-content-menu']} ${
                 showMenu ? styles['active-menu'] : ''
@@ -428,26 +764,13 @@ const ContentBox = ({
 
           {contentType !== 'reels' && (
             <div className={styles['small-menu-container']}>
-              <span
-                className={styles['small-details-box']}
-                onClick={() => {
-                  setLike(!like);
-                  setHideLike(like === true ? true : false);
-                }}
-              >
-                {!hideLike ? (
-                  <img
-                    src="../../assets/images/Animation - 1731349965809.gif"
-                    className={styles['like-icon']}
-                  />
-                ) : (
-                  <FaHeart
-                    className={`${styles['small-details-icon']} ${
-                      like ? styles['red-icon'] : ''
-                    }`}
-                    title="Like"
-                  />
-                )}
+              <span className={styles['small-details-box']}>
+                <IoMdHeart
+                  className={`${styles['small-details-icon']} ${
+                    like ? styles['red-icon'] : ''
+                  }`}
+                  title="Like"
+                />
 
                 <span className={styles['small-details-value']}>21K</span>
               </span>
@@ -493,7 +816,7 @@ const ContentBox = ({
           )}
         </div>
 
-        {contentType !== 'reels' && description && (
+        {/* {contentType !== 'reels' && description && (
           <>
             <div
               className={`${styles['content-description']} ${
@@ -511,11 +834,11 @@ const ContentBox = ({
               </div>
             )}
           </>
-        )}
+        )} */}
 
-        {contentType !== 'reels' && description === '' && (
+        {/* {contentType !== 'reels' && description === '' && (
           <div className={styles['empty-disc']}></div>
-        )}
+        )} */}
       </article>
     </LikeContext.Provider>
   );

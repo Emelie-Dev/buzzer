@@ -279,26 +279,20 @@ export const excludeContent = asyncErrorHandler(
       return next(new CustomError("You can't exlude your content.", 400));
     }
 
-    const excludedContents = new Set(
-      req.user?.settings.content.notInterested.content || []
-    );
+    let list: string[] = req.user?.settings.content.notInterested.content || [];
+    if (list.length > 0) list = list.map((value: string) => String(value));
+
+    const excludedContents = new Set(list);
     excludedContents.add(req.params.id);
 
     if (excludedContents.size > 100) {
-      const firstItem = [...excludedContents].shift();
-      excludedContents.delete(firstItem);
+      excludedContents.delete(list[0]);
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user?._id,
       {
-        settings: {
-          content: {
-            notInterested: {
-              content: [...excludedContents],
-            },
-          },
-        },
+        'settings.content.notInterested.content': [...excludedContents],
       },
       {
         new: true,
@@ -410,10 +404,91 @@ export const getContents = asyncErrorHandler(
           {
             $lookup: {
               from: 'users',
-              localField: 'user',
-              foreignField: '_id',
+              let: { userId: '$user' },
               as: 'user',
-              pipeline: [{ $project: { username: 1, name: 1, photo: 1 } }],
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $eq: ['$_id', '$$userId'],
+                    },
+                  },
+                },
+                {
+                  $lookup: {
+                    from: 'follows',
+                    let: { userId: '$_id' },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $and: [
+                              { $eq: ['$following', '$$userId'] },
+                              {
+                                $eq: ['$follower', viewerId],
+                              },
+                            ],
+                          },
+                        },
+                      },
+                    ],
+                    as: 'isFollowing',
+                  },
+                },
+                {
+                  $addFields: {
+                    isFollowing: { $first: '$isFollowing' },
+                  },
+                },
+                {
+                  $project: { username: 1, name: 1, photo: 1, isFollowing: 1 },
+                },
+              ],
+            },
+          },
+          {
+            $lookup: {
+              from: 'users',
+              let: { collaborators: '$collaborators' },
+              as: 'collaborators',
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $in: ['$_id', '$$collaborators'],
+                    },
+                  },
+                },
+                {
+                  $lookup: {
+                    from: 'follows',
+                    let: { userId: '$_id' },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $and: [
+                              { $eq: ['$following', '$$userId'] },
+                              {
+                                $eq: ['$follower', viewerId],
+                              },
+                            ],
+                          },
+                        },
+                      },
+                    ],
+                    as: 'isFollowing',
+                  },
+                },
+                {
+                  $addFields: {
+                    isFollowing: { $first: '$isFollowing' },
+                  },
+                },
+                {
+                  $project: { username: 1, name: 1, photo: 1, isFollowing: 1 },
+                },
+              ],
             },
           },
           {
@@ -446,7 +521,7 @@ export const getContents = asyncErrorHandler(
                     as: 'storyView',
                   },
                 },
-                { $project: { _id: 1 } },
+                { $project: { _id: 1, storyView: 1 } },
               ],
               as: 'stories',
             },

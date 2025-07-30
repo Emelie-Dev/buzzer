@@ -1,10 +1,10 @@
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import styles from '../styles/Carousel.module.css';
 import { useRef, useState, useEffect } from 'react';
-import CarouselItem, { Content } from './CarouselItem';
+import CarouselItem from './CarouselItem';
 
 type CarouselProps = {
-  data: Content[];
+  data: any[];
   aspectRatio: number;
   setDescriptionWidth?: React.Dispatch<React.SetStateAction<number>>;
   type: 'comment' | 'content';
@@ -201,11 +201,11 @@ const Carousel = ({
         onTouchMove={handleSwipe('move')}
         onTouchEnd={handleSwipe('end')}
       >
-        {data.map(({ type, src, description }, index) => (
+        {data.map(({ mediaType, src, description }, index) => (
           <CarouselItem
             key={index}
             item={{
-              type,
+              type: mediaType,
               src,
               description,
             }}

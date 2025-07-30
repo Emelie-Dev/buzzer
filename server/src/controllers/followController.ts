@@ -20,7 +20,7 @@ export const followUser = asyncErrorHandler(
       return next(new CustomError("You can't follow yourself.", 400));
     }
 
-    await Follow.create({
+    const follow = await Follow.create({
       follower: req.user?._id,
       following: req.params.id,
       collectionName: collection,
@@ -95,7 +95,9 @@ export const followUser = asyncErrorHandler(
 
     return res.status(201).json({
       status: 'success',
-      message: 'Followed succesfully.',
+      data: {
+        follow,
+      },
     });
   }
 );

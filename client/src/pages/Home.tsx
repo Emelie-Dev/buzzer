@@ -2,7 +2,6 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Home.module.css';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
-import { Content } from '../components/CarouselItem';
 import ContentBox from '../components/ContentBox';
 import {
   ContentContext,
@@ -10,7 +9,6 @@ import {
   AuthContext,
   StoryContext,
 } from '../Contexts';
-import { DataItem } from './Following';
 import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
 import { GoPlus } from 'react-icons/go';
@@ -56,160 +54,159 @@ export interface Arrow {
 //   { name: 'starGazer' },
 // ];
 
-const data: Content[] = [
-  {
-    src: 'content23',
-    type: 'image',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-  {
-    src: 'content2',
-    type: 'image',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-  },
-  {
-    src: 'content3',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content4',
-    type: 'image',
-    description: 'Lorem ipsum dolor sit amet.',
-  },
-  {
-    src: 'content5',
-    type: 'image',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-  {
-    src: 'content6',
-    type: 'video',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-];
+// const data: Content[] = [
+//   {
+//     src: 'content23',
+//     type: 'image',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
+//   },
+//   {
+//     src: 'content2',
+//     type: 'image',
+//     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+//   },
+//   {
+//     src: 'content3',
+//     type: 'image',
+//     description: '',
+//   },
+//   {
+//     src: 'content4',
+//     type: 'image',
+//     description: 'Lorem ipsum dolor sit amet.',
+//   },
+//   {
+//     src: 'content5',
+//     type: 'image',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
+//   },
+//   {
+//     src: 'content6',
+//     type: 'video',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
+//   },
+// ];
 
-const data2: Content[] = [
-  {
-    src: 'content22',
-    type: 'image',
-  },
-  {
-    src: 'content21',
-    type: 'video',
-    description: 'Messi celebrating a goal with fans.',
-  },
-  {
-    src: 'content8',
-    type: 'image',
-    description: 'Focused during a free-kick.',
-  },
-  {
-    src: 'content9',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content10',
-    type: 'image',
-    description: 'In action on the field.',
-  },
-  {
-    src: 'content11',
-    type: 'image',
-    description: 'Holding the World Cup trophy.',
-  },
-  {
-    src: 'content12',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content13',
-    type: 'image',
-    description: 'Messi dribbling past defenders.',
-  },
-  {
-    src: 'content14',
-    type: 'image',
-    description: 'Close-up of his iconic jersey.',
-  },
-  {
-    src: 'content15',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content20',
-    type: 'video',
-    description: 'Messi looking up, determined.',
-  },
-  {
-    src: 'content17',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content18',
-    type: 'image',
-    description: 'Celebrating with his teammates.',
-  },
-  {
-    src: 'content19',
-    type: 'image',
-    description: 'Messi lifting a trophy high.',
-  },
-  {
-    src: 'content16',
-    type: 'image',
-    description: 'In training gear, focused and ready.',
-  },
-  {
-    src: 'content7',
-    type: 'image',
-    description: '',
-  },
-];
+// const data2: Content[] = [
+//   {
+//     src: 'content22',
+//     type: 'image',
+//   },
+//   {
+//     src: 'content21',
+//     type: 'video',
+//     description: 'Messi celebrating a goal with fans.',
+//   },
+//   {
+//     src: 'content8',
+//     type: 'image',
+//     description: 'Focused during a free-kick.',
+//   },
+//   {
+//     src: 'content9',
+//     type: 'image',
+//     description: '',
+//   },
+//   {
+//     src: 'content10',
+//     type: 'image',
+//     description: 'In action on the field.',
+//   },
+//   {
+//     src: 'content11',
+//     type: 'image',
+//     description: 'Holding the World Cup trophy.',
+//   },
+//   {
+//     src: 'content12',
+//     type: 'image',
+//     description: '',
+//   },
+//   {
+//     src: 'content13',
+//     type: 'image',
+//     description: 'Messi dribbling past defenders.',
+//   },
+//   {
+//     src: 'content14',
+//     type: 'image',
+//     description: 'Close-up of his iconic jersey.',
+//   },
+//   {
+//     src: 'content15',
+//     type: 'image',
+//     description: '',
+//   },
+//   {
+//     src: 'content20',
+//     type: 'video',
+//     description: 'Messi looking up, determined.',
+//   },
+//   {
+//     src: 'content17',
+//     type: 'image',
+//     description: '',
+//   },
+//   {
+//     src: 'content18',
+//     type: 'image',
+//     description: 'Celebrating with his teammates.',
+//   },
+//   {
+//     src: 'content19',
+//     type: 'image',
+//     description: 'Messi lifting a trophy high.',
+//   },
+//   {
+//     src: 'content16',
+//     type: 'image',
+//     description: 'In training gear, focused and ready.',
+//   },
+//   {
+//     src: 'content7',
+//     type: 'image',
+//     description: '',
+//   },
+// ];
 
-const dataList: DataItem[] = [
-  {
-    media: data,
-    name: 'Godfather 👑👑',
-    username: '@dagodfather_100',
-    photo: 'profile1.jpeg',
-    time: '10m',
-    aspectRatio: 1 / 1,
-    type: 'carousel',
-    description: `Big vibes only! 🌍 Had an amazing time with the fam last night. Nothing but love and energy! 💥✨ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#001</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfrobeatKing</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#OBO👑</span>. Blessed to do what I love with these amazing people. 💯🖤
+// const dataList: DataItem[] = [
+//   {
+//     media: data,
+//     name: 'Godfather 👑👑',
+//     username: '@dagodfather_100',
+//     photo: 'profile1.jpeg',
+//     time: '10m',
+//     aspectRatio: 1 / 1,
+//     type: 'carousel',
+//     description: `Big vibes only! 🌍 Had an amazing time with the fam last night. Nothing but love and energy! 💥✨ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#001</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfrobeatKing</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#OBO👑</span>. Blessed to do what I love with these amazing people. 💯🖤
 
-        
-        Shoutout to my brothers <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@real_kiddominant</span> and <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@thechefchi</span> 🙌🔥 Let’s keep pushing the culture! 🎶✨
-        
-        <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NaijaToTheWorld</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#30BG</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Davido</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Afrobeats</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LagosVibes</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfricanGiant</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewMusicLoading 🎵</span>.`,
-  },
+//         Shoutout to my brothers <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@real_kiddominant</span> and <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@thechefchi</span> 🙌🔥 Let’s keep pushing the culture! 🎶✨
 
-  {
-    media: data2,
-    name: 'Lionel Messi 🐐🐐',
-    username: '@absolute_messi',
-    photo: 'profile2.jpeg',
-    time: '3h',
-    aspectRatio: 4 / 5,
-    type: 'carousel',
-    description: `Grateful for every step of this journey ⚽️. From Rosario to Barcelona, Paris, and now Miami, it’s always been about the love of the game and the incredible people I’ve met along the way ❤️💙.
+//         <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NaijaToTheWorld</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#30BG</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Davido</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Afrobeats</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LagosVibes</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfricanGiant</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewMusicLoading 🎵</span>.`,
+//   },
 
-Special memories with my family, teammates, and fans who’ve been there through it all. Thank you! 🙏
+//   {
+//     media: data2,
+//     name: 'Lionel Messi 🐐🐐',
+//     username: '@absolute_messi',
+//     photo: 'profile2.jpeg',
+//     time: '3h',
+//     aspectRatio: 4 / 5,
+//     type: 'carousel',
+//     description: `Grateful for every step of this journey ⚽️. From Rosario to Barcelona, Paris, and now Miami, it’s always been about the love of the game and the incredible people I’ve met along the way ❤️💙.
 
-<span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#SiempreMessi</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FromRosarioToTheWorld 🌍</span>
+// Special memories with my family, teammates, and fans who’ve been there through it all. Thank you! 🙏
 
-Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@fcbarcelona</span> – Dreams started here 💙❤️ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@psg</span> – Another chapter, another challenge 🌟 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@intermiamicf</span> – Writing new stories in the USA⚽️
+// <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#SiempreMessi</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FromRosarioToTheWorld 🌍</span>
 
-<span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Argentina</span> – Always proud to wear these colors 💪 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#VamosAlbiceleste</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LaPulga</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Goat</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewGoalsAhead</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FootballFamily</span>`,
-  },
-];
+// Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@fcbarcelona</span> – Dreams started here 💙❤️ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@psg</span> – Another chapter, another challenge 🌟 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@intermiamicf</span> – Writing new stories in the USA⚽️
+
+// <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Argentina</span> – Always proud to wear these colors 💪 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#VamosAlbiceleste</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LaPulga</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Goat</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewGoalsAhead</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FootballFamily</span>`,
+//   },
+// ];
 
 const Home = () => {
   const [showArrow, setShowArrow] = useState<Arrow>({
@@ -310,6 +307,8 @@ const Home = () => {
       setFollowList(new Set(newList));
     }
   };
+
+  console.log(contents);
 
   return (
     <>
@@ -521,11 +520,12 @@ const Home = () => {
                   the page or check your connection.
                 </div>
               ) : (
-                dataList.map((data, index) => (
+                contents.map((data, index) => (
                   <ContentBox
                     key={index}
                     data={data}
                     contentType="home"
+                    setContents={setContents}
                     setShowMobileMenu={setShowMobileMenu}
                   />
                 ))

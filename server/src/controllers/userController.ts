@@ -281,7 +281,8 @@ export const updatePrivateAudience = asyncErrorHandler(
       return next(new CustomError('This action is not allowed.', 403));
     }
 
-    const { value, users = [] } = req.user?.settings.general.privacy;
+    let { value, users = [] } = req.user?.settings.general.privacy;
+    if (users.length > 0) users = users.map((value: string) => String(value));
 
     if (action !== 'add' && action !== 'remove') {
       return next(new CustomError('Invalid request!', 400));
@@ -297,8 +298,7 @@ export const updatePrivateAudience = asyncErrorHandler(
       privateAudience.add(id);
 
       if (privateAudience.size > 1000) {
-        const firstItem = [...privateAudience].shift();
-        privateAudience.delete(firstItem);
+        privateAudience.delete(users[0]);
       }
     } else {
       privateAudience.delete(id);
@@ -307,13 +307,7 @@ export const updatePrivateAudience = asyncErrorHandler(
     const updatedUser = await User.findByIdAndUpdate(
       id,
       {
-        settings: {
-          general: {
-            privacy: {
-              users: [...privateAudience],
-            },
-          },
-        },
+        'settings.general.privacy.users': [...privateAudience],
       },
       {
         new: true,

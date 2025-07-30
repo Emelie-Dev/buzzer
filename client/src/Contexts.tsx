@@ -1,14 +1,24 @@
 import React, { createContext } from 'react';
 
 interface LikeObj {
-  like: boolean;
-  setLike: React.Dispatch<React.SetStateAction<boolean>>;
-  setHideLike: React.Dispatch<React.SetStateAction<boolean>>;
+  like: {
+    value: boolean;
+    obj: any;
+    count: number;
+  };
+  setLike: React.Dispatch<
+    React.SetStateAction<{
+      value: boolean;
+      obj: any;
+      count: number;
+    }>
+  >;
   setShowMenu: React.Dispatch<React.SetStateAction<boolean>>;
   setHideMenu: React.Dispatch<React.SetStateAction<boolean>>;
   reelMenuRef: React.MutableRefObject<HTMLDivElement>;
   viewComment: boolean;
   setShowMobileMenu?: React.Dispatch<React.SetStateAction<boolean>>;
+  handleLike: () => Promise<void>;
 }
 
 type AudioFile = {

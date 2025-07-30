@@ -83,13 +83,13 @@ const MobileMenu = ({
         >
           Not interested
         </li>
-        <li
+        {/* <li
           className={`${styles['menu-item']} ${
             reels ? styles['reels-menu-item'] : ''
           }`}
         >
           Add to story
-        </li>
+        </li> */}
         <li
           className={`${styles['menu-item']} ${
             reels ? styles['reels-menu-item'] : ''

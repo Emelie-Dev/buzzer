@@ -6,6 +6,7 @@ export interface ILike extends Document {
   collectionName: String;
   documentId: Types.ObjectId;
   likedAt: Date;
+  data: {};
 }
 
 const LikeSchema = new Schema<ILike>({
@@ -27,6 +28,9 @@ const LikeSchema = new Schema<ILike>({
   documentId: {
     type: Schema.Types.ObjectId,
     required: true,
+  },
+  data: {
+    type: {},
   },
   likedAt: {
     type: Date,

@@ -1,31 +1,35 @@
 import styles from '../styles/CommentContent.module.css';
 import { FiHeart } from 'react-icons/fi';
-import { IoIosArrowDown } from 'react-icons/io';
 import { MdDelete } from 'react-icons/md';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
-import { useContext, useEffect, useRef, useState } from 'react';
-import { apiClient, getTime, getUrl } from '../Utilities';
-import { AuthContext } from '../Contexts';
-import { BsDot } from 'react-icons/bs';
+import { getUrl, getTime, apiClient } from '../Utilities';
 import ShowMoreText from 'react-show-more-text';
-import { toast } from 'sonner';
-import { IoMdHeart } from 'react-icons/io';
+import { useState, useContext, useEffect } from 'react';
+import { AuthContext } from '../Contexts';
 import LoadingAnimation from './LoadingAnimation';
-import CommentReply from './CommentReply';
+import { toast } from 'sonner';
+import { IoMdHeart, IoMdArrowDropright } from 'react-icons/io';
 
-type CommentContentProps = {
+type CommentReply = {
   data: any;
+  dataId: string;
   creator: any;
+  setReplies: React.Dispatch<
+    React.SetStateAction<{
+      value: any[];
+      count: number;
+    }>
+  >;
   setComments: any;
-  collaborators: any;
 };
 
-const CommentContent = ({
+const CommentReply = ({
   data,
   creator,
+  dataId,
+  setReplies,
   setComments,
-  collaborators,
-}: CommentContentProps) => {
+}: CommentReply) => {
   const {
     _id: commentId,
     user,
@@ -34,43 +38,24 @@ const CommentContent = ({
     text,
     createdAt,
     likes,
-    likeObj,
-    ownerLiked,
     collectionName,
     documentId,
-    ownerReply,
-    ownerReplyLikeDetails,
-    repliesCount,
+    likeObj,
+    reply,
+    receiver,
+    ownerLiked,
   } = data;
-  const { user: viewer } = useContext(AuthContext);
-  const [showMenu, setShowMenu] = useState<boolean>(false);
+
   const [textLines, setTextLines] = useState(5);
+  const { user: viewer } = useContext(AuthContext);
+  const [loading, setLoading] = useState({ like: false, delete: false });
   const [like, setLike] = useState<{ value: any; count: number }>({
     value: likeObj,
     count: likes,
   });
-  const [loading, setLoading] = useState({
-    like: false,
-    delete: false,
-    replies: false,
-  });
-  const [replies, setReplies] = useState<{ value: any[]; count: number }>({
-    value: [],
-    count: ownerReply ? repliesCount - 1 : repliesCount,
-  });
-  const [cursor, setCursor] = useState<string>(null!);
-
-  const subCommentRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     setLike({ value: likeObj, count: likes });
-
-    setReplies({
-      value: ownerReply
-        ? [{ ...ownerReply, ...creator, ...ownerReplyLikeDetails }]
-        : [],
-      count: ownerReply ? repliesCount - 1 : repliesCount,
-    });
   }, []);
 
   const handleCommentText = () => {
@@ -85,6 +70,7 @@ const CommentContent = ({
         const { data } = await apiClient.post('v1/likes', {
           collection: 'comment',
           documentId: commentId,
+          data: { commentId: dataId },
         });
 
         setLike({ value: data.data.like, count: like.count + 1 });
@@ -112,12 +98,16 @@ const CommentContent = ({
 
     try {
       await apiClient.delete(`v1/comments/${commentId}`, {
-        data: { collection: collectionName, documentId, mentions: [] },
+        data: { collection: collectionName, documentId, reply, mentions: [] },
       });
 
-      setComments(({ value, totalCount }: any) => ({
+      setReplies(({ value, count }) => ({
         value: value.filter((comment: any) => comment._id !== commentId),
-        totalCount: totalCount - 1,
+        count,
+      }));
+      setComments((prevValue: any) => ({
+        ...prevValue,
+        totalCount: prevValue.totalCount - 1,
       }));
     } catch (err: any) {
       if (!err.response) {
@@ -130,42 +120,8 @@ const CommentContent = ({
     }
   };
 
-  const getReplies = async () => {
-    setLoading({ ...loading, replies: true });
-
-    try {
-      const { data } = await apiClient(
-        `v1/comments?collection=${collectionName}&documentId=${documentId}&cursor=${cursor}&reply=true&commentId=${commentId}&objId=${
-          ownerReply ? ownerReply._id : null
-        }`
-      );
-
-      setReplies(({ value }) => ({
-        value: [...value, ...data.data.comments],
-        count: Math.max(data.data.totalCount - 5, 0),
-      }));
-
-      setCursor(data.data.nextCursor ? data.data.nextCursor : cursor);
-    } catch (err: any) {
-      if (!err.response) {
-        toast.error(`Could not load replies. Please Try again.`);
-      } else {
-        toast.error(err.response.data.message);
-      }
-    } finally {
-      setLoading({ ...loading, replies: false });
-    }
-  };
-
   return (
-    <article
-      className={styles['comment-box']}
-      onMouseOver={(e) => {
-        if (!subCommentRef.current.contains(e.target as Node))
-          setShowMenu(true);
-      }}
-      onMouseOut={() => setShowMenu(false)}
-    >
+    <article className={styles['sub-comment-box']}>
       <a href={`/@${user.username}`}>
         <span
           className={`${styles['comment-img-box']} ${
@@ -177,26 +133,22 @@ const CommentContent = ({
           }`}
         >
           <img
-            className={styles['comment-img']}
+            className={styles['sub-comment-img']}
             src={getUrl(user.photo, 'users')}
           />
         </span>
       </a>
 
-      <div className={styles['comment-details']}>
+      <div className={styles['sub-comment-details']}>
         <span className={styles['comment-owner']}>
           <a href={`/@${user.username}`}>{user.name || <>&nbsp;</>}</a>
-          {user._id === creator.user._id ? (
-            <span className={styles['creator-tag']}>
-              <BsDot /> Creator
-            </span>
-          ) : collaborators.length > 0 &&
-            collaborators.find((obj: any) => obj._id === user._id) ? (
-            <span className={styles['creator-tag']}>
-              <BsDot /> Collaborator
-            </span>
-          ) : (
-            ''
+          {receiver && (
+            <>
+              <IoMdArrowDropright className={styles['arrow-icon']} />
+              <a href={`/@${receiver.username}`}>
+                {receiver.name || <>&nbsp;</>}
+              </a>
+            </>
           )}
         </span>
 
@@ -232,47 +184,9 @@ const CommentContent = ({
             )}
           </span>
         </div>
-
-        {replies.value.length > 0 ? (
-          <div className={styles['sub-comments-container']} ref={subCommentRef}>
-            {replies.value.map((reply) => (
-              <CommentReply
-                key={reply._id}
-                data={reply}
-                creator={creator}
-                setReplies={setReplies}
-                setComments={setComments}
-                dataId={commentId}
-              />
-            ))}
-          </div>
-        ) : (
-          <div ref={subCommentRef}></div>
-        )}
-
-        {replies.count > 0 ? (
-          loading.replies ? (
-            <div className={styles['loader-box']}>
-              <LoadingAnimation
-                style={{
-                  width: '1.5rem',
-                  height: '1.5rem',
-                  transform: 'scale(2.5)',
-                }}
-              />
-            </div>
-          ) : (
-            <span className={styles['other-replies-text']} onClick={getReplies}>
-              View {replies.count} {replies.count === 1 ? 'reply' : 'replies'}
-              <IoIosArrowDown className={styles['down-arrow-icon']} />
-            </span>
-          )
-        ) : (
-          ''
-        )}
       </div>
 
-      <div className={styles['comment-likes-box']}>
+      <div className={styles['sub-comment-likes-box']}>
         {user._id === viewer._id ? (
           loading.delete ? (
             <LoadingAnimation
@@ -284,20 +198,16 @@ const CommentContent = ({
               }}
             />
           ) : (
-            <div
-              className={`${styles['comment-menu-box']} ${
-                showMenu ? styles['show-menu'] : ''
-              }`}
-            >
+            <div className={styles['sub-comment-menu-box']}>
               <HiOutlineDotsHorizontal
-                className={styles['comment-menu-icon']}
+                className={styles['sub-comment-menu-icon']}
               />
 
               <span
-                className={styles['comment-menu-item']}
+                className={styles['sub-comment-menu-item']}
                 onClick={deleteComment}
               >
-                <MdDelete className={styles['delete-comment-icon']} />
+                <MdDelete className={styles['sub-delete-comment-icon']} />
                 Delete
               </span>
             </div>
@@ -319,4 +229,4 @@ const CommentContent = ({
   );
 };
 
-export default CommentContent;
+export default CommentReply;

@@ -8,6 +8,7 @@ import { BsDot } from 'react-icons/bs';
 import { FaMusic } from 'react-icons/fa';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { RiPushpinFill } from 'react-icons/ri';
+import { getUrl } from '../Utilities';
 
 export interface Content {
   type: 'image' | 'video';
@@ -43,7 +44,7 @@ const CarouselItem = ({
 }: CarouselItemProps) => {
   const { type, src } = item;
   const [loading, setLoading] = useState<
-    boolean | 'error' | 'empty' | 'notfound'
+    boolean | 'error' | 'empty' | 'waiting'
   >(true);
   const [pause, setPause] = useState<boolean>(false);
   const [hidePause, setHidePause] = useState<boolean>(true);
@@ -56,13 +57,12 @@ const CarouselItem = ({
   const { contentRef } = useContext(ContentContext);
   const {
     like,
-    setLike,
-    setHideLike,
     setShowMenu,
     setHideMenu,
     reelMenuRef,
     viewComment,
     setShowMobileMenu,
+    handleLike,
   } = useContext(LikeContext);
   const [showLike, setShowLike] = useState<boolean>(false);
   const [webkit, setWebkit] = useState<boolean>(true);
@@ -81,11 +81,7 @@ const CarouselItem = ({
 
   useEffect(() => {
     const networkHandler = () => {
-      if (
-        loading === 'empty' ||
-        loading === 'error' ||
-        loading === 'notfound'
-      ) {
+      if (loading === 'empty' || loading === 'error') {
         setReloading(true);
 
         if (type === 'image') {
@@ -180,14 +176,12 @@ const CarouselItem = ({
     }
   };
 
-  const handleError = (event: 'error' | 'empty' | 'notfound') => () => {
+  const handleError = (event: 'error' | 'empty') => () => {
     setReloading(false);
     if (event === 'error') {
       setLoading('error');
     } else if (event === 'empty') {
       setLoading('empty');
-    } else if (event === 'notfound') {
-      setLoading('notfound');
     }
   };
 
@@ -209,27 +203,19 @@ const CarouselItem = ({
     setClickTimeout(timeout);
   };
 
-  const handleDoubleClick =
-    (
-      handler1: React.Dispatch<React.SetStateAction<boolean>>,
-      handler2: React.Dispatch<React.SetStateAction<boolean>>
-    ) =>
-    () => {
-      // Clear the timeout for single click when a double click is detected
-      if (clickTimeout) {
-        clearTimeout(clickTimeout);
-        setClickTimeout(null);
-      }
+  const handleDoubleClick = () => {
+    // Clear the timeout for single click when a double click is detected
+    if (clickTimeout) {
+      clearTimeout(clickTimeout);
+      setClickTimeout(null);
+    }
 
-      if (loading === false) {
-        // Perform double-click action here
-        handler1(true);
-        if (!like) handler2(false);
-        setShowLike(true);
-
-        setTimeout(() => setShowLike(false), 700);
-      }
-    };
+    if (loading === false) {
+      if (!like.value) handleLike();
+      setShowLike(true);
+      setTimeout(() => setShowLike(false), 700);
+    }
+  };
 
   const addToRef =
     (ref: React.MutableRefObject<HTMLDivElement[]>) => (el: HTMLDivElement) => {
@@ -340,6 +326,26 @@ const CarouselItem = ({
       }
     };
 
+  const showLoader = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    // Check if we're really out of buffer
+
+    const target = e.target as HTMLVideoElement;
+    const buffered = target.buffered;
+    const currentTime = target.currentTime;
+    let isBuffered = false;
+
+    for (let i = 0; i < buffered.length; i++) {
+      if (currentTime >= buffered.start(i) && currentTime <= buffered.end(i)) {
+        isBuffered = true;
+        break;
+      }
+    }
+
+    if (!isBuffered) {
+      setLoading('waiting');
+    }
+  };
+
   return (
     <div
       className={`${styles['carousel-item']} ${
@@ -348,7 +354,7 @@ const CarouselItem = ({
       ref={type === 'video' ? addToRef(contentRef) : null}
       data-active={contentIndex === itemIndex && !pause}
     >
-      {(loading === true || reloading === true) && (
+      {(loading === true || reloading === true || loading === 'waiting') && (
         <div className={styles.loader}></div>
       )}
 
@@ -371,11 +377,6 @@ const CarouselItem = ({
               <BiSolidErrorAlt className={styles['error-icon']} />
               Unable to load media.
             </span>
-          ) : loading === 'notfound' ? (
-            <span className={styles['error-box']}>
-              <BiSolidErrorAlt className={styles['error-icon']} />
-              This media no longer exists.
-            </span>
           ) : (
             ''
           )}
@@ -383,7 +384,7 @@ const CarouselItem = ({
       )}
 
       <div
-        className={`${styles['media-wrapper']} `}
+        className={`${styles['media-wrapper']}`}
         onContextMenu={(e) => {
           if (contentType === 'reels') {
             e.preventDefault();
@@ -395,22 +396,13 @@ const CarouselItem = ({
             ? handleSingleClick(handleClick)
             : handleSingleClick(handleImageClick)
         }
-        onDoubleClick={
-          type === 'video'
-            ? handleDoubleClick(setLike, setHideLike)
-            : handleDoubleClick(setLike, setHideLike)
-        }
+        onDoubleClick={handleDoubleClick}
       >
         {type === 'image' ? (
           <img
-            src={`../../assets/images/content/${src}.jpeg`}
+            src={getUrl(src, 'contents')}
             className={`${styles['media']} ${
-              loading === true ||
-              loading === 'empty' ||
-              loading === 'error' ||
-              loading === 'notfound'
-                ? styles['hide-visibility']
-                : ''
+              loading && loading !== 'waiting' ? styles['hide-visibility'] : ''
             }`}
             style={{ aspectRatio }}
             ref={imageRef}
@@ -427,10 +419,7 @@ const CarouselItem = ({
               className={`${styles['video-media']} ${
                 contentType === 'reels' ? styles['reels-video'] : ''
               } ${
-                loading === true ||
-                loading === 'empty' ||
-                loading === 'error' ||
-                loading === 'notfound'
+                loading && loading !== 'waiting'
                   ? styles['hide-visibility']
                   : ''
               }`}
@@ -446,8 +435,8 @@ const CarouselItem = ({
               }}
               onError={handleError('error')}
               onAbort={handleError('error')}
-              onEmptied={handleError('notfound')}
               onStalled={handleError('empty')}
+              onWaiting={showLoader}
               onTimeUpdate={handleProgressUpdate}
               onPlaying={() => {
                 setIsProgressChanging(false);
@@ -456,10 +445,7 @@ const CarouselItem = ({
               onDurationChange={handleMediaTime('duration')}
               autoPlay={false}
             >
-              <source
-                src={`../../assets/images/content/${src}.mp4`}
-                type="video/mp4"
-              />
+              <source src={getUrl(src, 'contents')} />
               Your browser does not support playing video.
             </video>
 

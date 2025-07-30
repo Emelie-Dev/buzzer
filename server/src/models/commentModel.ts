@@ -38,7 +38,6 @@ const CommentSchema = new Schema<IComment>({
       receiver: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
       },
       commentId: {
         type: Schema.Types.ObjectId,
@@ -50,7 +49,7 @@ const CommentSchema = new Schema<IComment>({
   text: {
     type: String,
     required: true,
-    maxlength: 200,
+    maxlength: 2000,
     trim: true,
   },
   createdAt: {
