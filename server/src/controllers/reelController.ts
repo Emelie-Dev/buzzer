@@ -284,7 +284,7 @@ export const saveReel = asyncErrorHandler(
         'create',
         'reel',
         mentions,
-        { id: req.user?._id, name: req.user?.username },
+        req.user?._id,
         reel._id,
         settings.accessibility,
         { text: req.body.description }
@@ -490,7 +490,7 @@ export const deleteReel = asyncErrorHandler(
       'delete',
       'reel',
       mentions,
-      { id: req.user?._id, name: req.user?.username },
+      req.user?._id,
       reel._id,
       null,
       null

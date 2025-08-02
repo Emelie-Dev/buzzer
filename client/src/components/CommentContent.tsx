@@ -7,17 +7,18 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { apiClient, getTime, getUrl } from '../Utilities';
 import { AuthContext } from '../Contexts';
 import { BsDot } from 'react-icons/bs';
-import ShowMoreText from 'react-show-more-text';
 import { toast } from 'sonner';
 import { IoMdHeart } from 'react-icons/io';
 import LoadingAnimation from './LoadingAnimation';
 import CommentReply from './CommentReply';
+import ShowMoreText from './ShowMoreText';
 
 type CommentContentProps = {
   data: any;
   creator: any;
   setComments: any;
   collaborators: any;
+  setReply: React.Dispatch<any>;
 };
 
 const CommentContent = ({
@@ -25,6 +26,7 @@ const CommentContent = ({
   creator,
   setComments,
   collaborators,
+  setReply,
 }: CommentContentProps) => {
   const {
     _id: commentId,
@@ -41,10 +43,10 @@ const CommentContent = ({
     ownerReply,
     ownerReplyLikeDetails,
     repliesCount,
+    mentions,
   } = data;
   const { user: viewer } = useContext(AuthContext);
   const [showMenu, setShowMenu] = useState<boolean>(false);
-  const [textLines, setTextLines] = useState(5);
   const [like, setLike] = useState<{ value: any; count: number }>({
     value: likeObj,
     count: likes,
@@ -59,8 +61,10 @@ const CommentContent = ({
     count: ownerReply ? repliesCount - 1 : repliesCount,
   });
   const [cursor, setCursor] = useState<string>(null!);
+  const [excludeArray, setExcludeArray] = useState<string[]>([]);
 
   const subCommentRef = useRef<HTMLDivElement>(null!);
+  const time = useRef<string>(getTime(createdAt, true));
 
   useEffect(() => {
     setLike({ value: likeObj, count: likes });
@@ -71,11 +75,9 @@ const CommentContent = ({
         : [],
       count: ownerReply ? repliesCount - 1 : repliesCount,
     });
-  }, []);
 
-  const handleCommentText = () => {
-    setTextLines(textLines + 5);
-  };
+    setExcludeArray((prev) => (ownerReply ? [ownerReply._id] : prev));
+  }, []);
 
   const handleLike = async () => {
     setLoading({ ...loading, like: true });
@@ -112,7 +114,7 @@ const CommentContent = ({
 
     try {
       await apiClient.delete(`v1/comments/${commentId}`, {
-        data: { collection: collectionName, documentId, mentions: [] },
+        data: { collection: collectionName, documentId, mentions },
       });
 
       setComments(({ value, totalCount }: any) => ({
@@ -134,11 +136,14 @@ const CommentContent = ({
     setLoading({ ...loading, replies: true });
 
     try {
-      const { data } = await apiClient(
-        `v1/comments?collection=${collectionName}&documentId=${documentId}&cursor=${cursor}&reply=true&commentId=${commentId}&objId=${
-          ownerReply ? ownerReply._id : null
-        }`
-      );
+      const { data } = await apiClient.post(`v1/comments`, {
+        collection: collectionName,
+        documentId,
+        cursor,
+        reply: true,
+        commentId,
+        excludeArray,
+      });
 
       setReplies(({ value }) => ({
         value: [...value, ...data.data.comments],
@@ -169,7 +174,7 @@ const CommentContent = ({
       <a href={`/@${user.username}`}>
         <span
           className={`${styles['comment-img-box']} ${
-            hasStory && hasUnviewedStory
+            hasStory && (hasUnviewedStory || user._id === viewer._id)
               ? styles['comment-img-box3']
               : hasStory
               ? styles['comment-img-box2']
@@ -202,24 +207,30 @@ const CommentContent = ({
 
         <div className={styles['comment-content']}>
           <ShowMoreText
-            lines={textLines}
-            more="more"
-            less=""
+            text={text}
+            lines={5}
             className={styles.comment}
             anchorClass={styles['more-text']}
-            expanded={false}
-            expandByClick={false}
-            onClick={handleCommentText}
-          >
-            {text}
-          </ShowMoreText>
+            increment
+          />
 
           <span className={styles['comment-options']}>
-            <time className={styles['comment-time']}>
-              {getTime(createdAt, true)}
-            </time>
+            <time className={styles['comment-time']}>{time.current}</time>
 
-            <span className={styles['reply-text']}>Reply</span>
+            <span
+              className={styles['reply-text']}
+              onClick={() =>
+                setReply({
+                  name: user.name,
+                  receiver: undefined,
+                  commentId,
+                  setter: setReplies,
+                  setExcludeArray,
+                })
+              }
+            >
+              Reply
+            </span>
 
             {ownerLiked && (
               <span className={styles['owner-like-box']}>
@@ -243,6 +254,8 @@ const CommentContent = ({
                 setReplies={setReplies}
                 setComments={setComments}
                 dataId={commentId}
+                setReply={setReply}
+                setExcludeArray={setExcludeArray}
               />
             ))}
           </div>

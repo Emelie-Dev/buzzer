@@ -104,6 +104,11 @@ const ContentBox = ({
   const reelMenuRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
+    setIsFollowing(user.isFollowing);
+    setFollow(Boolean(user.isFollowing));
+  }, [user]);
+
+  useEffect(() => {
     setLike({
       value: Boolean(userLike),
       obj: userLike,

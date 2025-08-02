@@ -38,7 +38,7 @@ export default () => {
 
         case 'delete': {
           const id = change.documentKey._id.toString();
-          await typesense.collections(name).documents().delete(id);
+          await typesense.collections(name).documents(id).delete();
           break;
         }
       }

@@ -15,7 +15,7 @@ import { Types } from 'mongoose';
 import Like from '../models/likeModel.js';
 // 08061500665
 
-const isValidDateString = (str: string): boolean => {
+export const isValidDateString = (str: string): boolean => {
   const date = new Date(str);
   return !isNaN(date.getTime());
 };
@@ -39,6 +39,8 @@ export const addComment = asyncErrorHandler(
       return next(new CustomError(`This ${collection} does not exist.`, 404));
     }
 
+    const viewerId = req.user?._id;
+
     // Check if content owner enabled commenting
     const disableComments = data.settings.disableComments;
     if (disableComments) {
@@ -48,7 +50,7 @@ export const addComment = asyncErrorHandler(
     }
 
     const comment = await Comment.create({
-      user: req.user?._id,
+      user: viewerId,
       creator: data.user._id,
       collectionName: collection,
       documentId: data._id,
@@ -67,7 +69,7 @@ export const addComment = asyncErrorHandler(
 
         await handleCreateNotifications(
           'reply',
-          req.user?._id,
+          viewerId,
           {
             user: { _id: reply.receiver || originalComment!.user },
             _id: reply.commentId,
@@ -82,7 +84,7 @@ export const addComment = asyncErrorHandler(
       } else {
         await handleCreateNotifications(
           'comment',
-          req.user?._id,
+          viewerId,
           data,
           collection,
           {
@@ -99,15 +101,85 @@ export const addComment = asyncErrorHandler(
       'create',
       'comment',
       mentions,
-      { id: req.user?._id, name: req.user?.username },
+      viewerId,
       comment._id,
       ContentAccessibility.EVERYONE,
       { text, collection, docId: documentId }
     );
 
+    const commentData = await Comment.aggregate([
+      {
+        $match: {
+          _id: comment._id,
+        },
+      },
+      {
+        $lookup: {
+          from: 'stories',
+          localField: 'user',
+          foreignField: 'user',
+          as: 'stories',
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'users',
+          pipeline: [{ $project: { name: 1, photo: 1, username: 1 } }],
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'reply.receiver',
+          foreignField: '_id',
+          as: 'receiver',
+          pipeline: [{ $project: { name: 1, photo: 1, username: 1 } }],
+        },
+      },
+      {
+        $addFields: {
+          user: { $first: '$users' },
+          receiver: { $first: '$receiver' },
+          likes: 0,
+          hasStory: {
+            $gt: [{ $size: '$stories' }, 0],
+          },
+          hasUnviewedStory: false,
+          repliesCount: 0,
+          ownerLiked: false,
+          ownerReply: undefined,
+          ownerReplyLikeDetails: undefined,
+          likeObj: undefined,
+        },
+      },
+      {
+        $project: {
+          user: 1,
+          text: 1,
+          createdAt: 1,
+          likes: 1,
+          hasStory: 1,
+          hasUnviewedStory: 1,
+          repliesCount: 1,
+          ownerLiked: 1,
+          documentId: 1,
+          collectionName: 1,
+          ownerReply: 1,
+          ownerReplyLikeDetails: 1,
+          likeObj: 1,
+          receiver: 1,
+          mentions: 1,
+          reply: 1,
+        },
+      },
+    ]);
+
     return res.status(201).json({
       status: 'success',
-      message: 'Comment added!',
+      data: { message: 'Comment added!', comment: commentData[0] },
     });
   }
 );
@@ -144,7 +216,7 @@ export const deleteComment = asyncErrorHandler(
       'delete',
       'comment',
       mentions,
-      { id: req.user?._id, name: req.user?.username },
+      req.user?._id,
       comment._id,
       null,
       null
@@ -159,7 +231,14 @@ export const deleteComment = asyncErrorHandler(
 
 export const getComments = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
-    let { collection, documentId, cursor, reply, commentId, objId } = req.query;
+    let {
+      collection,
+      documentId,
+      cursor,
+      reply,
+      commentId,
+      excludeArray = [],
+    } = req.body;
     collection = String(collection).toLowerCase().trim();
 
     const query =
@@ -177,36 +256,26 @@ export const getComments = asyncErrorHandler(
 
     let comments, totalCount;
 
-    if (replyValue) {
-      let firstStage: any = Types.ObjectId.isValid(String(objId))
-        ? {
-            $match: {
-              _id: { $ne: new Types.ObjectId(String(objId)) },
-              'reply.commentId': new Types.ObjectId(String(commentId)),
-              collectionName: collection,
-              documentId: new Types.ObjectId(String(documentId)),
-            },
-          }
-        : {
-            $match: {
-              'reply.commentId': new Types.ObjectId(String(commentId)),
-              collectionName: collection,
-              documentId: new Types.ObjectId(String(documentId)),
-            },
-          };
+    excludeArray = excludeArray.map(
+      (id: string) => new Types.ObjectId(String(id))
+    );
 
-      let match: any = Types.ObjectId.isValid(String(objId))
-        ? {
-            _id: { $ne: objId },
-            'reply.commentId': commentId,
-            collectionName: collection,
-            documentId,
-          }
-        : {
-            'reply.commentId': commentId,
-            collectionName: collection,
-            documentId,
-          };
+    if (replyValue) {
+      let firstStage: any = {
+        $match: {
+          _id: { $nin: excludeArray },
+          'reply.commentId': new Types.ObjectId(String(commentId)),
+          collectionName: collection,
+          documentId: new Types.ObjectId(String(documentId)),
+        },
+      };
+
+      let match: any = {
+        _id: { $nin: excludeArray },
+        'reply.commentId': commentId,
+        collectionName: collection,
+        documentId,
+      };
 
       if (isValidDateString(String(cursor))) {
         firstStage['$match'] = {
@@ -406,6 +475,7 @@ export const getComments = asyncErrorHandler(
               },
             },
             reply: 1,
+            mentions: 1,
           },
         },
       ]);
@@ -781,6 +851,7 @@ export const getComments = asyncErrorHandler(
                 },
               },
             },
+            mentions: 1,
           },
         },
       ]);

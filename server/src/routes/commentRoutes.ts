@@ -10,7 +10,9 @@ const router = express.Router();
 
 router.use(protectRoute);
 
-router.route('/').get(getComments).post(addComment);
+router.post('/', getComments);
+
+router.post('/add', addComment);
 
 router.delete('/:id', deleteComment);
 

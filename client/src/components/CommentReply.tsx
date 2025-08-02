@@ -3,8 +3,8 @@ import { FiHeart } from 'react-icons/fi';
 import { MdDelete } from 'react-icons/md';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { getUrl, getTime, apiClient } from '../Utilities';
-import ShowMoreText from 'react-show-more-text';
-import { useState, useContext, useEffect } from 'react';
+import ShowMoreText from './ShowMoreText';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { AuthContext } from '../Contexts';
 import LoadingAnimation from './LoadingAnimation';
 import { toast } from 'sonner';
@@ -21,6 +21,8 @@ type CommentReply = {
     }>
   >;
   setComments: any;
+  setReply: React.Dispatch<any>;
+  setExcludeArray: React.Dispatch<React.SetStateAction<string[]>>;
 };
 
 const CommentReply = ({
@@ -29,6 +31,8 @@ const CommentReply = ({
   dataId,
   setReplies,
   setComments,
+  setReply,
+  setExcludeArray,
 }: CommentReply) => {
   const {
     _id: commentId,
@@ -44,9 +48,9 @@ const CommentReply = ({
     reply,
     receiver,
     ownerLiked,
+    mentions,
   } = data;
 
-  const [textLines, setTextLines] = useState(5);
   const { user: viewer } = useContext(AuthContext);
   const [loading, setLoading] = useState({ like: false, delete: false });
   const [like, setLike] = useState<{ value: any; count: number }>({
@@ -54,13 +58,11 @@ const CommentReply = ({
     count: likes,
   });
 
+  const time = useRef<string>(getTime(createdAt, true));
+
   useEffect(() => {
     setLike({ value: likeObj, count: likes });
   }, []);
-
-  const handleCommentText = () => {
-    setTextLines(textLines + 5);
-  };
 
   const handleLike = async () => {
     setLoading({ ...loading, like: true });
@@ -98,7 +100,7 @@ const CommentReply = ({
 
     try {
       await apiClient.delete(`v1/comments/${commentId}`, {
-        data: { collection: collectionName, documentId, reply, mentions: [] },
+        data: { collection: collectionName, documentId, reply, mentions },
       });
 
       setReplies(({ value, count }) => ({
@@ -125,7 +127,7 @@ const CommentReply = ({
       <a href={`/@${user.username}`}>
         <span
           className={`${styles['comment-img-box']} ${
-            hasStory && hasUnviewedStory
+            hasStory && (hasUnviewedStory || user._id === viewer._id)
               ? styles['comment-img-box3']
               : hasStory
               ? styles['comment-img-box2']
@@ -154,24 +156,30 @@ const CommentReply = ({
 
         <div className={styles['comment-content']}>
           <ShowMoreText
-            lines={textLines}
-            more="more"
-            less=""
+            lines={5}
+            moreText="more"
             className={styles.comment}
             anchorClass={styles['more-text']}
-            expanded={false}
-            expandByClick={false}
-            onClick={handleCommentText}
-          >
-            {text}
-          </ShowMoreText>
+            text={text}
+          />
 
           <span className={styles['comment-options']}>
-            <time className={styles['comment-time']}>
-              {getTime(createdAt, true)}
-            </time>
+            <time className={styles['comment-time']}>{time.current}</time>
 
-            <span className={styles['reply-text']}>Reply</span>
+            <span
+              className={styles['reply-text']}
+              onClick={() =>
+                setReply({
+                  name: user.name,
+                  receiver: user._id,
+                  commentId: dataId,
+                  setter: setReplies,
+                  setExcludeArray,
+                })
+              }
+            >
+              Reply
+            </span>
 
             {ownerLiked && (
               <span className={styles['owner-like-box']}>

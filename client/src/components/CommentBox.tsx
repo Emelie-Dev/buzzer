@@ -6,17 +6,17 @@ import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { FaCommentDots, FaShare } from 'react-icons/fa';
 import { IoBookmark } from 'react-icons/io5';
 import CommentContent from './CommentContent';
-import { PiCheckFatFill } from 'react-icons/pi';
-import { IoReloadOutline } from 'react-icons/io5';
 import { IoClose } from 'react-icons/io5';
 import { FaArrowUp } from 'react-icons/fa';
 import Carousel from './Carousel';
 import { ContentContext, LikeContext } from '../Contexts';
-import { apiClient, getUrl } from '../Utilities';
+import { apiClient, debounce, getUrl } from '../Utilities';
 import { toast } from 'sonner';
 import { IoMdHeart } from 'react-icons/io';
 import LoadingAnimation from './LoadingAnimation';
 import { CommentData } from './ContentBox';
+import { BsDot } from 'react-icons/bs';
+import DOMPurify from 'dompurify';
 
 type CommentBoxProps = {
   data: CommentData;
@@ -30,33 +30,20 @@ type CommentBoxProps = {
   engagementObj: any;
 };
 
-const followers = [
-  {
-    id: 1,
-    name: 'Alice Johnson',
-    userhandle: 'alicejohnson2024',
-    isFollowing: true,
-  },
-  {
-    id: 2,
-    name: 'Bob Smith',
-    userhandle: 'bob_smith_official',
-    isFollowing: false,
-  },
-  { id: 3, name: 'Charlie Davis', userhandle: 'charlied', isFollowing: true },
-  {
-    id: 4,
-    name: 'Diana Garcia',
-    userhandle: 'dianagarcia123',
-    isFollowing: false,
-  },
-  {
-    id: 5,
-    name: 'Ethan Brown',
-    userhandle: 'ethanbrown_live',
-    isFollowing: true,
-  },
-];
+const getUsers = async (...args: any[]) => {
+  const [query, page, cursor] = args;
+  try {
+    const { data } = await apiClient(
+      `v1/users/mention?query=${query}&page=${page}&cursor=${cursor}`
+    );
+
+    return data.data.result;
+  } catch {
+    return 'error';
+  }
+};
+
+const debouncedQuery = debounce(getUsers, 300);
 
 const CommentBox = ({
   data,
@@ -84,13 +71,10 @@ const CommentBox = ({
     collaborators,
   } = engagementObj;
   const [showMenu, setShowMenu] = useState<boolean>(false);
-  const [hideMenu, setHideMenu] = useState<boolean>(true);
-  const [newComment, setNewComment] = useState<string>('');
   const [showList, setShowList] = useState<boolean>(false);
-  const [savedRange, setSavedRange] = useState<Range>();
-  const [tagList, setTagList] = useState<number[]>([]);
-  const [searching, setSearching] = useState<boolean | 'done'>(false);
-  const [newTag, setNewTag] = useState<boolean>(false);
+  const [hideMenu, setHideMenu] = useState<boolean>(true);
+  const [hideList, setHideList] = useState<boolean>(true);
+  const [newComment, setNewComment] = useState<string>('');
   const [scrollHeight, setScrollHeight] = useState<number>(0);
   const [hideData, setHideData] = useState<boolean>(false);
   const { setActiveVideo } = useContext(ContentContext);
@@ -100,13 +84,22 @@ const CommentBox = ({
     value: false,
     end: false,
   });
+  const [savedRange, setSavedRange] = useState<Range>();
+  const [tagList, setTagList] = useState<Set<string>>(new Set());
+  const [newTag, setNewTag] = useState<boolean>(false);
+  const [searching, setSearching] = useState({ value: false, query: '' });
+  const [tagResult, setTagResult] = useState<any[]>([]);
+  const [tagData, setTagData] = useState({ page: 1, cursor: null, end: false });
+  const [isEmpty, setIsEmpty] = useState({ post: true, div: true });
+  const [posting, setPosting] = useState(false);
+  const [reply, setReply] = useState<any>(undefined);
 
   const menuRef = useRef<HTMLDivElement>(null!);
   const listRef = useRef<HTMLUListElement>(null!);
   const textRef = useRef<HTMLDivElement>(null!);
-  const followersRef = useRef<HTMLUListElement>(null!);
-  const tagRef = useRef<HTMLDivElement>(null!);
   const commentRef = useRef<HTMLDivElement>(null!);
+  const tagListRef = useRef<HTMLDivElement>(null!);
+  const tagRef = useRef<HTMLDivElement>(null!);
 
   const target = document.getElementById('comment-portal') || document.body;
 
@@ -118,11 +111,11 @@ const CommentBox = ({
     }
 
     try {
-      const { data } = await apiClient(
-        `v1/comments?collection=${
-          reels ? 'reel' : 'content'
-        }&documentId=${postId}&cursor=${cursor}`
-      );
+      const { data } = await apiClient.post(`v1/comments`, {
+        collection: reels ? 'reel' : 'content',
+        documentId: postId,
+        cursor,
+      });
 
       const commentsArr = data.data.comments;
 
@@ -149,6 +142,7 @@ const CommentBox = ({
 
     if (
       comments.value !== null &&
+      comments.value !== 'error' &&
       container &&
       container.scrollHeight <= container.clientHeight &&
       !loadingComments.end
@@ -156,28 +150,6 @@ const CommentBox = ({
       getComments();
     }
   }, [comments]);
-
-  useEffect(() => {
-    const clickHandler = (e: Event) => {
-      if (showList) {
-        if (
-          e.target !== tagRef.current &&
-          e.target !== followersRef.current &&
-          !followersRef.current.contains(e.target as Node)
-        ) {
-          setShowList(false);
-        }
-      }
-    };
-
-    window.removeEventListener('click', clickHandler);
-
-    window.addEventListener('click', clickHandler);
-
-    return () => {
-      window.removeEventListener('click', clickHandler);
-    };
-  }, [showList]);
 
   useEffect(() => {
     const clickHandler = (e: Event) => {
@@ -225,188 +197,112 @@ const CommentBox = ({
   }, [showMenu]);
 
   useEffect(() => {
-    const set = new Set(tagList);
-
-    followers.forEach((user) => {
-      if (tagList.includes(user.id)) {
-        const isPresent = [
-          ...textRef.current.querySelectorAll('.app-user-tags'),
-        ].find((elem) => elem.getAttribute('data-tag-index') === `${user.id}`);
-
-        if (!isPresent) set.delete(user.id);
+    const clickHandler = (e: Event) => {
+      if (e.target) {
+        if (showList && !tagRef.current.contains(e.target as Node)) {
+          setShowList(false);
+          setNewTag(false);
+          setSearching({ query: '', value: false });
+        }
       }
-    });
+    };
 
-    setTagList([...set]);
-
-    let timeout: number | NodeJS.Timeout;
-
-    if (searching === true) {
-      timeout = setTimeout(() => {
-        setSearching('done');
-      }, 1000);
+    if (!showList) {
+      setNewTag(false);
+      setSearching({ value: false, query: '' });
+      setTagData({ page: 1, cursor: null, end: false });
     }
 
+    let animation;
+
+    if (tagListRef.current) {
+      if (showList) {
+        animation = tagListRef.current.animate(
+          {
+            height: ['0', `15rem`],
+          },
+          {
+            fill: 'both',
+            duration: 200,
+          }
+        );
+      } else {
+        animation = tagListRef.current.animate(
+          {
+            height: [`15rem`, '0'],
+          },
+          {
+            fill: 'both',
+            duration: 200,
+          }
+        );
+
+        animation.onfinish = () => setHideList(true);
+      }
+    }
+
+    window.removeEventListener('click', clickHandler);
+
+    window.addEventListener('click', clickHandler);
+
     return () => {
-      clearTimeout(timeout);
+      window.removeEventListener('click', clickHandler);
     };
+  }, [showList]);
+
+  useEffect(() => {
+    const getMentions = async () => {
+      if (searching.value) {
+        const result = await debouncedQuery(
+          searching.query,
+          tagData.page,
+          tagData.cursor
+        );
+
+        if (result === 'error') {
+          setShowList(false);
+        } else {
+          const filteredResults = (result as []).filter(
+            (obj: any) => !tagResult.find((data) => data._id === obj._id)
+          );
+
+          setSearching({ ...searching, value: false });
+          setTagResult([...tagResult, ...filteredResults]);
+          setTagData({ ...tagData, end: (result as []).length < 30 });
+        }
+      }
+    };
+
+    getMentions();
+  }, [searching]);
+
+  useEffect(() => {
+    const users = Array.from(
+      textRef.current.querySelectorAll('.app-user-tags')
+    );
+
+    const ids = users
+      .map((user) => user.getAttribute('data-tag-index') || '')
+      .filter((id) => id);
+
+    setTagList(new Set(ids));
+
+    const text = textRef.current.textContent;
+    setIsEmpty({ post: text?.trim().length === 0, div: text?.length === 0 });
   }, [newComment]);
+
+  useEffect(() => {
+    textRef.current.innerHTML = '';
+    textRef.current.focus();
+    setNewComment('');
+    setShowList(false);
+    setTagList(new Set());
+  }, [reply]);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       setActiveVideo(null);
       setViewComment(false);
-    }
-  };
-
-  const handleCommentHeight = () => {
-    setNewComment(textRef.current.textContent || '');
-
-    if (newTag) setSearching(true);
-    else setShowList(false);
-
-    textRef.current.style.height = 'auto';
-    textRef.current.style.height = `${textRef.current.scrollHeight}px`;
-  };
-
-  const saveSelection = () => {
-    const selection = window.getSelection();
-    if (selection) {
-      if (selection.rangeCount > 0) {
-        setSavedRange(selection.getRangeAt(0));
-      }
-    }
-  };
-
-  const updateTagList = (handle: string, id: number) => () => {
-    textRef.current.focus();
-
-    if (!tagList.includes(id)) {
-      if (savedRange) {
-        const selection = window.getSelection();
-        if (selection) {
-          const tags = document.querySelectorAll('.app-tag');
-
-          selection.removeAllRanges();
-          selection.addRange(savedRange); // Restore the saved range
-
-          // Insert text at the cursor position
-          savedRange.deleteContents(); // Remove any selected content
-          const textNode = document.createElement('span');
-          textNode.setAttribute('class', 'app-user-tags');
-          textNode.setAttribute('data-tag-index', `${id}`);
-
-          textNode.innerHTML = ` @${handle} `;
-          textNode.setAttribute('contentEditable', 'false');
-
-          if (tags[tags.length - 1])
-            textRef.current.removeChild(tags[tags.length - 1]);
-
-          setNewComment((prev) => `${prev} @${handle} `);
-          savedRange.insertNode(textNode);
-          savedRange.detach();
-
-          setNewTag(false);
-
-          textRef.current.style.height = 'auto';
-          textRef.current.style.height = `${textRef.current.scrollHeight}px`;
-
-          // Move the cursor after the inserted text
-          savedRange.setStartAfter(textNode);
-          savedRange.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(savedRange);
-        }
-      }
-
-      setTagList([...tagList, id]);
-    } else {
-      const follower = [
-        ...textRef.current.querySelectorAll('.app-user-tags'),
-      ].find((elem) => elem.getAttribute('data-tag-index') === `${id}`);
-
-      if (follower) textRef.current.removeChild(follower);
-
-      const set = new Set(tagList);
-      set.delete(id);
-
-      setTagList([...set]);
-    }
-  };
-
-  const addTag = () => {
-    textRef.current.focus();
-
-    if (savedRange) {
-      const selection = window.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(savedRange); // Restore the saved range
-
-        // Insert text at the cursor position
-        savedRange.deleteContents(); // Remove any selected content
-        const textNode = document.createElement('span');
-        textNode.setAttribute('class', 'app-tag');
-        textNode.innerHTML = ` @`;
-        setNewComment((prev) => `${prev} @`);
-        setNewTag(true);
-
-        savedRange.insertNode(textNode);
-        savedRange.detach();
-
-        textRef.current.style.height = 'auto';
-        textRef.current.style.height = `${textRef.current.scrollHeight}px`;
-
-        // Move the cursor after the inserted text
-        savedRange.setStartAfter(textNode);
-        savedRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(savedRange);
-      }
-    }
-
-    setShowList(true);
-  };
-
-  const addToTagList = (handle: string) => () => {
-    textRef.current.focus();
-
-    if (savedRange) {
-      const selection = window.getSelection();
-      if (selection) {
-        const tags = document.querySelectorAll('.app-tag');
-
-        selection.removeAllRanges();
-        selection.addRange(savedRange); // Restore the saved range
-
-        // Insert text at the cursor position
-        savedRange.deleteContents(); // Remove any selected content
-        const textNode = document.createElement('span');
-        textNode.setAttribute('class', 'app-user-tags');
-
-        textNode.innerHTML = ` @${handle} `;
-        textNode.setAttribute('contentEditable', 'false');
-
-        if (tags[tags.length - 1])
-          textRef.current.removeChild(tags[tags.length - 1]);
-
-        setNewComment((prev) => `${prev} @${handle} `);
-        savedRange.insertNode(textNode);
-        savedRange.detach();
-
-        setNewTag(false);
-        setShowList(false);
-        setSearching(false);
-
-        textRef.current.style.height = 'auto';
-        textRef.current.style.height = `${textRef.current.scrollHeight}px`;
-
-        // Move the cursor after the inserted text
-        savedRange.setStartAfter(textNode);
-        savedRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(savedRange);
-      }
     }
   };
 
@@ -419,6 +315,299 @@ const CommentBox = ({
       target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
 
     if (isBottom && !loadingComments.end) getComments();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const pasted = e.clipboardData.getData('text/plain');
+
+    // Detect line breaks
+    const hasLineBreaks = /[\r\n]/.test(pasted);
+    if (hasLineBreaks) return;
+
+    if (pasted === '@') {
+      e.preventDefault();
+      return addTag();
+    }
+
+    setSearching({
+      ...searching,
+      query: `${searching.query}${pasted || ''}`,
+    });
+  };
+
+  const handleBeforeInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const data = (e.nativeEvent as InputEvent).data;
+
+    if (data === '@') {
+      e.preventDefault();
+      return addTag();
+    }
+  };
+
+  const handleCommentInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    const event = e.nativeEvent as InputEvent;
+
+    setNewComment(target.innerHTML || '');
+
+    if (newTag) {
+      if (
+        event.data === null &&
+        event.inputType.includes('delete') &&
+        !searching.query
+      ) {
+        setShowList(false);
+      } else {
+        setTagResult([]);
+        setTagData({ page: 1, cursor: null, end: false });
+
+        if (event.inputType.includes('delete')) {
+          setSearching({
+            value: true,
+            query: String(
+              savedRange?.commonAncestorContainer.textContent?.replace('@', '')
+            ),
+          });
+        } else {
+          setSearching({
+            value: true,
+            query: `${searching.query}${event.data || ''}`,
+          });
+        }
+      }
+    }
+
+    textRef.current.style.height = 'auto';
+    textRef.current.style.height = `${textRef.current.scrollHeight}px`;
+
+    if (tagListRef.current) {
+      tagListRef.current.style.bottom = `${
+        Math.max(30, textRef.current.offsetHeight) + 20
+      }px`;
+    }
+  };
+
+  const saveSelection = () => {
+    const selection = window.getSelection();
+    if (selection) {
+      if (selection.rangeCount > 0) {
+        setSavedRange(selection.getRangeAt(0));
+      }
+    }
+  };
+
+  const addTag = () => {
+    textRef.current.focus();
+
+    if (comments.value === null || comments.value === 'error') return;
+
+    const selection = window.getSelection();
+    const range = savedRange ? savedRange : selection!.getRangeAt(0);
+
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range); // Restore the saved range
+
+      // Insert text at the cursor position
+      range.deleteContents(); // Remove any selected content
+      const textNode = document.createElement('span');
+      textNode.setAttribute('class', 'app-tag');
+      textNode.innerHTML = '@';
+
+      range.insertNode(textNode);
+      range.detach();
+
+      setNewTag(true);
+
+      textRef.current.style.height = 'auto';
+      textRef.current.style.height = `${textRef.current.scrollHeight}px`;
+
+      // Move the cursor after the inserted text
+      range.setStartAfter(textNode);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    setSearching({ value: true, query: '' });
+    setTagResult([]);
+    setTagData({ page: 1, cursor: null, end: false });
+    setNewComment(textRef.current.innerHTML!);
+    setShowList(true);
+    setHideList(false);
+    saveSelection();
+  };
+
+  const updateTagList = (name: string, id: string, username: string) => () => {
+    textRef.current.focus();
+
+    const selection = window.getSelection();
+    const range = savedRange ? savedRange : selection!.getRangeAt(0);
+
+    if (!tagList.has(id)) {
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range); // Restore the saved range
+
+        // Insert text at the cursor position
+        range.deleteContents(); // Remove any selected content
+        const textNode = document.createElement('span');
+        textNode.setAttribute('class', 'app-user-tags');
+        textNode.setAttribute('data-tag-index', id);
+        textNode.setAttribute('href', `/@${username}`);
+
+        textNode.innerHTML = `@${name}`;
+        textNode.setAttribute('contentEditable', 'false');
+
+        const elem = textRef.current.children[range.startOffset - 1];
+
+        if (elem && elem.classList.item(0) === 'app-tag')
+          textRef.current.removeChild(elem);
+
+        range.insertNode(textNode);
+        range.detach();
+
+        setNewTag(false);
+
+        textRef.current.style.height = 'auto';
+        textRef.current.style.height = `${textRef.current.scrollHeight}px`;
+
+        // Move the cursor after the inserted text
+        range.setStartAfter(textNode);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        setTagList(new Set(tagList.add(id)));
+      }
+    } else {
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        const users = Array.from(
+          textRef.current.querySelectorAll('.app-user-tags')
+        );
+
+        const user = users.find(
+          (elem) => elem && elem.getAttribute('data-tag-index') === id
+        );
+
+        if (user) textRef.current.removeChild(user);
+
+        const set = new Set(tagList);
+        set.delete(id);
+        setTagList(set);
+      }
+    }
+
+    setNewComment(textRef.current.innerHTML!);
+    saveSelection();
+  };
+
+  const handleTagScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+
+    const isBottom =
+      target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
+
+    if (isBottom && !tagData.end) {
+      if (searching.query === '') {
+        setTagData({
+          ...tagData,
+          cursor: tagResult[tagResult.length - 1].followedAt,
+        });
+      } else {
+        setTagData({
+          ...tagData,
+          page: tagData.page + 1,
+        });
+      }
+
+      setSearching({ ...searching, value: true });
+    }
+  };
+
+  const sanitizeHTML = (dirtyHtml: string, allowedClasses: string[]) => {
+    const hook = (_: Element, data: any) => {
+      if (data.attrName === 'class') {
+        const classes = (data.attrValue || '').split(/\s+/);
+        const filtered = classes.filter((cls: any) =>
+          allowedClasses.includes(cls)
+        );
+
+        if (filtered.length > 0) {
+          data.attrValue = filtered.join(' ');
+          data.keepAttr = true;
+        } else {
+          data.keepAttr = false;
+        }
+      }
+    };
+
+    // Add the hook temporarily
+    DOMPurify.addHook('uponSanitizeAttribute', hook);
+
+    const clean = DOMPurify.sanitize(dirtyHtml, {
+      ALLOWED_TAGS: ['a'],
+      ALLOWED_ATTR: ['class', 'href'],
+      ALLOW_DATA_ATTR: false,
+    });
+
+    // Remove the hook so it doesn't affect other sanitizations
+    DOMPurify.removeHook('uponSanitizeAttribute', hook);
+
+    return clean;
+  };
+
+  const addComment = () => async () => {
+    const convertedHTML = newComment
+      .replace(/<span([^>]*)>/g, '<a$1>')
+      .replace(/<\/span>/g, '</a>');
+
+    const text = sanitizeHTML(convertedHTML, ['app-user-tags']);
+
+    setPosting(true);
+
+    try {
+      const { data } = await apiClient.post('v1/comments/add', {
+        collection: reels ? 'reel' : 'content',
+        documentId: postId,
+        text,
+        reply,
+        mentions: [...tagList],
+      });
+
+      toast.success(data.data.message);
+
+      textRef.current.innerHTML = '';
+      setNewComment('');
+      setTagList(new Set());
+
+      if (reply) {
+        const setter = reply.setter;
+        const setExcludeArray = reply.setExcludeArray;
+
+        setter(({ value, count }: any) => ({
+          value: [...value, data.data.comment],
+          count,
+        }));
+
+        setExcludeArray((prev: any) => [...prev, data.data.comment._id]);
+        setReply(undefined);
+      } else {
+        setComments((prevValue: any) => ({
+          totalCount: prevValue.totalCount + 1,
+          value: [data.data.comment, ...prevValue.value],
+        }));
+      }
+    } catch {
+      toast.error(
+        `Could not ${reply ? 'send reply' : 'post comment'}. Please Try again.`
+      );
+    } finally {
+      setPosting(false);
+    }
   };
 
   return ReactDOM.createPortal(
@@ -652,6 +841,7 @@ const CommentBox = ({
                   data={comment}
                   setComments={setComments}
                   collaborators={collaborators}
+                  setReply={setReply}
                 />
               ))
             )}
@@ -679,121 +869,154 @@ const CommentBox = ({
           </div>
 
           <div className={styles['new-comment-div']}>
-            <div className={styles['new-comment-box']}>
+            <div className={styles['new-comment-box']} ref={tagRef}>
               <div
                 className={styles['new-comment-text']}
-                onInput={handleCommentHeight}
-                ref={textRef}
                 contentEditable={true}
+                ref={textRef}
+                onBeforeInput={handleBeforeInput}
+                onInput={handleCommentInput}
+                onPaste={handlePaste}
                 onKeyUp={saveSelection}
                 onMouseUp={saveSelection}
               ></div>
 
-              {newComment.trim().length === 0 && (
+              {isEmpty.div && (
                 <span
                   className={styles['comment-placeholder']}
                   contentEditable={false}
                 >
-                  Add Comment....
+                  {reply ? `Reply to ${reply.name}` : 'Add Comment....'}
                 </span>
               )}
 
-              <div
-                className={`${styles['new-comment-tags']} ${
-                  showList ? styles['active-comment-tag'] : ''
-                }`}
-                ref={tagRef}
-                onClick={addTag}
-              >
-                @
+              <div className={styles['new-comment-tags']}>
+                {reply && (
+                  <IoClose
+                    className={styles['cancel-reply']}
+                    onClick={() => setReply(undefined)}
+                  />
+                )}
+
+                <span
+                  className={`${styles['comment-tag']} ${
+                    showList ? styles['active-tag'] : ''
+                  }`}
+                  onClick={addTag}
+                >
+                  @
+                </span>
               </div>
 
-              {showList && (
-                <ul
-                  className={styles['new-comment-tag-list']}
-                  ref={followersRef}
+              {!hideList && (
+                <div
+                  className={`${styles['tag-container']} ${
+                    showList ? styles['show-tags'] : ''
+                  }`}
+                  ref={tagListRef}
+                  onScroll={handleTagScroll}
                 >
-                  {searching === 'done' ? (
-                    followers.map((user) => (
-                      <li
-                        key={user.id}
-                        className={styles['followers-item2']}
-                        onClick={addToTagList(user.userhandle)}
-                      >
-                        <span className={styles['followers-img-box']}>
-                          <img
-                            src="../../assets/images/users/user13.jpeg"
-                            className={styles['followers-img']}
-                          />
-                          {user.isFollowing && (
-                            <span className={styles['followers-icon-box']}>
-                              <PiCheckFatFill
-                                className={styles['followers-icon']}
-                              />
-                            </span>
-                          )}
-                        </span>
-
-                        <span className={styles['followers-name-box']}>
-                          <span className={styles['followers-name']}>
-                            {user.name}
-                          </span>
-                          <span className={styles['followers-username']}>
-                            {`@${user.userhandle}`}
-                          </span>
-                        </span>
-                      </li>
-                    ))
-                  ) : searching ? (
-                    <li className={styles['searchig-box']}>
-                      <IoReloadOutline className={styles['searchig-icon']} />
-                      Searching....
-                    </li>
+                  {searching.value &&
+                  tagData.page === 1 &&
+                  tagData.cursor === null ? (
+                    <div className={styles['tag-loader']}>
+                      <LoadingAnimation
+                        style={{
+                          width: '3rem',
+                          height: '3rem',
+                          transform: 'scale(2.5)',
+                        }}
+                      />
+                    </div>
+                  ) : tagResult.length === 0 ? (
+                    <div className={styles['tag-loader']}>
+                      No matching user found.
+                    </div>
                   ) : (
-                    followers.map((user) => (
-                      <li key={user.id} className={styles['followers-item']}>
-                        <span className={styles['followers-img-box']}>
-                          <img
-                            src="../../assets/images/users/user13.jpeg"
-                            className={styles['followers-img']}
-                          />
-                          {user.isFollowing && (
-                            <span className={styles['followers-icon-box']}>
-                              <PiCheckFatFill
-                                className={styles['followers-icon']}
-                              />
-                            </span>
+                    <ul className={styles['tag-list']}>
+                      {tagResult.map((user) => (
+                        <li
+                          key={user._id}
+                          className={styles['tag-item']}
+                          onClick={updateTagList(
+                            user.name,
+                            `${user._id}`,
+                            user.username
                           )}
-                        </span>
+                        >
+                          <img
+                            className={styles['tag-img']}
+                            src={getUrl(user.photo, 'users')}
+                          />
 
-                        <span className={styles['followers-name-box']}>
-                          <span className={styles['followers-name']}>
-                            {user.name}
-                          </span>
-                          <span className={styles['followers-username']}>
-                            {`@${user.userhandle}`}
-                          </span>
-                        </span>
+                          <div className={styles['tag-name-box']}>
+                            <span className={styles['tag-name']}>
+                              {user.name || <>&nbsp;</>}
 
-                        <input
-                          type="checkbox"
-                          className={styles['radio-btn']}
-                          onChange={updateTagList(user.userhandle, user.id)}
-                          checked={tagList.includes(user.id)}
-                        />
-                      </li>
-                    ))
+                              {user.isFollowing && (
+                                <span className={styles['tag-text']}>
+                                  <BsDot className={styles['tag-dot']} />
+                                  Following
+                                </span>
+                              )}
+                            </span>
+                            <span className={styles['tag-username']}>
+                              @{user.username}
+                            </span>
+                          </div>
+
+                          <input
+                            className={styles['tag-input']}
+                            type="checkbox"
+                            checked={tagList.has(user._id)}
+                            readOnly
+                          />
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </ul>
+
+                  {searching.value &&
+                    (tagData.page !== 1 || tagData.cursor !== null) && (
+                      <span>
+                        <div className={styles['tag-loader2']}>
+                          <LoadingAnimation
+                            style={{
+                              width: '2rem',
+                              height: '2rem',
+                              transform: 'scale(2.5)',
+                            }}
+                          />
+                        </div>
+                      </span>
+                    )}
+                </div>
               )}
             </div>
 
             <span
               className={`${styles['new-comment-post']} ${
-                newComment.trim().length > 0 ? styles['post-comment'] : ''
+                !isEmpty.post && !posting ? styles['post-comment'] : ''
               }`}
+              onClick={addComment()}
             >
-              Post
+              {posting ? (
+                <LoadingAnimation
+                  style={{
+                    width: '2rem',
+                    height: '2rem',
+                    transform: 'scale(2.5)',
+                  }}
+                />
+              ) : (
+                <span
+                  className={`${
+                    isEmpty.post || posting ? styles['stop-comment'] : ''
+                  }`}
+                >
+                  Post
+                </span>
+              )}
             </span>
           </div>
         </div>

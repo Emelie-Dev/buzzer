@@ -186,7 +186,7 @@ export const saveContent = asyncErrorHandler(
         'create',
         'content',
         mentions,
-        { id: req.user?._id, name: req.user?.username },
+        req.user?._id,
         content._id,
         settings.accessibility,
         { text: req.body.description }
@@ -228,7 +228,7 @@ export const deleteContent = asyncErrorHandler(
       'delete',
       'content',
       mentions,
-      { id: req.user?._id, name: req.user?.username },
+      req.user?._id,
       content._id,
       null,
       null

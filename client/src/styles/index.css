@@ -43,6 +43,7 @@ body {
   color: #a855f7;
   font-family: appFontMedium;
   font-size: 0.95rem;
+  text-decoration: none;
 }
 
 /* This class is applied to each toast */

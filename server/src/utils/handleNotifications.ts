@@ -153,7 +153,7 @@ export const handleMentionNotifications = async (
   action: 'create' | 'delete',
   type: 'content' | 'reel' | 'comment',
   mentions: string[] = [],
-  user: { id: string; name: string },
+  id: string,
   documentId: any,
   accessibility: ContentAccessibility | null,
   data: {} | null
@@ -161,11 +161,9 @@ export const handleMentionNotifications = async (
   if (mentions.length < 1) return;
 
   try {
-    const { id, name } = user;
-
-    const promises = mentions.map(async (username: string) => {
-      if (username !== name) {
-        const userExists = await User.findOne({ username });
+    const promises = mentions.map(async (userId: string) => {
+      if (userId !== id) {
+        const userExists = await User.findOne({ _id: userId });
 
         if (userExists) {
           const batchNotification = await Notification.findOne({

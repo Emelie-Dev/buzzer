@@ -77,12 +77,14 @@
   font-size: 0.9rem;
   font-family: appFont;
   word-wrap: break-word;
+  white-space: pre-line;
 }
 
 .more-text {
   color: gray;
   font-family: appFontSemi;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .comment-options {

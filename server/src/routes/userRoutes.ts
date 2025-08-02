@@ -13,6 +13,7 @@ import {
   updateScreenTime,
   updateSettings,
   getWatchHistory,
+  searchForMention,
 } from '../controllers/userController.js';
 import protectRoute from '../middleware/protectRoute.js';
 
@@ -47,5 +48,7 @@ router.patch('/screen-time', updateScreenTime);
 router.post('/switch-account', switchAccount);
 
 router.post('/watch-history', getWatchHistory);
+
+router.get('/mention', searchForMention);
 
 export default router;

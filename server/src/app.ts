@@ -114,7 +114,15 @@ app.use((req, _, next) => {
   if (req.body) {
     for (const key in req.body) {
       if (typeof req.body[key] === 'string') {
-        req.body[key] = sanitizeHtml(req.body[key]); // Sanitize input fields
+        req.body[key] = sanitizeHtml(req.body[key], {
+          allowedTags: ['a'],
+          allowedAttributes: {
+            a: ['class', 'href'],
+          },
+          allowedClasses: {
+            a: ['app-user-tags'],
+          },
+        });
       }
     }
   }
