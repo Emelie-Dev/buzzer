@@ -715,7 +715,7 @@ export const getContents = asyncErrorHandler(
     return res.status(200).json({
       status: 'success',
       data: {
-        contents,
+        posts: contents,
       },
     });
   }

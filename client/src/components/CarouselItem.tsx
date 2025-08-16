@@ -28,6 +28,10 @@ type CarouselItemProps = {
   description?: string;
   name?: string;
   time?: string;
+  viewsData: {
+    seenSlides: Set<unknown>;
+    setSeenSlides: React.Dispatch<React.SetStateAction<Set<unknown>>>;
+  };
 };
 
 const CarouselItem = ({
@@ -41,6 +45,7 @@ const CarouselItem = ({
   contentType,
   description,
   name,
+  viewsData,
 }: CarouselItemProps) => {
   const { type, src } = item;
   const [loading, setLoading] = useState<
@@ -64,6 +69,7 @@ const CarouselItem = ({
     setShowMobileMenu,
     handleLike,
   } = useContext(LikeContext);
+  const { seenSlides, setSeenSlides } = viewsData;
   const [showLike, setShowLike] = useState<boolean>(false);
   const [webkit, setWebkit] = useState<boolean>(true);
   const [showMore, setShowMore] = useState<boolean>(false);
@@ -78,6 +84,7 @@ const CarouselItem = ({
   const videoRef = useRef<HTMLVideoElement>(null!);
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const progressRef = useRef<HTMLInputElement>(null!);
+  const videoTime = useRef(0);
 
   useEffect(() => {
     const networkHandler = () => {
@@ -283,6 +290,12 @@ const CarouselItem = ({
     const duration = target.duration;
 
     if (!isProgressChanging) setProgress((currentTime / duration) * 100);
+
+    if (contentType !== 'carousel' && videoTime.current > currentTime) {
+      setSeenSlides(new Set());
+    }
+
+    videoTime.current = currentTime;
   };
 
   const seekMedia = () => {
@@ -346,6 +359,40 @@ const CarouselItem = ({
     }
   };
 
+  const handleMediaLoad = (
+    e: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement, Event>
+  ) => {
+    setLoading(false);
+    setReloading(false);
+
+    const elem = e.currentTarget;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const ratio = entry.intersectionRatio;
+          if (viewType === 'content') {
+            if (ratio >= 0.4) {
+              // Element is at least 40% visible
+
+              if (contentType === 'carousel' && !seenSlides.has(itemIndex)) {
+                setSeenSlides((prev) => new Set(prev).add(itemIndex));
+              }
+            } else if (ratio === 0) {
+              // Fully out of view
+              if (contentType !== 'carousel' && type === 'image') {
+                setSeenSlides(new Set());
+              }
+            }
+          }
+        });
+      },
+      { threshold: [0, 0.4] }
+    );
+
+    observer.observe(elem);
+  };
+
   return (
     <div
       className={`${styles['carousel-item']} ${
@@ -406,10 +453,7 @@ const CarouselItem = ({
             }`}
             style={{ aspectRatio }}
             ref={imageRef}
-            onLoad={() => {
-              setLoading(false);
-              setReloading(false);
-            }}
+            onLoad={handleMediaLoad}
             onError={handleError('error')}
             onAbort={handleError('error')}
           />
@@ -429,10 +473,7 @@ const CarouselItem = ({
               ref={videoRef}
               muted={mute}
               loop={true}
-              onCanPlay={() => {
-                setLoading(false);
-                setReloading(false);
-              }}
+              onCanPlay={handleMediaLoad}
               onError={handleError('error')}
               onAbort={handleError('error')}
               onStalled={handleError('empty')}

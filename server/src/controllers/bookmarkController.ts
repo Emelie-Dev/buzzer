@@ -5,6 +5,7 @@ import Content from '../models/contentModel.js';
 import CustomError from '../utils/CustomError.js';
 import Bookmark from '../models/bookmarkModel.js';
 import handleProfileDocuments from '../utils/handleProfileDocuments.js';
+import Reel from '../models/reelModel.js';
 
 export const bookmarkItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -12,7 +13,11 @@ export const bookmarkItem = asyncErrorHandler(
     collection = collection.toLowerCase();
 
     const query =
-      collection === 'content' ? Content.findById(documentId) : null;
+      collection === 'content'
+        ? Content.findById(documentId)
+        : collection === 'reel'
+        ? Reel.findById(documentId)
+        : null;
 
     const data = (await query) as Record<string, any>;
 
@@ -21,7 +26,7 @@ export const bookmarkItem = asyncErrorHandler(
       return next(new CustomError(`This ${collection} does not exist.`, 404));
     }
 
-    await Bookmark.create({
+    const saveObj = await Bookmark.create({
       user: req.user?._id,
       collectionName: collection,
       documentId: data._id,
@@ -29,7 +34,10 @@ export const bookmarkItem = asyncErrorHandler(
 
     return res.status(201).json({
       status: 'success',
-      message: 'Saved successfully!',
+      data: {
+        saveObj,
+        message: 'Saved successfully!',
+      },
     });
   }
 );

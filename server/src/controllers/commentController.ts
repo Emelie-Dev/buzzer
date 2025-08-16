@@ -13,7 +13,7 @@ import {
 import { ContentAccessibility } from '../models/storyModel.js';
 import { Types } from 'mongoose';
 import Like from '../models/likeModel.js';
-// 08061500665
+import { convert } from 'html-to-text';
 
 export const isValidDateString = (str: string): boolean => {
   const date = new Date(str);
@@ -37,6 +37,14 @@ export const addComment = asyncErrorHandler(
     // Check if item exists
     if (!data) {
       return next(new CustomError(`This ${collection} does not exist.`, 404));
+    }
+
+    const textContent = convert(text, { wordwrap: null });
+
+    if (textContent.length > 2000) {
+      return next(
+        new CustomError('Comment can’t exceed 2000 characters.', 400)
+      );
     }
 
     const viewerId = req.user?._id;

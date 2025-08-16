@@ -4,6 +4,7 @@ import {
   getSearchSuggestions,
   getTrendingSearches,
   handleSearch,
+  searchForUsers,
 } from '../controllers/searchController.js';
 
 const router = express.Router();
@@ -15,5 +16,7 @@ router.get('/', handleSearch);
 router.get('/trending', getTrendingSearches);
 
 router.get('/suggestions', getSearchSuggestions);
+
+router.get('/users', searchForUsers);
 
 export default router;

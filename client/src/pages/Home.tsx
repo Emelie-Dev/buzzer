@@ -215,8 +215,15 @@ const Home = () => {
   });
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
 
-  const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
-    useScrollHandler();
+  const {
+    activeVideo,
+    setActiveVideo,
+    contentRef,
+    scrollHandler,
+    posts: contents,
+    setPosts: setContents,
+    postData,
+  } = useScrollHandler(false, 'v1/contents?category=home');
   const {
     setCreateCategory,
     setShowSearchPage,
@@ -230,7 +237,6 @@ const Home = () => {
     'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
   >(null);
   const [followList, setFollowList] = useState<Set<string>>(new Set());
-  const [contents, setContents] = useState<any[]>(null!);
 
   const storyRef = useRef<HTMLDivElement>(null!);
 
@@ -240,17 +246,7 @@ const Home = () => {
     document.title = 'Buzzer - Home';
     scrollHandler();
 
-    const getContents = async () => {
-      try {
-        const { data } = await apiClient('v1/contents?category=home');
-        setContents(data.data.contents);
-      } catch {
-        setContents([]);
-        toast.error(`Error loading posts. Refresh to try again`);
-      }
-    };
-
-    getContents();
+    // setTimeout
 
     return () => {
       setShowSearchPage(false);
@@ -307,8 +303,6 @@ const Home = () => {
       setFollowList(new Set(newList));
     }
   };
-
-  console.log(contents);
 
   return (
     <>
@@ -529,6 +523,16 @@ const Home = () => {
                     setShowMobileMenu={setShowMobileMenu}
                   />
                 ))
+              )}
+
+              {postData.loading && (
+                <LoadingAnimation
+                  style={{
+                    width: '3rem',
+                    height: '3rem',
+                    transform: 'scale(2.5)',
+                  }}
+                />
               )}
             </div>
           </ContentContext.Provider>

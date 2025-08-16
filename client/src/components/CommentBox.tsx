@@ -22,8 +22,16 @@ type CommentBoxProps = {
   data: CommentData;
   setViewComment: React.Dispatch<React.SetStateAction<boolean>>;
   isFollowing: boolean;
-  saved: boolean;
-  setSaved: React.Dispatch<React.SetStateAction<boolean>>;
+  save: {
+    value: any;
+    count: number;
+  };
+  setSave: React.Dispatch<
+    React.SetStateAction<{
+      value: any;
+      count: number;
+    }>
+  >;
   setShareMedia: React.Dispatch<React.SetStateAction<boolean>>;
   reels?: boolean;
   description?: string;
@@ -34,7 +42,7 @@ const getUsers = async (...args: any[]) => {
   const [query, page, cursor] = args;
   try {
     const { data } = await apiClient(
-      `v1/users/mention?query=${query}&page=${page}&cursor=${cursor}`
+      `v1/search/users?query=${query}&page=${page}&cursor=${cursor}`
     );
 
     return data.data.result;
@@ -49,10 +57,9 @@ const CommentBox = ({
   data,
   setViewComment,
   isFollowing,
-  saved,
+  save,
   reels,
   description,
-  setSaved,
   setShareMedia,
   engagementObj,
 }: CommentBoxProps) => {
@@ -69,6 +76,8 @@ const CommentBox = ({
     hasStory,
     hasUnviewedStory,
     collaborators,
+    handleSave,
+    shares,
   } = engagementObj;
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [showList, setShowList] = useState<boolean>(false);
@@ -348,6 +357,38 @@ const CommentBox = ({
     const target = e.target as HTMLDivElement;
     const event = e.nativeEvent as InputEvent;
 
+    if (!event.inputType.includes('delete')) {
+      const convertedHTML = newComment
+        .replace(/<span([^>]*)>/g, '<a$1>')
+        .replace(/<\/span>/g, '</a>');
+
+      const clean = sanitizeHTML(convertedHTML, ['app-user-tags']);
+
+      const formatted = clean
+        .replace(/(<br\s*\/?>\s*){2,}/gi, '<br />')
+        .replace(/(&nbsp;\s*){2,}/gi, '&nbsp;');
+
+      const div = document.createElement('div');
+      div.innerHTML = formatted;
+
+      if (div.textContent!.length >= 2000) {
+        textRef.current.innerHTML = newComment;
+
+        const selection = window.getSelection();
+        const range = savedRange ? savedRange : selection!.getRangeAt(0);
+
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          range.deleteContents();
+          range.setStartAfter(textRef.current);
+        }
+
+        return toast.info(`Comment can’t exceed 2000 characters.`);
+      }
+    }
+
     setNewComment(target.innerHTML || '');
 
     if (newTag) {
@@ -375,6 +416,8 @@ const CommentBox = ({
           });
         }
       }
+    } else {
+      if (event.data !== ' ') setShowList(false);
     }
 
     textRef.current.style.height = 'auto';
@@ -515,7 +558,7 @@ const CommentBox = ({
       if (searching.query === '') {
         setTagData({
           ...tagData,
-          cursor: tagResult[tagResult.length - 1].followedAt,
+          cursor: tagResult[tagResult.length - 1].createdAt,
         });
       } else {
         setTagData({
@@ -549,7 +592,7 @@ const CommentBox = ({
     DOMPurify.addHook('uponSanitizeAttribute', hook);
 
     const clean = DOMPurify.sanitize(dirtyHtml, {
-      ALLOWED_TAGS: ['a'],
+      ALLOWED_TAGS: ['a', 'br'],
       ALLOWED_ATTR: ['class', 'href'],
       ALLOW_DATA_ATTR: false,
     });
@@ -567,13 +610,17 @@ const CommentBox = ({
 
     const text = sanitizeHTML(convertedHTML, ['app-user-tags']);
 
+    const formatted = text
+      .replace(/(<br\s*\/?>\s*){2,}/gi, '<br />')
+      .replace(/(&nbsp;\s*){2,}/gi, '&nbsp;');
+
     setPosting(true);
 
     try {
       const { data } = await apiClient.post('v1/comments/add', {
         collection: reels ? 'reel' : 'content',
         documentId: postId,
-        text,
+        text: formatted,
         reply,
         mentions: [...tagList],
       });
@@ -581,6 +628,7 @@ const CommentBox = ({
       toast.success(data.data.message);
 
       textRef.current.innerHTML = '';
+      textRef.current.style.height = 'unset';
       setNewComment('');
       setTagList(new Set());
 
@@ -775,17 +823,21 @@ const CommentBox = ({
 
             <div className={styles['menu-box']}>
               <span
-                className={styles['menu-icon-box']}
+                className={`${styles['menu-icon-box']} ${
+                  loading.save ? styles['menu-icon-box2'] : ''
+                }`}
                 title="Save"
-                onClick={() => setSaved(!saved)}
+                onClick={handleSave}
               >
                 <IoBookmark
                   className={`${styles['menu-icon']} ${
-                    saved ? styles['saved-icon'] : ''
-                  }`}
+                    save.value ? styles['saved-icon'] : ''
+                  } ${loading.save ? styles['save-skeleton'] : ''}`}
                 />
               </span>
-              <span className={styles['menu-text']}>954</span>
+              <span className={styles['menu-text']}>
+                {getEngagementValue(save.count)}
+              </span>
             </div>
 
             <div className={`${styles['menu-box']} ${styles['share-box']}`}>
@@ -795,7 +847,10 @@ const CommentBox = ({
               >
                 <FaShare className={styles['menu-icon']} />
               </span>
-              <span className={styles['menu-text']}>217</span>
+              <span className={styles['menu-text']}>
+                {' '}
+                {getEngagementValue(shares)}
+              </span>
             </div>
           </div>
 
@@ -953,10 +1008,10 @@ const CommentBox = ({
                             <span className={styles['tag-name']}>
                               {user.name || <>&nbsp;</>}
 
-                              {user.isFollowing && (
+                              {user.type && (
                                 <span className={styles['tag-text']}>
                                   <BsDot className={styles['tag-dot']} />
-                                  Following
+                                  {user.type}
                                 </span>
                               )}
                             </span>

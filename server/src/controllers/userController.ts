@@ -22,8 +22,6 @@ import { randomUUID } from 'crypto';
 import { manageUserDevices, signToken } from './authController.js';
 import View from '../models/viewModel.js';
 import handleCloudinary from '../utils/handleCloudinary.js';
-import queryFromTypesense from '../utils/queryFromTypesense.js';
-import { isValidDateString } from './commentController.js';
 
 const upload = multerConfig('users');
 
@@ -1001,81 +999,6 @@ export const getWatchHistory = asyncErrorHandler(
     return res.status(200).json({
       status: 'success',
       data: { history },
-    });
-  }
-);
-
-export const searchForMention = asyncErrorHandler(
-  async (req: AuthRequest, res: Response) => {
-    const { query, page, cursor } = req.query;
-
-    let result: any[] = [];
-
-    if (query) {
-      const users = await queryFromTypesense(
-        'users',
-        {
-          q: String(query),
-          query_by: 'username,name',
-          filter_by: `id:!=${String(req.user?._id)}`,
-          page: Number(page),
-          per_page: 30,
-        },
-        ['username', 'photo', 'name', 'createdAt']
-      );
-
-      if (users?.length! > 0) {
-        result = users!.map((user) => {
-          const doc = { ...user };
-          doc._id = doc.id;
-          delete doc.id;
-
-          return doc;
-        });
-      }
-    } else {
-      const cursorDate = isValidDateString(String(cursor))
-        ? new Date(String(cursor))
-        : new Date();
-
-      const following = await Follow.aggregate([
-        {
-          $match: {
-            follower: req.user?._id,
-            followedAt: { $lt: cursorDate },
-          },
-        },
-        { $sort: { followedAt: -1 } },
-        { $limit: 30 },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'following',
-            foreignField: '_id',
-            as: 'users',
-          },
-        },
-        { $addFields: { user: { $first: '$users' } } },
-        {
-          $project: {
-            _id: 0,
-            user: { username: 1, name: 1, photo: 1, _id: 1 },
-            followedAt: 1,
-          },
-        },
-      ]);
-
-      if (following.length > 0) {
-        result = following.map((doc) => ({
-          ...doc.user,
-          followedAt: doc.followedAt,
-        }));
-      }
-    }
-
-    return res.status(200).json({
-      status: 'success',
-      data: { result },
     });
   }
 );

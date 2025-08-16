@@ -10,6 +10,11 @@ type CarouselProps = {
   type: 'comment' | 'content';
   hideData: boolean;
   setHideData: React.Dispatch<React.SetStateAction<boolean>>;
+  viewObj: {
+    viewed: boolean;
+    setViewed: React.Dispatch<React.SetStateAction<boolean>>;
+    handleView: () => Promise<void>;
+  };
 };
 
 const Carousel = ({
@@ -19,20 +24,29 @@ const Carousel = ({
   type: viewType,
   hideData,
   setHideData,
+  viewObj,
 }: CarouselProps) => {
   const [contentIndex, setContentIndex] = useState<number>(0);
-  const [descriptionHeight, setDescriptionHeight] = useState<number>(0);
   const [showMore, setShowMore] = useState<boolean>(false);
   const [webkit, setWebkit] = useState<boolean>(true);
+  const [truncated, setTruncated] = useState(false);
+  const [seenSlides, setSeenSlides] = useState(new Set());
+  const [resetSeen, setResetSeen] = useState(false);
+
+  const { viewed, setViewed, handleView } = viewObj;
 
   const carouselRef = useRef<HTMLDivElement>(null!);
-  const moreRef = useRef<HTMLSpanElement>(null!);
   const descriptionRef = useRef<HTMLDivElement>(null!);
+  const textRef = useRef<HTMLDivElement>(null!);
   const dotRef = useRef<HTMLSpanElement>(null!);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const touchMoveType = useRef('');
+  const timeout = useRef<number | NodeJS.Timeout | undefined>(undefined);
+  const waitTime = useRef(3000);
+  const time = useRef<Date>(null!);
+  const viewValue = useRef(viewed);
 
   useEffect(() => {
     const resizeHandler = () => {
@@ -44,15 +58,84 @@ const Carousel = ({
 
     window.addEventListener('resize', resizeHandler);
 
+    viewValue.current = viewed;
+
+    const elem = carouselRef.current;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (viewType === 'content' && !viewValue.current) {
+            if (entry.isIntersecting) {
+              time.current = new Date();
+              timeout.current = setTimeout(handleView, waitTime.current);
+            } else {
+              if (timeout.current) {
+                const diff = Math.max(
+                  0,
+                  waitTime.current -
+                    (Date.parse(new Date().toString()) -
+                      Date.parse(time.current.toString()))
+                );
+
+                waitTime.current = diff;
+
+                clearTimeout(timeout.current);
+                timeout.current = undefined;
+              }
+            }
+          }
+        });
+      },
+      {
+        threshold: 0.4, // fires when 40% visible
+      }
+    );
+
+    observer.observe(elem);
+
     return () => {
       window.removeEventListener('resize', resizeHandler);
+      observer.unobserve(elem);
     };
   }, []);
 
   useEffect(() => {
-    setDescriptionHeight(descriptionRef.current.scrollHeight);
+    const el = textRef.current;
+    if (el) {
+      setTruncated(el.scrollHeight > el.clientHeight);
+    }
+
     setShowMore(false);
-  }, [contentIndex]);
+    setWebkit(true);
+  }, [contentIndex, data]);
+
+  useEffect(() => {
+    viewValue.current = viewed;
+
+    if (viewed) {
+      time.current = null!;
+      waitTime.current = 3000;
+      clearTimeout(timeout.current);
+      timeout.current = undefined;
+    }
+  }, [viewed]);
+
+  useEffect(() => {
+    if (resetSeen) {
+      return setResetSeen(false);
+    }
+    //
+    if (seenSlides.size === data.length) {
+      const lastElem: any = [...seenSlides][seenSlides.size - 1];
+
+      setResetSeen(true);
+      setSeenSlides(new Set([lastElem]));
+      setViewed(false);
+    } else if (seenSlides.size >= (2 / 3) * data.length) {
+      handleView();
+    }
+  }, [seenSlides]);
 
   const changeMedia = (type: 'prev' | 'next') => () => {
     if (type === 'next') {
@@ -79,19 +162,23 @@ const Carousel = ({
 
     setWebkit(false);
     if (showMore) {
-      animation = descriptionRef.current.animate(
+      animation = textRef.current.animate(
         {
-          maxHeight: [`${descriptionRef.current.scrollHeight}px`, '50px'],
+          maxHeight: [`${textRef.current.scrollHeight}px`, '50px'],
         },
         {
           fill: 'both',
           duration: 300,
         }
       );
+
+      animation.onfinish = () => {
+        setWebkit(true);
+      };
     } else {
-      animation = descriptionRef.current.animate(
+      animation = textRef.current.animate(
         {
-          maxHeight: ['50px', `${descriptionRef.current.scrollHeight}px`],
+          maxHeight: ['50px', `${textRef.current.scrollHeight}px`],
         },
         {
           fill: 'both',
@@ -101,9 +188,6 @@ const Carousel = ({
     }
 
     setShowMore(!showMore);
-    animation.onfinish = () => {
-      setWebkit(true);
-    };
   };
 
   const handleSwipe =
@@ -170,7 +254,6 @@ const Carousel = ({
       >
         <span>{contentIndex + 1}</span>&nbsp;/&nbsp;<span>{data.length}</span>
       </span>
-
       <span className={styles['dot-cover']}>&nbsp;</span>
       <span className={styles['dot-box']} ref={dotRef}>
         {data.map((content, index) => (
@@ -184,7 +267,6 @@ const Carousel = ({
           </span>
         ))}
       </span>
-
       {contentIndex !== 0 && (
         <span
           className={styles['left-arrow-box']}
@@ -193,7 +275,6 @@ const Carousel = ({
           <MdKeyboardArrowLeft className={styles['left-arrow']} />
         </span>
       )}
-
       <div
         className={styles['carousel-container']}
         ref={carouselRef}
@@ -217,10 +298,10 @@ const Carousel = ({
             setHideData={setHideData}
             contentType="carousel"
             description={''}
+            viewsData={{ seenSlides, setSeenSlides }}
           />
         ))}
       </div>
-
       {contentIndex !== data.length - 1 && (
         <span
           className={styles['right-arrow-box']}
@@ -229,29 +310,25 @@ const Carousel = ({
           <MdKeyboardArrowRight className={styles['right-arrow']} />
         </span>
       )}
-
       <div
-        className={`${styles['media-description-container']} ${
+        className={`${styles['description-container']} ${
           showMore ? styles['show-description'] : ''
-        } ${
+        }  ${
           !data[contentIndex].description || hideData ? styles['hide-data'] : ''
         }`}
         ref={descriptionRef}
       >
-        <span
+        <div
           className={`${styles['media-description']} ${
             showMore ? styles['show-desc'] : ''
-          }  ${webkit ? styles['webkit-style'] : ''}`}
+          } ${webkit ? styles['webkit-style'] : ''}`}
+          ref={textRef}
         >
           {data[contentIndex].description}
-        </span>
+        </div>
 
-        {descriptionHeight > 50 && (
-          <span
-            className={`${styles['more-text']}`}
-            ref={moreRef}
-            onClick={handleDescription}
-          >
+        {truncated && (
+          <span className={styles['more-text']} onClick={handleDescription}>
             {showMore ? 'less' : 'more'}
           </span>
         )}

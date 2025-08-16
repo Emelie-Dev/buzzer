@@ -5,11 +5,14 @@ import Search from '../models/searchModel.js';
 import getUserLocation from '../utils/getUserLocation.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
-import mongoose, { Document } from 'mongoose';
+import mongoose, { Document, Types } from 'mongoose';
 import queryFromTypesense from '../utils/queryFromTypesense.js';
 import Content from '../models/contentModel.js';
 import Reel from '../models/reelModel.js';
 import { ContentAccessibility } from '../models/storyModel.js';
+import { isValidDateString } from './commentController.js';
+import Friend from '../models/friendModel.js';
+import Follow from '../models/followModel.js';
 
 const getQueriesArray = (arr: any[]) => {
   const queries = [...new Set(arr.map(({ query }) => query))];
@@ -702,6 +705,231 @@ export const getSearchSuggestions = asyncErrorHandler(
           users,
         },
       },
+    });
+  }
+);
+
+export const searchForUsers = asyncErrorHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { query, page, cursor } = req.query;
+
+    let result: any[] = [];
+
+    const viewerId = req.user?._id;
+
+    if (query) {
+      const users = await queryFromTypesense(
+        'users',
+        {
+          q: String(query),
+          query_by: 'username,name',
+          filter_by: `id:!=${String(viewerId)}`,
+          page: Number(page),
+          per_page: 30,
+        },
+        ['id']
+      );
+
+      if (users?.length! > 0) {
+        const userIds = users!.map(
+          (user) => new Types.ObjectId(String(user.id))
+        );
+
+        result = await User.aggregate([
+          { $match: { _id: { $in: userIds } } },
+          {
+            $lookup: {
+              from: 'friends',
+              let: { user: '$_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $or: [
+                        {
+                          $and: [
+                            { $eq: ['$requester', '$$user'] },
+                            {
+                              $eq: ['$recipient', viewerId],
+                            },
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: ['$requester', viewerId],
+                            },
+                            { $eq: ['$recipient', '$$user'] },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'friendInfo',
+            },
+          },
+          {
+            $lookup: {
+              from: 'follows',
+              let: { user: '$_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$following', '$$user'] },
+                        {
+                          $eq: ['$follower', viewerId],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'followInfo',
+            },
+          },
+          {
+            $addFields: {
+              type: {
+                $cond: [
+                  { $ne: ['$friendInfo', []] },
+                  'Friend',
+                  {
+                    $cond: [
+                      { $ne: ['$followInfo', []] },
+                      'Following',
+                      undefined,
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              username: 1,
+              photo: 1,
+              name: 1,
+              createdAt: 1,
+              type: 1,
+            },
+          },
+        ]);
+      }
+    } else {
+      const cursorDate = isValidDateString(String(cursor))
+        ? new Date(String(cursor))
+        : new Date();
+
+      const following = await Follow.aggregate([
+        {
+          $match: {
+            follower: req.user?._id,
+            followedAt: { $lt: cursorDate },
+          },
+        },
+        { $sort: { followedAt: -1 } },
+        { $limit: 30 },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'following',
+            foreignField: '_id',
+            as: 'users',
+          },
+        },
+        {
+          $addFields: {
+            user: { $first: '$users' },
+            createdAt: '$followedAt',
+            isFollowing: true,
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            user: { username: 1, name: 1, photo: 1, _id: 1 },
+            isFollowing: 1,
+            createdAt: 1,
+          },
+        },
+      ]);
+
+      const friends = await Friend.aggregate([
+        {
+          $match: {
+            $or: [
+              {
+                requester: req.user?._id,
+              },
+              { recipient: req.user?._id },
+            ],
+            createdAt: { $lt: cursorDate },
+          },
+        },
+        { $sort: { createdAt: -1 } },
+        { $limit: 30 },
+        {
+          $addFields: {
+            user: {
+              $cond: [
+                { $eq: ['$requester', viewerId] },
+                '$recipient',
+                '$requester',
+              ],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'users',
+          },
+        },
+        { $addFields: { user: { $first: '$users' }, isFriend: true } },
+        {
+          $project: {
+            _id: 0,
+            user: { username: 1, name: 1, photo: 1, _id: 1 },
+            createdAt: 1,
+            isFriend: 1,
+          },
+        },
+      ]);
+
+      const userIds = new Set();
+
+      const total = [...friends, ...following]
+        .map((user) => {
+          if (userIds.has(user._id)) return null;
+          else {
+            userIds.add(user._id);
+            return user;
+          }
+        })
+        .filter((user) => user)
+        .sort((a, b) => {
+          return +new Date(b.createdAt) - +new Date(a.createdAt);
+        })
+        .slice(0, 30);
+
+      if (total.length > 0) {
+        result = total.map((doc) => ({
+          ...doc.user,
+          createdAt: doc.createdAt,
+          type: doc.isFriend ? 'Friend' : 'Following',
+        }));
+      }
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: { result },
     });
   }
 );

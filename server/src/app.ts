@@ -114,8 +114,8 @@ app.use((req, _, next) => {
   if (req.body) {
     for (const key in req.body) {
       if (typeof req.body[key] === 'string') {
-        req.body[key] = sanitizeHtml(req.body[key], {
-          allowedTags: ['a'],
+        const cleanText = sanitizeHtml(req.body[key], {
+          allowedTags: ['a', 'br'],
           allowedAttributes: {
             a: ['class', 'href'],
           },
@@ -123,6 +123,10 @@ app.use((req, _, next) => {
             a: ['app-user-tags'],
           },
         });
+
+        req.body[key] = cleanText
+          .replace(/(<br\s*\/?>\s*){2,}/gi, '<br />')
+          .replace(/(&nbsp;\s*){2,}/gi, '&nbsp;');
       }
     }
   }

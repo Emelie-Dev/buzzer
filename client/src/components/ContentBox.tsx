@@ -62,6 +62,9 @@ const ContentBox = ({
     userLike,
     likesCount,
     commentsCount,
+    userBookmark,
+    bookmarksCount,
+    sharesCount,
   } = data;
   const type = media.length === 1 ? media[0].mediaType : 'carousel';
   const [showMore, setShowMore] = useState<boolean>(false);
@@ -78,7 +81,10 @@ const ContentBox = ({
   const [isFollowing, setIsFollowing] = useState<any>(user.isFollowing);
   const [follow, setFollow] = useState<any>(Boolean(user.isFollowing));
   const [excludeValue, setExcludeValue] = useState<any>(false);
-  const [saved, setSaved] = useState<boolean>(false);
+  const [save, setSave] = useState<{ value: any; count: number }>({
+    value: userBookmark,
+    count: bookmarksCount,
+  });
   const [shareMedia, setShareMedia] = useState<boolean>(false);
   const [viewComment, setViewComment] = useState<boolean>(false);
   const [hideMore, setHideMore] = useState<boolean>(false);
@@ -91,17 +97,21 @@ const ContentBox = ({
       .filter((data: any) => data)
   );
   const { setUser } = useContext(AuthContext);
-  const [loading, setLoading] = useState({ like: false });
+  const [loading, setLoading] = useState({ like: false, save: false });
   const [comments, setComments] = useState<{
     totalCount: number;
     value: any[] | 'error';
   }>({ totalCount: commentsCount, value: null! });
+  const [shares, setShares] = useState<number>(sharesCount);
+  const [viewed, setViewed] = useState(false);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
   const menuRef = useRef<HTMLDivElement>(null!);
   const listRef = useRef<HTMLUListElement>(null!);
   const reelMenuRef = useRef<HTMLDivElement>(null!);
+
+  useEffect(() => setShares(sharesCount), [sharesCount]);
 
   useEffect(() => {
     setIsFollowing(user.isFollowing);
@@ -117,14 +127,14 @@ const ContentBox = ({
   }, [likesCount, userLike]);
 
   useEffect(() => {
+    setSave({ count: bookmarksCount, value: userBookmark });
+  }, [userBookmark, bookmarksCount]);
+
+  useEffect(() => {
     setComments({ totalCount: commentsCount, value: null! });
   }, [commentsCount]);
 
   useEffect(() => {
-    if (descriptionRef.current) {
-      descriptionRef.current.innerHTML = description!;
-    }
-
     setFollowersList(
       collaborators
         .map((user: any) => user.isFollowing)
@@ -134,6 +144,8 @@ const ContentBox = ({
 
   useEffect(() => {
     if (descriptionRef.current) {
+      descriptionRef.current.innerHTML = description!;
+
       if (descriptionRef.current.scrollHeight <= 42) {
         setHideMore(true);
       }
@@ -408,12 +420,14 @@ const ContentBox = ({
   };
 
   const handleLike = async () => {
-    setLoading({ like: true });
+    setLoading({ ...loading, like: true });
+
+    const collection = contentType === 'reels' ? 'reel' : 'content';
 
     try {
       if (!like.value) {
         const { data } = await apiClient.post('v1/likes', {
-          collection: 'content',
+          collection,
           documentId: contentId,
         });
 
@@ -424,14 +438,14 @@ const ContentBox = ({
         );
         setLike({ value: false, count: like.count - 1, obj: null });
       }
-    } catch (err: any) {
-      if (!err.response) {
-        toast.error(`Could not like content. Please Try again.`);
-      } else {
-        toast.error(err.response.data.message);
-      }
+    } catch {
+      toast.error(
+        `Could not ${
+          like.value ? 'remove like' : `like ${collection}`
+        }. Please Try again.`
+      );
     } finally {
-      setLoading({ like: false });
+      setLoading({ ...loading, like: false });
     }
   };
 
@@ -445,6 +459,45 @@ const ContentBox = ({
     } else {
       return field;
     }
+  };
+
+  const handleSave = async () => {
+    setLoading({ ...loading, save: true });
+
+    const collection = contentType === 'reels' ? 'reel' : 'content';
+
+    try {
+      if (!save.value) {
+        const { data } = await apiClient.post('v1/bookmarks', {
+          collection,
+          documentId: contentId,
+        });
+
+        setSave({ value: data.data.saveObj, count: save.count + 1 });
+      } else {
+        await apiClient.delete(`v1/bookmarks/${save.value._id}`);
+        setSave({ value: null, count: save.count - 1 });
+      }
+    } catch {
+      toast.error(
+        `Could not ${
+          save.value ? `remove ${collection} from saved` : `save ${collection}`
+        }. Please Try again.`
+      );
+    } finally {
+      setLoading({ ...loading, save: false });
+    }
+  };
+
+  const handleView = async () => {
+    if (viewed) return;
+
+    // await apiClient.post('v1/views', {
+    //   collection: contentType === 'reels' ? 'reel' : 'content',
+    //   documentId: contentId,
+    // });
+
+    setViewed(true);
   };
 
   return (
@@ -461,7 +514,13 @@ const ContentBox = ({
       }}
     >
       {shareMedia && (
-        <ShareMedia setShareMedia={setShareMedia} activeVideo={activeVideo} />
+        <ShareMedia
+          setShareMedia={setShareMedia}
+          activeVideo={activeVideo}
+          post={data}
+          postType={contentType === 'reels' ? 'reel' : 'content'}
+          setShares={setShares}
+        />
       )}
 
       {viewComment && (
@@ -475,8 +534,8 @@ const ContentBox = ({
             media: media.length === 1 ? media[0].src : media,
           }}
           isFollowing={isFollowing}
-          saved={saved}
-          setSaved={setSaved}
+          save={save}
+          setSave={setSave}
           setShareMedia={setShareMedia}
           reels={contentType === 'reels'}
           description={description}
@@ -492,6 +551,8 @@ const ContentBox = ({
             hasStory,
             hasUnviewedStory,
             collaborators,
+            handleSave,
+            shares,
           }}
         />
       )}
@@ -600,6 +661,7 @@ const ContentBox = ({
                 hideData={hideData}
                 setHideData={setHideData}
                 type="content"
+                viewObj={{ viewed, setViewed, handleView }}
               />
             ) : (
               <ContentItem
@@ -612,6 +674,7 @@ const ContentBox = ({
                 name={user.name}
                 hideData={hideData}
                 setHideData={setHideData}
+                viewObj={{ viewed, setViewed, handleView }}
               />
             )}
 
@@ -734,18 +797,23 @@ const ContentBox = ({
 
             <div className={styles['menu-box']}>
               <span
-                className={styles['menu-icon-box']}
+                className={`${styles['menu-icon-box']} ${
+                  loading.save ? styles['menu-icon-box2'] : ''
+                }`}
                 title="Save"
-                onClick={() => setSaved(!saved)}
+                onClick={handleSave}
               >
                 <IoBookmark
                   className={`${styles['menu-icon']} ${
-                    saved ? styles['saved-icon'] : ''
-                  }`}
+                    save.value ? styles['saved-icon'] : ''
+                  } ${loading.save ? styles['save-skeleton'] : ''}`}
                 />
               </span>
-              <span className={styles['menu-text']}>954</span>
+              <span className={styles['menu-text']}>
+                {getEngagementValue(save.count)}
+              </span>
             </div>
+
             <div className={styles['menu-box']}>
               <span
                 className={styles['menu-icon-box']}
@@ -757,8 +825,11 @@ const ContentBox = ({
               >
                 <FaShare className={styles['menu-icon']} />
               </span>
-              <span className={styles['menu-text']}>217</span>
+              <span className={styles['menu-text']}>
+                {getEngagementValue(shares)}
+              </span>
             </div>
+
             <HiOutlineDotsHorizontal
               className={`${styles['reel-content-menu']} ${
                 showMenu ? styles['active-menu'] : ''
@@ -795,11 +866,11 @@ const ContentBox = ({
 
               <span
                 className={styles['small-details-box']}
-                onClick={() => setSaved(!saved)}
+                onClick={handleSave}
               >
                 <IoBookmark
                   className={`${styles['small-details-icon']} ${
-                    saved ? styles['saved-icon'] : ''
+                    save.value ? styles['saved-icon'] : ''
                   }`}
                 />
 
@@ -821,7 +892,7 @@ const ContentBox = ({
           )}
         </div>
 
-        {/* {contentType !== 'reels' && description && (
+        {contentType !== 'reels' && description && (
           <>
             <div
               className={`${styles['content-description']} ${
@@ -839,11 +910,11 @@ const ContentBox = ({
               </div>
             )}
           </>
-        )} */}
+        )}
 
-        {/* {contentType !== 'reels' && description === '' && (
+        {contentType !== 'reels' && description === '' && (
           <div className={styles['empty-disc']}></div>
-        )} */}
+        )}
       </article>
     </LikeContext.Provider>
   );
