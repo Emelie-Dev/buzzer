@@ -46,7 +46,10 @@ export interface IUser extends Document {
     feed: Types.ObjectId[];
   };
   location: ILocation;
-  searchHistory: String[];
+  searchHistory: {
+    query: String;
+    searchedAt: Date;
+  }[];
   reelSounds: { name: string; src: string }[];
   settings: ISettings;
   pushSubscription: Object;
@@ -155,7 +158,15 @@ const UserSchema = new Schema<IUser>({
     default: {},
   },
   searchHistory: {
-    type: [String],
+    type: [
+      {
+        query: String,
+        searchedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     default: [],
   },
   reelSounds: {

@@ -3,8 +3,12 @@ export default [
     name: 'searches',
     fields: [
       { name: 'id', type: 'string' },
-      { name: 'query', type: 'string' },
-      // { name: 'searchedAt', type: 'int64' }, // Store as timestamp
+      {
+        name: 'query',
+        type: 'string',
+        infix: true,
+        sort: true, // ✅ makes alphabetical sorting possible
+      },
       { name: 'searchCount', type: 'int32' },
     ],
     default_sorting_field: 'searchCount',

@@ -566,11 +566,11 @@ const StoryItem = ({
     <>
       {confirmModal && (
         <ConfirmModal
-          item="story"
+          message="Are you sure you want to delete this story?"
           setConfirmModal={setConfirmModal}
-          setterArray={[
-            { setter: setPause, value: false, type: 'both' },
-            { setter: setDeleteStory, value: true, type: 'delete' },
+          functionArray={[
+            { caller: setPause, value: [false], type: 'both' },
+            { caller: setDeleteStory, value: [true], type: 'delete' },
           ]}
         />
       )}

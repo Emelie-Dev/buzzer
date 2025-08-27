@@ -420,12 +420,15 @@
 }
 
 .recent-search-box {
+  border-radius: 5px;
+}
+
+.recent-search-box a {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  cursor: pointer;
   padding: 0.6rem 0.5rem;
-  border-radius: 5px;
+  text-decoration: none;
 }
 
 .recent-search-icon {
@@ -443,6 +446,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   width: calc(100% - 1rem);
+  color: black;
 }
 
 .remove-recent-search {
@@ -488,11 +492,14 @@
 }
 
 .search-result {
+  border-radius: 8px;
+}
+
+.search-result a {
   display: flex;
   align-items: center;
-  cursor: pointer;
   padding: 0.6rem 0.5rem;
-  border-radius: 8px;
+  text-decoration: none;
 }
 
 .search-results-icon {
@@ -510,6 +517,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  color: black;
 }
 
 .search-result:hover {
@@ -530,12 +538,15 @@
 }
 
 .search-accounts {
+  margin-bottom: 0.2rem;
+  border-radius: 8px;
+}
+
+.search-accounts a {
   display: flex;
   align-items: center;
-  cursor: pointer;
   padding: 0.5rem;
-  border-radius: 8px;
-  margin-bottom: 0.2rem;
+  text-decoration: none;
 }
 
 .search-accounts-img {
@@ -561,6 +572,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  color: black;
 }
 
 .search-accounts-username {
@@ -611,6 +623,22 @@
 .show-search-page {
   display: flex !important;
   z-index: 5;
+}
+
+.empty-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 3rem 0;
+  padding: 0 0.5rem;
+  font-family: appFontMedium;
+  color: gray;
+  font-size: 0.9rem;
+}
+
+.query-match {
+  color: var(--app-theme-color);
+  font-weight: bold;
 }
 
 /* Animation */

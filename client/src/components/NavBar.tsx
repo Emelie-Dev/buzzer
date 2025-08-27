@@ -24,7 +24,12 @@ import { IoNotificationsOutline } from 'react-icons/io5';
 import { FaCircleUser } from 'react-icons/fa6';
 import { FaRegCircleUser } from 'react-icons/fa6';
 import { TbBrandGoogleAnalytics } from 'react-icons/tb';
-import { GeneralContext } from '../Contexts';
+import { AuthContext, GeneralContext } from '../Contexts';
+import { apiClient, debounce, getUrl } from '../Utilities';
+import LoadingAnimation from './LoadingAnimation';
+import { toast } from 'sonner';
+import ConfirmModal from './ConfirmModal';
+import DOMPurify from 'dompurify';
 
 type NavBarProps = {
   page: string;
@@ -34,6 +39,21 @@ type NavBarProps = {
 };
 
 const mediumSize = window.matchMedia('(max-width: 900px)').matches;
+
+const getSuggestions = async (...data: any[]) => {
+  const [query, setSuggestions] = data;
+
+  try {
+    const { data } = await apiClient(`v1/search/suggestions?query=${query}`);
+    setSuggestions({
+      searches: data.data.suggestions.searches,
+      users: data.data.suggestions.users,
+    });
+    // eslint-disable-next-line no-empty
+  } catch {}
+};
+
+const debouncedGetSuggestions = debounce(getSuggestions, 300);
 
 const NavBar = ({
   page,
@@ -52,7 +72,10 @@ const NavBar = ({
   const [showMore2, setShowMore2] = useState<boolean>(false);
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
-  const [moreTrends, setMoreTrends] = useState<boolean>(false);
+  const [moreResults, setMoreResults] = useState({
+    trend: false,
+    recent: false,
+  });
   const [mediaQueries, setMediaQueries] = useState<{
     first: boolean;
     second: boolean;
@@ -60,8 +83,18 @@ const NavBar = ({
     first: false,
     second: false,
   });
+  const [deleteSet, setDeleteSet] = useState(new Set());
+  const [trending, setTrending] = useState<any[]>(null!);
+  const [clearAll, setClearAll] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [displaySearch, setDisplaySearch] = useState(false);
+  const [suggestions, setSuggestions] = useState<{
+    searches: any[];
+    users: any[];
+  }>({ searches: [], users: [] });
 
   const { showSearchPage, setShowSearchPage } = useContext(GeneralContext);
+  const { user, setUser } = useContext(AuthContext);
 
   const navigate = useNavigate();
 
@@ -103,7 +136,16 @@ const NavBar = ({
       });
     };
 
+    const getTrending = async () => {
+      try {
+        const { data } = await apiClient('v1/search/trending');
+        setTrending(data.data.result);
+        // eslint-disable-next-line no-empty
+      } catch {}
+    };
+
     resizeHandler();
+    getTrending();
 
     window.addEventListener('resize', resizeHandler);
 
@@ -120,6 +162,8 @@ const NavBar = ({
         }
       }
     };
+
+    window.removeEventListener('click', clickHandler);
 
     window.addEventListener('click', clickHandler);
 
@@ -150,8 +194,10 @@ const NavBar = ({
         if (
           showSearch &&
           e.target !== searchRef.current &&
-          !searchSectionRef.current.contains(e.target as Node)
+          !searchSectionRef.current.contains(e.target as Node) &&
+          !showConfirmModal
         ) {
+          if (displaySearch) return setDisplaySearch(false);
           const animation = searchContainerRef.current.animate(
             {
               width: ['31vw', '0'],
@@ -172,19 +218,84 @@ const NavBar = ({
       }
     };
 
+    window.removeEventListener('click', clickHandler);
+
     window.addEventListener('click', clickHandler);
 
     return () => {
       window.removeEventListener('click', clickHandler);
     };
-  }, [showSearch]);
+  }, [showSearch, displaySearch, showConfirmModal]);
 
   useEffect(() => {
     if (setOverlaySearch) setShowSearchPage(overlaySearch as boolean);
   }, [overlaySearch]);
 
+  useEffect(() => {
+    const getResults = async () => {
+      if (searchText.trim().length > 0)
+        await debouncedGetSuggestions(searchText, setSuggestions);
+    };
+
+    getResults();
+  }, [searchText]);
+
+  const deleteSearch = async (id: string, clear = false) => {
+    const set = new Set(deleteSet);
+
+    if (!clear) setDeleteSet(set.add(id));
+    else setClearAll(true);
+
+    try {
+      const { data } = await apiClient.delete(
+        `v1/search/${clear ? 'all' : id}`
+      );
+      setUser(data.data.user);
+    } catch {
+      if (!clear) {
+        toast.error('Could not remove search from recent.');
+      } else {
+        toast.error('Could not clear search history.');
+      }
+    } finally {
+      if (!clear) {
+        set.delete(id);
+        setDeleteSet(new Set(set));
+      } else {
+        setClearAll(false);
+      }
+    }
+  };
+
+  const formatQuery = (query: string) => {
+    const regex = new RegExp(`(${searchText})`, 'gi');
+    const parts = query.split(regex);
+
+    return parts.map((part: any, index) =>
+      regex.test(part) ? (
+        <span key={index} className={styles['query-match']}>
+          {part}
+        </span>
+      ) : (
+        <span key={index}>{part}</span>
+      )
+    );
+  };
+
   return (
     <>
+      {showConfirmModal && (
+        <ConfirmModal
+          heading="Clear search history"
+          message="Your entire search history will be deleted permanently and cannot be restored."
+          confirmText="Clear"
+          setConfirmModal={setShowConfirmModal}
+          functionArray={[
+            { caller: deleteSearch, type: 'delete', value: [null, true] },
+          ]}
+        />
+      )}
+
       {pageType === 'wide' && (
         <section className={styles['nav-section']}>
           <nav
@@ -1104,250 +1215,90 @@ const NavBar = ({
 
               {searchText.trim().length > 0 ? (
                 <div className={styles['search-results-div']}>
-                  <div className={styles['search-results-container']}>
-                    <article
-                      className={styles['search-result']}
-                      onClick={() => {
-                        setShowSearch(false);
-                        setShowSearchPage(false);
-                        if (setOverlaySearch) setOverlaySearch(false);
-                        navigate('/search');
-                      }}
-                    >
-                      <IoSearchSharp
-                        className={styles['search-results-icon']}
-                      />
+                  {suggestions.searches.length > 0 && (
+                    <div className={styles['search-results-container']}>
+                      {suggestions.searches.map((data) => (
+                        <article
+                          key={data.id}
+                          className={styles['search-result']}
+                          onClick={() => {
+                            setShowSearch(false);
+                            setShowSearchPage(false);
+                            if (setOverlaySearch) setOverlaySearch(false);
+                            navigate('/search');
+                          }}
+                        >
+                          <a href={``}>
+                            <IoSearchSharp
+                              className={styles['search-results-icon']}
+                            />
 
-                      <span className={styles['search-results-text']}>
-                        man city vs feyenoord
-                      </span>
-                    </article>
-                    <article
-                      className={styles['search-result']}
-                      onClick={() => {
-                        setShowSearch(false);
-                        setShowSearchPage(false);
-                        if (setOverlaySearch) setOverlaySearch(false);
-                        navigate('/search');
-                      }}
-                    >
-                      <IoSearchSharp
-                        className={styles['search-results-icon']}
-                      />
-
-                      <span className={styles['search-results-text']}>
-                        man city vs feyenoord
-                      </span>
-                    </article>
-                    <article
-                      className={styles['search-result']}
-                      onClick={() => {
-                        setShowSearch(false);
-                        setShowSearchPage(false);
-                        if (setOverlaySearch) setOverlaySearch(false);
-                        navigate('/search');
-                      }}
-                    >
-                      <IoSearchSharp
-                        className={styles['search-results-icon']}
-                      />
-
-                      <span className={styles['search-results-text']}>
-                        davido
-                      </span>
-                    </article>
-                    <article
-                      className={styles['search-result']}
-                      onClick={() => {
-                        setShowSearch(false);
-                        setShowSearchPage(false);
-                        if (setOverlaySearch) setOverlaySearch(false);
-                        navigate('/search');
-                      }}
-                    >
-                      <IoSearchSharp
-                        className={styles['search-results-icon']}
-                      />
-
-                      <span className={styles['search-results-text']}>
-                        powepuff girls
-                      </span>
-                    </article>
-                    <article
-                      className={styles['search-result']}
-                      onClick={() => {
-                        setShowSearch(false);
-                        setShowSearchPage(false);
-                        if (setOverlaySearch) setOverlaySearch(false);
-                        navigate('/search');
-                      }}
-                    >
-                      <IoSearchSharp
-                        className={styles['search-results-icon']}
-                      />
-
-                      <span className={styles['search-results-text']}>
-                        grammy 2025 nominations
-                      </span>
-                    </article>
-                    <article
-                      className={styles['search-result']}
-                      onClick={() => {
-                        setShowSearch(false);
-                        setShowSearchPage(false);
-                        if (setOverlaySearch) setOverlaySearch(false);
-                        navigate('/search');
-                      }}
-                    >
-                      <IoSearchSharp
-                        className={styles['search-results-icon']}
-                      />
-
-                      <span className={styles['search-results-text']}>
-                        game of thrones
-                      </span>
-                    </article>
-                  </div>
-
-                  <div className={styles['search-accounts-container']}>
-                    <span className={styles['search-accounts-head']}>
-                      Users
-                    </span>
-
-                    <div className={styles['search-accounts-div']}>
-                      <article
-                        className={styles['search-accounts']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <img
-                          className={styles['search-accounts-img']}
-                          src="../../assets/images/users/user10.jpeg"
-                        />
-
-                        <span className={styles['search-accounts-box']}>
-                          <span className={styles['search-accounts-name']}>
-                            Rey Mesterio
-                          </span>
-                          <span className={styles['search-accounts-username']}>
-                            @reymesterio_100
-                          </span>
-                        </span>
-                      </article>
-
-                      <article
-                        className={styles['search-accounts']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <img
-                          className={styles['search-accounts-img']}
-                          src="../../assets/images/users/user8.jpeg"
-                        />
-
-                        <span className={styles['search-accounts-box']}>
-                          <span className={styles['search-accounts-name']}>
-                            The Godfather
-                          </span>
-                          <span className={styles['search-accounts-username']}>
-                            @dagodfather1
-                          </span>
-                        </span>
-                      </article>
-
-                      <article
-                        className={styles['search-accounts']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <img
-                          className={styles['search-accounts-img']}
-                          src="../../assets/images/users/user4.jpeg"
-                        />
-
-                        <span className={styles['search-accounts-box']}>
-                          <span className={styles['search-accounts-name']}>
-                            Cynthia
-                          </span>
-                          <span className={styles['search-accounts-username']}>
-                            @therealcynthia
-                          </span>
-                        </span>
-                      </article>
-
-                      <article
-                        className={styles['search-accounts']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <img
-                          className={styles['search-accounts-img']}
-                          src="../../assets/images/users/user6.jpeg"
-                        />
-
-                        <span className={styles['search-accounts-box']}>
-                          <span className={styles['search-accounts-name']}>
-                            Kamala Harris
-                          </span>
-                          <span className={styles['search-accounts-username']}>
-                            @vicepresidentharris
-                          </span>
-                        </span>
-                      </article>
-
-                      <article
-                        className={styles['search-accounts']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <img
-                          className={styles['search-accounts-img']}
-                          src="../../assets/images/users/user19.jpeg"
-                        />
-
-                        <span className={styles['search-accounts-box']}>
-                          <span className={styles['search-accounts-name']}>
-                            Tech Wizard
-                          </span>
-                          <span className={styles['search-accounts-username']}>
-                            @jonas_travis
-                          </span>
-                        </span>
-                      </article>
+                            <span className={styles['search-results-text']}>
+                              {formatQuery(data.query)}
+                            </span>
+                          </a>
+                        </article>
+                      ))}
                     </div>
-                  </div>
+                  )}
 
-                  <span
-                    className={styles['show-results-txt']}
-                    onClick={() => {
-                      setShowSearch(false);
-                      setShowSearchPage(false);
-                      if (setOverlaySearch) setOverlaySearch(false);
-                      navigate('/search');
-                    }}
-                  >
-                    View all results
-                  </span>
+                  {suggestions.users.length > 0 && (
+                    <div className={styles['search-accounts-container']}>
+                      <span className={styles['search-accounts-head']}>
+                        Users
+                      </span>
+
+                      <div className={styles['search-accounts-div']}>
+                        {suggestions.users.map((data) => (
+                          <article
+                            key={data.id}
+                            className={styles['search-accounts']}
+                            onClick={() => {
+                              setShowSearch(false);
+                              setShowSearchPage(false);
+                              if (setOverlaySearch) setOverlaySearch(false);
+                              navigate('/search');
+                            }}
+                          >
+                            <a href={`/@${data.username}`}>
+                              <img
+                                className={styles['search-accounts-img']}
+                                src={getUrl(data.photo, 'users')}
+                              />
+
+                              <span className={styles['search-accounts-box']}>
+                                <span
+                                  className={styles['search-accounts-name']}
+                                >
+                                  {data.name || <>&nbsp;</>}
+                                </span>
+                                <span
+                                  className={styles['search-accounts-username']}
+                                >
+                                  @{data.username}
+                                </span>
+                              </span>
+                            </a>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(suggestions.users.length > 0 ||
+                    suggestions.searches.length > 0) && (
+                    <span
+                      className={styles['show-results-txt']}
+                      onClick={() => {
+                        setShowSearch(false);
+                        setShowSearchPage(false);
+                        if (setOverlaySearch) setOverlaySearch(false);
+                        navigate('/search');
+                      }}
+                    >
+                      View all results
+                    </span>
+                  )}
                 </div>
               ) : (
                 <>
@@ -1355,113 +1306,150 @@ const NavBar = ({
                     <span className={styles['recent-search-text']}>Recent</span>
 
                     <div className={styles['recent-search-div']}>
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <AiFillClockCircle
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>davido</span>
+                      {clearAll ? (
+                        <div className={styles['empty-box']}>
+                          <LoadingAnimation
+                            style={{
+                              width: '2rem',
+                              height: '2rem',
+                              transform: 'scale(2.5)',
+                            }}
+                          />
+                        </div>
+                      ) : !user.searchHistory ||
+                        user.searchHistory.length === 0 ? (
+                        <div className={styles['empty-box']}>
+                          Your search history isn’t available at the moment.
+                        </div>
+                      ) : (
+                        user.searchHistory.slice(0, 5).map((data: any) => (
+                          <div
+                            key={data._id}
+                            className={styles['recent-search-box']}
+                            onClick={() => {
+                              setShowSearch(false);
+                              setShowSearchPage(false);
+                              if (setOverlaySearch) setOverlaySearch(false);
+                              navigate('/search');
+                            }}
+                          >
+                            <a href="">
+                              <AiFillClockCircle
+                                className={styles['recent-search-icon']}
+                              />
+                              <span className={styles['recent-search']}>
+                                {data.query}
+                              </span>
 
-                        <IoClose
-                          className={styles['remove-recent-search']}
-                          title="Remove"
-                        />
-                      </div>
+                              {deleteSet.has(data._id) ? (
+                                <LoadingAnimation
+                                  style={{
+                                    width: '1.5rem',
+                                    height: '1.5rem',
+                                    transform: 'scale(2.5)',
+                                  }}
+                                />
+                              ) : (
+                                <IoClose
+                                  className={styles['remove-recent-search']}
+                                  title="Remove"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteSearch(data._id);
+                                  }}
+                                />
+                              )}
+                            </a>
+                          </div>
+                        ))
+                      )}
 
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <AiFillClockCircle
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>
-                          mancheter city vs feyenoord highlights
-                        </span>
+                      {!clearAll &&
+                        user.searchHistory &&
+                        user.searchHistory.length > 5 && (
+                          <>
+                            <span
+                              className={`${styles['show-more-trends']} ${
+                                moreResults.recent
+                                  ? styles['hide-more-trends']
+                                  : ''
+                              }`}
+                              onClick={() =>
+                                setMoreResults((prev) => ({
+                                  ...prev,
+                                  recent: true,
+                                }))
+                              }
+                            >
+                              Show more
+                            </span>
 
-                        <IoClose
-                          className={styles['remove-recent-search']}
-                          title="Remove"
-                        />
-                      </div>
+                            {moreResults.recent && (
+                              <>
+                                {user.searchHistory
+                                  .slice(5, user.searchHistory.length)
+                                  .map((data: any) => (
+                                    <div
+                                      key={data._id}
+                                      className={styles['recent-search-box']}
+                                      onClick={() => {
+                                        setShowSearch(false);
+                                        setShowSearchPage(false);
+                                        if (setOverlaySearch)
+                                          setOverlaySearch(false);
+                                        navigate('/search');
+                                      }}
+                                    >
+                                      {' '}
+                                      <a href="">
+                                        <AiFillClockCircle
+                                          className={
+                                            styles['recent-search-icon']
+                                          }
+                                        />
+                                        <span
+                                          className={styles['recent-search']}
+                                        >
+                                          {data.query}
+                                        </span>
 
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <AiFillClockCircle
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>
-                          vicoka upcoming artist
-                        </span>
+                                        {deleteSet.has(data._id) ? (
+                                          <LoadingAnimation
+                                            style={{
+                                              width: '1.5rem',
+                                              height: '1.5rem',
+                                              transform: 'scale(2.5)',
+                                            }}
+                                          />
+                                        ) : (
+                                          <IoClose
+                                            className={
+                                              styles['remove-recent-search']
+                                            }
+                                            title="Remove"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              deleteSearch(data._id);
+                                            }}
+                                          />
+                                        )}
+                                      </a>
+                                    </div>
+                                  ))}
 
-                        <IoClose
-                          className={styles['remove-recent-search']}
-                          title="Remove"
-                        />
-                      </div>
-
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <AiFillClockCircle
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>
-                          wizkid new album
-                        </span>
-
-                        <IoClose
-                          className={styles['remove-recent-search']}
-                          title="Remove"
-                        />
-                      </div>
-
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <AiFillClockCircle
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>
-                          speed darlington
-                        </span>
-
-                        <IoClose
-                          className={styles['remove-recent-search']}
-                          title="Remove"
-                        />
-                      </div>
+                                <span
+                                  className={styles['show-more-trends']}
+                                  onClick={() => {
+                                    setShowConfirmModal(true);
+                                    setDisplaySearch(true);
+                                  }}
+                                >
+                                  Clear all
+                                </span>
+                              </>
+                            )}
+                          </>
+                        )}
                     </div>
                   </div>
 
@@ -1471,184 +1459,87 @@ const NavBar = ({
                     </span>
 
                     <div className={styles['recent-search-div']}>
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <HiTrendingUp
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>davido</span>
-                      </div>
+                      {trending === null ? (
+                        <div className={styles['empty-box']}>
+                          <LoadingAnimation
+                            style={{
+                              width: '2rem',
+                              height: '2rem',
+                              transform: 'scale(2.5)',
+                            }}
+                          />
+                        </div>
+                      ) : trending.length === 0 ? (
+                        <div className={styles['empty-box']}>
+                          Trending searches aren’t available at the moment.
+                        </div>
+                      ) : (
+                        trending.slice(0, 5).map((data, index) => (
+                          <div
+                            key={index}
+                            className={styles['recent-search-box']}
+                            onClick={() => {
+                              setShowSearch(false);
+                              setShowSearchPage(false);
+                              if (setOverlaySearch) setOverlaySearch(false);
+                              navigate('/search');
+                            }}
+                          >
+                            <a href="">
+                              <HiTrendingUp
+                                className={styles['recent-search-icon']}
+                              />
+                              <span className={styles['recent-search']}>
+                                {data}
+                              </span>
+                            </a>
+                          </div>
+                        ))
+                      )}
 
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <HiTrendingUp
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>
-                          mancheter city vs feyenoord highlights
-                        </span>
-                      </div>
-
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <HiTrendingUp
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>
-                          vicoka upcoming artist
-                        </span>
-                      </div>
-
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <HiTrendingUp
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>
-                          wizkid new album
-                        </span>
-                      </div>
-
-                      <div
-                        className={styles['recent-search-box']}
-                        onClick={() => {
-                          setShowSearch(false);
-                          setShowSearchPage(false);
-                          if (setOverlaySearch) setOverlaySearch(false);
-                          navigate('/search');
-                        }}
-                      >
-                        <HiTrendingUp
-                          className={styles['recent-search-icon']}
-                        />
-                        <span className={styles['recent-search']}>
-                          speed darlington
-                        </span>
-                      </div>
-
-                      <span
-                        className={`${styles['show-more-trends']} ${
-                          moreTrends ? styles['hide-more-trends'] : ''
-                        }`}
-                        onClick={() => setMoreTrends(true)}
-                      >
-                        Show more
-                      </span>
-
-                      {moreTrends && (
+                      {trending && trending.length > 5 && (
                         <>
-                          <div
-                            className={styles['recent-search-box']}
-                            onClick={() => {
-                              setShowSearch(false);
-                              setShowSearchPage(false);
-                              if (setOverlaySearch) setOverlaySearch(false);
-                              navigate('/search');
-                            }}
+                          <span
+                            className={`${styles['show-more-trends']} ${
+                              moreResults.trend
+                                ? styles['hide-more-trends']
+                                : ''
+                            }`}
+                            onClick={() =>
+                              setMoreResults((prev) => ({
+                                ...prev,
+                                trend: true,
+                              }))
+                            }
                           >
-                            <HiTrendingUp
-                              className={styles['recent-search-icon']}
-                            />
-                            <span className={styles['recent-search']}>
-                              davido
-                            </span>
-                          </div>
-
-                          <div
-                            className={styles['recent-search-box']}
-                            onClick={() => {
-                              setShowSearch(false);
-                              setShowSearchPage(false);
-                              if (setOverlaySearch) setOverlaySearch(false);
-                              navigate('/search');
-                            }}
-                          >
-                            <HiTrendingUp
-                              className={styles['recent-search-icon']}
-                            />
-                            <span className={styles['recent-search']}>
-                              mancheter city vs feyenoord highlights
-                            </span>
-                          </div>
-
-                          <div
-                            className={styles['recent-search-box']}
-                            onClick={() => {
-                              setShowSearch(false);
-                              setShowSearchPage(false);
-                              if (setOverlaySearch) setOverlaySearch(false);
-                              navigate('/search');
-                            }}
-                          >
-                            <HiTrendingUp
-                              className={styles['recent-search-icon']}
-                            />
-                            <span className={styles['recent-search']}>
-                              vicoka upcoming artist
-                            </span>
-                          </div>
-
-                          <div
-                            className={styles['recent-search-box']}
-                            onClick={() => {
-                              setShowSearch(false);
-                              setShowSearchPage(false);
-                              if (setOverlaySearch) setOverlaySearch(false);
-                              navigate('/search');
-                            }}
-                          >
-                            <HiTrendingUp
-                              className={styles['recent-search-icon']}
-                            />
-                            <span className={styles['recent-search']}>
-                              wizkid new album
-                            </span>
-                          </div>
-
-                          <div
-                            className={styles['recent-search-box']}
-                            onClick={() => {
-                              setShowSearch(false);
-                              setShowSearchPage(false);
-                              if (setOverlaySearch) setOverlaySearch(false);
-                              navigate('/search');
-                            }}
-                          >
-                            <HiTrendingUp
-                              className={styles['recent-search-icon']}
-                            />
-                            <span className={styles['recent-search']}>
-                              speed darlington
-                            </span>
-                          </div>
+                            Show more
+                          </span>
+                          {moreResults.trend &&
+                            trending
+                              .slice(5, trending.length)
+                              .map((data, index) => (
+                                <div
+                                  key={index}
+                                  className={styles['recent-search-box']}
+                                  onClick={() => {
+                                    setShowSearch(false);
+                                    setShowSearchPage(false);
+                                    if (setOverlaySearch)
+                                      setOverlaySearch(false);
+                                    navigate('/search');
+                                  }}
+                                >
+                                  {' '}
+                                  <a href="">
+                                    <HiTrendingUp
+                                      className={styles['recent-search-icon']}
+                                    />
+                                    <span className={styles['recent-search']}>
+                                      {data}
+                                    </span>
+                                  </a>
+                                </div>
+                              ))}
                         </>
                       )}
                     </div>

@@ -2,29 +2,33 @@ import styles from '../styles/ConfirmModal.module.css';
 import ReactDOM from 'react-dom';
 
 type ConfirmModalProps = {
-  item: string;
-  setConfirmModal: React.Dispatch<React.SetStateAction<boolean>>;
-  setterArray: {
-    setter: React.Dispatch<React.SetStateAction<any>>;
-    value: any;
+  heading: string;
+  message: string;
+  confirmText?: string;
+  functionArray: {
+    caller: any;
+    value: any[];
     type: 'cancel' | 'delete' | 'both';
   }[];
+  setConfirmModal: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const ConfirmModal = ({
-  item,
+  heading,
+  message,
+  confirmText = 'Delete',
+  functionArray,
   setConfirmModal,
-  setterArray,
 }: ConfirmModalProps) => {
   const target =
     document.getElementById('confirmation-portal') || document.body;
 
   const closeModal = (closeType: 'cancel' | 'delete') => () => {
-    setterArray.forEach(({ setter, value, type }) => {
+    functionArray.forEach(({ caller, value, type }) => {
       if (type === 'both') {
-        setter(value);
+        caller(...value);
       } else {
-        if (type === closeType) setter(value);
+        if (type === closeType) caller(...value);
       }
     });
     setConfirmModal(false);
@@ -38,9 +42,9 @@ const ConfirmModal = ({
       }}
     >
       <div className={styles.container}>
-        <p className={styles.text}>
-          Are you sure you want to delete this {item}?
-        </p>
+        <h2 className={styles.heading}>{heading}</h2>
+
+        <p className={styles.text}>{message}</p>
 
         <div className={styles['btn-div']}>
           <button
@@ -53,7 +57,7 @@ const ConfirmModal = ({
             className={styles['delete-btn']}
             onClick={closeModal('delete')}
           >
-            Delete
+            {confirmText}
           </button>
         </div>
       </div>

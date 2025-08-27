@@ -1,5 +1,5 @@
 import asyncErrorHandler from '../utils/asyncErrorHandler.js';
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import Search from '../models/searchModel.js';
 import getUserLocation from '../utils/getUserLocation.js';
@@ -13,6 +13,7 @@ import { ContentAccessibility } from '../models/storyModel.js';
 import { isValidDateString } from './commentController.js';
 import Friend from '../models/friendModel.js';
 import Follow from '../models/followModel.js';
+import CustomError from '../utils/CustomError.js';
 
 const getQueriesArray = (arr: any[]) => {
   const queries = [...new Set(arr.map(({ query }) => query))];
@@ -20,8 +21,12 @@ const getQueriesArray = (arr: any[]) => {
 };
 
 export const handleSearch = asyncErrorHandler(
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     let { query, page } = req.query;
+    let search;
+
+    if (!query) return next(new CustomError('Please provide a query!', 400));
+
     query = String(query).toLowerCase().trim();
 
     // Check is search exists
@@ -30,13 +35,17 @@ export const handleSearch = asyncErrorHandler(
     });
 
     if (userSearch) {
-      await Search.findByIdAndUpdate(userSearch._id, {
-        $inc: { searchCount: 1 },
-      });
+      search = await Search.findByIdAndUpdate(
+        userSearch._id,
+        {
+          $inc: { searchCount: 1 },
+        },
+        { new: true }
+      );
     } else {
       const location = await getUserLocation(req.clientIp);
 
-      await Search.create({
+      search = await Search.create({
         user: req.user?._id,
         query,
         location,
@@ -44,17 +53,31 @@ export const handleSearch = asyncErrorHandler(
     }
 
     // Update user search history
-    const searchHistory = new Set(req.user?.searchHistory || []);
-    searchHistory.add(query);
+    const searchHistory = req.user?.searchHistory || [];
 
-    if (searchHistory.size > 10) {
-      searchHistory.delete(Array.from(searchHistory)[0]);
+    if (searchHistory.length > 0) {
+      const index = searchHistory.findIndex(
+        (data: any) => data.query === query
+      );
+
+      if (index === -1) {
+        searchHistory.push({ query });
+      } else {
+        searchHistory[index].searchedAt = new Date();
+      }
+    } else {
+      searchHistory.push({ query });
     }
 
     const user = await User.findByIdAndUpdate(
       req.user?._id,
       {
-        searchHistory: [...searchHistory],
+        searchHistory: searchHistory
+          .sort(
+            (a: any, b: any) =>
+              +new Date(b.searchedAt) - +new Date(a.searchedAt)
+          )
+          .slice(0, 10),
       },
       {
         runValidators: true,
@@ -679,8 +702,9 @@ export const getSearchSuggestions = asyncErrorHandler(
         {
           q: query,
           query_by: 'query',
-          num_typos: 0,
-          sort_by: 'searchCount:desc',
+          num_typos: 1,
+          per_page: 6,
+          sort_by: '_text_match:desc, query:asc',
         },
         ['query']
       ),
@@ -691,7 +715,6 @@ export const getSearchSuggestions = asyncErrorHandler(
           query_by: 'username,name',
           filter_by: `id:!=${String(req.user?._id)}`,
           per_page: 5,
-          page: 1,
         },
         ['username', 'photo', 'name']
       ),
@@ -931,5 +954,42 @@ export const searchForUsers = asyncErrorHandler(
       status: 'success',
       data: { result },
     });
+  }
+);
+
+export const deleteUserSearch = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const id = req.params.id;
+
+    if (!id) return next(new CustomError('Please provide a search Id!', 400));
+
+    let searchHistory = req.user?.searchHistory;
+
+    if (searchHistory.length > 0) {
+      if (id === 'all') {
+        searchHistory = [];
+      } else {
+        searchHistory = searchHistory.filter(
+          (data: any) => String(data._id) !== id
+        );
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        searchHistory,
+      },
+      {
+        runValidators: true,
+        new: true,
+      }
+    );
+
+    const userData = protectData(user as Document, 'user');
+
+    return res
+      .status(200)
+      .json({ status: 'success', data: { user: userData } });
   }
 );
