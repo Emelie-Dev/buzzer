@@ -25,7 +25,8 @@ export const handleSearch = asyncErrorHandler(
     let { query, page } = req.query;
     let search;
 
-    if (!query) return next(new CustomError('Please provide a query!', 400));
+    if (!query || String(query).toLowerCase().trim() === '')
+      return next(new CustomError('Please provide a query!', 400));
 
     query = String(query).toLowerCase().trim();
 
@@ -104,7 +105,7 @@ export const handleSearch = asyncErrorHandler(
         {
           q: query,
           query_by: 'description',
-          filter_by: `id:!=${String(req.user?._id)}`,
+          filter_by: `user:!=${String(req.user?._id)}`,
           page: Number(page),
           per_page: 10,
         },
@@ -115,7 +116,7 @@ export const handleSearch = asyncErrorHandler(
         {
           q: query,
           query_by: 'description',
-          filter_by: `id:!=${String(req.user?._id)}`,
+          filter_by: `user:!=${String(req.user?._id)}`,
           page: Number(page),
           per_page: 10,
         },
@@ -149,7 +150,18 @@ export const handleSearch = asyncErrorHandler(
               name: 1,
               photo: 1,
               createdAt: 1,
-              isFollowing: { $in: [req.user?._id, '$followers.follower'] },
+              followObj: {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: '$followers',
+                      as: 'f',
+                      cond: { $eq: ['$$f.follower', req.user?._id] },
+                    },
+                  },
+                  0,
+                ],
+              },
               followers: { $size: '$followers' },
             },
           },
@@ -432,7 +444,7 @@ export const handleSearch = asyncErrorHandler(
               'owner._id': 1,
               'owner.photo': 1,
               'owner.username': 1,
-              media: 1,
+              src: 1,
               description: 1,
               createdAt: 1,
               views: { $size: '$views' },

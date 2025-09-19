@@ -9,7 +9,7 @@ const typesenseDev = new Typesense.Client({
     },
   ],
   apiKey: 'xyz',
-  connectionTimeoutSeconds: 2,
+  connectionTimeoutSeconds: 10,
 });
 
 const typesenseProd = new Typesense.Client({
@@ -21,7 +21,7 @@ const typesenseProd = new Typesense.Client({
     },
   ],
   apiKey: process.env.TYPESENSE_PROD_KEY!,
-  connectionTimeoutSeconds: 2,
+  connectionTimeoutSeconds: 10,
 });
 
 export default process.env.NODE_ENV === 'production'

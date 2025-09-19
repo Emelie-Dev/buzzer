@@ -1,3 +1,38 @@
+const symbolsToIndex = [
+  '!',
+  '"',
+  '#',
+  '$',
+  '%',
+  '&',
+  "'",
+  '(',
+  ')',
+  '*',
+  '+',
+  ',',
+  '-',
+  '.',
+  '/',
+  ':',
+  ';',
+  '<',
+  '=',
+  '>',
+  '?',
+  '@',
+  '[',
+  '\\',
+  ']',
+  '^',
+  '_',
+  '`',
+  '{',
+  '|',
+  '}',
+  '~',
+];
+
 export default [
   {
     name: 'searches',
@@ -11,22 +46,24 @@ export default [
       },
       { name: 'searchCount', type: 'int32' },
     ],
+    symbols_to_index: symbolsToIndex,
     default_sorting_field: 'searchCount',
   },
   {
     name: 'users',
     fields: [
-      { name: 'id', type: 'string' },
+      { name: 'id', type: 'string', facet: true },
       { name: 'username', type: 'string' },
       { name: 'name', type: 'string' },
       { name: 'createdAt', type: 'int64' },
     ],
+    symbols_to_index: symbolsToIndex,
   },
   {
     name: 'contents',
     fields: [
       { name: 'id', type: 'string' },
-      { name: 'user', type: 'string' },
+      { name: 'user', type: 'string', facet: true },
       { name: 'description', type: 'string' },
       {
         name: 'media',
@@ -34,12 +71,13 @@ export default [
       },
       { name: 'createdAt', type: 'int64' },
     ],
+    symbols_to_index: symbolsToIndex,
   },
   {
     name: 'reels',
     fields: [
       { name: 'id', type: 'string' },
-      { name: 'user', type: 'string' },
+      { name: 'user', type: 'string', facet: true },
       { name: 'description', type: 'string' },
       {
         name: 'src',
@@ -47,5 +85,6 @@ export default [
       },
       { name: 'createdAt', type: 'int64' },
     ],
+    symbols_to_index: symbolsToIndex,
   },
 ];

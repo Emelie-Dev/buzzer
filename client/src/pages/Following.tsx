@@ -9,6 +9,12 @@ import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
+import Skeleton from 'react-loading-skeleton';
+import LoadingAnimation from '../components/LoadingAnimation';
+import { apiClient, getUrl } from '../Utilities';
+import { toast } from 'sonner';
+import Engagements from '../components/Engagements';
+import { Link } from 'react-router-dom';
 
 type CarouselData = {
   media: Content[];
@@ -34,159 +40,25 @@ type MediaData = {
 
 export type DataItem = CarouselData | MediaData;
 
-const data: Content[] = [
-  {
-    src: 'content16',
-    type: 'image',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-  {
-    src: 'content7',
-    type: 'image',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-  },
-  {
-    src: 'content9',
-    type: 'image',
-    description: '',
-  },
-];
-
-const data2: Content[] = [
-  {
-    src: 'content14',
-    type: 'image',
-  },
-  {
-    src: 'content21',
-    type: 'video',
-    description: 'Messi celebrating a goal with fans.',
-  },
-  {
-    src: 'content8',
-    type: 'image',
-    description: 'Focused during a free-kick.',
-  },
-  {
-    src: 'content9',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content10',
-    type: 'image',
-    description: 'In action on the field.',
-  },
-  {
-    src: 'content11',
-    type: 'image',
-    description: 'Holding the World Cup trophy.',
-  },
-  {
-    src: 'content12',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content13',
-    type: 'image',
-    description: 'Messi dribbling past defenders.',
-  },
-  {
-    src: 'content14',
-    type: 'image',
-    description: 'Close-up of his iconic jersey.',
-  },
-  {
-    src: 'content15',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content20',
-    type: 'video',
-    description: 'Messi looking up, determined.',
-  },
-  {
-    src: 'content17',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content18',
-    type: 'image',
-    description: 'Celebrating with his teammates.',
-  },
-  {
-    src: 'content24',
-    type: 'video',
-    description: 'Messi lifting a trophy high.',
-  },
-];
-
-const dataList: DataItem[] = [
-  {
-    media: data,
-    name: 'Godfather 👑👑',
-    username: '@dagodfather_100',
-    photo: 'profile1.jpeg',
-    time: '10m',
-    aspectRatio: 1 / 1,
-    type: 'carousel',
-    description: `Big vibes only! 🌍 Had an amazing time with the fam last night. Nothing but love and energy! 💥✨ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#001</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfrobeatKing</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#OBO👑</span>. Blessed to do what I love with these amazing people. 💯🖤
-
-        
-        Shoutout to my brothers <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@real_kiddominant</span> and <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@thechefchi</span> 🙌🔥 Let’s keep pushing the culture! 🎶✨
-        
-        <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NaijaToTheWorld</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#30BG</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Davido</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Afrobeats</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LagosVibes</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfricanGiant</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewMusicLoading 🎵</span>.`,
-  },
-  {
-    media: 'content26',
-    name: 'Coach of Mancheter City',
-    username: '@pepguardiola',
-    photo: 'profile3.jpeg',
-    time: '5h',
-    aspectRatio: 7 / 8,
-    type: 'image',
-    description: `We keep pushing harder everyday, to achieve greatness.`,
-  },
-  {
-    media: data2,
-    name: 'Lionel Messi 🐐🐐',
-    username: '@absolute_messi',
-    photo: 'profile2.jpeg',
-    time: '3h',
-    aspectRatio: 4 / 5,
-    type: 'carousel',
-    description: `Grateful for every step of this journey ⚽️. From Rosario to Barcelona, Paris, and now Miami, it’s always been about the love of the game and the incredible people I’ve met along the way ❤️💙.
-
-  Special memories with my family, teammates, and fans who’ve been there through it all. Thank you! 🙏
-
-  <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#SiempreMessi</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FromRosarioToTheWorld 🌍</span>
-
-  Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@fcbarcelona</span> – Dreams started here 💙❤️ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@psg</span> – Another chapter, another challenge 🌟 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@intermiamicf</span> – Writing new stories in the USA⚽️
-
-  <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Argentina</span> – Always proud to wear these colors 💪 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#VamosAlbiceleste</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LaPulga</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Goat</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewGoalsAhead</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FootballFamily</span>`,
-  },
-  {
-    media: 'content27',
-    name: 'Antonella',
-    username: '@antonellarocuzzo',
-    photo: 'profile4.jpeg',
-    time: '2d',
-    aspectRatio: 9 / 16,
-    type: 'video',
-    description: '',
-  },
-];
-
 const Following = () => {
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
-  const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
-    useScrollHandler();
+  const {
+    activeVideo,
+    setActiveVideo,
+    contentRef,
+    scrollHandler,
+    posts: contents,
+    setPosts: setContents,
+    postData,
+  } = useScrollHandler(false, 'v1/contents?category=following');
 
-  const { setShowSearchPage } = useContext(GeneralContext);
+  const [followList, setFollowList] = useState<Set<string>>(new Set());
+  const [engagementModal, setEngagementModal] = useState<
+    'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
+  >(null);
+
+  const { setShowSearchPage, suggestedUsers, setSuggestedUsers } =
+    useContext(GeneralContext);
 
   useEffect(() => {
     document.title = 'Buzzer - Following';
@@ -197,6 +69,33 @@ const Following = () => {
       setShowSearchPage(false);
     };
   }, []);
+
+  const hasViewedAll = (stories: any[]) => {
+    return stories.every((story) => story.hasViewed);
+  };
+
+  const followUser = async (id: string) => {
+    const newList = new Set(followList);
+    newList.add(id);
+    setFollowList(newList);
+
+    try {
+      await apiClient.post(`v1/follow/${id}`);
+
+      setSuggestedUsers((prevValue) =>
+        prevValue.filter((user) => user._id !== id)
+      );
+    } catch (err: any) {
+      if (!err.response) {
+        toast.error(`Could not follow user. Please Try again.`);
+      } else {
+        toast.error(err.response.data.message);
+      }
+    } finally {
+      newList.delete(id);
+      setFollowList(new Set(newList));
+    }
+  };
 
   return (
     <>
@@ -210,14 +109,65 @@ const Following = () => {
             value={{ contentRef, activeVideo, setActiveVideo }}
           >
             <div className={styles['content-container']}>
-              {dataList.map((data, index) => (
-                <ContentBox
-                  key={index}
-                  data={data}
-                  contentType="following"
-                  setShowMobileMenu={setShowMobileMenu}
+              {contents === null ? (
+                Array.from({ length: 2 }).map((_, index) => (
+                  <div key={index} className={styles['content-skeleton-div']}>
+                    <div className={styles['top-content-skeleton']}>
+                      <Skeleton inline height={22} />
+                      <Skeleton inline height={10} />
+                    </div>
+                    <div className={styles['bottom-content-skeleton']}>
+                      <Skeleton inline height={500} />
+                      <div className={styles['engagement-content-skeleton']}>
+                        <Skeleton circle width={50} height={50} />
+                        <br />
+                        <span className={styles['engagement-skeleton-box']}>
+                          <Skeleton circle width={40} height={40} />
+                          <Skeleton width={30} height={12} />
+                        </span>
+                        <span className={styles['engagement-skeleton-box']}>
+                          <Skeleton circle width={40} height={40} />
+                          <Skeleton width={30} height={12} />
+                        </span>
+                        <span className={styles['engagement-skeleton-box']}>
+                          <Skeleton circle width={40} height={40} />
+                          <Skeleton width={30} height={12} />
+                        </span>
+                        <span className={styles['engagement-skeleton-box']}>
+                          <Skeleton circle width={40} height={40} />
+                          <Skeleton width={30} height={12} />
+                        </span>
+                      </div>
+                    </div>
+                    <Skeleton inline width={'80%'} height={40} />
+                  </div>
+                ))
+              ) : contents.length === 0 ? (
+                <div className={styles['no-data-text']}>
+                  Something went wrong while loading contents. Please refresh
+                  the page or check your connection.
+                </div>
+              ) : (
+                contents.map((data, index) => (
+                  <ContentBox
+                    key={index}
+                    data={data}
+                    contentType="home"
+                    setContents={setContents}
+                    setShowMobileMenu={setShowMobileMenu}
+                  />
+                ))
+              )}
+
+              {postData.loading && (
+                <LoadingAnimation
+                  style={{
+                    width: '3rem',
+                    height: '3rem',
+                    transform: 'scale(2.5)',
+                  }}
                 />
-              ))}
+              )}
             </div>
           </ContentContext.Provider>
 
@@ -231,144 +181,100 @@ const Following = () => {
             <span className={styles['suggested-text']}>Suggested for you</span>
 
             <div className={styles['suggested-users']}>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
+              {suggestedUsers === null ? (
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className={styles['suggested-skeleton-box']}>
+                    <Skeleton circle height={48} width={48} />
+                    <div className={styles['suggested-skeleton-box2']}>
+                      <Skeleton height={14} width="50%" />
+                      <Skeleton height={14} width="80%" />
+                    </div>
+                    <Skeleton height={30} width={60} />
+                  </div>
+                ))
+              ) : suggestedUsers.length === 0 ? (
+                <div className={styles['no-data-text']}>
+                  We couldn’t find any users at the moment.
+                </div>
+              ) : (
+                suggestedUsers.slice(0, 10).map((user) => (
+                  <article key={user._id} className={styles['suggested-user']}>
+                    <Link to={`/@${user.username}`}>
+                      <span
+                        className={`${styles['suggested-img-box']} ${
+                          user.stories.length > 0
+                            ? hasViewedAll(user.stories)
+                              ? styles['suggested-img-box2']
+                              : styles['suggested-img-box3']
+                            : ''
+                        }`}
+                      >
+                        <img
+                          src={getUrl(user.photo, 'users')}
+                          className={styles['suggested-user-img']}
+                        />
+                      </span>
 
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
+                      <span className={styles['suggested-user-names']}>
+                        <span className={styles['suggested-user-username']}>
+                          {user.name}
+                        </span>
+                        <span className={styles['suggested-user-handle']}>
+                          @{user.username}
+                        </span>
+                      </span>
 
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
+                      <span
+                        className={styles['follow-btn-box']}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          className={`${styles['follow-btn']} ${
+                            followList.has(user._id)
+                              ? styles['disable-btn']
+                              : ''
+                          }`}
+                          onClick={() => followUser(user._id)}
+                        >
+                          <span
+                            className={`${
+                              followList.has(user._id)
+                                ? styles['follow-txt']
+                                : ''
+                            } `}
+                          >
+                            Follow
+                          </span>
+                        </button>
 
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
-              <article className={styles['suggested-user']}>
-                <img
-                  src="../../assets/images/users/user6.jpeg"
-                  className={styles['suggested-user-img']}
-                />
-
-                <span className={styles['suggested-user-names']}>
-                  <span className={styles['suggested-user-username']}>
-                    Arya Stark
-                  </span>
-                  <span className={styles['suggested-user-handle']}>
-                    @aryaofhousestark
-                  </span>
-                </span>
-
-                <button className={styles['follow-btn']}>Follow</button>
-              </article>
+                        {followList.has(user._id) && (
+                          <LoadingAnimation
+                            style={{
+                              position: 'absolute',
+                              zIndex: 2,
+                              width: 60,
+                              height: 60,
+                              opacity: 0.7,
+                            }}
+                          />
+                        )}
+                      </span>
+                    </Link>
+                  </article>
+                ))
+              )}
             </div>
+
+            {suggestedUsers && suggestedUsers.length > 10 && (
+              <div>
+                <span
+                  className={styles['more-users-text']}
+                  onClick={() => setEngagementModal('suggested')}
+                >
+                  Show more
+                </span>
+              </div>
+            )}
           </div>
         </section>
       </section>
@@ -378,6 +284,10 @@ const Following = () => {
           showMobileMenu={showMobileMenu}
           setShowMobileMenu={setShowMobileMenu}
         />
+      )}
+
+      {engagementModal && (
+        <Engagements value={engagementModal} setValue={setEngagementModal} />
       )}
     </>
   );

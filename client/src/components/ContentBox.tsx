@@ -15,7 +15,7 @@ import CommentBox from './CommentBox';
 import ShareMedia from '../components/ShareMedia';
 import { Content } from '../components/CarouselItem';
 import ContentItem from './ContentItem';
-import { apiClient, getTime, getUrl } from '../Utilities';
+import { apiClient, getTime, getUrl, getEngagementValue } from '../Utilities';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { toast } from 'sonner';
 import { IoMdHeart } from 'react-icons/io';
@@ -446,18 +446,6 @@ const ContentBox = ({
       );
     } finally {
       setLoading({ ...loading, like: false });
-    }
-  };
-
-  const getEngagementValue = (field: number) => {
-    if (field > 1_000_000_000) {
-      return `${Number((field / 1_000_000_000).toFixed(1))}B`;
-    } else if (field > 1_000_000) {
-      return `${Number((field / 1_000_000).toFixed(1))}M`;
-    } else if (field > 9999) {
-      return `${Number((field / 1_000).toFixed(1))}K`;
-    } else {
-      return field;
     }
   };
 

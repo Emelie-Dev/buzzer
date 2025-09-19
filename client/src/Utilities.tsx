@@ -282,3 +282,15 @@ export const getTime = (time: string, comment = false) => {
 
   return value;
 };
+
+export const getEngagementValue = (field: number) => {
+  if (field > 1_000_000_000) {
+    return `${Number((field / 1_000_000_000).toFixed(1))}B`;
+  } else if (field > 1_000_000) {
+    return `${Number((field / 1_000_000).toFixed(1))}M`;
+  } else if (field > 9999) {
+    return `${Number((field / 1_000).toFixed(1))}K`;
+  } else {
+    return field;
+  }
+};

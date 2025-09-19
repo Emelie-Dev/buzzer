@@ -102,6 +102,8 @@ const CommentBox = ({
   const [isEmpty, setIsEmpty] = useState({ post: true, div: true });
   const [posting, setPosting] = useState(false);
   const [reply, setReply] = useState<any>(undefined);
+  const [seenSlides, setSeenSlides] = useState(new Set());
+  const [viewed, setViewed] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null!);
   const listRef = useRef<HTMLUListElement>(null!);
@@ -658,6 +660,17 @@ const CommentBox = ({
     }
   };
 
+  const handleView = async () => {
+    if (viewed) return;
+
+    // await apiClient.post('v1/views', {
+    //   collection: contentType === 'reels' ? 'reel' : 'content',
+    //   documentId: contentId,
+    // });
+
+    setViewed(true);
+  };
+
   return ReactDOM.createPortal(
     <section className={styles.section} onClick={handleClick}>
       <span
@@ -685,6 +698,7 @@ const CommentBox = ({
               type="comment"
               hideData={hideData}
               setHideData={setHideData}
+              viewObj={{ viewed, setViewed, handleView }}
             />
           ) : (
             <CarouselItem
@@ -697,6 +711,7 @@ const CommentBox = ({
               viewType="comment"
               contentType={reels ? 'reels' : 'single'}
               description={description}
+              viewsData={{ seenSlides, setSeenSlides }}
             />
           )}
         </div>
