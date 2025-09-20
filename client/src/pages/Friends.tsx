@@ -4,8 +4,6 @@ import { PiCheckFatFill } from 'react-icons/pi';
 import { useEffect, useRef, useState, useContext } from 'react';
 import { ContentContext, GeneralContext } from '../Contexts';
 import ContentBox from '../components/ContentBox';
-import { Content } from '../components/CarouselItem';
-import { DataItem } from './Following';
 import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
@@ -13,153 +11,12 @@ import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
 import { IoPeopleSharp } from 'react-icons/io5';
 import FriendRequests from '../components/FriendRequests';
-
-const data: Content[] = [
-  {
-    src: 'content16',
-    type: 'image',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-  {
-    src: 'content7',
-    type: 'image',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-  },
-  {
-    src: 'content9',
-    type: 'image',
-    description: '',
-  },
-];
-
-const data2: Content[] = [
-  {
-    src: 'content14',
-    type: 'image',
-  },
-  {
-    src: 'content21',
-    type: 'video',
-    description: 'Messi celebrating a goal with fans.',
-  },
-  {
-    src: 'content8',
-    type: 'image',
-    description: 'Focused during a free-kick.',
-  },
-  {
-    src: 'content9',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content10',
-    type: 'image',
-    description: 'In action on the field.',
-  },
-  {
-    src: 'content11',
-    type: 'image',
-    description: 'Holding the World Cup trophy.',
-  },
-  {
-    src: 'content12',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content13',
-    type: 'image',
-    description: 'Messi dribbling past defenders.',
-  },
-  {
-    src: 'content14',
-    type: 'image',
-    description: 'Close-up of his iconic jersey.',
-  },
-  {
-    src: 'content15',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content20',
-    type: 'video',
-    description: 'Messi looking up, determined.',
-  },
-  {
-    src: 'content17',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content18',
-    type: 'image',
-    description: 'Celebrating with his teammates.',
-  },
-  {
-    src: 'content24',
-    type: 'video',
-    description: 'Messi lifting a trophy high.',
-  },
-];
-
-const dataList: DataItem[] = [
-  {
-    media: data,
-    name: 'Godfather 👑👑',
-    username: '@dagodfather_100',
-    photo: 'profile1.jpeg',
-    time: '10m',
-    aspectRatio: 1 / 1,
-    type: 'carousel',
-    description: `Big vibes only! 🌍 Had an amazing time with the fam last night. Nothing but love and energy! 💥✨ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#001</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfrobeatKing</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#OBO👑</span>. Blessed to do what I love with these amazing people. 💯🖤
-
-        
-        Shoutout to my brothers <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@real_kiddominant</span> and <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@thechefchi</span> 🙌🔥 Let’s keep pushing the culture! 🎶✨
-        
-        <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NaijaToTheWorld</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#30BG</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Davido</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Afrobeats</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LagosVibes</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#AfricanGiant</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewMusicLoading 🎵</span>.`,
-  },
-  {
-    media: 'content26',
-    name: 'Coach of Mancheter City',
-    username: '@pepguardiola',
-    photo: 'profile3.jpeg',
-    time: '5h',
-    aspectRatio: 7 / 8,
-    type: 'image',
-    description: `We keep pushing harder everyday, to achieve greatness.`,
-  },
-  {
-    media: data2,
-    name: 'Lionel Messi 🐐🐐',
-    username: '@absolute_messi',
-    photo: 'profile2.jpeg',
-    time: '3h',
-    aspectRatio: 4 / 5,
-    type: 'carousel',
-    description: `Grateful for every step of this journey ⚽️. From Rosario to Barcelona, Paris, and now Miami, it’s always been about the love of the game and the incredible people I’ve met along the way ❤️💙.
-
-Special memories with my family, teammates, and fans who’ve been there through it all. Thank you! 🙏
-
-<span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#SiempreMessi</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FromRosarioToTheWorld 🌍</span>
-
-Clubs and moments: <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@fcbarcelona</span> – Dreams started here 💙❤️ <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@psg</span> – Another chapter, another challenge 🌟 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">@intermiamicf</span> – Writing new stories in the USA⚽️
-
-<span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Argentina</span> – Always proud to wear these colors 💪 <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#VamosAlbiceleste</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#LaPulga</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#Goat</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#NewGoalsAhead</span> <span style="color:#a855f7;cursor: pointer;font-family: appFontMedium;">#FootballFamily</span>`,
-  },
-  {
-    media: 'content27',
-    name: 'Antonella',
-    username: '@antonellarocuzzo',
-    photo: 'profile4.jpeg',
-    time: '2d',
-    aspectRatio: 9 / 16,
-    type: 'video',
-    description: '',
-  },
-];
+import Skeleton from 'react-loading-skeleton';
+import LoadingAnimation from '../components/LoadingAnimation';
+import { apiClient, getUrl } from '../Utilities';
+import { toast } from 'sonner';
+import { MdOutlineHourglassEmpty, MdOutlineWifiOff } from 'react-icons/md';
+import { Link } from 'react-router-dom';
 
 const Friends = () => {
   const [category, setCategory] = useState<'users' | 'contents' | null>(null);
@@ -169,10 +26,25 @@ const Friends = () => {
   const containerRef = useRef<HTMLDivElement>(null!);
   const mainRef = useRef<HTMLDivElement>(null!);
 
-  const { activeVideo, setActiveVideo, contentRef, scrollHandler } =
-    useScrollHandler();
+  const {
+    activeVideo,
+    setActiveVideo,
+    contentRef,
+    scrollHandler,
+    posts: contents,
+    setPosts: setContents,
+    postData,
+  } = useScrollHandler(false, 'v1/contents?category=friends');
 
   const { setShowSearchPage } = useContext(GeneralContext);
+
+  const [requestsData, setRequestsData] = useState<{
+    type: 'sent' | 'received';
+    value: any[];
+    loading: boolean | 'error';
+  }>({ type: 'received', value: [], loading: false });
+
+  const [replyQueue, setReplyQueue] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     document.title = 'Buzzer - Friends';
@@ -215,6 +87,73 @@ const Friends = () => {
       mainRef.current.scrollTop = 0;
     }
   }, [category]);
+
+  useEffect(() => {
+    getRequests();
+  }, [requestsData.type]);
+
+  const getRequests = async () => {
+    if (requestsData.loading === true) return;
+
+    setRequestsData((prev) => ({ ...prev, loading: true }));
+
+    try {
+      const { data } = await apiClient(
+        `v1/friends/requests?type=${requestsData.type}&page=true`
+      );
+
+      setRequestsData((prev) => ({
+        ...prev,
+        value: data.data.requests,
+        loading: false,
+      }));
+    } catch {
+      setRequestsData((prev) => ({
+        ...prev,
+        loading: 'error',
+      }));
+
+      toast.error(`An error occured while getting friend requests.`);
+    }
+  };
+
+  const handleRequests = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRequestsData({
+      value: [],
+      type: e.target.value as 'sent' | 'received',
+      loading: false,
+    });
+  };
+
+  const replyRequest =
+    (action: 'accept' | 'reject', id: string) =>
+    async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      e.preventDefault();
+      if (replyQueue.has(id)) return;
+
+      const queue = new Set(replyQueue).add(id);
+      setReplyQueue(queue);
+
+      try {
+        await apiClient.post(`v1/friends/request/respond/${id}`, { action });
+
+        setRequestsData((prev) => ({
+          ...prev,
+          value: prev.value.filter((request) => request._id !== id),
+        }));
+      } catch (err: any) {
+        if (!err.response) {
+          toast.error(`Could not ${action} request. Please Try again.`);
+        } else {
+          toast.error(err.response.data.message);
+        }
+      } finally {
+        queue.delete(id);
+        setReplyQueue(new Set(queue));
+      }
+    };
+
+  console.log(requestsData.value);
 
   return (
     <>
@@ -481,21 +420,66 @@ const Friends = () => {
             <ContentContext.Provider
               value={{ contentRef, activeVideo, setActiveVideo }}
             >
-              <div
-                className={`${styles['content-container']} ${
-                  category === 'users' || category === null
-                    ? styles['hide-section']
-                    : ''
-                }`}
-              >
-                {dataList.map((data, index) => (
-                  <ContentBox
-                    key={index}
-                    data={data}
-                    contentType="home"
-                    setShowMobileMenu={setShowMobileMenu}
+              <div className={styles['content-container']}>
+                {contents === null ? (
+                  Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className={styles['content-skeleton-div']}>
+                      <div className={styles['top-content-skeleton']}>
+                        <Skeleton inline height={22} />
+                        <Skeleton inline height={10} />
+                      </div>
+                      <div className={styles['bottom-content-skeleton']}>
+                        <Skeleton inline height={500} />
+                        <div className={styles['engagement-content-skeleton']}>
+                          <Skeleton circle width={50} height={50} />
+                          <br />
+                          <span className={styles['engagement-skeleton-box']}>
+                            <Skeleton circle width={40} height={40} />
+                            <Skeleton width={30} height={12} />
+                          </span>
+                          <span className={styles['engagement-skeleton-box']}>
+                            <Skeleton circle width={40} height={40} />
+                            <Skeleton width={30} height={12} />
+                          </span>
+                          <span className={styles['engagement-skeleton-box']}>
+                            <Skeleton circle width={40} height={40} />
+                            <Skeleton width={30} height={12} />
+                          </span>
+                          <span className={styles['engagement-skeleton-box']}>
+                            <Skeleton circle width={40} height={40} />
+                            <Skeleton width={30} height={12} />
+                          </span>
+                        </div>
+                      </div>
+                      <Skeleton inline width={'80%'} height={40} />
+                    </div>
+                  ))
+                ) : contents.length === 0 ? (
+                  <div className={styles['no-data-text']}>
+                    Something went wrong while loading contents. Please refresh
+                    the page or check your connection.
+                  </div>
+                ) : (
+                  contents.map((data, index) => (
+                    <ContentBox
+                      key={index}
+                      data={data}
+                      contentType="home"
+                      setContents={setContents}
+                      setShowMobileMenu={setShowMobileMenu}
+                    />
+                  ))
+                )}
+
+                {postData.loading && (
+                  <LoadingAnimation
+                    style={{
+                      width: '3rem',
+                      height: '3rem',
+                      transform: 'scale(2.5)',
+                    }}
                   />
-                ))}
+                )}
               </div>
             </ContentContext.Provider>
           </div>
@@ -506,146 +490,113 @@ const Friends = () => {
           <AsideHeader activeVideo={activeVideo} />
 
           <div className={styles['friends-request-container']}>
-            <span className={styles['friends-request-text']}>
-              Friend requests
+            <span className={styles['friends-request-header']}>
+              <span className={styles['friends-request-text']}>
+                Friend requests
+              </span>
+              <select
+                className={styles['request-type-select']}
+                value={requestsData.type}
+                onChange={handleRequests}
+              >
+                <option value="received">Received</option>
+                <option value="sent">Sent</option>
+              </select>
             </span>
 
             <div className={styles['friend-requests']}>
-              <article className={styles['friend-request']}>
-                <span className={styles['friend-request-img-box']}>
-                  <img
-                    className={styles['friend-request-img']}
-                    src="../../assets/images/users/user13.jpeg"
-                  />
-
-                  <span className={styles['friend-request-icon-box']}>
-                    <PiCheckFatFill className={styles['friend-request-icon']} />
-                  </span>
-                </span>
-
-                <div className={styles['friend-request-details']}>
-                  <span className={styles['friend-request-username']}>
-                    travis_scott
-                  </span>
-
-                  <div className={styles['friend-btn-box']}>
-                    <button className={styles['friend-accept-btn']}>
-                      Accept
-                    </button>
-                    <button className={styles['friend-decline-btn']}>
-                      Decline
-                    </button>
-                  </div>
+              {requestsData.loading === true ? (
+                <div className={styles['request-skeleton-container']}>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className={styles['request-skeleton-box']}>
+                      <Skeleton circle height={55} width={55} />
+                      <div className={styles['request-skeleton-details']}>
+                        <Skeleton height={14} width="100%" />
+                        <div>
+                          <Skeleton height={28} width={65} />
+                          <Skeleton height={28} width={65} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </article>
-
-              <article className={styles['friend-request']}>
-                <span className={styles['friend-request-img-box']}>
-                  <img
-                    className={styles['friend-request-img']}
-                    src="../../assets/images/users/user10.jpeg"
-                  />
-                </span>
-
-                <div className={styles['friend-request-details']}>
-                  <span className={styles['friend-request-username']}>
-                    travis_scott
-                  </span>
-
-                  <div className={styles['friend-btn-box']}>
-                    <button className={styles['friend-accept-btn']}>
-                      Accept
-                    </button>
-                    <button className={styles['friend-decline-btn']}>
-                      Decline
-                    </button>
-                  </div>
+              ) : requestsData.loading === 'error' ? (
+                <div className={styles['error-div']}>
+                  <MdOutlineWifiOff className={styles['empty-icon']} />
+                  <span>Could not get friend requests.</span>
+                  <button className={styles['error-btn']} onClick={getRequests}>
+                    Try Again
+                  </button>
                 </div>
-              </article>
-
-              <article className={styles['friend-request']}>
-                <span className={styles['friend-request-img-box']}>
-                  <img
-                    className={styles['friend-request-img']}
-                    src="../../assets/images/users/user1.jpeg"
-                  />
-
-                  <span className={styles['friend-request-icon-box']}>
-                    <PiCheckFatFill className={styles['friend-request-icon']} />
-                  </span>
-                </span>
-
-                <div className={styles['friend-request-details']}>
-                  <span className={styles['friend-request-username']}>
-                    travis_scott
-                  </span>
-
-                  <div className={styles['friend-btn-box']}>
-                    <button className={styles['friend-accept-btn']}>
-                      Accept
-                    </button>
-                    <button className={styles['friend-decline-btn']}>
-                      Decline
-                    </button>
-                  </div>
+              ) : requestsData.value.length === 0 ? (
+                <div className={styles['error-div']}>
+                  <MdOutlineHourglassEmpty className={styles['empty-icon2']} />
+                  <span>You don’t have any friend requests at the moment.</span>
                 </div>
-              </article>
+              ) : (
+                requestsData.value.map((request) => (
+                  <article
+                    key={request._id}
+                    className={styles['friend-request']}
+                  >
+                    <Link to={`/@${request.requester.username}`}>
+                      <span className={styles['friend-request-img-box']}>
+                        <img
+                          className={styles['friend-request-img']}
+                          src={getUrl(request.requester.photo, 'users')}
+                        />
 
-              <article className={styles['friend-request']}>
-                <span className={styles['friend-request-img-box']}>
-                  <img
-                    className={styles['friend-request-img']}
-                    src="../../assets/images/users/user4.jpeg"
-                  />
-                </span>
+                        {request.isFollowing && (
+                          <span className={styles['friend-request-icon-box']}>
+                            <PiCheckFatFill
+                              className={styles['friend-request-icon']}
+                            />
+                          </span>
+                        )}
+                      </span>
 
-                <div className={styles['friend-request-details']}>
-                  <span className={styles['friend-request-username']}>
-                    travis_scott
-                  </span>
+                      <div className={styles['friend-request-details']}>
+                        <span className={styles['friend-request-username']}>
+                          {request.requester.username}
+                        </span>
 
-                  <div className={styles['friend-btn-box']}>
-                    <button className={styles['friend-accept-btn']}>
-                      Accept
-                    </button>
-                    <button className={styles['friend-decline-btn']}>
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              </article>
-
-              <article className={styles['friend-request']}>
-                <span className={styles['friend-request-img-box']}>
-                  <img
-                    className={styles['friend-request-img']}
-                    src="../../assets/images/users/user5.jpeg"
-                  />
-                </span>
-
-                <div className={styles['friend-request-details']}>
-                  <span className={styles['friend-request-username']}>
-                    travis_scott
-                  </span>
-
-                  <div className={styles['friend-btn-box']}>
-                    <button className={styles['friend-accept-btn']}>
-                      Accept
-                    </button>
-                    <button className={styles['friend-decline-btn']}>
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              </article>
+                        <div className={styles['friend-btn-box']}>
+                          <button
+                            className={`${styles['friend-accept-btn']} ${
+                              replyQueue.has(request._id)
+                                ? styles['disable-btn']
+                                : ''
+                            }`}
+                            onClick={replyRequest('accept', request._id)}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className={`${styles['friend-decline-btn']} ${
+                              replyQueue.has(request._id)
+                                ? styles['disable-btn']
+                                : ''
+                            }`}
+                            onClick={replyRequest('reject', request._id)}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    </Link>
+                  </article>
+                ))
+              )}
             </div>
 
-            <span
-              className={styles['friends-request-all']}
-              onClick={() => setShowFriendRequests(true)}
-            >
-              View all
-            </span>
+            {requestsData.value.length >= 10 && (
+              <span
+                className={styles['friends-request-all']}
+                onClick={() => setShowFriendRequests(true)}
+              >
+                View all
+              </span>
+            )}
           </div>
         </section>
       </section>

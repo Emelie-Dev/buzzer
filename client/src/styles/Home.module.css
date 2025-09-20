@@ -300,15 +300,16 @@
 
 .suggested-user {
   margin-bottom: 1rem;
+  border-radius: 5px;
 }
 
 .suggested-user > a {
   display: flex;
   align-items: center;
-  border-radius: 5px;
   padding: 0.5rem;
   transition: background 0.3s;
   text-decoration: none;
+  color: black;
 }
 
 .suggested-user-img {

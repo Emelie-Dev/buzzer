@@ -5,6 +5,7 @@ import User from '../models/userModel.js';
 import CustomError from '../utils/CustomError.js';
 import Friend from '../models/friendModel.js';
 import Notification from '../models/notificationModel.js';
+import { isValidDateString } from './commentController.js';
 
 export const sendRequest = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -17,7 +18,7 @@ export const sendRequest = asyncErrorHandler(
 
     // Check if recipient is the user
     if (recipient === String(req.user?._id)) {
-      return next(new CustomError("You can't be fiends with yourself.", 400));
+      return next(new CustomError("You can't be friends with yourself.", 400));
     }
 
     // Checks if the recipient exists
@@ -76,7 +77,7 @@ export const sendRequest = asyncErrorHandler(
     if (request) {
       return next(
         new CustomError(
-          'You’ve already have a pending request with this user.',
+          'You already have a pending request with this user.',
           409
         )
       );
@@ -201,17 +202,24 @@ export const respondToRequest = asyncErrorHandler(
 
 export const getRequests = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    let { type, page = 1 } = req.query;
-    page = Number(page);
+    let { type, page, cursor } = req.query;
+
+    const cursorDate = isValidDateString(String(cursor))
+      ? new Date(String(cursor))
+      : new Date();
 
     let requests;
-    const skip = (page - 1) * 30;
 
     if (type === 'received') {
       requests = await Notification.aggregate([
         {
-          $match: { user: req.user?._id, type: { $eq: ['friend_request'] } },
+          $match: {
+            user: req.user?._id,
+            type: { $eq: ['friend_request'] },
+            createdAt: { $lt: cursorDate },
+          },
         },
+        { $limit: page === 'true' ? 10 : 20 },
         {
           $lookup: {
             from: 'users',
@@ -259,8 +267,6 @@ export const getRequests = asyncErrorHandler(
             createdAt: 1,
           },
         },
-        { $skip: skip },
-        { $limit: 30 },
       ]);
     } else if (type === 'sent') {
       requests = await Notification.aggregate([
@@ -268,8 +274,10 @@ export const getRequests = asyncErrorHandler(
           $match: {
             secondUser: req.user?._id,
             type: { $eq: ['friend_request'] },
+            createdAt: { $lt: cursorDate },
           },
         },
+        { $limit: page === 'true' ? 10 : 20 },
         {
           $lookup: {
             from: 'users',
@@ -315,8 +323,6 @@ export const getRequests = asyncErrorHandler(
             createdAt: 1,
           },
         },
-        { $skip: skip },
-        { $limit: 30 },
       ]);
     } else {
       return next(new CustomError('Invalid request!', 400));

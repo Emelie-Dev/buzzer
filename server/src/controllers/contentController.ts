@@ -15,6 +15,7 @@ import { checkVideoFilesDuration } from '../worker.js';
 import { handleMentionNotifications } from '../utils/handleNotifications.js';
 import handleCloudinary from '../utils/handleCloudinary.js';
 import { ContentAccessibility } from '../models/storyModel.js';
+import { PipelineStage } from 'mongoose';
 
 const upload = multerConfig('contents');
 
@@ -327,388 +328,322 @@ export const getContents = asyncErrorHandler(
 
     let contents;
 
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          user: { $nin: excludedUsers },
+          'settings.accessibility': {
+            $in: [ContentAccessibility.EVERYONE, ContentAccessibility.FRIENDS],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'views',
+          let: { contentId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$documentId', '$$contentId'] },
+                    { $eq: ['$user', viewerId] },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
+            { $project: { _id: 1 } },
+          ],
+          as: 'viewed',
+        },
+      },
+      { $match: { viewed: [] } },
+      {
+        $lookup: {
+          from: 'friends',
+          let: { ownerId: '$user' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$requester', '$$ownerId'] },
+                        { $eq: ['$recipient', viewerId] },
+                      ],
+                    },
+                    {
+                      $and: [
+                        { $eq: ['$requester', viewerId] },
+                        { $eq: ['$recipient', '$$ownerId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'isFriend',
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { 'settings.accessibility': ContentAccessibility.EVERYONE },
+            { isFriend: { $ne: [] } },
+          ],
+        },
+      },
+      { $sample: { size: 10 } },
+      {
+        $lookup: {
+          from: 'users',
+          let: { userId: '$user' },
+          as: 'user',
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$_id', '$$userId'],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: 'follows',
+                let: { userId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$following', '$$userId'] },
+                          {
+                            $eq: ['$follower', viewerId],
+                          },
+                        ],
+                      },
+                    },
+                  },
+                ],
+                as: 'isFollowing',
+              },
+            },
+            {
+              $addFields: {
+                isFollowing: { $first: '$isFollowing' },
+              },
+            },
+            {
+              $project: { username: 1, name: 1, photo: 1, isFollowing: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          let: { collaborators: '$collaborators' },
+          as: 'collaborators',
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $in: ['$_id', '$$collaborators'],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: 'follows',
+                let: { userId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$following', '$$userId'] },
+                          {
+                            $eq: ['$follower', viewerId],
+                          },
+                        ],
+                      },
+                    },
+                  },
+                ],
+                as: 'isFollowing',
+              },
+            },
+            {
+              $addFields: {
+                isFollowing: { $first: '$isFollowing' },
+              },
+            },
+            {
+              $project: { username: 1, name: 1, photo: 1, isFollowing: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'stories',
+          let: { userId: '$user' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
+              },
+            },
+            {
+              $lookup: {
+                from: 'views',
+                let: { storyId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$documentId', '$$storyId'] },
+                          { $eq: ['$user', viewerId] },
+                        ],
+                      },
+                    },
+                  },
+                  { $project: { _id: 1 } },
+                ],
+                as: 'storyView',
+              },
+            },
+            { $project: { _id: 1, storyView: 1 } },
+          ],
+          as: 'stories',
+        },
+      },
+      {
+        $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'comments',
+        },
+      },
+      {
+        $lookup: {
+          from: 'shares',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'shares',
+        },
+      },
+      {
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'likes',
+        },
+      },
+      {
+        $lookup: {
+          from: 'bookmarks',
+          localField: '_id',
+          foreignField: 'documentId',
+          as: 'bookmarks',
+        },
+      },
+      {
+        $addFields: {
+          user: { $first: '$user' },
+          commentsCount: { $size: '$comments' },
+          sharesCount: { $size: '$shares' },
+          likesCount: { $size: '$likes' },
+          bookmarksCount: { $size: '$bookmarks' },
+          userLike: {
+            $first: {
+              $filter: {
+                input: '$likes',
+                as: 'like',
+                cond: { $eq: ['$$like.user', viewerId] },
+              },
+            },
+          },
+          userBookmark: {
+            $first: {
+              $filter: {
+                input: '$bookmarks',
+                as: 'bookmark',
+                cond: { $eq: ['$$bookmark.user', viewerId] },
+              },
+            },
+          },
+          hasStory: {
+            $gt: [{ $size: '$stories' }, 0],
+          },
+          hasUnviewedStory: {
+            $anyElementTrue: {
+              $map: {
+                input: '$stories',
+                as: 'story',
+                in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+              },
+            },
+          },
+          comments: '$$REMOVE',
+          shares: '$$REMOVE',
+          likes: '$$REMOVE',
+          bookmarks: '$$REMOVE',
+          stories: '$$REMOVE',
+          isFriend: '$$REMOVE',
+          viewed: '$$REMOVE',
+          following: '$$REMOVE',
+        },
+      },
+    ];
+
     switch (category) {
       case 'home':
-        contents = await Content.aggregate([
-          {
-            $match: {
-              user: { $nin: excludedUsers },
-              'settings.accessibility': {
-                $in: [
-                  ContentAccessibility.EVERYONE,
-                  ContentAccessibility.FRIENDS,
-                ],
-              },
-            },
-          },
-          {
-            $lookup: {
-              from: 'views',
-              let: { contentId: '$_id' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$documentId', '$$contentId'] },
-                        { $eq: ['$user', viewerId] },
-                      ],
-                    },
-                  },
-                },
-                { $limit: 1 },
-                { $project: { _id: 1 } },
-              ],
-              as: 'viewed',
-            },
-          },
-          { $match: { viewed: [] } },
-          {
-            $lookup: {
-              from: 'friends',
-              let: { ownerId: '$user' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $or: [
-                        {
-                          $and: [
-                            { $eq: ['$requester', '$$ownerId'] },
-                            { $eq: ['$recipient', viewerId] },
-                          ],
-                        },
-                        {
-                          $and: [
-                            { $eq: ['$requester', viewerId] },
-                            { $eq: ['$recipient', '$$ownerId'] },
-                          ],
-                        },
-                      ],
-                    },
-                  },
-                },
-              ],
-              as: 'isFriend',
-            },
-          },
-          {
-            $match: {
-              $or: [
-                { 'settings.accessibility': ContentAccessibility.EVERYONE },
-                { isFriend: { $ne: [] } },
-              ],
-            },
-          },
-          { $sample: { size: 10 } },
-          {
-            $lookup: {
-              from: 'users',
-              let: { userId: '$user' },
-              as: 'user',
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $eq: ['$_id', '$$userId'],
-                    },
-                  },
-                },
-                {
-                  $lookup: {
-                    from: 'follows',
-                    let: { userId: '$_id' },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: {
-                            $and: [
-                              { $eq: ['$following', '$$userId'] },
-                              {
-                                $eq: ['$follower', viewerId],
-                              },
-                            ],
-                          },
-                        },
-                      },
-                    ],
-                    as: 'isFollowing',
-                  },
-                },
-                {
-                  $addFields: {
-                    isFollowing: { $first: '$isFollowing' },
-                  },
-                },
-                {
-                  $project: { username: 1, name: 1, photo: 1, isFollowing: 1 },
-                },
-              ],
-            },
-          },
-          {
-            $lookup: {
-              from: 'users',
-              let: { collaborators: '$collaborators' },
-              as: 'collaborators',
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $in: ['$_id', '$$collaborators'],
-                    },
-                  },
-                },
-                {
-                  $lookup: {
-                    from: 'follows',
-                    let: { userId: '$_id' },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: {
-                            $and: [
-                              { $eq: ['$following', '$$userId'] },
-                              {
-                                $eq: ['$follower', viewerId],
-                              },
-                            ],
-                          },
-                        },
-                      },
-                    ],
-                    as: 'isFollowing',
-                  },
-                },
-                {
-                  $addFields: {
-                    isFollowing: { $first: '$isFollowing' },
-                  },
-                },
-                {
-                  $project: { username: 1, name: 1, photo: 1, isFollowing: 1 },
-                },
-              ],
-            },
-          },
-          {
-            $lookup: {
-              from: 'stories',
-              let: { userId: '$user' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
-                  },
-                },
-                {
-                  $lookup: {
-                    from: 'views',
-                    let: { storyId: '$_id' },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: {
-                            $and: [
-                              { $eq: ['$documentId', '$$storyId'] },
-                              { $eq: ['$user', viewerId] },
-                            ],
-                          },
-                        },
-                      },
-                      { $project: { _id: 1 } },
-                    ],
-                    as: 'storyView',
-                  },
-                },
-                { $project: { _id: 1, storyView: 1 } },
-              ],
-              as: 'stories',
-            },
-          },
-          {
-            $lookup: {
-              from: 'comments',
-              localField: '_id',
-              foreignField: 'documentId',
-              as: 'comments',
-            },
-          },
-          {
-            $lookup: {
-              from: 'shares',
-              localField: '_id',
-              foreignField: 'documentId',
-              as: 'shares',
-            },
-          },
-          {
-            $lookup: {
-              from: 'likes',
-              localField: '_id',
-              foreignField: 'documentId',
-              as: 'likes',
-            },
-          },
-          {
-            $lookup: {
-              from: 'bookmarks',
-              localField: '_id',
-              foreignField: 'documentId',
-              as: 'bookmarks',
-            },
-          },
-          {
-            $addFields: {
-              user: { $first: '$user' },
-              commentsCount: { $size: '$comments' },
-              sharesCount: { $size: '$shares' },
-              likesCount: { $size: '$likes' },
-              bookmarksCount: { $size: '$bookmarks' },
-              userLike: {
-                $first: {
-                  $filter: {
-                    input: '$likes',
-                    as: 'like',
-                    cond: { $eq: ['$$like.user', viewerId] },
-                  },
-                },
-              },
-              userBookmark: {
-                $first: {
-                  $filter: {
-                    input: '$bookmarks',
-                    as: 'bookmark',
-                    cond: { $eq: ['$$bookmark.user', viewerId] },
-                  },
-                },
-              },
-              hasStory: {
-                $gt: [{ $size: '$stories' }, 0],
-              },
-              hasUnviewedStory: {
-                $anyElementTrue: {
-                  $map: {
-                    input: '$stories',
-                    as: 'story',
-                    in: { $eq: [{ $size: '$$story.storyView' }, 0] },
-                  },
-                },
-              },
-              comments: '$$REMOVE',
-              shares: '$$REMOVE',
-              likes: '$$REMOVE',
-              bookmarks: '$$REMOVE',
-              stories: '$$REMOVE',
-              isFriend: '$$REMOVE',
-              viewed: '$$REMOVE',
-            },
-          },
-        ]);
+        contents = await Content.aggregate(pipeline);
         break;
 
       case 'following':
-        contents = await Content.aggregate([
+        pipeline.splice(
+          5,
+          0,
           {
-            // Join with the Follow collection to see if the content's user is being followed by current user
             $lookup: {
               from: 'follows',
-              let: { contentUser: '$user' }, // field in Content referencing the user who created it
+              let: { userId: '$user' },
               pipeline: [
                 {
                   $match: {
                     $expr: {
                       $and: [
-                        { $eq: ['$following', '$$contentUser'] }, // content.user == follow.following
-                        {
-                          $eq: ['$follower', req.user?._id],
-                        },
-                        { $not: { $in: ['$$contentUser', excludedUsers] } }, // Exclude users
+                        { $eq: ['$following', '$$userId'] },
+                        { $eq: ['$follower', req.user?._id] },
                       ],
                     },
                   },
                 },
               ],
-              as: 'followInfo',
+              as: 'following',
             },
           },
-          {
-            // Only keep contents from users that current user follows
-            $match: {
-              followInfo: { $ne: [] },
-            },
-          },
-          {
-            $sample: { size: 10 }, // Random sample
-          },
-          {
-            $project: {
-              location: 0,
-              settings: 0,
-              followInfo: 0,
-              __v: 0,
-            },
-          },
-        ]);
+          { $match: { following: { $ne: [] } } }
+        );
+
+        contents = await Content.aggregate(pipeline);
         break;
 
       case 'friends':
-        contents = await Content.aggregate([
-          {
-            $lookup: {
-              from: 'friends',
-              let: { contentUser: '$user' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        {
-                          $or: [
-                            {
-                              $and: [
-                                { $eq: ['$requester', '$$contentUser'] },
-                                {
-                                  $eq: ['$recipient', req.user?._id],
-                                },
-                              ],
-                            },
-                            {
-                              $and: [
-                                {
-                                  $eq: ['$requester', req.user?._id],
-                                },
-                                { $eq: ['$recipient', '$$contentUser'] },
-                              ],
-                            },
-                          ],
-                        },
-                        { $not: { $in: ['$$contentUser', excludedUsers] } },
-                      ],
-                    },
-                  },
-                },
-              ],
-              as: 'friendInfo',
-            },
+        pipeline.splice(4, 1, {
+          $match: {
+            isFriend: { $ne: [] },
           },
-          {
-            $match: {
-              friendInfo: { $ne: [] },
-            },
-          },
-          {
-            $sample: { size: 10 },
-          },
-          {
-            $project: {
-              location: 0,
-              settings: 0,
-              friendInfo: 0,
-              __v: 0,
-            },
-          },
-        ]);
+        });
+        contents = await Content.aggregate(pipeline);
         break;
     }
 

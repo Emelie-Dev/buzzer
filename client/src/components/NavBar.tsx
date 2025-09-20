@@ -705,8 +705,8 @@ const NavBar = ({
                       <TbBrandGoogleAnalytics
                         className={styles['more-item-icon']}
                       />
+                      Analytics
                     </Link>
-                    Analytics
                   </li>
                   <li
                     className={styles['more-item']}

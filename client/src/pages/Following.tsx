@@ -152,7 +152,7 @@ const Following = () => {
                   <ContentBox
                     key={index}
                     data={data}
-                    contentType="home"
+                    contentType="following"
                     setContents={setContents}
                     setShowMobileMenu={setShowMobileMenu}
                   />
