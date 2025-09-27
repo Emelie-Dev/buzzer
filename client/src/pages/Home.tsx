@@ -334,6 +334,7 @@ const Home = () => {
                 ))
               ) : contents.length === 0 ? (
                 <div className={styles['no-data-text']}>
+                  <br /> <br />
                   Something went wrong while loading contents. Please refresh
                   the page or check your connection.
                 </div>

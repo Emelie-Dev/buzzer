@@ -1,4 +1,5 @@
 import axios from 'axios';
+import CustomError from './CustomError.js';
 // import countryLookup from 'country-code-lookup';
 
 export default async (ip: String = '') => {
@@ -15,19 +16,23 @@ export default async (ip: String = '') => {
     '13.14.183.84',
   ];
 
-  const { data: location } =
-    process.env.NODE_ENV === 'production'
-      ? await axios.get(`https://ipwho.is/${ip}`)
-      : await axios.get(
-          `https://ipwho.is/${ips[Math.floor(Math.random() * 10)]}`
-        );
+  try {
+    const { data: location } =
+      process.env.NODE_ENV === 'production'
+        ? await axios.get(`https://ipwho.is/${ip}`)
+        : await axios.get(
+            `https://ipwho.is/${ips[Math.floor(Math.random() * 10)]}`
+          );
 
-  // const locationDetails = countryLookup.byIso(location.country);
+    // const locationDetails = countryLookup.byIso(location.country);
 
-  return {
-    continent: location.continent,
-    country: location.country,
-    state: location.region,
-    city: location.city,
-  };
+    return {
+      continent: location.continent,
+      country: location.country,
+      state: location.region,
+      city: location.city,
+    };
+  } catch {
+    throw new CustomError('An error occured! Please try again.', 500);
+  }
 };

@@ -6,6 +6,8 @@ import CustomError from '../utils/CustomError.js';
 import Friend from '../models/friendModel.js';
 import Notification from '../models/notificationModel.js';
 import { isValidDateString } from './commentController.js';
+import shuffleData from '../utils/shuffleData.js';
+import { PipelineStage } from 'mongoose';
 
 export const sendRequest = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -21,6 +23,7 @@ export const sendRequest = asyncErrorHandler(
       return next(new CustomError("You can't be friends with yourself.", 400));
     }
 
+    let requestObj;
     // Checks if the recipient exists
     const recipientExists = await User.exists({
       _id: recipient,
@@ -83,7 +86,7 @@ export const sendRequest = asyncErrorHandler(
       );
     } else {
       // Send recipient notification
-      await Notification.create({
+      requestObj = await Notification.create({
         user: recipient,
         secondUser: req.user?._id,
         type: ['friend_request'],
@@ -93,6 +96,9 @@ export const sendRequest = asyncErrorHandler(
     return res.status(200).json({
       status: 'success',
       message: 'Friend request sent!',
+      data: {
+        request: requestObj,
+      },
     });
   }
 );
@@ -194,15 +200,15 @@ export const respondToRequest = asyncErrorHandler(
       status: 'success',
       message:
         action === 'accept'
-          ? 'Friend request accepted successfully.'
-          : 'Friend request rejected.',
+          ? 'Friend request accepted.'
+          : 'Friend request declined.',
     });
   }
 );
 
 export const getRequests = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    let { type, page, cursor } = req.query;
+    let { type, cursor } = req.query;
 
     const cursorDate = isValidDateString(String(cursor))
       ? new Date(String(cursor))
@@ -219,7 +225,8 @@ export const getRequests = asyncErrorHandler(
             createdAt: { $lt: cursorDate },
           },
         },
-        { $limit: page === 'true' ? 10 : 20 },
+        { $sort: { createdAt: -1 } },
+        { $limit: 20 },
         {
           $lookup: {
             from: 'users',
@@ -277,7 +284,8 @@ export const getRequests = asyncErrorHandler(
             createdAt: { $lt: cursorDate },
           },
         },
-        { $limit: page === 'true' ? 10 : 20 },
+        { $sort: { createdAt: -1 } },
+        { $limit: 20 },
         {
           $lookup: {
             from: 'users',
@@ -339,14 +347,90 @@ export const getRequests = asyncErrorHandler(
 
 export const getFriendsSugestions = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
-    // Get 20 mutual, 10 following, 10 followers, 10 others
+    // Get 10 mutual, 10 following, 5 followers, 5 others
 
     const excludedUsers: String[] =
       req.user?.settings.content.notInterested.content || [];
     excludedUsers.push(req.user?._id);
 
+    const pipeline: PipelineStage[] = [
+      {
+        $lookup: {
+          from: 'friends',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$requester', '$$userId'] },
+                        { $eq: ['$recipient', req.user?._id] },
+                      ],
+                    },
+                    {
+                      $and: [
+                        { $eq: ['$requester', req.user?._id] },
+                        { $eq: ['$recipient', '$$userId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'isFriend',
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $eq: [{ $size: '$isFriend' }, 0],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'notifications',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$user', '$$userId'] },
+                        { $eq: ['$secondUser', req.user?._id] },
+                      ],
+                    },
+                    {
+                      $and: [
+                        { $eq: ['$user', req.user?._id] },
+                        { $eq: ['$secondUser', '$$userId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'request',
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $eq: [{ $size: '$request' }, 0],
+          },
+        },
+      },
+    ];
+
     const mutuals = await User.aggregate([
       { $match: { _id: { $nin: excludedUsers } } },
+      ...pipeline,
       {
         $lookup: {
           from: 'follows',
@@ -384,21 +468,16 @@ export const getFriendsSugestions = asyncErrorHandler(
         },
       },
       {
-        $sample: { size: 20 },
-      },
-      {
-        $project: {
-          name: 1,
-          username: 1,
-          photo: 1,
-        },
+        $sample: { size: 10 },
       },
     ]);
+
     // Add mutual users id to excluded users
     mutuals.forEach((user) => excludedUsers.push(user._id));
 
     const following = await User.aggregate([
       { $match: { _id: { $nin: excludedUsers } } },
+      ...pipeline,
       {
         $lookup: {
           from: 'follows',
@@ -424,21 +503,16 @@ export const getFriendsSugestions = asyncErrorHandler(
         },
       },
       {
-        $sample: { size: 20 - mutuals.length + 10 },
-      },
-      {
-        $project: {
-          name: 1,
-          username: 1,
-          photo: 1,
-        },
+        $sample: { size: 10 - mutuals.length + 10 },
       },
     ]);
+
     // Add following users id to excluded users
     following.forEach((user) => excludedUsers.push(user._id));
 
     const followers = await User.aggregate([
       { $match: { _id: { $nin: excludedUsers } } },
+      ...pipeline,
       {
         $lookup: {
           from: 'follows',
@@ -464,29 +538,141 @@ export const getFriendsSugestions = asyncErrorHandler(
         },
       },
       {
-        $sample: { size: 30 - following.length + 10 },
-      },
-      {
-        $project: {
-          name: 1,
-          username: 1,
-          photo: 1,
-        },
+        $sample: { size: 20 - following.length + 5 },
       },
     ]);
+
     // Add following users id to excluded users
     followers.forEach((user) => excludedUsers.push(user._id));
 
     const others = await User.aggregate([
       { $match: { _id: { $nin: excludedUsers } } },
+      ...pipeline,
       {
-        $sample: { size: 40 - followers.length + 10 },
+        $sample: { size: 25 - followers.length + 5 },
+      },
+    ]);
+
+    const users = [...mutuals, ...following, ...followers, ...others];
+    const userIds = users.map((user) => user._id);
+
+    const suggestions = await User.aggregate([
+      {
+        $match: {
+          _id: { $in: userIds },
+        },
+      },
+      {
+        $lookup: {
+          from: 'stories',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$user', '$$userId'],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: 'views',
+                let: { storyId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$documentId', '$$storyId'] },
+                          { $eq: ['$user', req.user?._id] },
+                        ],
+                      },
+                    },
+                  },
+                  { $project: { _id: 1 } },
+                ],
+                as: 'storyView',
+              },
+            },
+            { $project: { _id: 1, storyView: 1 } },
+          ],
+          as: 'stories',
+        },
+      },
+      {
+        $lookup: {
+          from: 'contents',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: { $expr: { $eq: ['$user', '$$userId'] } },
+            },
+            { $sort: { createdAt: -1 } },
+            { $limit: 1 },
+            {
+              $project: {
+                media: 1,
+                createdAt: 1,
+              },
+            },
+          ],
+          as: 'contents',
+        },
+      },
+      {
+        $lookup: {
+          from: 'reels',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: { $expr: { $eq: ['$user', '$$userId'] } },
+            },
+            { $sort: { createdAt: -1 } },
+            { $limit: 1 },
+            {
+              $project: {
+                src: 1,
+                createdAt: 1,
+              },
+            },
+          ],
+          as: 'reels',
+        },
       },
       {
         $project: {
           name: 1,
           username: 1,
           photo: 1,
+          hasStory: {
+            $gt: [{ $size: '$stories' }, 0],
+          },
+          hasUnviewedStory: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: '$stories',
+                    as: 'story',
+                    cond: { $eq: [{ $size: '$$story.storyView' }, 0] },
+                  },
+                },
+              },
+              0,
+            ],
+          },
+          post: {
+            $cond: {
+              if: {
+                $gt: [
+                  { $arrayElemAt: ['$contents.createdAt', 0] },
+                  { $arrayElemAt: ['$reels.createdAt', 0] },
+                ],
+              },
+              then: { $arrayElemAt: ['$contents', 0] },
+              else: { $arrayElemAt: ['$reels', 0] },
+            },
+          },
         },
       },
     ]);
@@ -494,12 +680,7 @@ export const getFriendsSugestions = asyncErrorHandler(
     return res.status(200).json({
       status: 'success',
       data: {
-        users: {
-          mutuals,
-          following,
-          followers,
-          others,
-        },
+        users: shuffleData(suggestions),
       },
     });
   }

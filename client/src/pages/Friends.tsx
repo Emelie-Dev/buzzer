@@ -40,16 +40,26 @@ const Friends = () => {
 
   const [requestsData, setRequestsData] = useState<{
     type: 'sent' | 'received';
-    value: any[];
     loading: boolean | 'error';
-  }>({ type: 'received', value: [], loading: false });
+  }>({ type: 'received', loading: true });
+
+  const [requests, setRequests] = useState<{
+    sent: { value: any[]; end: false };
+    received: { value: any[]; end: false };
+  }>({ sent: { value: [], end: false }, received: { value: [], end: false } });
+  const [suggestions, setSuggestions] = useState<any[]>(null!);
 
   const [replyQueue, setReplyQueue] = useState<Set<string>>(new Set());
+  const [suggestionsData, setSuggestionsData] = useState({
+    queue: new Set(),
+    list: new Map(),
+  });
 
   useEffect(() => {
     document.title = 'Buzzer - Friends';
 
     scrollHandler();
+    getSuggestions();
 
     return () => {
       setShowSearchPage(false);
@@ -93,19 +103,21 @@ const Friends = () => {
   }, [requestsData.type]);
 
   const getRequests = async () => {
-    if (requestsData.loading === true) return;
-
-    setRequestsData((prev) => ({ ...prev, loading: true }));
-
     try {
       const { data } = await apiClient(
-        `v1/friends/requests?type=${requestsData.type}&page=true`
+        `v1/friends/requests?type=${requestsData.type}`
       );
 
       setRequestsData((prev) => ({
         ...prev,
-        value: data.data.requests,
         loading: false,
+      }));
+      setRequests((prev) => ({
+        ...prev,
+        [requestsData.type]: {
+          value: data.data.requests,
+          end: data.data.requests.length < 20,
+        },
       }));
     } catch {
       setRequestsData((prev) => ({
@@ -119,9 +131,8 @@ const Friends = () => {
 
   const handleRequests = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRequestsData({
-      value: [],
       type: e.target.value as 'sent' | 'received',
-      loading: false,
+      loading: true,
     });
   };
 
@@ -135,12 +146,19 @@ const Friends = () => {
       setReplyQueue(queue);
 
       try {
-        await apiClient.post(`v1/friends/request/respond/${id}`, { action });
+        const { data } = await apiClient.post(
+          `v1/friends/request/respond/${id}`,
+          { action }
+        );
 
-        setRequestsData((prev) => ({
+        setRequests((prev) => ({
           ...prev,
-          value: prev.value.filter((request) => request._id !== id),
+          received: {
+            ...prev.received,
+            value: prev.received.value.filter((request) => request._id !== id),
+          },
         }));
+        toast.success(data.message);
       } catch (err: any) {
         if (!err.response) {
           toast.error(`Could not ${action} request. Please Try again.`);
@@ -153,8 +171,92 @@ const Friends = () => {
       }
     };
 
-  console.log(requestsData.value);
+  const cancelRequest =
+    (id: string) =>
+    async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      e.preventDefault();
+      if (replyQueue.has(id)) return;
 
+      const queue = new Set(replyQueue).add(id);
+      setReplyQueue(queue);
+
+      try {
+        await apiClient.delete(`v1/friends/request/${id}`);
+
+        const request = [...suggestionsData.list].find(
+          (item) => item[1] === id
+        );
+
+        if (request) {
+          const list = new Map(suggestionsData.list);
+          list.delete(request[0]);
+          setSuggestionsData((prev) => ({ ...prev, list }));
+        }
+
+        setRequests((prev) => ({
+          ...prev,
+          sent: {
+            ...prev.sent,
+            value: prev.sent.value.filter((request) => request._id !== id),
+          },
+        }));
+        toast.success(`Friend request canceled.`);
+      } catch (err: any) {
+        if (!err.response) {
+          toast.error(`Could not cancel request. Please Try again.`);
+        } else {
+          toast.error(err.response.data.message);
+        }
+      } finally {
+        queue.delete(id);
+        setReplyQueue(new Set(queue));
+      }
+    };
+
+  const getSuggestions = async () => {
+    try {
+      const { data } = await apiClient('v1/friends/suggestions');
+
+      setSuggestions(data.data.users);
+    } catch {
+      setSuggestions([]);
+      toast.error('Couldn’t fetch your friend suggestions.');
+    }
+  };
+
+  
+  const sendRequest =
+    (id: string) =>
+    async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      e.preventDefault();
+
+      if (suggestionsData.queue.has(id)) return;
+
+      const queue = new Set(suggestionsData.queue).add(id);
+
+      setSuggestionsData((prev) => ({ ...prev, queue }));
+
+      try {
+        const { data } = await apiClient.post(`v1/friends/request/${id}`);
+
+        const list = new Map(suggestionsData.list);
+        list.set(id, data.data.request._id);
+
+        setSuggestionsData((prev) => ({ ...prev, list }));
+        toast.success(data.message);
+      } catch (err: any) {
+        if (!err.response) {
+          toast.error(`Could not send friend request. Please Try again.`);
+        } else {
+          toast.error(err.response.data.message);
+        }
+      } finally {
+        queue.delete(id);
+        setSuggestionsData((prev) => ({ ...prev, queue: new Set(queue) }));
+      }
+    };
+
+   
   return (
     <>
       <NavBar page="friends" />
@@ -209,212 +311,104 @@ const Friends = () => {
                 category === 'contents' ? styles['hide-section'] : ''
               }`}
             >
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
-
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
-
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
+              {suggestions === null ? (
+                <>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className={styles['suggestion-skeleton']}>
+                      <Skeleton width={'100%'} />
+                      <Skeleton width={'100%'} />
+                    </div>
+                  ))}
+                </>
+              ) : suggestions.length === 0 ? (
+                <div className={styles['no-data-text']}>
+                  <br /> <br />
+                  Something went wrong while loading friend suggestions. Please
+                  refresh the page or check your connection.
                 </div>
-              </article>
+              ) : (
+                suggestions.map((user) => (
+                  <article key={user._id} className={styles['user']}>
+                    <Link to={`/@${user.username}`}>
+                      {user.post &&
+                        (user.post.media ? (
+                          user.post.media[0].mediaType === 'video' ? (
+                            <video className={styles['user-content']} muted>
+                              <source
+                                src={getUrl(user.post.media[0].src, 'contents')}
+                              />
+                              Your browser does not support playing video.
+                            </video>
+                          ) : (
+                            <img
+                              className={styles['user-content']}
+                              src={getUrl(user.post.media[0].src, 'contents')}
+                            />
+                          )
+                        ) : (
+                          <video className={styles['user-content']} muted>
+                            <source src={getUrl(user.post.src, 'reels')} />
+                            Your browser does not support playing video.
+                          </video>
+                        ))}
 
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
+                      <div className={styles['user-details']}>
+                        <span
+                          className={`${styles['user-img-box']} ${
+                            user.hasStory && user.hasUnviewedStory
+                              ? styles['user-img-box3']
+                              : user.hasStory
+                              ? styles['user-img-box2']
+                              : ''
+                          }`}
+                        >
+                          <img
+                            className={`${styles['user-img']} ${
+                              !user.hasStory ? styles['no-story-img'] : ''
+                            }`}
+                            src={getUrl(user.photo, 'users')}
+                          />
+                        </span>
 
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
+                        <span className={styles['user-name-box']}>
+                          <span className={styles['user-name']}>
+                            {user.name}
+                          </span>
+                          <span className={styles['user-handle']}>
+                            {user.username}
+                          </span>
+                        </span>
 
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
-                </div>
-              </article>
-
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
-
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
-
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
-                </div>
-              </article>
-
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
-
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
-
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
-                </div>
-              </article>
-
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
-
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
-
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
-                </div>
-              </article>
-
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
-
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
-
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
-                </div>
-              </article>
-
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
-
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
-
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
-                </div>
-              </article>
-
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
-
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
-
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
-                </div>
-              </article>
-
-              <article className={styles['user']}>
-                <img
-                  className={styles['user-content']}
-                  src="../../assets/images/content/content28.jpeg"
-                />
-
-                <div className={styles['user-details']}>
-                  <span className={styles['user-img-box']}>
-                    <img
-                      className={styles['user-img']}
-                      src="../../assets/images/users/profile5.jpeg"
-                    />
-                  </span>
-
-                  <span className={styles['user-name-box']}>
-                    <span className={styles['user-name']}>Don Jazzy</span>
-                    <span className={styles['user-handle']}>donjazzy👑👑</span>
-                  </span>
-
-                  <button className={styles['user-follow-btn']}>Follow</button>
-                </div>
-              </article>
+                        {suggestionsData.list.has(user._id) ? (
+                          <button
+                            className={`${styles['user-follow-btn']} ${
+                              replyQueue.has(suggestionsData.list.get(user._id))
+                                ? styles['disable-btn']
+                                : ''
+                            } `}
+                            onClick={cancelRequest(
+                              suggestionsData.list.get(user._id)
+                            )}
+                          >
+                            Cancel Request
+                          </button>
+                        ) : (
+                          <button
+                            className={`${styles['user-follow-btn']} ${
+                              suggestionsData.queue.has(user._id)
+                                ? styles['disable-btn']
+                                : ''
+                            } `}
+                            onClick={sendRequest(user._id)}
+                          >
+                            Send Request
+                          </button>
+                        )}
+                      </div>
+                    </Link>
+                  </article>
+                ))
+              )}
             </div>
 
             <ContentContext.Provider
@@ -528,68 +522,107 @@ const Friends = () => {
                     Try Again
                   </button>
                 </div>
-              ) : requestsData.value.length === 0 ? (
+              ) : requests[requestsData.type].value.length === 0 ? (
                 <div className={styles['error-div']}>
                   <MdOutlineHourglassEmpty className={styles['empty-icon2']} />
                   <span>You don’t have any friend requests at the moment.</span>
                 </div>
               ) : (
-                requestsData.value.map((request) => (
-                  <article
-                    key={request._id}
-                    className={styles['friend-request']}
-                  >
-                    <Link to={`/@${request.requester.username}`}>
-                      <span className={styles['friend-request-img-box']}>
-                        <img
-                          className={styles['friend-request-img']}
-                          src={getUrl(request.requester.photo, 'users')}
-                        />
+                requests[requestsData.type].value.slice(0, 10).map((request) =>
+                  requestsData.type === 'received' ? (
+                    <article
+                      key={request._id}
+                      className={`${styles['friend-request']} ${
+                        replyQueue.has(request._id)
+                          ? styles['disable-link']
+                          : ''
+                      }`}
+                    >
+                      <Link to={`/@${request.requester.username}`}>
+                        <span className={styles['friend-request-img-box']}>
+                          <img
+                            className={styles['friend-request-img']}
+                            src={getUrl(request.requester.photo, 'users')}
+                          />
 
-                        {request.isFollowing && (
-                          <span className={styles['friend-request-icon-box']}>
-                            <PiCheckFatFill
-                              className={styles['friend-request-icon']}
-                            />
-                          </span>
-                        )}
-                      </span>
-
-                      <div className={styles['friend-request-details']}>
-                        <span className={styles['friend-request-username']}>
-                          {request.requester.username}
+                          {request.isFollowing && (
+                            <span className={styles['friend-request-icon-box']}>
+                              <PiCheckFatFill
+                                className={styles['friend-request-icon']}
+                              />
+                            </span>
+                          )}
                         </span>
 
-                        <div className={styles['friend-btn-box']}>
-                          <button
-                            className={`${styles['friend-accept-btn']} ${
-                              replyQueue.has(request._id)
-                                ? styles['disable-btn']
-                                : ''
-                            }`}
-                            onClick={replyRequest('accept', request._id)}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            className={`${styles['friend-decline-btn']} ${
-                              replyQueue.has(request._id)
-                                ? styles['disable-btn']
-                                : ''
-                            }`}
-                            onClick={replyRequest('reject', request._id)}
-                          >
-                            Decline
-                          </button>
+                        <div className={styles['friend-request-details']}>
+                          <span className={styles['friend-request-username']}>
+                            {request.requester.username}
+                          </span>
+
+                          <div className={styles['friend-btn-box']}>
+                            <button
+                              className={`${styles['friend-accept-btn']} `}
+                              onClick={replyRequest('accept', request._id)}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              className={`${styles['friend-decline-btn']} `}
+                              onClick={replyRequest('reject', request._id)}
+                            >
+                              Decline
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  </article>
-                ))
+                      </Link>
+                    </article>
+                  ) : (
+                    <article
+                      key={request._id}
+                      className={`${styles['friend-request']} ${
+                        replyQueue.has(request._id)
+                          ? styles['disable-link']
+                          : ''
+                      }`}
+                    >
+                      <Link to={`/@${request.recipient.username}`}>
+                        <span className={styles['friend-request-img-box']}>
+                          <img
+                            className={styles['friend-request-img']}
+                            src={getUrl(request.recipient.photo, 'users')}
+                          />
+
+                          {request.isFollowing && (
+                            <span className={styles['friend-request-icon-box']}>
+                              <PiCheckFatFill
+                                className={styles['friend-request-icon']}
+                              />
+                            </span>
+                          )}
+                        </span>
+
+                        <div className={styles['friend-request-details']}>
+                          <span className={styles['friend-request-username']}>
+                            {request.recipient.username}
+                          </span>
+
+                          <div className={styles['friend-btn-box']}>
+                            <button
+                              className={`${styles['friend-decline-btn']} ${styles['friend-decline-btn2']}`}
+                              onClick={cancelRequest(request._id)}
+                            >
+                              Cancel Request
+                            </button>
+                          </div>
+                        </div>
+                      </Link>
+                    </article>
+                  )
+                )
               )}
             </div>
 
-            {requestsData.value.length >= 10 && (
+            {requests[requestsData.type].value.length > 10 && (
               <span
                 className={styles['friends-request-all']}
                 onClick={() => setShowFriendRequests(true)}
@@ -609,7 +642,15 @@ const Friends = () => {
       )}
 
       {showFriendRequests && (
-        <FriendRequests setShowFriendRequests={setShowFriendRequests} />
+        <FriendRequests
+          setShowFriendRequests={setShowFriendRequests}
+          requests={requests}
+          setRequests={setRequests}
+          replyRequest={replyRequest}
+          cancelRequest={cancelRequest}
+          replyQueue={replyQueue}
+          requestType={requestsData.type}
+        />
       )}
     </>
   );

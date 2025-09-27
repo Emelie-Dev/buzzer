@@ -10,8 +10,7 @@
   width: 100%;
   border-right: 1px solid rgb(128, 128, 128, 0.3);
   height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .category-container {
@@ -269,18 +268,39 @@
   flex-wrap: wrap;
   width: 100%;
   overflow: auto;
-  /* height: calc(100vh - 4.32rem); */
+  height: calc(100vh - 4.32rem);
+}
+
+.suggestion-skeleton {
+  width: 31%;
+  border-radius: 5px;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.7rem;
+}
+
+.suggestion-skeleton :first-child span {
+  height: 12rem;
+}
+
+.suggestion-skeleton :nth-child(2) span {
+  height: 2.5rem;
 }
 
 .user {
-  display: flex;
   width: 31%;
+  border-radius: 5px;
+  margin-bottom: 1.5rem;
+}
+
+.user > a {
+  display: flex;
+  width: 100%;
   flex-direction: column;
   position: relative;
   align-items: center;
   border-radius: 5px;
-  cursor: pointer;
-  margin-bottom: 1.5rem;
 }
 
 .user-content {
@@ -310,6 +330,14 @@
   justify-content: center;
   padding: 0.17rem;
   border-radius: 50%;
+  background: transparent;
+}
+
+.user-img-box2 {
+  background: gray;
+}
+
+.user-img-box3 {
   background: linear-gradient(
     to bottom left,
     #dc143c,
@@ -323,6 +351,10 @@
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid rgb(0, 0, 0, 0.6);
+}
+
+.no-story-img {
+  border-color: transparent !important;
 }
 
 .user-details:hover {
@@ -373,7 +405,7 @@
   padding: 0.5rem 2.5rem;
   cursor: pointer;
   transition: opacity 0.2s;
-  margin-top: 1.5rem;
+  margin: 1.5rem 0.5rem 0;
 }
 
 .user-follow-btn:hover {
@@ -386,7 +418,7 @@
   align-items: center;
   padding: 1.5rem 6rem 2rem;
   overflow: auto;
-  /* height: calc(100vh - 4.32rem); */
+  height: calc(100vh - 4.32rem);
   animation: slideLeft 0.2 ease 0s 0 normal both;
 }
 
@@ -500,8 +532,18 @@
   opacity: 0.8;
 }
 
+.disable-link {
+  pointer-events: none;
+  opacity: 0.5 !important;
+}
+
+.friend-decline-btn2 {
+  margin: 0;
+}
+
 .disable-btn {
   opacity: 0.5 !important;
+  cursor: default;
 }
 
 /* Media Queries */
@@ -572,7 +614,8 @@
     padding: 1.5rem 3rem 2rem;
   }
 
-  .user {
+  .user,
+  .suggestion-skeleton {
     width: 46.5%;
   }
 }
@@ -604,7 +647,8 @@
     padding: 1.5rem 1.5rem 6rem;
   }
 
-  .user {
+  .user,
+  .suggestion-skeleton {
     width: 48%;
   }
 }
@@ -618,7 +662,8 @@
     padding: 1.5rem 0.5rem 6rem;
   }
 
-  .user {
+  .user,
+  .suggestion-skeleton {
     width: 49%;
   }
 }

@@ -32,7 +32,6 @@ const App = () => {
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [storyIndex, setStoryIndex] = useState<number>(0);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>(null!);
-
   useEffect(() => {
     const deviceId = crypto.randomUUID();
     const id = localStorage.getItem('deviceId');
