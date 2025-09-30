@@ -23,7 +23,6 @@ const getQueriesArray = (arr: any[]) => {
 export const handleSearch = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     let { query, page } = req.query;
-    let search;
 
     if (!query || String(query).toLowerCase().trim() === '')
       return next(new CustomError('Please provide a query!', 400));
@@ -36,7 +35,7 @@ export const handleSearch = asyncErrorHandler(
     });
 
     if (userSearch) {
-      search = await Search.findByIdAndUpdate(
+      await Search.findByIdAndUpdate(
         userSearch._id,
         {
           $inc: { searchCount: 1 },
@@ -46,7 +45,7 @@ export const handleSearch = asyncErrorHandler(
     } else {
       const location = await getUserLocation(req.clientIp);
 
-      search = await Search.create({
+      await Search.create({
         user: req.user?._id,
         query,
         location,
