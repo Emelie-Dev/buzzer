@@ -63,9 +63,10 @@ export async function syncAllCollections() {
         : await model.find();
     const typesenseDocs = docs.map((doc: any) => transformDocument(doc));
 
-    await typesense
-      .collections(schemaName)
-      .documents()
-      .import(typesenseDocs, { action: 'upsert' });
+    if (typesenseDocs.length > 0)
+      await typesense
+        .collections(schemaName)
+        .documents()
+        .import(typesenseDocs, { action: 'upsert' });
   }
 }
