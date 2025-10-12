@@ -143,6 +143,7 @@
   backdrop-filter: blur(5px);
   border-radius: 50%;
   padding: 0.1rem;
+  cursor: pointer;
 }
 
 .reel-menu-icon {
@@ -290,20 +291,18 @@
 }
 
 .music-box {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   display: inline-flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(3px);
   border-radius: 8px;
-  padding: 0.3rem 0.7rem;
-  padding-right: 0;
+  padding: 0.3rem;
   font-family: appFontMedium;
   font-size: 0.85rem;
   overflow: hidden;
   white-space: nowrap;
-  width: 100%;
-  cursor: pointer;
+  width: fit-content;
 }
 
 .music-icon {

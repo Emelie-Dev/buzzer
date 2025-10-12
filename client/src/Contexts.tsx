@@ -18,7 +18,11 @@ interface LikeObj {
   reelMenuRef: React.MutableRefObject<HTMLDivElement>;
   viewComment: boolean;
   setShowMobileMenu?: React.Dispatch<React.SetStateAction<boolean>>;
+  muted: boolean;
+  setMuted: React.Dispatch<React.SetStateAction<boolean>>;
   handleLike: () => Promise<void>;
+  handlePinnedReels: (action: 'add' | 'delete') => string | number | undefined;
+  isReelPinned: () => boolean;
 }
 
 type AudioFile = {
@@ -34,6 +38,11 @@ export const ContentContext = createContext<{
   contentRef: React.MutableRefObject<HTMLDivElement[]>;
   activeVideo: HTMLVideoElement | null;
   setActiveVideo: React.Dispatch<React.SetStateAction<HTMLVideoElement | null>>;
+  reelOptions?: {
+    autoScroll: boolean;
+    playBackSpeed: 0.5 | 1 | 1.5 | 2;
+  };
+  mainRef?: React.MutableRefObject<HTMLDivElement>;
 }>(null!);
 
 export const LikeContext = createContext<LikeObj>(null!);

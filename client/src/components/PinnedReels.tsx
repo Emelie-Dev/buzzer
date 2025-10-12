@@ -1,12 +1,26 @@
 import styles from '../styles/PinnedReels.module.css';
 import { IoClose } from 'react-icons/io5';
 import { RiUnpinFill } from 'react-icons/ri';
+import Skeleton from 'react-loading-skeleton';
+import { getTime, getUrl } from '../Utilities';
+import { Link } from 'react-router-dom';
 
 type PinnedReelsProps = {
   setShowPinnedVideos: React.Dispatch<React.SetStateAction<boolean>>;
+  pinnedReels: any[] | 'error';
+  getPinnedReels: () => Promise<void>;
+  unPinReel: (
+    e: React.MouseEvent<SVGElement, MouseEvent>,
+    id: string
+  ) => Promise<void>;
 };
 
-const PinnedReels = ({ setShowPinnedVideos }: PinnedReelsProps) => {
+const PinnedReels = ({
+  setShowPinnedVideos,
+  pinnedReels,
+  getPinnedReels,
+  unPinReel,
+}: PinnedReelsProps) => {
   return (
     <section
       className={styles.section}
@@ -26,150 +40,74 @@ const PinnedReels = ({ setShowPinnedVideos }: PinnedReelsProps) => {
         </header>
 
         <div className={styles['pinned-videos-div']}>
-          <article className={styles['pinned-video-box']}>
-            <video className={styles['pinned-video']}>
-              <source
-                src={`../../assets/images/content/content21.mp4`}
-                type="video/mp4"
+          {pinnedReels === null ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton
+                key={index}
+                className={styles['pinned-reels-skeleton']}
               />
-              Your browser does not support playing video.
-            </video>
-
-            <div className={styles['pinned-video-details']}>
-              <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
-
-              <div className={styles['pinned-video-data']}>
-                <span className={styles['profile-img-span']}>
-                  <img
-                    src={`../../assets/images/users/user8.jpeg`}
-                    className={styles['profile-img2']}
-                  />
-                </span>
-
-                <span className={styles['pinned-video-username']}>
-                  Jon Snow🦅
-                </span>
-              </div>
-
-              <span className={styles['pinned-video-duration']}>02:30</span>
+            ))
+          ) : pinnedReels === 'error' ? (
+            <div className={styles['error-div']}>
+              <span>Could not load pinned reels.</span>
+              <button className={styles['error-btn']} onClick={getPinnedReels}>
+                Try Again
+              </button>
             </div>
-          </article>
-
-          <article className={styles['pinned-video-box']}>
-            <video className={styles['pinned-video']}>
-              <source
-                src={`../../assets/images/content/content24.mp4`}
-                type="video/mp4"
-              />
-              Your browser does not support playing video.
-            </video>
-
-            <div className={styles['pinned-video-details']}>
-              <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
-
-              <div className={styles['pinned-video-data']}>
-                <span className={styles['profile-img-span']}>
-                  <img
-                    src={`../../assets/images/users/user8.jpeg`}
-                    className={styles['profile-img2']}
-                  />
-                </span>
-
-                <span className={styles['pinned-video-username']}>
-                  aryastark
-                </span>
-              </div>
-
-              <span className={styles['pinned-video-duration']}>00:47</span>
+          ) : pinnedReels.length === 0 ? (
+            <div className={styles['error-div']}>
+              <span>You don't have any pinned reels.</span>
             </div>
-          </article>
+          ) : (
+            pinnedReels.map((reel, index) => (
+              <article key={index} className={styles['pinned-video-box']}>
+                <Link to={'/'}>
+                  <video className={styles['pinned-video']}>
+                    <source src={getUrl(reel.src, 'reels')} type="video/mp4" />
+                    Your browser does not support playing video.
+                  </video>
 
-          <article className={styles['pinned-video-box']}>
-            <video className={styles['pinned-video']}>
-              <source
-                src={`../../assets/images/content/content25.mp4`}
-                type="video/mp4"
-              />
-              Your browser does not support playing video.
-            </video>
+                  <div className={styles['pinned-video-details']}>
+                    <RiUnpinFill
+                      className={styles['unpin-icon']}
+                      title="Unpin"
+                      onClick={(e) => unPinReel(e, reel._id)}
+                    />
 
-            <div className={styles['pinned-video-details']}>
-              <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
+                    <Link
+                      to={`/@${reel.username}`}
+                      className={styles['pinned-video-data']}
+                    >
+                      <span
+                        className={`${styles['profile-img-span']} ${
+                          reel.hasStory && reel.hasUnviewedStory
+                            ? styles['profile-img-span3']
+                            : reel.hasStory
+                            ? styles['profile-img-span2']
+                            : ''
+                        }`}
+                      >
+                        <img
+                          className={`${styles['profile-img2']} ${
+                            !reel.hasStory ? styles['no-story-img'] : ''
+                          }`}
+                          src={getUrl(reel.photo, 'users')}
+                        />
+                      </span>
 
-              <div className={styles['pinned-video-data']}>
-                <span className={styles['profile-img-span']}>
-                  <img
-                    src={`../../assets/images/users/user8.jpeg`}
-                    className={styles['profile-img2']}
-                  />
-                </span>
+                      <span className={styles['pinned-video-username']}>
+                        {reel.username}
+                      </span>
+                    </Link>
 
-                <span className={styles['pinned-video-username']}>
-                  missandei
-                </span>
-              </div>
-
-              <span className={styles['pinned-video-duration']}>01:08</span>
-            </div>
-          </article>
-
-          <article className={styles['pinned-video-box']}>
-            <video className={styles['pinned-video']}>
-              <source
-                src={`../../assets/images/content/content27.mp4`}
-                type="video/mp4"
-              />
-              Your browser does not support playing video.
-            </video>
-
-            <div className={styles['pinned-video-details']}>
-              <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
-
-              <div className={styles['pinned-video-data']}>
-                <span className={styles['profile-img-span']}>
-                  <img
-                    src={`../../assets/images/users/user8.jpeg`}
-                    className={styles['profile-img2']}
-                  />
-                </span>
-
-                <span className={styles['pinned-video-username']}>
-                  antonella_roccuzzo
-                </span>
-              </div>
-
-              <span className={styles['pinned-video-duration']}>12:35</span>
-            </div>
-          </article>
-
-          <article className={styles['pinned-video-box']}>
-            <video className={styles['pinned-video']}>
-              <source
-                src={`../../assets/images/content/content29.mp4`}
-                type="video/mp4"
-              />
-              Your browser does not support playing video.
-            </video>
-
-            <div className={styles['pinned-video-details']}>
-              <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
-
-              <div className={styles['pinned-video-data']}>
-                <span className={styles['profile-img-span']}>
-                  <img
-                    src={`../../assets/images/users/user8.jpeg`}
-                    className={styles['profile-img2']}
-                  />
-                </span>
-
-                <span className={styles['pinned-video-username']}>
-                  antonella_roccuzzo
-                </span>
-              </div>
-
-              <span className={styles['pinned-video-duration']}>09:16</span>
-            </div>
-          </article>
+                    <span className={styles['pinned-video-duration']}>
+                      {getTime(reel.time)}
+                    </span>
+                  </div>
+                </Link>
+              </article>
+            ))
+          )}
         </div>
       </div>
     </section>

@@ -5,10 +5,10 @@ import { BiSolidErrorAlt } from 'react-icons/bi';
 import { GoUnmute, GoMute } from 'react-icons/go';
 import { ContentContext, LikeContext } from '../Contexts';
 import { BsDot } from 'react-icons/bs';
-import { FaMusic } from 'react-icons/fa';
+import { MdLibraryMusic } from 'react-icons/md';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
-import { RiPushpinFill } from 'react-icons/ri';
-import { getUrl } from '../Utilities';
+import { RiPushpinFill, RiUnpinFill } from 'react-icons/ri';
+import { getTime, getUrl } from '../Utilities';
 
 export interface Content {
   type: 'image' | 'video';
@@ -17,7 +17,7 @@ export interface Content {
 }
 
 type CarouselItemProps = {
-  item: Content;
+  item: any;
   aspectRatio: number;
   hideData: boolean;
   contentIndex: number;
@@ -47,7 +47,7 @@ const CarouselItem = ({
   name,
   viewsData,
 }: CarouselItemProps) => {
-  const { type, src } = item;
+  const { type, src, createdAt, hasSound } = item;
   const [loading, setLoading] = useState<
     boolean | 'error' | 'empty' | 'waiting'
   >(true);
@@ -59,7 +59,7 @@ const CarouselItem = ({
     number | null | NodeJS.Timeout
   >(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const { contentRef } = useContext(ContentContext);
+  const { contentRef, reelOptions, mainRef } = useContext(ContentContext);
   const {
     like,
     setShowMenu,
@@ -68,6 +68,10 @@ const CarouselItem = ({
     viewComment,
     setShowMobileMenu,
     handleLike,
+    muted,
+    setMuted,
+    handlePinnedReels,
+    isReelPinned,
   } = useContext(LikeContext);
   const { seenSlides, setSeenSlides } = viewsData;
   const [showLike, setShowLike] = useState<boolean>(false);
@@ -84,7 +88,6 @@ const CarouselItem = ({
   const videoRef = useRef<HTMLVideoElement>(null!);
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const progressRef = useRef<HTMLInputElement>(null!);
-  const videoTime = useRef(0);
 
   useEffect(() => {
     const networkHandler = () => {
@@ -149,6 +152,12 @@ const CarouselItem = ({
       }
     }
   }, [viewComment]);
+
+  useEffect(() => {
+    if (contentType === 'reels' && reelOptions && videoRef.current) {
+      videoRef.current.playbackRate = reelOptions.playBackSpeed;
+    }
+  }, [reelOptions?.playBackSpeed]);
 
   const handleImageClick = () => {
     if (loading === false) setHideData(!hideData);
@@ -290,12 +299,6 @@ const CarouselItem = ({
     const duration = target.duration;
 
     if (!isProgressChanging) setProgress((currentTime / duration) * 100);
-
-    if (contentType !== 'carousel' && videoTime.current > currentTime) {
-      setSeenSlides(new Set());
-    }
-
-    videoTime.current = currentTime;
   };
 
   const seekMedia = () => {
@@ -393,6 +396,26 @@ const CarouselItem = ({
     observer.observe(elem);
   };
 
+  const handleEnded = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    if (contentType !== 'carousel') {
+      setSeenSlides(new Set());
+    }
+
+    handleAutoScroll();
+
+    const video = e.target as HTMLVideoElement;
+    video.currentTime = 0;
+    video.play();
+  };
+
+  const handleAutoScroll = () => {
+    if (contentType === 'reels' && reelOptions?.autoScroll) {
+      if (mainRef && mainRef.current) {
+        mainRef.current.scrollTop += mainRef.current.clientHeight;
+      }
+    }
+  };
+
   return (
     <div
       className={`${styles['carousel-item']} ${
@@ -471,8 +494,7 @@ const CarouselItem = ({
                 aspectRatio: contentType === 'reels' ? 9 / 16 : aspectRatio,
               }}
               ref={videoRef}
-              muted={mute}
-              loop={true}
+              muted={contentType === 'reels' ? muted : mute}
               onCanPlay={handleMediaLoad}
               onError={handleError('error')}
               onAbort={handleError('error')}
@@ -485,8 +507,14 @@ const CarouselItem = ({
               }}
               onDurationChange={handleMediaTime('duration')}
               autoPlay={false}
+              onEnded={handleEnded}
             >
-              <source src={getUrl(src, 'contents')} />
+              <source
+                src={getUrl(
+                  src,
+                  contentType === 'reels' ? 'reels' : 'contents'
+                )}
+              />
               Your browser does not support playing video.
             </video>
 
@@ -544,13 +572,37 @@ const CarouselItem = ({
 
           {viewType === 'comment' && (
             <>
-              <span className={styles['reel-mute-box']}>
-                <GoUnmute className={styles['reel-mute-icon']} />
-              </span>
+              {muted ? (
+                <span
+                  className={styles['reel-mute-box']}
+                  onClick={() => setMuted(!muted)}
+                >
+                  <GoMute className={styles['reel-mute-icon']} />
+                </span>
+              ) : (
+                <span
+                  className={styles['reel-mute-box']}
+                  onClick={() => setMuted(!muted)}
+                >
+                  <GoUnmute className={styles['reel-mute-icon']} />
+                </span>
+              )}
 
-              <span className={styles['reel-pin-box']}>
-                <RiPushpinFill className={styles['reel-pin-icon']} />
-              </span>
+              {isReelPinned() ? (
+                <span
+                  className={styles['reel-pin-box']}
+                  onClick={() => handlePinnedReels('delete')}
+                >
+                  <RiUnpinFill className={styles['reel-pin-icon']} />
+                </span>
+              ) : (
+                <span
+                  className={styles['reel-pin-box']}
+                  onClick={() => handlePinnedReels('add')}
+                >
+                  <RiPushpinFill className={styles['reel-pin-icon']} />
+                </span>
+              )}
             </>
           )}
 
@@ -563,7 +615,9 @@ const CarouselItem = ({
               <div className={styles['reel-details']}>
                 <span className={styles['reel-owner']}>{name}</span>
                 <BsDot className={styles.dot} />
-                <time className={styles['reel-time']}>02-04-24</time>
+                <time className={styles['reel-time']}>
+                  {getTime(createdAt)}
+                </time>
               </div>
             )}
 
@@ -587,12 +641,15 @@ const CarouselItem = ({
               )}
             </div>
 
-            <span className={styles['music-box']}>
-              <FaMusic className={styles['music-icon']} />{' '}
+            {hasSound && (
+              <span className={styles['music-box']} title="Has Sound">
+                <MdLibraryMusic />
+                {/* <FaMusic className={styles['music-icon']} />{' '}
               <span className={styles['music-owner']}>SoVinci</span>{' '}
               <BsDot className={styles.dot2} />{' '}
-              <span className={styles['music-name']}>Me and the Devil</span>
-            </span>
+              <span className={styles['music-name']}>Me and the Devil</span> */}
+              </span>
+            )}
           </div>
 
           <div className={styles['reel-progress-box']}>

@@ -339,9 +339,9 @@ const Home = () => {
                   the page or check your connection.
                 </div>
               ) : (
-                contents.map((data, index) => (
+                contents.map((data) => (
                   <ContentBox
-                    key={index}
+                    key={data._id}
                     data={data}
                     contentType="home"
                     setContents={setContents}

@@ -42,14 +42,26 @@ const app = express();
 
 config({ path: './config.env' });
 
-// Create a worker pool
-export const pool = workerpool.pool(
-  join(dirname(fileURLToPath(import.meta.url)), 'worker.js'),
-  {
-    maxWorkers: 4,
-    minWorkers: 0,
-  }
+const workerScriptFile = join(
+  dirname(fileURLToPath(import.meta.url)),
+  process.env.NODE_ENV === 'production' ? 'worker.js' : 'worker.ts'
 );
+
+export const pool = workerpool.pool(workerScriptFile, {
+  maxWorkers: 4,
+  minWorkers: 0,
+  workerThreadOpts:
+    process.env.NODE_ENV === 'production'
+      ? {}
+      : {
+          execArgv: [
+            '--import',
+            'data:text/javascript,import { register } from "node:module";' +
+              ' import { pathToFileURL } from "node:url";' +
+              ' register("ts-node/esm", pathToFileURL("./"));',
+          ],
+        }, // ts-node loader converts the ts file to js
+});
 
 // Middlewares
 

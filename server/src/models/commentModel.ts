@@ -26,7 +26,7 @@ const CommentSchema = new Schema<IComment>({
   },
   collectionName: {
     type: String,
-    enum: ['content'],
+    enum: ['story', 'content', 'comment', 'reel'],
     required: true,
   },
   documentId: {

@@ -1,18 +1,19 @@
 import workerpool from 'workerpool';
-import sharp from 'sharp';
-import fs from 'fs';
+import sharp, { Matrix3x3 } from 'sharp';
+import fs, { promises } from 'fs';
 import path from 'path';
 import { tmpdir } from 'os';
 import ffmpeg from 'fluent-ffmpeg';
 import axios from 'axios';
 import handleCloudinary from './utils/handleCloudinary.js';
-// import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-// import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+import CustomError from './utils/CustomError.js';
 
-// ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-// ffmpeg.setFfprobePath(ffprobeInstaller.path);
+const moveFile = async (src: string, dest: string) => {
+  await promises.copyFile(src, dest);
+  await promises.unlink(src);
+};
 
-const sharpFromUrl = async (url) => {
+const sharpFromUrl = async (url: string) => {
   const response = await axios.get(url, {
     responseType: 'arraybuffer', // Get the image as binary
   });
@@ -21,11 +22,11 @@ const sharpFromUrl = async (url) => {
   return sharp(imageBuffer); // Now use this as normal sharp input
 };
 
-const emitEvent = (message) => {
+const emitEvent = (message: any) => {
   return workerpool.workerEmit(message);
 };
 
-const getGrayscaleMatrix = (intensity) => {
+const getGrayscaleMatrix = (intensity: number) => {
   const base = [
     [0.2126, 0.7152, 0.0722],
     [0.2126, 0.7152, 0.0722],
@@ -43,7 +44,12 @@ const getGrayscaleMatrix = (intensity) => {
   );
 };
 
-const processImage = async (filter, filePath, tempFilePath, filename) => {
+const processImage = async (
+  filter: any,
+  filePath: string,
+  tempFilePath: string,
+  filename: string
+): Promise<void> => {
   const {
     brightness,
     contrast,
@@ -71,7 +77,7 @@ const processImage = async (filter, filePath, tempFilePath, filename) => {
       [sepia * 0.349, 1 - sepia + sepia * 0.686, sepia * 0.168],
       [sepia * 0.272, sepia * 0.534, 1 - sepia + sepia * 0.131],
     ])
-    .recomb(getGrayscaleMatrix(grayscale));
+    .recomb(getGrayscaleMatrix(grayscale) as Matrix3x3);
 
   if (blur) processedFile.blur(blur);
 
@@ -81,23 +87,27 @@ const processImage = async (filter, filePath, tempFilePath, filename) => {
   if (process.env.NODE_ENV === 'production') {
     await handleCloudinary('upload', filename, 'image', tempFilePath);
 
-    await new Promise((resolve, reject) =>
+    await new Promise<void>((resolve, reject) =>
       fs.unlink(tempFilePath, (err) => {
         if (err) return reject(err);
         resolve();
       })
     );
   } else {
-    await new Promise((resolve, reject) =>
-      fs.rename(tempFilePath, filePath, (err) => {
-        if (err) return reject(err);
-        resolve();
-      })
+    await new Promise<void>((resolve, reject) =>
+      moveFile(tempFilePath, filePath)
+        .then(() => resolve())
+        .catch((err) => reject(err))
     );
   }
 };
 
-const processVideo = (filter, filePath, tempFilePath, filename) => {
+const processVideo = (
+  filter: any,
+  filePath: string,
+  tempFilePath: string,
+  filename: string
+): Promise<void> => {
   const {
     brightness,
     contrast,
@@ -163,10 +173,9 @@ const processVideo = (filter, filePath, tempFilePath, filename) => {
             })
             .catch((err) => reject(err));
         } else {
-          fs.rename(tempFilePath, filePath, (err) => {
-            if (err) return reject(err);
-            else resolve();
-          });
+          moveFile(tempFilePath, filePath)
+            .then(() => resolve())
+            .catch((err) => reject(err));
         }
       })
       .on('error', reject)
@@ -174,12 +183,15 @@ const processVideo = (filter, filePath, tempFilePath, filename) => {
   });
 };
 
-export const checkVideoFilesDuration = async (files, seconds) => {
+export const checkVideoFilesDuration = async (
+  files: any[],
+  seconds: number
+) => {
   await Promise.all(
     files.map((file) => {
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         ffmpeg.ffprobe(file.path, (err, metadata) => {
-          const error = new Error();
+          const error = new Error() as CustomError;
           error.statusCode = 400;
 
           if (err) {
@@ -209,7 +221,7 @@ export const checkVideoFilesDuration = async (files, seconds) => {
   );
 };
 
-export const processFiles = async (files, filters) => {
+export const processFiles = async (files: any[], filters: any[]) => {
   let fileIndex = 0;
   const initialValues = {
     brightness: 1,
@@ -228,7 +240,7 @@ export const processFiles = async (files, filters) => {
       if (filterString) {
         const filterObj = filterString
           .split(' ')
-          .reduce((accumulator, field) => {
+          .reduce((accumulator: any, field: string) => {
             const key = field.slice(0, field.indexOf('('));
             const value = field.slice(
               field.indexOf('(') + 1,
@@ -269,9 +281,14 @@ export const processFiles = async (files, filters) => {
   );
 };
 
-export const transformReelFiles = (files, position = {}, volume = {}) => {
+export const transformReelFiles = (
+  files: any,
+  position: any = {},
+  volume: any = {}
+) => {
   const { reel: reelFile, sound = [], cover = [] } = files;
-  const { start = 0, end = 0 } = position;
+
+  const { start = 0, end = 1 } = position;
   const { original: originalVolume = 0, sound: soundVolume = 1 } = volume;
 
   const ext = path.extname(reelFile[0].originalname);
@@ -280,7 +297,8 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
     `processed-${Date.now()}-${Math.trunc(Math.random() * 1000000000)}${ext}`
   );
 
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
+    // metadata
     ffmpeg.ffprobe(reelFile[0].path, (err, metadata) => {
       if (err) return reject(err);
 
@@ -386,10 +404,10 @@ export const transformReelFiles = (files, position = {}, volume = {}) => {
               })
               .catch((err) => reject(err));
           } else {
-            fs.rename(tempFilePath, reelFile[0].path, (err) => {
-              if (err) reject(err);
-              else resolve();
-            });
+            0;
+            moveFile(tempFilePath, reelFile[0].path)
+              .then(() => resolve())
+              .catch((err) => reject(err));
           }
         })
         .run();

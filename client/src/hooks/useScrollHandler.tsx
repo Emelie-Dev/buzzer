@@ -120,7 +120,10 @@ const useScrollHandler = (disableFunctionality?: boolean, url?: string) => {
         const isBottom =
           target.scrollTop + target.clientHeight >= target.scrollHeight - 200;
 
-        if (isBottom && !postData.end) getPosts();
+        if (isBottom && !postData.end) {
+          setPostData((prev) => ({ ...prev, loading: true }));
+          getPosts();
+        }
       }
     }
 
@@ -144,6 +147,8 @@ const useScrollHandler = (disableFunctionality?: boolean, url?: string) => {
     posts,
     setPosts,
     postData,
+    setPostData,
+    getPosts,
   };
 };
 

@@ -397,6 +397,7 @@ export const getFriendsSugestions = asyncErrorHandler(
           pipeline: [
             {
               $match: {
+                type: { $eq: ['friend_request'] },
                 $expr: {
                   $or: [
                     {

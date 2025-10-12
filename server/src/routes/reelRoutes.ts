@@ -10,6 +10,7 @@ import {
   excludeReelType,
   deleteReel,
   getReel,
+  getPinnedReels,
 } from '../controllers/reelController.js';
 import updatePost from '../utils/updatePost.js';
 
@@ -26,6 +27,8 @@ router.post('/sounds', saveReelSound);
 router.delete('/sounds/:id', deleteReelSound);
 
 router.patch('/not-interested/:id', excludeReelType);
+
+router.post('/pinned', getPinnedReels);
 
 router.route('/:id').delete(deleteReel).get(getReel).patch(updatePost('reel'));
 

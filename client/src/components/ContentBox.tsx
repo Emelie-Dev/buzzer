@@ -25,6 +25,8 @@ type ContentBoxProps = {
   contentType: 'following' | 'home' | 'reels';
   setContents: React.Dispatch<React.SetStateAction<any[]>>;
   setShowMobileMenu?: React.Dispatch<React.SetStateAction<boolean>>;
+  pinnedReels?: any[] | 'error';
+  setPinnedReels?: React.Dispatch<React.SetStateAction<any[] | 'error'>>;
 };
 
 export type CommentData =
@@ -48,6 +50,8 @@ const ContentBox = ({
   contentType,
   setContents,
   setShowMobileMenu,
+  pinnedReels,
+  setPinnedReels,
 }: ContentBoxProps) => {
   const {
     _id: contentId,
@@ -65,8 +69,14 @@ const ContentBox = ({
     userBookmark,
     bookmarksCount,
     sharesCount,
+    src,hasSound
   } = data;
-  const type = media.length === 1 ? media[0].mediaType : 'carousel';
+  const type =
+    contentType === 'reels'
+      ? 'video'
+      : media.length === 1
+      ? media[0].mediaType
+      : 'carousel';
   const [showMore, setShowMore] = useState<boolean>(false);
   const [descriptionWidth, setDescriptionWidth] = useState<number>(0);
   const [showMenu, setShowMenu] = useState<boolean>(false);
@@ -96,7 +106,7 @@ const ContentBox = ({
       .map((user: any) => user.isFollowing)
       .filter((data: any) => data)
   );
-  const { setUser } = useContext(AuthContext);
+  const { setUser, user: authUser } = useContext(AuthContext);
   const [loading, setLoading] = useState({ like: false, save: false });
   const [comments, setComments] = useState<{
     totalCount: number;
@@ -104,6 +114,7 @@ const ContentBox = ({
   }>({ totalCount: commentsCount, value: null! });
   const [shares, setShares] = useState<number>(sharesCount);
   const [viewed, setViewed] = useState(false);
+  const [muted, setMuted] = useState(false);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -233,7 +244,7 @@ const ContentBox = ({
     try {
       if (action === 'Follow') {
         const { data } = await apiClient.post(`v1/follow/${id}`, {
-          collection: 'content',
+          collection: contentType === 'reels' ? 'reel' : 'content',
           documentId: contentId,
         });
         const follow = data.data.follow;
@@ -309,44 +320,54 @@ const ContentBox = ({
                     />
 
                     <span className={styles['collaborators-names']}>
-                      <span className={styles['collaborators-name']}>
-                        {user.name}
+                      <span
+                        className={`${styles['collaborators-name']} ${
+                          user._id === authUser._id ? styles['auth-user'] : ''
+                        }`}
+                      >
+                        {user._id === authUser._id ? 'You' : user.name}
                       </span>
                       <span className={styles['collaborators-username']}>
                         @{user.username}
                       </span>
                     </span>
 
-                    <span
-                      className={styles['follow-btn-box']}
-                      onClick={(e) => handleFollow(e, user._id)}
-                    >
-                      <button
-                        className={`${styles['follow-btn']} ${
-                          followList.has(user._id) ? styles['disable-btn'] : ''
-                        }`}
+                    {user._id !== authUser._id && (
+                      <span
+                        className={styles['follow-btn-box']}
+                        onClick={(e) => handleFollow(e, user._id)}
                       >
-                        <span
-                          className={`${
-                            followList.has(user._id) ? styles['follow-txt'] : ''
-                          } `}
+                        <button
+                          className={`${styles['follow-btn']} ${
+                            followList.has(user._id)
+                              ? styles['disable-btn']
+                              : ''
+                          }`}
                         >
-                          {getFollowText(user._id)}
-                        </span>
-                      </button>
+                          <span
+                            className={`${
+                              followList.has(user._id)
+                                ? styles['follow-txt']
+                                : ''
+                            } `}
+                          >
+                            {getFollowText(user._id)}
+                          </span>
+                        </button>
 
-                      {followList.has(user._id) && (
-                        <LoadingAnimation
-                          style={{
-                            position: 'absolute',
-                            zIndex: 2,
-                            width: 60,
-                            height: 60,
-                            opacity: 0.7,
-                          }}
-                        />
-                      )}
-                    </span>
+                        {followList.has(user._id) && (
+                          <LoadingAnimation
+                            style={{
+                              position: 'absolute',
+                              zIndex: 2,
+                              width: 60,
+                              height: 60,
+                              opacity: 0.7,
+                            }}
+                          />
+                        )}
+                      </span>
+                    )}
                   </a>
                 </li>
               ))}
@@ -366,7 +387,7 @@ const ContentBox = ({
     try {
       if (!isFollowing) {
         const { data } = await apiClient.post(`v1/follow/${user._id}`, {
-          collection: 'content',
+          collection: contentType === 'reels' ? 'reel' : 'content',
           documentId: contentId,
         });
         const follow = data.data.follow;
@@ -398,11 +419,15 @@ const ContentBox = ({
     setExcludeValue(true);
 
     try {
-      const { data } = await apiClient.patch(
-        `v1/contents/not-interested/${user._id}`
-      );
+      const request =
+        contentType === 'reels'
+          ? apiClient.patch(`v1/reels/not-interested/${contentId}`)
+          : apiClient.patch(`v1/contents/not-interested/${user._id}`);
+
+      const { data } = await request;
 
       setUser(data.data.user);
+
       setContents((prevValue) =>
         prevValue.filter((content) => content._id !== contentId)
       );
@@ -488,6 +513,91 @@ const ContentBox = ({
     setViewed(true);
   };
 
+  const muteReel = () => {
+    if (contentRef.current) {
+      const video = contentRef.current.querySelector('video');
+      if (video) setMuted(!muted);
+    }
+  };
+
+  const handlePinnedReels = (action: 'add' | 'delete') => {
+    if (!Array.isArray(pinnedReels)) {
+      return toast.error('Please reload your pinned reels and try again.');
+    }
+
+    const storedReels =
+      window.localStorage.getItem('pinnedReels') || JSON.stringify([]);
+
+    let reels;
+    try {
+      reels = JSON.parse(storedReels);
+    } catch {
+      reels = [];
+    }
+
+    if (!(reels instanceof Array) || reels.length > 5) reels = [];
+
+    let reel: any;
+
+    if (reels.length > 0) {
+      reel = reels.find((obj: any) => obj._id === contentId);
+    }
+
+    if (action === 'delete') {
+      if (reel) {
+        reels = reels.filter((obj) => obj._id !== contentId);
+        if (setPinnedReels)
+          setPinnedReels((prev) =>
+            (prev as any[]).filter((obj) => obj._id !== contentId)
+          );
+      }
+
+      toast.success('Video removed from pinned reels.');
+    } else {
+      if (reel) {
+        return toast.error('This reel is already pinned.');
+      } else {
+        if (reels.length >= 5) {
+          return toast.error('You can only pin five reels.');
+        }
+
+        const obj = {
+          _id: contentId,
+          src: data.src,
+          time: new Date(),
+        };
+
+        reels.push(obj);
+
+        if (setPinnedReels)
+          setPinnedReels((prev) => [
+            ...(prev || []),
+            {
+              _id: contentId,
+              src: data.src,
+              time: new Date(),
+              username: user.username,
+              photo: user.photo,
+              hasStory,
+              hasUnviewedStory,
+            },
+          ]);
+
+        toast.success('Video added to pinned reels.');
+      }
+    }
+
+    localStorage.setItem('pinnedReels', JSON.stringify(reels));
+  };
+
+  const isReelPinned = () => {
+    if (!Array.isArray(pinnedReels) || pinnedReels.length === 0) return false;
+
+    const reel = pinnedReels.find((obj) => obj._id === contentId);
+
+    return !!reel;
+  };
+
   return (
     <LikeContext.Provider
       value={{
@@ -499,6 +609,10 @@ const ContentBox = ({
         viewComment,
         setShowMobileMenu,
         handleLike,
+        muted,
+        setMuted,
+        handlePinnedReels,
+        isReelPinned,
       }}
     >
       {shareMedia && (
@@ -519,7 +633,12 @@ const ContentBox = ({
             user,
             aspectRatio,
             type,
-            media: media.length === 1 ? media[0].src : media,
+            media:
+              contentType === 'reels'
+                ? src
+                : media.length === 1
+                ? media[0].src
+                : media,
           }}
           isFollowing={isFollowing}
           save={save}
@@ -653,13 +772,20 @@ const ContentBox = ({
               />
             ) : (
               <ContentItem
-                src={media[0].src}
+                item={{
+                  src: contentType === 'reels' ? data.src : media[0].src,
+                  type,
+                  name: user.name,
+                  description:
+                    contentType === 'reels'
+                      ? description
+                      : media[0].description,
+                  contentType: contentType === 'reels' ? 'reels' : 'single',
+                  createdAt,
+                  hasSound,
+                }}
                 aspectRatio={aspectRatio}
                 setDescriptionWidth={setDescriptionWidth}
-                type={type}
-                contentType={contentType === 'reels' ? 'reels' : 'single'}
-                description={media[0].description}
-                name={user.name}
                 hideData={hideData}
                 setHideData={setHideData}
                 viewObj={{ viewed, setViewed, handleView }}
@@ -677,19 +803,48 @@ const ContentBox = ({
                   >
                     <li
                       className={`${styles['menu-item']} ${styles['menu-red']}`}
+                      onClick={handleUserFollow}
                     >
                       {isFollowing ? 'Unfollow' : 'Follow'}
                     </li>
                     <li
                       className={`${styles['menu-item']} ${styles['menu-red']}`}
+                      onClick={() => {
+                        setShowMenu(false);
+                        toast.success(
+                          'Thanks for reporting. We’ll review and take action if necessary.'
+                        );
+                      }}
                     >
                       Report
                     </li>
-                    <li className={styles['menu-item']}>Mute</li>
-                    <li className={styles['menu-item']}>Pin</li>
-                    <li className={styles['menu-item']}>Not interested</li>
-                    <li className={styles['menu-item']}>Add to story</li>
-                    <li className={styles['menu-item']}>Clear display</li>
+                    <li className={styles['menu-item']} onClick={muteReel}>
+                      {muted ? 'Unmute' : 'Mute'}
+                    </li>
+                    <li
+                      className={styles['menu-item']}
+                      onClick={() =>
+                        handlePinnedReels(isReelPinned() ? 'delete' : 'add')
+                      }
+                    >
+                      {isReelPinned() ? 'Unpin' : 'Pin'}
+                    </li>
+                    <li
+                      className={styles['menu-item']}
+                      onClick={excludeContent}
+                    >
+                      Not interested
+                    </li>
+                    {/* <li className={styles['menu-item']}>Add to story</li> */}
+                    <li
+                      className={styles['menu-item']}
+                      onClick={() => {
+                        setHideData(true);
+                        setShowMenu(false);
+                      }}
+                    >
+                      Clear display
+                    </li>
                   </ul>
                 )}
               </div>

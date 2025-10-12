@@ -224,8 +224,7 @@
   position: absolute;
   top: -20%;
   right: -30%;
-  width: 1.55rem;
-  height: 1.55rem;
+  aspect-ratio: 1;
 }
 
 .header-list {
@@ -261,20 +260,18 @@
 
 .users-container {
   padding: 1.5rem 2rem 2rem;
-  display: flex;
-  align-items: flex-start;
-  align-content: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 1rem;
+  row-gap: 1.5rem;
   width: 100%;
   overflow: auto;
   height: calc(100vh - 4.32rem);
 }
 
 .suggestion-skeleton {
-  width: 31%;
+  width: 100%;
   border-radius: 5px;
-  margin-bottom: 2rem;
   display: flex;
   flex-direction: column;
   row-gap: 0.7rem;
@@ -289,9 +286,16 @@
 }
 
 .user {
-  width: 31%;
+  width: 100%;
+  height: fit-content;
   border-radius: 5px;
-  margin-bottom: 1.5rem;
+  background: linear-gradient(
+    to bottom right,
+    rgba(220, 20, 60, 0.5) 0%,
+    rgba(220, 20, 60, 0.5) 5%,
+    rgba(168, 85, 247, 0.5) 20%,
+    black 100%
+  );
 }
 
 .user > a {
@@ -591,6 +595,18 @@
   .content-container {
     padding: 1.5rem 4rem 2rem;
   }
+
+  .users-container {
+    column-gap: 1rem;
+  }
+
+  .users-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .content-skeleton-div {
+    width: 90%;
+  }
 }
 
 @media screen and (max-width: 900px) {
@@ -601,22 +617,31 @@
   .content-container {
     padding: 1.5rem 6rem 2rem;
   }
+
+  .users-container {
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 0.5rem;
+  }
+
+  .content-skeleton-div {
+    width: 100%;
+  }
 }
 
 @media screen and (max-width: 800px) {
   .content-container {
     padding: 1.5rem 4rem 2rem;
   }
+
+  .users-container {
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 1rem;
+  }
 }
 
 @media screen and (max-width: 700px) {
   .content-container {
     padding: 1.5rem 3rem 2rem;
-  }
-
-  .user,
-  .suggestion-skeleton {
-    width: 46.5%;
   }
 }
 
@@ -626,7 +651,7 @@
   }
 
   .users-container {
-    padding: 1.5rem 2rem 6rem;
+    padding: 1.5rem 1rem 6rem;
   }
 
   .content-container {
@@ -644,12 +669,19 @@
   }
 
   .users-container {
-    padding: 1.5rem 1.5rem 6rem;
+    padding: 1.5rem 3rem 6rem;
   }
 
-  .user,
-  .suggestion-skeleton {
-    width: 48%;
+  .users-container {
+    grid-template-columns: 1fr;
+  }
+
+  .bottom-content-skeleton {
+    grid-template-columns: 100%;
+  }
+
+  .engagement-content-skeleton {
+    display: none;
   }
 }
 
@@ -659,11 +691,6 @@
   }
 
   .users-container {
-    padding: 1.5rem 0.5rem 6rem;
-  }
-
-  .user,
-  .suggestion-skeleton {
-    width: 49%;
+    padding: 1.5rem 1rem 6rem;
   }
 }

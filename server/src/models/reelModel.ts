@@ -13,6 +13,7 @@ interface IReel extends Document {
   keywords: String[];
   playTime: Number;
   watchedFully: Number;
+  hasSound: Boolean;
   settings: {
     accessibility: Number;
     disableComments: Boolean;
@@ -58,6 +59,10 @@ const ReelSchema = new Schema<IReel>({
   watchedFully: {
     type: Number,
     default: 0,
+  },
+  hasSound: {
+    type: Boolean,
+    default: false,
   },
   settings: {
     type: {

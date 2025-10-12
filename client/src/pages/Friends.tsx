@@ -224,7 +224,6 @@ const Friends = () => {
     }
   };
 
-  
   const sendRequest =
     (id: string) =>
     async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -256,7 +255,6 @@ const Friends = () => {
       }
     };
 
-   
   return (
     <>
       <NavBar page="friends" />
@@ -301,7 +299,7 @@ const Friends = () => {
               onClick={() => setShowFriendRequests(true)}
             >
               <IoPeopleSharp className={styles['friends-icon']} />
-              <span className={styles['request-length']}>10</span>
+              {/* <span className={styles['request-length']}>{}</span> */}
             </span>
           </div>
 
@@ -454,9 +452,9 @@ const Friends = () => {
                     the page or check your connection.
                   </div>
                 ) : (
-                  contents.map((data, index) => (
+                  contents.map((data) => (
                     <ContentBox
-                      key={index}
+                      key={data._id}
                       data={data}
                       contentType="home"
                       setContents={setContents}

@@ -26,6 +26,7 @@ services:
       - ./server/src/config.env
     volumes:
       - /app/node_modules
+      - api_public:/app/src/public 
     develop:
       watch:
         - path: ./server
@@ -79,3 +80,4 @@ services:
 volumes:
   mongo_data:
   typesense_data:
+  api_public:

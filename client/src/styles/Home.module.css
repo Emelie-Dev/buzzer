@@ -465,6 +465,10 @@
   .content-container {
     padding: 0 2rem;
   }
+
+  .content-skeleton-div {
+    width: 90%;
+  }
 }
 
 @media screen and (max-width: 900px) {
@@ -482,6 +486,10 @@
 
   .content-container {
     padding: 0 3rem;
+  }
+
+  .content-skeleton-div {
+    width: 100%;
   }
 }
 
@@ -547,6 +555,14 @@
 
   .content-container {
     padding: 0 1rem;
+  }
+
+  .bottom-content-skeleton {
+    grid-template-columns: 100%;
+  }
+
+  .engagement-content-skeleton {
+    display: none;
   }
 }
 

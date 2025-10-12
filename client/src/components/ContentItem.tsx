@@ -3,13 +3,9 @@ import styles from '../styles/ContentItem.module.css';
 import CarouselItem from './CarouselItem';
 
 type ContentItemProps = {
-  src: string;
+  item: any;
   aspectRatio: number;
   setDescriptionWidth?: React.Dispatch<React.SetStateAction<number>>;
-  type: 'image' | 'video';
-  contentType: 'single' | 'reels';
-  description: string;
-  name?: string;
   hideData: boolean;
   setHideData: React.Dispatch<React.SetStateAction<boolean>>;
   viewObj: {
@@ -20,17 +16,15 @@ type ContentItemProps = {
 };
 
 const ContentItem = ({
-  src,
+  item,
   aspectRatio,
   setDescriptionWidth,
-  type,
-  contentType,
-  description,
-  name,
   hideData,
   setHideData,
   viewObj,
 }: ContentItemProps) => {
+  const { src, type, contentType, description, name, createdAt, hasSound } =
+    item;
   const [seenSlides, setSeenSlides] = useState(new Set());
 
   const { viewed, setViewed, handleView } = viewObj;
@@ -109,7 +103,7 @@ const ContentItem = ({
   return (
     <div className={styles.content} ref={contentRef}>
       <CarouselItem
-        item={{ type, src }}
+        item={{ type, src, createdAt, hasSound }}
         aspectRatio={aspectRatio}
         hideData={hideData}
         setHideData={setHideData}

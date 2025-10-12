@@ -282,9 +282,9 @@ const Carousel = ({
         onTouchMove={handleSwipe('move')}
         onTouchEnd={handleSwipe('end')}
       >
-        {data.map(({ mediaType, src, description }, index) => (
+        {data.map(({ mediaType, src, description, _id }, index) => (
           <CarouselItem
-            key={index}
+            key={_id}
             item={{
               type: mediaType,
               src,

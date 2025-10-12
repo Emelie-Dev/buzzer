@@ -55,7 +55,7 @@
 .collaborators-list {
   list-style-type: none;
   position: absolute;
-  bottom: -145px;
+  top: 100%;
   right: 100px;
   z-index: 2;
   margin: 0;
@@ -512,6 +512,10 @@
 
 .small-details-box:nth-child(4) {
   margin-left: auto;
+}
+
+.auth-user {
+  color: var(--app-theme-color);
 }
 
 /* Animations */

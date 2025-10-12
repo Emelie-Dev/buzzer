@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Query, Types } from 'mongoose';
 import validator from 'validator';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import locationSubschema, {
   ILocation,

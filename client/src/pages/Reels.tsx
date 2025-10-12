@@ -1,10 +1,9 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Reels.module.css';
-import { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { ContentContext, GeneralContext } from '../Contexts';
 import ContentBox from '../components/ContentBox';
 import useScrollHandler from '../hooks/useScrollHandler';
-import { DataItem } from './Following';
 import { TbMenuDeep } from 'react-icons/tb';
 import { RiUnpinFill } from 'react-icons/ri';
 import { IoIosArrowUp } from 'react-icons/io';
@@ -14,40 +13,35 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
 import PinnedReels from '../components/PinnedReels';
-
-const dataList: DataItem[] = [
-  {
-    media: 'content30',
-    name: 'Mr Hilarious👑',
-    username: 'kingofreaction',
-    photo: 'profile1.jpeg',
-    time: '',
-    aspectRatio: 1,
-    type: 'video',
-    description: `When you're just trying to shower but your underwear decides to
-                pull a "floor is lava" challenge 😩😂.#WhyMe`,
-  },
-  {
-    media: 'content29',
-    name: 'MCFC Lad',
-    username: 'mancity_fan',
-    photo: 'profile1.jpeg',
-    time: '',
-    aspectRatio: 1,
-    type: 'video',
-    description: `When you're just trying to shower but your underwear decides to
-                pull a "floor is lava" challenge 😩😂.#WhyMe`,
-  },
-];
+import Skeleton from 'react-loading-skeleton';
+import LoadingAnimation from '../components/LoadingAnimation';
+import { apiClient, getTime, getUrl } from '../Utilities';
+import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 const Reels = () => {
-  const { activeVideo, setActiveVideo, contentRef } = useScrollHandler();
-  const setActiveIndex = useState<number>(0)[1];
+  const {
+    activeVideo,
+    setActiveVideo,
+    contentRef,
+    posts: contents,
+    setPosts: setContents,
+    postData,
+    getPosts,
+    setPostData,
+  } = useScrollHandler(false, 'v1/reels');
+
+  const [activeIndex, setActiveIndex] = useState<number>(0);
   const [scrollType, setScrollType] = useState<'up' | 'down' | null>(null);
   const [prevTop, setPrevTop] = useState<number>(0);
   const { setScrollingUp, setShowSearchPage } = useContext(GeneralContext);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const [showPinnedVideos, setShowPinnedVideos] = useState<boolean>(false);
+  const [pinnedReels, setPinnedReels] = useState<any[] | 'error'>(null!);
+  const [reelOptions, setReelOptions] = useState<{
+    autoScroll: boolean;
+    playBackSpeed: 0.5 | 1 | 1.5 | 2;
+  }>({ autoScroll: false, playBackSpeed: 1 });
 
   const mainRef = useRef<HTMLDivElement>(null!);
   const timeout = useRef<number | NodeJS.Timeout>();
@@ -73,12 +67,8 @@ const Reels = () => {
   useEffect(() => {
     document.title = 'Buzzer - Reels';
 
-    if (contentRef.current) {
-      contentRef.current.forEach((video) => observer.observe(video));
-    }
-
     const resizeHandler = () => {
-      if (reelsRef.current) {
+      if (reelsRef.current && reelOptionsRef.current) {
         const smallDevice = window.matchMedia('(max-width: 600px)').matches;
         const smallDevice2 = window.matchMedia('(max-width: 500px)').matches;
 
@@ -98,6 +88,7 @@ const Reels = () => {
     };
 
     resizeHandler();
+    getPinnedReels();
 
     window.addEventListener('resize', resizeHandler);
 
@@ -107,15 +98,70 @@ const Reels = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.forEach((video) => observer.observe(video));
+    }
+  }, [contents]);
+
+  useEffect(() => {
+    if (activeVideo) {
+      if (showPinnedVideos) activeVideo.pause();
+      else activeVideo.play();
+    }
+  }, [showPinnedVideos]);
+
+  const getPinnedReels = async () => {
+    setPinnedReels(null!);
+    try {
+      const pinnedReels =
+        window.localStorage.getItem('pinnedReels') || JSON.stringify([]);
+
+      let reels: any[] = JSON.parse(pinnedReels);
+
+      if (!(reels instanceof Array) || reels.length > 5) reels = [];
+
+      if (reels.length > 0) {
+        const { data } = await apiClient.post('v1/reels/pinned', {
+          reels: reels.map((reel) => reel._id),
+        });
+
+        const reelsData: any[] = data.data.reels;
+
+        const reelsObj = reelsData.map((data) => {
+          const match = reels.find((obj) => obj._id === data._id);
+          if (match) data.time = match.time;
+          return data;
+        });
+
+        setPinnedReels(reelsObj);
+      } else {
+        setPinnedReels([]);
+      }
+    } catch {
+      setPinnedReels('error');
+      toast.error('Could not load pinned reels.');
+    }
+  };
+
   const scrollHandler = (e: React.UIEvent<HTMLElement, UIEvent>) => {
     clearTimeout(timeout.current);
     timeout.current = setTimeout(() => {
       const scrollPosition = mainRef.current.scrollTop;
-
       setActiveIndex(Math.round(scrollPosition / window.innerHeight));
     }, 100);
 
     const target = e.target as HTMLDivElement;
+
+    if (target) {
+      const isBottom =
+        target.scrollTop + target.clientHeight >= target.scrollHeight - 200;
+
+      if (isBottom && !postData.end) {
+        setPostData((prev) => ({ ...prev, loading: true }));
+        getPosts();
+      }
+    }
 
     setScrollingUp(
       target.scrollTop - prevTop < 0
@@ -140,6 +186,43 @@ const Reels = () => {
       } else setScrollType(null);
     };
 
+  const unPinReel = async (
+    e: React.MouseEvent<SVGElement, MouseEvent>,
+    id: string
+  ) => {
+    e.preventDefault();
+
+    const storedReels =
+      window.localStorage.getItem('pinnedReels') || JSON.stringify([]);
+
+    let reels;
+    try {
+      reels = JSON.parse(storedReels);
+    } catch {
+      reels = [];
+    }
+
+    if (!(reels instanceof Array)) reels = [];
+
+    if (reels.length > 0) reels = reels.filter((obj) => obj._id !== id);
+
+    setPinnedReels((prev) => (prev as any[]).filter((obj) => obj._id !== id));
+
+    localStorage.setItem('pinnedReels', JSON.stringify(reels));
+
+    toast.success('Video removed from pinned reels.');
+  };
+
+  const requestPictureMode = async () => {
+    if (activeVideo) {
+      try {
+        await activeVideo.requestPictureInPicture();
+      } catch {
+        toast.error('Picture-in-Picture request failed.');
+      }
+    }
+  };
+
   return (
     <>
       <NavBar page="reels" />
@@ -157,22 +240,263 @@ const Reels = () => {
 
           <div className={styles['reels-container']}>
             <ContentContext.Provider
-              value={{ contentRef, activeVideo, setActiveVideo }}
+              value={{
+                contentRef,
+                activeVideo,
+                setActiveVideo,
+                reelOptions,
+                mainRef,
+              }}
             >
               <div className={styles['content-container']} ref={reelsRef}>
-                {dataList.map((data, index) => (
-                  <ContentBox
-                    key={index}
-                    data={data}
-                    contentType="reels"
-                    setShowMobileMenu={setShowMobileMenu}
-                  />
-                ))}
+                {contents === null ? (
+                  <div className={styles['reel-skeleton-container']}>
+                    {Array.from({ length: 2 }).map((_, index) => (
+                      <div key={index} className={styles['reel-skeleton-box']}>
+                        <Skeleton className={styles['reel-skeleton-item']} />
+
+                        <div className={styles['engagement-content-skeleton']}>
+                          <Skeleton circle width={50} height={50} />
+                          <br />
+                          <span className={styles['engagement-skeleton-box']}>
+                            <Skeleton circle width={40} height={40} />
+                            <Skeleton width={30} height={12} />
+                          </span>
+                          <span className={styles['engagement-skeleton-box']}>
+                            <Skeleton circle width={40} height={40} />
+                            <Skeleton width={30} height={12} />
+                          </span>
+                          <span className={styles['engagement-skeleton-box']}>
+                            <Skeleton circle width={40} height={40} />
+                            <Skeleton width={30} height={12} />
+                          </span>
+                          <span className={styles['engagement-skeleton-box']}>
+                            <Skeleton circle width={40} height={40} />
+                            <Skeleton width={30} height={12} />
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : contents.length === 0 ? (
+                  <div className={styles['no-data-text']}>
+                    <br /> <br />
+                    Something went wrong while loading reels. Please refresh the
+                    page or check your connection.
+                  </div>
+                ) : (
+                  contents.map((data) => (
+                    <ContentBox
+                      key={data._id}
+                      data={data}
+                      contentType="reels"
+                      setContents={setContents}
+                      setShowMobileMenu={setShowMobileMenu}
+                      pinnedReels={pinnedReels}
+                      setPinnedReels={setPinnedReels}
+                    />
+                  ))
+                )}
+
+                {postData.loading && (
+                  <div className={styles['animation-box']}>
+                    <LoadingAnimation
+                      style={{
+                        width: '3rem',
+                        height: '3rem',
+                        transform: 'scale(2.5)',
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </ContentContext.Provider>
 
-            <div className={styles['medium-menu-container']}>
-              <div className={styles['arrow-div2']}>
+            {contents !== null && contents.length > 0 && (
+              <>
+                <div className={styles['medium-menu-container']}>
+                  <div className={styles['arrow-div2']}>
+                    {activeIndex > 0 && (
+                      <span
+                        className={styles['arrow-box']}
+                        onClick={() => {
+                          mainRef.current.scrollTop -=
+                            mainRef.current.clientHeight;
+                        }}
+                      >
+                        <IoIosArrowUp
+                          className={`${styles.arrow}  ${
+                            scrollType === 'up' ? styles['active-arrow'] : ''
+                          }`}
+                        />
+                      </span>
+                    )}
+
+                    {activeIndex !== contents.length - 1 && (
+                      <span
+                        className={styles['arrow-box']}
+                        onClick={() => {
+                          mainRef.current.scrollTop +=
+                            mainRef.current.clientHeight;
+                        }}
+                      >
+                        <IoIosArrowDown
+                          className={`${styles.arrow}  ${
+                            scrollType === 'down' ? styles['active-arrow'] : ''
+                          }`}
+                        />
+                      </span>
+                    )}
+                  </div>
+
+                  <div className={styles['reel-options-box2']}>
+                    <span className={styles['reel-options-icon-box2']}>
+                      <TbMenuDeep className={styles['reel-options-icon']} />
+                    </span>
+
+                    <ul className={styles['reel-options-list2']}>
+                      <li className={styles['reel-options-item2']}>
+                        Auto scroll
+                        <input
+                          type="checkbox"
+                          className={styles['autoscroll-checkbox']}
+                          checked={reelOptions.autoScroll}
+                          onChange={(e) =>
+                            setReelOptions((prev) => ({
+                              ...prev,
+                              autoScroll: e.target.checked,
+                            }))
+                          }
+                        />
+                      </li>
+                      <li className={styles['reel-options-item2']}>
+                        Playback speed
+                        <select
+                          className={styles['speed-select']}
+                          value={reelOptions.playBackSpeed}
+                          onChange={(e) =>
+                            setReelOptions((prev) => ({
+                              ...prev,
+                              playBackSpeed: Number(e.target.value) as
+                                | 1
+                                | 2
+                                | 1.5
+                                | 0.5,
+                            }))
+                          }
+                        >
+                          <option className={styles['speed-value']} value={2}>
+                            2x
+                          </option>
+                          <option className={styles['speed-value']} value={1.5}>
+                            1.5x
+                          </option>
+                          <option
+                            className={styles['speed-value']}
+                            value={1}
+                            selected
+                          >
+                            1x
+                          </option>
+                          <option className={styles['speed-value']} value={0.5}>
+                            0.5x
+                          </option>
+                        </select>
+                      </li>
+                      <li
+                        className={styles['reel-options-item2']}
+                        onClick={requestPictureMode}
+                      >
+                        Picture-in-picture
+                      </li>
+                      <li
+                        className={`${styles['reel-options-item']} ${styles['pinned-videos-item']}`}
+                        onClick={() => setShowPinnedVideos(true)}
+                      >
+                        View pinned reels
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div
+                  className={styles['reel-options-box']}
+                  ref={reelOptionsRef}
+                >
+                  <span className={styles['reel-options-icon-box']}>
+                    <TbMenuDeep className={styles['reel-options-icon']} />
+                  </span>
+
+                  <ul className={styles['reel-options-list']}>
+                    <li className={styles['reel-options-item']}>
+                      Auto scroll{' '}
+                      <input
+                        type="checkbox"
+                        className={styles['autoscroll-checkbox']}
+                        checked={reelOptions.autoScroll}
+                        onChange={(e) =>
+                          setReelOptions((prev) => ({
+                            ...prev,
+                            autoScroll: e.target.checked,
+                          }))
+                        }
+                      />
+                    </li>
+                    <li className={styles['reel-options-item']}>
+                      Playback speed
+                      <select
+                        className={styles['speed-select']}
+                        value={reelOptions.playBackSpeed}
+                        onChange={(e) =>
+                          setReelOptions((prev) => ({
+                            ...prev,
+                            playBackSpeed: Number(e.target.value) as
+                              | 1
+                              | 2
+                              | 1.5
+                              | 0.5,
+                          }))
+                        }
+                      >
+                        <option className={styles['speed-value']} value={2}>
+                          2x
+                        </option>
+                        <option className={styles['speed-value']} value={1.5}>
+                          1.5x
+                        </option>
+                        <option
+                          className={styles['speed-value']}
+                          value={1}
+                          selected
+                        >
+                          1x
+                        </option>
+                        <option className={styles['speed-value']} value={0.5}>
+                          0.5x
+                        </option>
+                      </select>
+                    </li>
+                    <li
+                      className={styles['reel-options-item']}
+                      onClick={requestPictureMode}
+                    >
+                      Picture-in-picture
+                    </li>
+                    <li
+                      className={`${styles['reel-options-item']} ${styles['pinned-videos-item']}`}
+                      onClick={() => setShowPinnedVideos(true)}
+                    >
+                      View pinned videos
+                    </li>
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+
+          {contents !== null && contents.length > 0 && (
+            <div className={styles['arrow-div']}>
+              {activeIndex > 0 && (
                 <span
                   className={styles['arrow-box']}
                   onClick={() => {
@@ -185,7 +509,9 @@ const Reels = () => {
                     }`}
                   />
                 </span>
+              )}
 
+              {activeIndex !== contents.length - 1 && (
                 <span
                   className={styles['arrow-box']}
                   onClick={() => {
@@ -198,105 +524,9 @@ const Reels = () => {
                     }`}
                   />
                 </span>
-              </div>
-
-              <div className={styles['reel-options-box2']}>
-                <span className={styles['reel-options-icon-box2']}>
-                  <TbMenuDeep className={styles['reel-options-icon']} />
-                </span>
-
-                <ul className={styles['reel-options-list2']}>
-                  <li className={styles['reel-options-item2']}>
-                    Auto scroll
-                    <input
-                      type="checkbox"
-                      className={styles['autoscroll-checkbox']}
-                    />
-                  </li>
-                  <li className={styles['reel-options-item2']}>
-                    Playback speed
-                    <select className={styles['speed-select']}>
-                      <option className={styles['speed-value']}>2x</option>
-                      <option className={styles['speed-value']}>1.5x</option>
-                      <option className={styles['speed-value']}>1x</option>
-                      <option className={styles['speed-value']}>0.5x</option>
-                    </select>
-                  </li>
-                  <li className={styles['reel-options-item2']}>
-                    Picture-in-picture
-                  </li>
-                  <li
-                    className={`${styles['reel-options-item']} ${styles['pinned-videos-item']}`}
-                    onClick={() => setShowPinnedVideos(true)}
-                  >
-                    View pinned videos
-                  </li>
-                </ul>
-              </div>
+              )}
             </div>
-
-            <div className={styles['reel-options-box']} ref={reelOptionsRef}>
-              <span className={styles['reel-options-icon-box']}>
-                <TbMenuDeep className={styles['reel-options-icon']} />
-              </span>
-
-              <ul className={styles['reel-options-list']}>
-                <li className={styles['reel-options-item']}>
-                  Auto scroll{' '}
-                  <input
-                    type="checkbox"
-                    className={styles['autoscroll-checkbox']}
-                  />
-                </li>
-                <li className={styles['reel-options-item']}>
-                  Playback speed
-                  <select className={styles['speed-select']}>
-                    <option className={styles['speed-value']}>2x</option>
-                    <option className={styles['speed-value']}>1.5x</option>
-                    <option className={styles['speed-value']}>1x</option>
-                    <option className={styles['speed-value']}>0.5x</option>
-                  </select>
-                </li>
-                <li className={styles['reel-options-item']}>
-                  Picture-in-picture
-                </li>
-                <li
-                  className={`${styles['reel-options-item']} ${styles['pinned-videos-item']}`}
-                  onClick={() => setShowPinnedVideos(true)}
-                >
-                  View pinned videos
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className={styles['arrow-div']}>
-            <span
-              className={styles['arrow-box']}
-              onClick={() => {
-                mainRef.current.scrollTop -= mainRef.current.clientHeight;
-              }}
-            >
-              <IoIosArrowUp
-                className={`${styles.arrow}  ${
-                  scrollType === 'up' ? styles['active-arrow'] : ''
-                }`}
-              />
-            </span>
-
-            <span
-              className={styles['arrow-box']}
-              onClick={() => {
-                mainRef.current.scrollTop += mainRef.current.clientHeight;
-              }}
-            >
-              <IoIosArrowDown
-                className={`${styles.arrow}  ${
-                  scrollType === 'down' ? styles['active-arrow'] : ''
-                }`}
-              />
-            </span>
-          </div>
+          )}
 
           <Footer page={'reels'} />
         </section>
@@ -308,150 +538,77 @@ const Reels = () => {
             <span className={styles['pinned-videos-text']}>Pinned reels</span>
 
             <div className={styles['pinned-videos-div']}>
-              <article className={styles['pinned-video-box']}>
-                <video className={styles['pinned-video']}>
-                  <source
-                    src={`../../assets/images/content/content21.mp4`}
-                    type="video/mp4"
+              {pinnedReels === null ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton
+                    key={index}
+                    className={styles['pinned-reels-skeleton']}
                   />
-                  Your browser does not support playing video.
-                </video>
-
-                <div className={styles['pinned-video-details']}>
-                  <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
-
-                  <div className={styles['pinned-video-data']}>
-                    <span className={styles['profile-img-span']}>
-                      <img
-                        src={`../../assets/images/users/user8.jpeg`}
-                        className={styles['profile-img2']}
-                      />
-                    </span>
-
-                    <span className={styles['pinned-video-username']}>
-                      Jon Snow🦅
-                    </span>
-                  </div>
-
-                  <span className={styles['pinned-video-duration']}>02:30</span>
+                ))
+              ) : pinnedReels === 'error' ? (
+                <div className={styles['error-div']}>
+                  <span>Could not load pinned reels.</span>
+                  <button
+                    className={styles['error-btn']}
+                    onClick={getPinnedReels}
+                  >
+                    Try Again
+                  </button>
                 </div>
-              </article>
-
-              <article className={styles['pinned-video-box']}>
-                <video className={styles['pinned-video']}>
-                  <source
-                    src={`../../assets/images/content/content24.mp4`}
-                    type="video/mp4"
-                  />
-                  Your browser does not support playing video.
-                </video>
-
-                <div className={styles['pinned-video-details']}>
-                  <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
-
-                  <div className={styles['pinned-video-data']}>
-                    <span className={styles['profile-img-span']}>
-                      <img
-                        src={`../../assets/images/users/user8.jpeg`}
-                        className={styles['profile-img2']}
-                      />
-                    </span>
-
-                    <span className={styles['pinned-video-username']}>
-                      aryastark
-                    </span>
-                  </div>
-
-                  <span className={styles['pinned-video-duration']}>00:47</span>
+              ) : pinnedReels.length === 0 ? (
+                <div className={styles['error-div']}>
+                  <span>You don't have any pinned reels.</span>
                 </div>
-              </article>
+              ) : (
+                pinnedReels.map((reel, index) => (
+                  <article key={index} className={styles['pinned-video-box']}>
+                    <Link to={'/'}>
+                      <video className={styles['pinned-video']}>
+                        <source
+                          src={getUrl(reel.src, 'reels')}
+                          type="video/mp4"
+                        />
+                        Your browser does not support playing video.
+                      </video>
 
-              <article className={styles['pinned-video-box']}>
-                <video className={styles['pinned-video']}>
-                  <source
-                    src={`../../assets/images/content/content25.mp4`}
-                    type="video/mp4"
-                  />
-                  Your browser does not support playing video.
-                </video>
+                      <div className={styles['pinned-video-details']}>
+                        <RiUnpinFill
+                          className={styles['unpin-icon']}
+                          title="Unpin"
+                          onClick={(e) => unPinReel(e, reel._id)}
+                        />
 
-                <div className={styles['pinned-video-details']}>
-                  <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
+                        <div className={styles['pinned-video-data']}>
+                          <span
+                            className={`${styles['profile-img-span']} ${
+                              reel.hasStory && reel.hasUnviewedStory
+                                ? styles['profile-img-span3']
+                                : reel.hasStory
+                                ? styles['profile-img-span2']
+                                : ''
+                            }`}
+                          >
+                            <img
+                              className={`${styles['profile-img2']} ${
+                                !reel.hasStory ? styles['no-story-img'] : ''
+                              }`}
+                              src={getUrl(reel.photo, 'users')}
+                            />
+                          </span>
 
-                  <div className={styles['pinned-video-data']}>
-                    <span className={styles['profile-img-span']}>
-                      <img
-                        src={`../../assets/images/users/user8.jpeg`}
-                        className={styles['profile-img2']}
-                      />
-                    </span>
+                          <span className={styles['pinned-video-username']}>
+                            {reel.username}
+                          </span>
+                        </div>
 
-                    <span className={styles['pinned-video-username']}>
-                      missandei
-                    </span>
-                  </div>
-
-                  <span className={styles['pinned-video-duration']}>01:08</span>
-                </div>
-              </article>
-
-              <article className={styles['pinned-video-box']}>
-                <video className={styles['pinned-video']}>
-                  <source
-                    src={`../../assets/images/content/content27.mp4`}
-                    type="video/mp4"
-                  />
-                  Your browser does not support playing video.
-                </video>
-
-                <div className={styles['pinned-video-details']}>
-                  <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
-
-                  <div className={styles['pinned-video-data']}>
-                    <span className={styles['profile-img-span']}>
-                      <img
-                        src={`../../assets/images/users/user8.jpeg`}
-                        className={styles['profile-img2']}
-                      />
-                    </span>
-
-                    <span className={styles['pinned-video-username']}>
-                      antonella_roccuzzo
-                    </span>
-                  </div>
-
-                  <span className={styles['pinned-video-duration']}>12:35</span>
-                </div>
-              </article>
-
-              <article className={styles['pinned-video-box']}>
-                <video className={styles['pinned-video']}>
-                  <source
-                    src={`../../assets/images/content/content29.mp4`}
-                    type="video/mp4"
-                  />
-                  Your browser does not support playing video.
-                </video>
-
-                <div className={styles['pinned-video-details']}>
-                  <RiUnpinFill className={styles['unpin-icon']} title="Unpin" />
-
-                  <div className={styles['pinned-video-data']}>
-                    <span className={styles['profile-img-span']}>
-                      <img
-                        src={`../../assets/images/users/user8.jpeg`}
-                        className={styles['profile-img2']}
-                      />
-                    </span>
-
-                    <span className={styles['pinned-video-username']}>
-                      antonella_roccuzzo
-                    </span>
-                  </div>
-
-                  <span className={styles['pinned-video-duration']}>09:16</span>
-                </div>
-              </article>
+                        <span className={styles['pinned-video-duration']}>
+                          {getTime(reel.time)}
+                        </span>
+                      </div>
+                    </Link>
+                  </article>
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -466,10 +623,21 @@ const Reels = () => {
       )}
 
       {showPinnedVideos && (
-        <PinnedReels setShowPinnedVideos={setShowPinnedVideos} />
+        <PinnedReels
+          pinnedReels={pinnedReels}
+          getPinnedReels={getPinnedReels}
+          unPinReel={unPinReel}
+          setShowPinnedVideos={setShowPinnedVideos}
+        />
       )}
     </>
   );
 };
+
+// const MemoizedTime = React.memo(({ time }: { time: string }) => {
+//   return (
+//     <span className={styles['pinned-video-duration']}>{getTime(time)}</span>
+//   );
+// });
 
 export default Reels;
