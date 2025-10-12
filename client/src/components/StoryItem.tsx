@@ -566,6 +566,7 @@ const StoryItem = ({
     <>
       {confirmModal && (
         <ConfirmModal
+          heading="Delete Story"
           message="Are you sure you want to delete this story?"
           setConfirmModal={setConfirmModal}
           functionArray={[

@@ -5,8 +5,8 @@ import { HiOutlineBookmark } from 'react-icons/hi';
 import { FiHeart } from 'react-icons/fi';
 import { MdOutlineGridOn } from 'react-icons/md';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { FaPlay } from 'react-icons/fa6';
-import { FaHeart, FaCommentDots } from 'react-icons/fa';
+// import { FaPlay } from 'react-icons/fa6';
+// import { FaHeart, FaCommentDots } from 'react-icons/fa';
 import { IoClose, IoMenu, IoSettingsOutline } from 'react-icons/io5';
 import { QRCodeCanvas } from 'qrcode.react';
 import { FaCopy } from 'react-icons/fa6';
@@ -17,11 +17,12 @@ import {
   MdOutlineHistory,
 } from 'react-icons/md';
 import Engagements from '../components/Engagements';
-import CommentBox from '../components/CommentBox';
-import { CommentData } from '../components/ContentBox';
-import { ContentContext, GeneralContext, LikeContext } from '../Contexts';
-import { Content } from '../components/CarouselItem';
-import ShareMedia from '../components/ShareMedia';
+// import CommentBox from '../components/CommentBox';
+// import { CommentData } from '../components/ContentBox';
+import { GeneralContext } from '../Contexts';
+
+// import { Content } from '../components/CarouselItem';
+// import ShareMedia from '../components/ShareMedia';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import { RiArrowDownSLine } from 'react-icons/ri';
@@ -31,78 +32,78 @@ import { TbBrandGoogleAnalytics } from 'react-icons/tb';
 import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdNotificationsOutline } from 'react-icons/io';
 
-const data: Content[] = [
-  {
-    src: 'content23',
-    type: 'image',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-  {
-    src: 'content2',
-    type: 'image',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-  },
-  {
-    src: 'content3',
-    type: 'image',
-    description: '',
-  },
-  {
-    src: 'content4',
-    type: 'image',
-    description: 'Lorem ipsum dolor sit amet.',
-  },
-  {
-    src: 'content5',
-    type: 'image',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-  {
-    src: 'content6',
-    type: 'video',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
-  },
-];
+// const data: Content[] = [
+//   {
+//     src: 'content23',
+//     type: 'image',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
+//   },
+//   {
+//     src: 'content2',
+//     type: 'image',
+//     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+//   },
+//   {
+//     src: 'content3',
+//     type: 'image',
+//     description: '',
+//   },
+//   {
+//     src: 'content4',
+//     type: 'image',
+//     description: 'Lorem ipsum dolor sit amet.',
+//   },
+//   {
+//     src: 'content5',
+//     type: 'image',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
+//   },
+//   {
+//     src: 'content6',
+//     type: 'video',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique.',
+//   },
+// ];
 
-const contents: CommentData[] = [
-  {
-    name: 'The Godfather👑👑',
-    username: 'josephlouis_100',
-    type: 'video',
-    media: 'content24',
-    photo: 'user14.jpeg',
-    aspectRatio: 1,
-  },
+// const contents: CommentData[] = [
+//   {
 
-  {
-    name: 'The Godfather👑👑',
-    username: 'josephlouis_100',
-    type: 'image',
-    media: 'content10',
-    photo: 'user14.jpeg',
-    aspectRatio: 1,
-  },
+//     username: 'josephlouis_100',
+//     type: 'video',
+//     media: 'content24',
+//     photo: 'user14.jpeg',
+//     aspectRatio: 1,
+//   },
 
-  {
-    name: 'The Godfather👑👑',
-    username: 'josephlouis_100',
-    type: 'video',
-    media: 'content27',
-    photo: 'user14.jpeg',
-    aspectRatio: 1,
-  },
-  {
-    name: 'The Godfather👑👑',
-    username: 'josephlouis_100',
-    type: 'carousel',
-    media: data,
-    photo: 'user14.jpeg',
-    aspectRatio: 1,
-  },
-];
+//   {
+
+//     username: 'josephlouis_100',
+//     type: 'image',
+//     media: 'content10',
+//     photo: 'user14.jpeg',
+//     aspectRatio: 1,
+//   },
+
+//   {
+
+//     username: 'josephlouis_100',
+//     type: 'video',
+//     media: 'content27',
+//     photo: 'user14.jpeg',
+//     aspectRatio: 1,
+//   },
+//   {
+//     name: 'The Godfather👑👑',
+//     username: 'josephlouis_100',
+//     type: 'carousel',
+//     media: data,
+//     photo: 'user14.jpeg',
+//     aspectRatio: 1,
+//   },
+// ];
 
 const Profile = () => {
   const [category, setcategory] = useState<
@@ -119,25 +120,25 @@ const Profile = () => {
   const [engagementModal, setEngagementModal] = useState<
     'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
   >(null);
-  const [viewComment, setViewComment] = useState<boolean>(false);
-  const [activeVideo, setActiveVideo] = useState<HTMLVideoElement | null>(null);
-  const [currentIndex, setCurrentIndex] = useState<number>(null!);
+  // const [viewComment, setViewComment] = useState<boolean>(false);
+  // const [activeVideo, setActiveVideo] = useState<HTMLVideoElement | null>(null);
+  // const [currentIndex, setCurrentIndex] = useState<number>(null!);
 
   const { setSettingsCategory, setShowSearchPage } = useContext(GeneralContext);
 
-  const setShowMenu = useState<boolean>(false)[1];
-  const setHideMenu = useState<boolean>(true)[1];
-  const isFollowing = useState<boolean>(false)[0];
-  const [like, setLike] = useState<boolean>(false);
-  const [hideLike, setHideLike] = useState<boolean>(true);
-  const [saved, setSaved] = useState<boolean>(false);
-  const [shareMedia, setShareMedia] = useState<boolean>(false);
+  // const setShowMenu = useState<boolean>(false)[1];
+  // const setHideMenu = useState<boolean>(true)[1];
+  // const isFollowing = useState<boolean>(false)[0];
+  const like = useState<boolean>(false)[0];
+  const setHideLike = useState<boolean>(true)[1];
+  // const [saved, setSaved] = useState<boolean>(false);
+  // const [shareMedia, setShareMedia] = useState<boolean>(false);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
   const [mobileMenu, setMobileMenu] = useState<boolean>(false);
 
   const optionsRef = useRef<HTMLDivElement>(null!);
-  const reelMenuRef = useRef<HTMLDivElement>(null!);
-  const contentRef = useRef<HTMLDivElement[]>([]);
+  // const reelMenuRef = useRef<HTMLDivElement>(null!);
+  // const contentRef = useRef<HTMLDivElement[]>([]);
   const inputRef = useRef<HTMLInputElement>(null!);
   const listRef = useRef<HTMLUListElement>(null!);
 
@@ -441,7 +442,7 @@ const Profile = () => {
               </select>
             </div>
           </header>
-
+          {/* 
           <div className={styles['contents-container']}>
             {contents.map(({ type, media }, index) => (
               <article
@@ -586,7 +587,7 @@ const Profile = () => {
                 </div>
               </article>
             ))}
-          </div>
+          </div> */}
 
           <div className={styles['sort-container']}>
             <span className={styles['sort-icon-box']}>
@@ -796,7 +797,7 @@ const Profile = () => {
 
       {switchAccount && <SwitchAccount setSwitchAccount={setSwitchAccount} />}
 
-      <ContentContext.Provider
+      {/* <ContentContext.Provider
         value={{ contentRef, activeVideo, setActiveVideo }}
       >
         <LikeContext.Provider
@@ -831,7 +832,7 @@ const Profile = () => {
             />
           )}
         </LikeContext.Provider>
-      </ContentContext.Provider>
+      </ContentContext.Provider> */}
     </>
   );
 };
