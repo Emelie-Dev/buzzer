@@ -62,6 +62,7 @@ export interface IUser extends Document {
 const UserSchema = new Schema<IUser>({
   username: {
     type: String,
+    unique: true,
     trim: true,
     required: [true, 'Please provide a value for the username.'],
     validate: {
