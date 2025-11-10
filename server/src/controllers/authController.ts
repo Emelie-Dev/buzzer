@@ -64,6 +64,33 @@ const sendEmail = async (
   }
 };
 
+const getDeviceDetails = async (userAgent: string, clientIp: string) => {
+  const result = new UAParser(userAgent).getResult();
+
+  const { type, model, vendor } = result.device;
+  const { name, version } = result.os;
+
+  const deviceName =
+    model && vendor
+      ? `${vendor} ${model}`
+      : name && version
+      ? `${name} ${version}`
+      : result.ua.slice(0, result.ua.indexOf('/'));
+
+  const { city, country } = await getUserLocation(clientIp);
+
+  return {
+    type,
+    name,
+    version,
+    data: {
+      deviceName,
+      city,
+      country,
+    },
+  };
+};
+
 export const signToken = (id: unknown, jwi: string) => {
   return jwt.sign({ id, jwi }, String(process.env.JWT_SECRET), {
     expiresIn: Number(process.env.JWT_LOGIN_EXPIRES),
@@ -79,20 +106,14 @@ export const manageUserDevices = async (
   switchAccount: Boolean = false
 ) => {
   const sessions = user.settings.security.sessions || [];
-  const result = new UAParser(userAgent).getResult();
 
-  const { type, model, vendor } = result.device;
-  const { name, version } = result.os;
-
-  const deviceName =
-    model && vendor
-      ? `${vendor} ${model}`
-      : name && version
-      ? `${name} ${version}`
-      : result.ua.slice(0, result.ua.indexOf('/'));
+  const { data, name, version, type } = await getDeviceDetails(
+    userAgent,
+    clientIp
+  );
 
   const session = {
-    name: deviceName,
+    name: data.deviceName,
     type: type ? type : name && version ? 'desktop' : 'api-client',
     loginMethod: method,
     jwi,
@@ -102,8 +123,6 @@ export const manageUserDevices = async (
   sessions.unshift(session);
 
   if (sessions.length > 10) sessions.pop();
-
-  const { city, country } = await getUserLocation(clientIp);
 
   user = (await User.findByIdAndUpdate(
     user._id,
@@ -121,11 +140,7 @@ export const manageUserDevices = async (
     await Notification.create({
       user: user._id,
       type: ['security', 'login', 'new'],
-      data: {
-        deviceName,
-        city,
-        country,
-      },
+      data,
     });
 
     if (sessions.length > 4) {
@@ -150,8 +165,8 @@ export const manageUserDevices = async (
       // sends email to the user
       try {
         await new Email(user, url).sendSecurityEmail('new', {
-          device: deviceName,
-          location: `${city}, ${country}`,
+          device: data.deviceName,
+          location: `${data.city}, ${data.country}`,
           time: new Date(),
         });
 
@@ -344,16 +359,22 @@ export const login = asyncErrorHandler(
         if (user) {
           const allowEmail = user.settings.content.notifications.email;
 
+          const { data } = await getDeviceDetails(
+            req.get('user-agent')!,
+            req.clientIp!
+          );
+
           await Notification.create({
             user: user._id,
             type: ['security', 'login', 'failed'],
+            data,
           });
 
           if (allowEmail) {
             const url =
               process.env.NODE_ENV === 'production'
-                ? 'https://buzzer-0z8q.onrender.com/auth'
-                : 'http://localhost:5173/auth';
+                ? 'https://buzzer-0z8q.onrender.com/settings'
+                : 'http://localhost:5173/settings';
 
             // sends email to the user
             try {

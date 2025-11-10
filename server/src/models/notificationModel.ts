@@ -14,6 +14,7 @@ interface INotification extends Document {
     - comment on user's post
     - like user's comment
     - comments on user's comment
+   
 
   Mentions (derive mentions from client)
     - user is mentioned in post description or comments
@@ -24,6 +25,8 @@ interface INotification extends Document {
   Requests
     - receieves friend request
     - user's friend request accepted or rejected
+     - pending collaboration
+    - accepted collaboration
 
   System
     - notifications about user's device or account

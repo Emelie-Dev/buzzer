@@ -32,6 +32,10 @@ const App = () => {
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [storyIndex, setStoryIndex] = useState<number>(0);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>(null!);
+  const [showFriendRequests, setShowFriendRequests] = useState<boolean>(false);
+  const [showCollaborationRequests, setShowCollaborationRequests] =
+    useState<boolean>(false);
+
   useEffect(() => {
     const deviceId = crypto.randomUUID();
     const id = localStorage.getItem('deviceId');
@@ -71,6 +75,10 @@ const App = () => {
             setShowSearchPage,
             suggestedUsers,
             setSuggestedUsers,
+            showFriendRequests,
+            setShowFriendRequests,
+            showCollaborationRequests,
+            setShowCollaborationRequests,
           }}
         >
           <StoryContext.Provider

@@ -23,6 +23,17 @@ interface LikeObj {
   handleLike: () => Promise<void>;
   handlePinnedReels: (action: 'add' | 'delete') => string | number | undefined;
   isReelPinned: () => boolean;
+  collaboratorsList: {
+    value: any[];
+    loading: boolean;
+    isCollaborator: boolean;
+  };
+  handleFollow: (
+    e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+    id: string
+  ) => Promise<void>;
+  followList: Set<string>;
+  getFollowText: (id: string) => 'Unfollow' | 'Follow';
 }
 
 type AudioFile = {
@@ -85,6 +96,10 @@ export const GeneralContext = createContext<{
   setShowSearchPage: React.Dispatch<React.SetStateAction<boolean>>;
   suggestedUsers: any[];
   setSuggestedUsers: React.Dispatch<React.SetStateAction<any[]>>;
+  showFriendRequests: boolean;
+  setShowFriendRequests: React.Dispatch<React.SetStateAction<boolean>>;
+  showCollaborationRequests: boolean;
+  setShowCollaborationRequests: React.Dispatch<React.SetStateAction<boolean>>;
 }>(null!);
 
 export const SettingsContext = createContext<{
@@ -105,4 +120,59 @@ export const StoryContext = createContext<{
   userStory: any[];
   setUserStory: React.Dispatch<React.SetStateAction<any[]>>;
   setStories: React.Dispatch<React.SetStateAction<any[]>>;
+}>(null!);
+
+export const NotificationContext = createContext<{
+  likes: {
+    content: {
+      value: string;
+      obj: any;
+    }[];
+    reel: {
+      value: string;
+      obj: any;
+    }[];
+    story: {
+      value: string;
+      obj: any;
+    }[];
+    comment: {
+      value: string;
+      obj: any;
+    }[];
+  };
+
+  setLikes: React.Dispatch<
+    React.SetStateAction<{
+      content: {
+        value: string;
+        obj: any;
+      }[];
+      reel: {
+        value: string;
+        obj: any;
+      }[];
+      story: {
+        value: string;
+        obj: any;
+      }[];
+      comment: {
+        value: string;
+        obj: any;
+      }[];
+    }>
+  >;
+  followingList: any[];
+  setFollowingList: React.Dispatch<React.SetStateAction<any[]>>;
+  deleteData: {
+    list: Set<string>;
+    loading: boolean;
+  };
+  setDeleteData: React.Dispatch<
+    React.SetStateAction<{
+      list: Set<string>;
+      loading: boolean;
+    }>
+  >;
+  deleteNotifications: () => Promise<void>;
 }>(null!);

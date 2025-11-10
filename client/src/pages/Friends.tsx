@@ -21,7 +21,6 @@ import { Link } from 'react-router-dom';
 const Friends = () => {
   const [category, setCategory] = useState<'users' | 'contents' | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
-  const [showFriendRequests, setShowFriendRequests] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null!);
   const mainRef = useRef<HTMLDivElement>(null!);
@@ -36,7 +35,8 @@ const Friends = () => {
     postData,
   } = useScrollHandler(false, 'v1/contents?category=friends');
 
-  const { setShowSearchPage } = useContext(GeneralContext);
+  const { setShowSearchPage, showFriendRequests, setShowFriendRequests } =
+    useContext(GeneralContext);
 
   const [requestsData, setRequestsData] = useState<{
     type: 'sent' | 'received';
@@ -44,8 +44,8 @@ const Friends = () => {
   }>({ type: 'received', loading: true });
 
   const [requests, setRequests] = useState<{
-    sent: { value: any[]; end: false };
-    received: { value: any[]; end: false };
+    sent: { value: any[]; end: boolean };
+    received: { value: any[]; end: boolean };
   }>({ sent: { value: [], end: false }, received: { value: [], end: false } });
   const [suggestions, setSuggestions] = useState<any[]>(null!);
 
@@ -200,7 +200,7 @@ const Friends = () => {
             value: prev.sent.value.filter((request) => request._id !== id),
           },
         }));
-        toast.success(`Friend request canceled.`);
+        toast.success(`Friend request cancelled.`);
       } catch (err: any) {
         if (!err.response) {
           toast.error(`Could not cancel request. Please Try again.`);
@@ -523,7 +523,11 @@ const Friends = () => {
               ) : requests[requestsData.type].value.length === 0 ? (
                 <div className={styles['error-div']}>
                   <MdOutlineHourglassEmpty className={styles['empty-icon2']} />
-                  <span>You don’t have any friend requests at the moment.</span>
+                  <span>
+                    You don’t have any{' '}
+                    {requestsData.type === 'received' ? 'friend' : 'sent'}{' '}
+                    requests at the moment.
+                  </span>
                 </div>
               ) : (
                 requests[requestsData.type].value.slice(0, 10).map((request) =>

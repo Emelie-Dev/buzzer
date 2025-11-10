@@ -13,8 +13,12 @@ import {
   updateScreenTime,
   updateSettings,
   getWatchHistory,
+  replyCollaborationRequest,
+  getCollaborationRequests,
+  leaveCollaboration,
 } from '../controllers/userController.js';
 import protectRoute from '../middleware/protectRoute.js';
+import { cancelRequest } from '../utils/handleNotifications.js';
 
 const router = express.Router();
 
@@ -47,5 +51,13 @@ router.patch('/screen-time', updateScreenTime);
 router.post('/switch-account', switchAccount);
 
 router.post('/watch-history', getWatchHistory);
+
+router.get('/collaborate', getCollaborationRequests);
+
+router.post('/collaborate/respond/:id', replyCollaborationRequest);
+
+router.delete('/collaborate/:id', cancelRequest('collaborate'));
+
+router.patch('/collaborate/leave/:id', leaveCollaboration);
 
 export default router;

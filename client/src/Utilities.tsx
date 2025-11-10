@@ -99,6 +99,16 @@ export const monthLabels = [
   'Dec',
 ];
 
+export const days = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
 const getAdjustmentsValue = (currentFileData: FileData) => {
   const adjustments = { ...currentFileData.adjustments };
 

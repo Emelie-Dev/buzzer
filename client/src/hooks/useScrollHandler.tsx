@@ -3,7 +3,11 @@ import { GeneralContext } from '../Contexts';
 import { apiClient } from '../Utilities';
 import { toast } from 'sonner';
 
-const useScrollHandler = (disableFunctionality?: boolean, url?: string) => {
+const useScrollHandler = (
+  disableFunctionality?: boolean,
+  url?: string,
+  disablePosts?: boolean
+) => {
   const [activeVideo, setActiveVideo] = useState<HTMLVideoElement | null>(null);
   const [prevTop, setPrevTop] = useState<number>(0);
   const [posts, setPosts] = useState<any[]>(null!);
@@ -49,7 +53,7 @@ const useScrollHandler = (disableFunctionality?: boolean, url?: string) => {
   };
 
   useEffect(() => {
-    getPosts();
+    if (!disablePosts) getPosts();
   }, []);
 
   useEffect(() => {
@@ -64,22 +68,20 @@ const useScrollHandler = (disableFunctionality?: boolean, url?: string) => {
     window.removeEventListener('blur', blurHandler);
     window.removeEventListener('focus', focusHandler);
 
-    if (!disableFunctionality) {
+    if (!(disableFunctionality || disablePosts)) {
       window.addEventListener('blur', blurHandler);
       window.addEventListener('focus', focusHandler);
     }
 
     return () => {
-      if (!disableFunctionality) {
-        window.removeEventListener('blur', blurHandler);
-        window.removeEventListener('focus', focusHandler);
-      }
+      window.removeEventListener('blur', blurHandler);
+      window.removeEventListener('focus', focusHandler);
     };
   }, [activeVideo]);
 
   const scrollHandler = (e?: React.UIEvent<HTMLElement, UIEvent>) => {
     const target = e && (e.target as HTMLDivElement);
-    if (!disableFunctionality) {
+    if (!(disableFunctionality || disablePosts)) {
       const videos = contentRef.current;
       const deviceHeight = window.innerHeight;
 

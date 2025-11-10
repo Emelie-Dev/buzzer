@@ -3,6 +3,9 @@ import Notification from '../models/notificationModel.js';
 import { ContentAccessibility } from '../models/storyModel.js';
 import User from '../models/userModel.js';
 import webpush, { PushSubscription } from 'web-push';
+import asyncErrorHandler, { AuthRequest } from './asyncErrorHandler.js';
+import { NextFunction, Response } from 'express';
+import CustomError from './CustomError.js';
 
 export const handleCreateNotifications = async (
   type: 'like' | 'comment' | 'reply',
@@ -283,3 +286,76 @@ export const handleMentionNotifications = async (
     await Promise.allSettled(promises);
   } catch {}
 };
+
+export const sendCollaborationRequests = async (
+  collaborators: string[],
+  userId: string,
+  type: 'reel' | 'content',
+  documentId: any
+) => {
+  const users = collaborators.filter((user) => String(user) !== String(userId));
+
+  if (users.length > 0) {
+    await Promise.allSettled(
+      users.map(async (user) => {
+        const userData = await User.findById(user);
+
+        if (userData) {
+          const { value: isPrivate, users: audience } =
+            userData.settings.general.privacy;
+
+          if (isPrivate) {
+            return !audience.map((user) => String(user)).includes(userId);
+          }
+
+          const notificationExists = await Notification.exists({
+            user,
+            secondUser: userId,
+            type: ['collaborate', type],
+            documentId,
+          });
+
+          if (!notificationExists) {
+            await Notification.create({
+              user,
+              secondUser: userId,
+              type: ['collaborate', type],
+              documentId,
+            });
+          }
+        }
+
+        return;
+      })
+    );
+  }
+};
+
+export const cancelRequest = (type: string) =>
+  asyncErrorHandler(
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
+      const { id } = req.params;
+
+      // Checks if there is an field
+      if (!id)
+        return next(new CustomError('Please provide a request id.', 400));
+
+      // Checks if request exists
+      const request = await Notification.exists({
+        _id: id,
+        secondUser: req.user?._id,
+        type: { $in: [type] },
+      });
+
+      if (request) {
+        await Notification.findByIdAndDelete(request._id);
+
+        return res.status(204).json({
+          status: 'success',
+          message: null,
+        });
+      } else {
+        return next(new CustomError('This request does not exist!', 404));
+      }
+    }
+  );

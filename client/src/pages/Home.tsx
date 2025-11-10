@@ -17,10 +17,12 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileMenu from '../components/MobileMenu';
 import Skeleton from 'react-loading-skeleton';
-import { apiClient, getUrl } from '../Utilities';
+import { apiClient, getTime, getUrl } from '../Utilities';
 import Engagements from '../components/Engagements';
 import { toast } from 'sonner';
 import LoadingAnimation from '../components/LoadingAnimation';
+import { MdOutlineHourglassEmpty, MdOutlineWifiOff } from 'react-icons/md';
+import CollaborationRequests from '../components/CollaborationRequests';
 
 export interface User {
   name: string;
@@ -50,8 +52,8 @@ const Home = () => {
   const {
     setCreateCategory,
     setShowSearchPage,
-    suggestedUsers,
-    setSuggestedUsers,
+    showCollaborationRequests,
+    setShowCollaborationRequests,
   } = useContext(GeneralContext);
   const { user } = useContext(AuthContext);
   const { stories, userStory, setStoryIndex, setViewStory } =
@@ -59,15 +61,24 @@ const Home = () => {
   const [engagementModal, setEngagementModal] = useState<
     'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
   >(null);
-  const [followList, setFollowList] = useState<Set<string>>(new Set());
+
+  const [requestsData, setRequestsData] = useState<{
+    type: 'sent' | 'received';
+    loading: boolean | 'error';
+  }>({ type: 'received', loading: true });
+
+  const [requests, setRequests] = useState<{
+    sent: { value: any[]; end: boolean };
+    received: { value: any[]; end: boolean };
+  }>({ sent: { value: [], end: false }, received: { value: [], end: false } });
+
+  const [replyQueue, setReplyQueue] = useState<Set<string>>(new Set());
 
   const storyRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     document.title = 'Buzzer - Home';
     scrollHandler();
-
-    // setTimeout
 
     return () => {
       setShowSearchPage(false);
@@ -86,6 +97,37 @@ const Home = () => {
     });
   }, [stories]);
 
+  useEffect(() => {
+    getCollaborationRequests();
+  }, [requestsData.type]);
+
+  const getCollaborationRequests = async () => {
+    try {
+      const { data } = await apiClient(
+        `v1/users/collaborate?type=${requestsData.type}`
+      );
+
+      setRequestsData((prev) => ({
+        ...prev,
+        loading: false,
+      }));
+      setRequests((prev) => ({
+        ...prev,
+        [requestsData.type]: {
+          value: data.data.requests,
+          end: data.data.requests.length < 20,
+        },
+      }));
+    } catch {
+      setRequestsData((prev) => ({
+        ...prev,
+        loading: 'error',
+      }));
+
+      toast.error(`An error occured while getting collaboration requests.`);
+    }
+  };
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
 
@@ -98,32 +140,79 @@ const Home = () => {
     });
   };
 
-  const hasViewedAll = (stories: any[]) => {
-    return stories.every((story) => story.hasViewed);
+  const handleRequests = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRequestsData({
+      type: e.target.value as 'sent' | 'received',
+      loading: true,
+    });
   };
 
-  const followUser = async (id: string) => {
-    const newList = new Set(followList);
-    newList.add(id);
-    setFollowList(newList);
+  const replyRequest =
+    (action: 'accept' | 'reject', id: string) =>
+    async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      e.preventDefault();
+      if (replyQueue.has(id)) return;
 
-    try {
-      await apiClient.post(`v1/follow/${id}`);
+      const queue = new Set(replyQueue).add(id);
+      setReplyQueue(queue);
 
-      setSuggestedUsers((prevValue) =>
-        prevValue.filter((user) => user._id !== id)
-      );
-    } catch (err: any) {
-      if (!err.response) {
-        toast.error(`Could not follow user. Please Try again.`);
-      } else {
-        toast.error(err.response.data.message);
+      try {
+        const { data } = await apiClient.post(
+          `v1/users/collaborate/respond/${id}`,
+          { action }
+        );
+
+        setRequests((prev) => ({
+          ...prev,
+          received: {
+            ...prev.received,
+            value: prev.received.value.filter((request) => request._id !== id),
+          },
+        }));
+        toast.success(data.message);
+      } catch (err: any) {
+        if (!err.response) {
+          toast.error(`Could not ${action} request. Please Try again.`);
+        } else {
+          toast.error(err.response.data.message);
+        }
+      } finally {
+        queue.delete(id);
+        setReplyQueue(new Set(queue));
       }
-    } finally {
-      newList.delete(id);
-      setFollowList(new Set(newList));
-    }
-  };
+    };
+
+  const cancelRequest =
+    (id: string) =>
+    async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      e.preventDefault();
+      if (replyQueue.has(id)) return;
+
+      const queue = new Set(replyQueue).add(id);
+      setReplyQueue(queue);
+
+      try {
+        await apiClient.delete(`v1/users/collaborate/${id}`);
+
+        setRequests((prev) => ({
+          ...prev,
+          sent: {
+            ...prev.sent,
+            value: prev.sent.value.filter((request) => request._id !== id),
+          },
+        }));
+        toast.success(`Collaboration request cancelled.`);
+      } catch (err: any) {
+        if (!err.response) {
+          toast.error(`Could not cancel request. Please Try again.`);
+        } else {
+          toast.error(err.response.data.message);
+        }
+      } finally {
+        queue.delete(id);
+        setReplyQueue(new Set(queue));
+      }
+    };
 
   return (
     <>
@@ -369,98 +458,220 @@ const Home = () => {
           <AsideHeader activeVideo={activeVideo} />
 
           <div className={styles['suggested-container']}>
-            <span className={styles['suggested-text']}>Suggested for you</span>
+            <span className={styles['friends-request-header']}>
+              <span className={styles['friends-request-text']}>
+                Collaboration Requests
+              </span>
+              <select
+                className={styles['request-type-select']}
+                value={requestsData.type}
+                onChange={handleRequests}
+              >
+                <option value="received">Received</option>
+                <option value="sent">Sent</option>
+              </select>
+            </span>
 
             <div className={styles['suggested-users']}>
-              {suggestedUsers === null ? (
-                Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className={styles['suggested-skeleton-box']}>
-                    <Skeleton circle height={48} width={48} />
-                    <div className={styles['suggested-skeleton-box2']}>
-                      <Skeleton height={14} width="50%" />
-                      <Skeleton height={14} width="80%" />
-                    </div>
-                    <Skeleton height={30} width={60} />
+              {requestsData.loading === true ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div className={styles['collab-skeleton']} key={index}>
+                    <Skeleton className={styles['pinned-reels-skeleton']} />
+
+                    <span className={styles['collab-skeleton-btn-box']}>
+                      <Skeleton height={30} />
+                      <Skeleton height={30} />
+                    </span>
                   </div>
                 ))
-              ) : suggestedUsers.length === 0 ? (
-                <div className={styles['no-data-text']}>
-                  We couldn’t find any users at the moment.
+              ) : requestsData.loading === 'error' ? (
+                <div className={styles['error-div']}>
+                  <MdOutlineWifiOff className={styles['empty-icon']} />
+                  <span>Could not get collaboration requests.</span>
+                  <button
+                    className={styles['error-btn']}
+                    onClick={getCollaborationRequests}
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : requests[requestsData.type].value.length === 0 ? (
+                <div className={styles['error-div']}>
+                  <MdOutlineHourglassEmpty className={styles['empty-icon2']} />
+                  <span>
+                    You don’t have any{' '}
+                    {requestsData.type === 'received'
+                      ? 'collaboration'
+                      : 'sent'}{' '}
+                    requests at the moment.
+                  </span>
                 </div>
               ) : (
-                suggestedUsers.slice(0, 10).map((user) => (
-                  <article key={user._id} className={styles['suggested-user']}>
-                    <Link to={`/@${user.username}`}>
-                      <span
-                        className={`${styles['suggested-img-box']} ${
-                          user.stories.length > 0
-                            ? hasViewedAll(user.stories)
-                              ? styles['suggested-img-box2']
-                              : styles['suggested-img-box3']
-                            : ''
-                        }`}
-                      >
-                        <img
-                          src={getUrl(user.photo, 'users')}
-                          className={styles['suggested-user-img']}
-                        />
-                      </span>
-
-                      <span className={styles['suggested-user-names']}>
-                        <span className={styles['suggested-user-username']}>
-                          {user.name}
-                        </span>
-                        <span className={styles['suggested-user-handle']}>
-                          @{user.username}
-                        </span>
-                      </span>
-
-                      <span
-                        className={styles['follow-btn-box']}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          className={`${styles['follow-btn']} ${
-                            followList.has(user._id)
-                              ? styles['disable-btn']
-                              : ''
-                          }`}
-                          onClick={() => followUser(user._id)}
-                        >
-                          <span
-                            className={`${
-                              followList.has(user._id)
-                                ? styles['follow-txt']
-                                : ''
-                            } `}
-                          >
-                            Follow
-                          </span>
-                        </button>
-
-                        {followList.has(user._id) && (
-                          <LoadingAnimation
-                            style={{
-                              position: 'absolute',
-                              zIndex: 2,
-                              width: 60,
-                              height: 60,
-                              opacity: 0.7,
-                            }}
+                requests[requestsData.type].value.slice(0, 5).map((request) =>
+                  requestsData.type === 'received' ? (
+                    <article
+                      key={request._id}
+                      className={styles['pinned-video-box']}
+                    >
+                      <Link to={'#'}>
+                        {request.post.type === 'video' ? (
+                          <video className={styles['pinned-video']}>
+                            <source
+                              src={getUrl(
+                                request.post.src,
+                                `${request.type[1]}s`
+                              )}
+                              type="video/mp4"
+                            />
+                            Your browser does not support playing video.
+                          </video>
+                        ) : (
+                          <img
+                            className={styles['pinned-video']}
+                            src={getUrl(
+                              request.post.src,
+                              `${request.type[1]}s`
+                            )}
                           />
                         )}
-                      </span>
-                    </Link>
-                  </article>
-                ))
+
+                        <div className={styles['pinned-video-details']}>
+                          <div className={styles['pinned-video-data']}>
+                            <span
+                              className={`${styles['profile-img-span']} ${
+                                request.hasStory && request.hasUnviewedStory
+                                  ? styles['profile-img-span3']
+                                  : request.hasStory
+                                  ? styles['profile-img-span2']
+                                  : ''
+                              }`}
+                            >
+                              <img
+                                className={`${styles['profile-img2']} ${
+                                  !request.hasStory
+                                    ? styles['no-story-img']
+                                    : ''
+                                }`}
+                                src={getUrl(request.requester.photo, 'users')}
+                              />
+                            </span>
+
+                            <span className={styles['pinned-video-username']}>
+                              {request.requester.username}
+                            </span>
+                          </div>
+
+                          <span className={styles['pinned-video-duration']}>
+                            {getTime(request.createdAt)}
+                          </span>
+                        </div>
+                      </Link>
+
+                      <div className={styles['friend-btn-box']}>
+                        <button
+                          className={`${styles['friend-accept-btn']} ${
+                            replyQueue.has(request._id)
+                              ? styles['disable-link']
+                              : ''
+                          }`}
+                          onClick={replyRequest('accept', request._id)}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className={`${styles['friend-decline-btn']} ${
+                            replyQueue.has(request._id)
+                              ? styles['disable-link']
+                              : ''
+                          }`}
+                          onClick={replyRequest('reject', request._id)}
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </article>
+                  ) : (
+                    <article
+                      key={request._id}
+                      className={styles['pinned-video-box']}
+                    >
+                      <Link to={'#'}>
+                        {request.post.type === 'video' ? (
+                          <video className={styles['pinned-video']}>
+                            <source
+                              src={getUrl(
+                                request.post.src,
+                                `${request.type[1]}s`
+                              )}
+                              type="video/mp4"
+                            />
+                            Your browser does not support playing video.
+                          </video>
+                        ) : (
+                          <img
+                            className={styles['pinned-video']}
+                            src={getUrl(
+                              request.post.src,
+                              `${request.type[1]}s`
+                            )}
+                          />
+                        )}
+
+                        <div className={styles['pinned-video-details']}>
+                          <div className={styles['pinned-video-data']}>
+                            <span
+                              className={`${styles['profile-img-span']} ${
+                                request.hasStory && request.hasUnviewedStory
+                                  ? styles['profile-img-span3']
+                                  : request.hasStory
+                                  ? styles['profile-img-span2']
+                                  : ''
+                              }`}
+                            >
+                              <img
+                                className={`${styles['profile-img2']} ${
+                                  !request.hasStory
+                                    ? styles['no-story-img']
+                                    : ''
+                                }`}
+                                src={getUrl(request.recipient.photo, 'users')}
+                              />
+                            </span>
+
+                            <span className={styles['pinned-video-username']}>
+                              {request.recipient.username}
+                            </span>
+                          </div>
+
+                          <span className={styles['pinned-video-duration']}>
+                            {getTime(request.createdAt)}
+                          </span>
+                        </div>
+                      </Link>
+
+                      <div className={styles['friend-btn-box']}>
+                        <button
+                          className={`${styles['friend-decline-btn']} ${
+                            replyQueue.has(request._id)
+                              ? styles['disable-link']
+                              : ''
+                          }`}
+                          onClick={cancelRequest(request._id)}
+                        >
+                          Cancel Request
+                        </button>
+                      </div>
+                    </article>
+                  )
+                )
               )}
             </div>
 
-            {suggestedUsers && suggestedUsers.length > 10 && (
+            {requests[requestsData.type].value.length > 5 && (
               <div>
                 <span
                   className={styles['more-users-text']}
-                  onClick={() => setEngagementModal('suggested')}
+                  onClick={() => setShowCollaborationRequests(true)}
                 >
                   Show more
                 </span>
@@ -479,6 +690,18 @@ const Home = () => {
 
       {engagementModal && (
         <Engagements value={engagementModal} setValue={setEngagementModal} />
+      )}
+
+      {showCollaborationRequests && (
+        <CollaborationRequests
+          setShowCollaborationRequests={setShowCollaborationRequests}
+          requests={requests}
+          setRequests={setRequests}
+          replyRequest={replyRequest}
+          replyQueue={replyQueue}
+          requestType={requestsData.type}
+          cancelRequest={cancelRequest}
+        />
       )}
     </>
   );

@@ -4,10 +4,12 @@ import { IoPeopleOutline, IoArrowBack } from 'react-icons/io5';
 import { LiaPeopleCarrySolid } from 'react-icons/lia';
 import { BiMessageDetail } from 'react-icons/bi';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { GeneralContext } from '../Contexts';
+import { GeneralContext, NotificationContext } from '../Contexts';
 import { useNavigate } from 'react-router-dom';
 import { IoPeopleSharp } from 'react-icons/io5';
 import Engagements from './Engagements';
+import { IoClose } from 'react-icons/io5';
+import { MdDelete } from 'react-icons/md';
 
 type HeaderProps = {
   page?: string;
@@ -16,7 +18,6 @@ type HeaderProps = {
     React.SetStateAction<'users' | 'contents' | null>
   >;
   setShowFriendRequests?: React.Dispatch<React.SetStateAction<boolean>>;
-  selectCount?: number;
   notificationsCategory?:
     | 'all'
     | 'posts'
@@ -37,13 +38,15 @@ const Header = ({
   friendsCategory,
   setFriendsCategory,
   setShowFriendRequests,
-  selectCount = 0,
   notificationsCategory,
   setNotificationsCategory,
   setShowProfileViews,
 }: HeaderProps) => {
   const { setScrollingUp, setShowSearchPage, scrollingUp } =
     useContext(GeneralContext);
+
+  const { deleteData, setDeleteData, deleteNotifications } =
+    useContext(NotificationContext);
 
   const [engagementModal, setEngagementModal] = useState<
     'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
@@ -230,98 +233,128 @@ const Header = ({
               </li>
             </ul>
           ) : page === 'notifications' ? (
-            <ul
-              className={`${styles['notifications-list']} ${
-                selectCount > 0 ? styles['hide-scroll'] : ''
-              }`}
-            >
-              <li
-                className={`${styles['notifications-item']} ${
-                  notificationsCategory === 'all'
-                    ? styles['current-notification-category']
-                    : ''
-                } ${selectCount > 0 ? styles['hide-items'] : ''}`}
-                onClick={() =>
-                  setNotificationsCategory && setNotificationsCategory('all')
-                }
+            <>
+              <ul
+                className={`${styles['notifications-list']} ${
+                  deleteData.list.size > 0 ? styles['hide-scroll'] : ''
+                }`}
               >
-                View All
-                <span className={styles['category-count']}>15</span>
-              </li>
+                <li
+                  className={`${styles['notifications-item']} ${
+                    notificationsCategory === 'all'
+                      ? styles['current-notification-category']
+                      : ''
+                  } ${deleteData.list.size > 0 ? styles['hide-items'] : ''}`}
+                  onClick={() =>
+                    setNotificationsCategory && setNotificationsCategory('all')
+                  }
+                >
+                  View All
+                  <span className={styles['category-count']}>15</span>
+                </li>
 
-              <li
-                className={`${styles['notifications-item']} ${
-                  notificationsCategory === 'posts'
-                    ? styles['current-notification-category']
-                    : ''
-                }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
-                onClick={() =>
-                  setNotificationsCategory && setNotificationsCategory('posts')
-                }
-              >
-                Posts
-                <span className={styles['category-count']}>5</span>
-              </li>
+                <li
+                  className={`${styles['notifications-item']} ${
+                    notificationsCategory === 'posts'
+                      ? styles['current-notification-category']
+                      : ''
+                  }  ${deleteData.list.size > 0 ? styles['hide-items'] : ''}`}
+                  onClick={() =>
+                    setNotificationsCategory &&
+                    setNotificationsCategory('posts')
+                  }
+                >
+                  Posts
+                  <span className={styles['category-count']}>5</span>
+                </li>
 
-              <li
-                className={`${styles['notifications-item']} ${
-                  notificationsCategory === 'mentions'
-                    ? styles['current-notification-category']
-                    : ''
-                }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
-                onClick={() =>
-                  setNotificationsCategory &&
-                  setNotificationsCategory('mentions')
-                }
-              >
-                Mentions
-                <span className={styles['category-count']}>3</span>
-              </li>
+                <li
+                  className={`${styles['notifications-item']} ${
+                    notificationsCategory === 'mentions'
+                      ? styles['current-notification-category']
+                      : ''
+                  }  ${deleteData.list.size > 0 ? styles['hide-items'] : ''}`}
+                  onClick={() =>
+                    setNotificationsCategory &&
+                    setNotificationsCategory('mentions')
+                  }
+                >
+                  Mentions
+                  <span className={styles['category-count']}>3</span>
+                </li>
 
-              <li
-                className={`${styles['notifications-item']} ${
-                  notificationsCategory === 'followers'
-                    ? styles['current-notification-category']
-                    : ''
-                }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
-                onClick={() =>
-                  setNotificationsCategory &&
-                  setNotificationsCategory('followers')
-                }
-              >
-                Followers
-                <span className={styles['category-count']}>2</span>
-              </li>
+                <li
+                  className={`${styles['notifications-item']} ${
+                    notificationsCategory === 'followers'
+                      ? styles['current-notification-category']
+                      : ''
+                  }  ${deleteData.list.size > 0 ? styles['hide-items'] : ''}`}
+                  onClick={() =>
+                    setNotificationsCategory &&
+                    setNotificationsCategory('followers')
+                  }
+                >
+                  Followers
+                  <span className={styles['category-count']}>2</span>
+                </li>
 
-              <li
-                className={`${styles['notifications-item']} ${
-                  notificationsCategory === 'requests'
-                    ? styles['current-notification-category']
-                    : ''
-                }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
-                onClick={() =>
-                  setNotificationsCategory &&
-                  setNotificationsCategory('requests')
-                }
-              >
-                Requests
-                <span className={styles['category-count']}>4</span>
-              </li>
+                <li
+                  className={`${styles['notifications-item']} ${
+                    notificationsCategory === 'requests'
+                      ? styles['current-notification-category']
+                      : ''
+                  }  ${deleteData.list.size > 0 ? styles['hide-items'] : ''}`}
+                  onClick={() =>
+                    setNotificationsCategory &&
+                    setNotificationsCategory('requests')
+                  }
+                >
+                  Requests
+                  <span className={styles['category-count']}>4</span>
+                </li>
 
-              <li
-                className={`${styles['notifications-item']} ${
-                  notificationsCategory === 'system'
-                    ? styles['current-notification-category']
-                    : ''
-                }  ${selectCount > 0 ? styles['hide-items'] : ''}`}
-                onClick={() =>
-                  setNotificationsCategory && setNotificationsCategory('system')
-                }
-              >
-                System
-                <span className={styles['category-count']}>1</span>
-              </li>
-            </ul>
+                <li
+                  className={`${styles['notifications-item']} ${
+                    notificationsCategory === 'system'
+                      ? styles['current-notification-category']
+                      : ''
+                  }  ${deleteData.list.size > 0 ? styles['hide-items'] : ''}`}
+                  onClick={() =>
+                    setNotificationsCategory &&
+                    setNotificationsCategory('system')
+                  }
+                >
+                  System
+                  <span className={styles['category-count']}>1</span>
+                </li>
+              </ul>
+
+              {deleteData.list.size > 0 && (
+                <div className={styles['select-box']}>
+                  <span>
+                    Selected {deleteData.list.size}{' '}
+                    {deleteData.list.size === 1 ? 'item' : 'items'}
+                  </span>
+
+                  <div className={styles['select-btn-box']}>
+                    <IoClose
+                      className={styles['cancel-btn']}
+                      title="Cancel"
+                      onClick={() =>
+                        setDeleteData((prev) => ({ ...prev, list: new Set() }))
+                      }
+                    />
+                    <MdDelete
+                      className={`${styles['delete-btn']} ${
+                        deleteData.loading ? styles['disable-btn'] : ''
+                      }`}
+                      title="Delete"
+                      onClick={deleteNotifications}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             ''
           )}

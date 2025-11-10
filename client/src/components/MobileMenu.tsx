@@ -61,7 +61,13 @@ const MobileMenu = ({
         >
           Report
         </li>
-
+        <li
+          className={`${styles['menu-item']} ${
+            reels ? styles['reels-menu-item'] : ''
+          }`}
+        >
+          Leave Collaboration
+        </li>
         {reels && (
           <>
             <li

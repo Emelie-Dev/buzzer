@@ -12,7 +12,10 @@ import protectData from '../utils/protectData.js';
 import getUserLocation from '../utils/getUserLocation.js';
 // @ts-ignore
 import { checkVideoFilesDuration } from '../worker.js';
-import { handleMentionNotifications } from '../utils/handleNotifications.js';
+import {
+  handleMentionNotifications,
+  sendCollaborationRequests,
+} from '../utils/handleNotifications.js';
 import handleCloudinary from '../utils/handleCloudinary.js';
 import { ContentAccessibility } from '../models/storyModel.js';
 import { PipelineStage } from 'mongoose';
@@ -56,9 +59,17 @@ export const validateContentFiles = asyncErrorHandler(
     const uploader = upload.array('content', 20);
 
     uploader(req, res, async (error: any) => {
+      const collaborators = JSON.parse(req.body.collaborators) || [];
       const files = (req.files as Express.Multer.File[]) || [];
 
       try {
+        if (collaborators.length > 3) {
+          throw new CustomError(
+            'You can only have up to 3 collaborators per post.',
+            400
+          );
+        }
+
         if (error) {
           let message = error.isOperational
             ? error.message
@@ -143,6 +154,7 @@ export const saveContent = asyncErrorHandler(
 
       const filters = JSON.parse(req.body.filters).value;
       const fileDescriptions = JSON.parse(req.body.fileDescriptions).value;
+      const collaborators = JSON.parse(req.body.collaborators) || [];
 
       const contentItems = files.map((file, index) => ({
         src:
@@ -166,18 +178,6 @@ export const saveContent = asyncErrorHandler(
         media: contentItems,
         aspectRatio: Number(req.body.aspectRatio),
         description: req.body.description,
-        collaborators: (() => {
-          if (req.body.collaborators) {
-            const collaborators = new Set(
-              JSON.parse(req.body.collaborators).value
-            );
-            collaborators.delete(String(req.user?._id));
-
-            return [...collaborators];
-          }
-
-          return undefined;
-        })(),
         location,
         settings,
       });
@@ -191,6 +191,14 @@ export const saveContent = asyncErrorHandler(
         content._id,
         settings.accessibility,
         { text: req.body.description }
+      );
+
+      // send collaboration notifications
+      await sendCollaborationRequests(
+        collaborators,
+        req.user?._id,
+        'content',
+        content._id
       );
 
       return res.status(201).end(
@@ -590,6 +598,18 @@ export const getContents = asyncErrorHandler(
                 in: { $eq: [{ $size: '$$story.storyView' }, 0] },
               },
             },
+          },
+          isCollaborator: {
+            $in: [
+              viewerId,
+              {
+                $map: {
+                  input: '$collaborators',
+                  as: 'user',
+                  in: '$$user._id',
+                },
+              },
+            ],
           },
           comments: '$$REMOVE',
           shares: '$$REMOVE',

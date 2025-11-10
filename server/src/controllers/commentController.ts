@@ -14,6 +14,7 @@ import { ContentAccessibility } from '../models/storyModel.js';
 import { Types } from 'mongoose';
 import Like from '../models/likeModel.js';
 import { convert } from 'html-to-text';
+import truncate from 'truncate-html';
 
 export const isValidDateString = (str: string): boolean => {
   const date = new Date(str);
@@ -24,6 +25,10 @@ export const addComment = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     let { collection, documentId, text, reply, mentions } = req.body;
     collection = collection.toLowerCase();
+
+    if (!collection || !documentId || !text) {
+      return next(new CustomError(`Invalid request.`, 404));
+    }
 
     const query =
       collection === 'content'
@@ -37,6 +42,14 @@ export const addComment = asyncErrorHandler(
     // Check if item exists
     if (!data) {
       return next(new CustomError(`This ${collection} does not exist.`, 404));
+    }
+
+    if (reply) {
+      const commentExists = await Comment.exists({ _id: reply.commentId });
+
+      if (!commentExists) {
+        return next(new CustomError(`This comment does not exist.`, 404));
+      }
     }
 
     const textContent = convert(text, { wordwrap: null });
@@ -68,7 +81,14 @@ export const addComment = asyncErrorHandler(
 
     // Handle notifications
     const allowNotifications =
-      data.user.settings.content.notifications.interactions.likes;
+      data.user.settings.content.notifications.interactions.comments;
+
+    // @ts-expect-error/common js
+    const truncatedText = truncate(text, {
+      stripTags: false,
+      ellipsis: '....',
+      length: 50,
+    });
 
     if (allowNotifications) {
       // Handle notifications
@@ -87,7 +107,7 @@ export const addComment = asyncErrorHandler(
             value: data.user.settings.content.notifications.push,
             subscription: data.user.pushSubscription,
           },
-          { text, commentId: comment._id, postId: data._id }
+          { text: truncatedText, commentId: comment._id, postId: data._id }
         );
       } else {
         await handleCreateNotifications(
@@ -99,7 +119,7 @@ export const addComment = asyncErrorHandler(
             value: data.user.settings.content.notifications.push,
             subscription: data.user.pushSubscription,
           },
-          { text, commentId: comment._id }
+          { text: truncatedText, commentId: comment._id }
         );
       }
     }
@@ -112,7 +132,7 @@ export const addComment = asyncErrorHandler(
       viewerId,
       comment._id,
       ContentAccessibility.EVERYONE,
-      { text, collection, docId: documentId }
+      { text: truncatedText, collection, postId: documentId }
     );
 
     const commentData = await Comment.aggregate([

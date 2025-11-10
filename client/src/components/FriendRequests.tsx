@@ -14,22 +14,22 @@ type FriendRequestsProps = {
   requests: {
     sent: {
       value: any[];
-      end: false;
+      end: boolean;
     };
     received: {
       value: any[];
-      end: false;
+      end: boolean;
     };
   };
   setRequests: React.Dispatch<
     React.SetStateAction<{
       sent: {
         value: any[];
-        end: false;
+        end: boolean;
       };
       received: {
         value: any[];
-        end: false;
+        end: boolean;
       };
     }>
   >;
@@ -139,7 +139,7 @@ const FriendRequests = ({
           requests[prev.type].value[
             requests[prev.type].value.length - 1
           ].createdAt
-        ).toISOString() as any,
+        ),
       }));
     }
   };

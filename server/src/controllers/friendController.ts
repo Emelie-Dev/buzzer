@@ -103,32 +103,6 @@ export const sendRequest = asyncErrorHandler(
   }
 );
 
-export const cancelRequest = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-
-    // Checks if there is an field
-    if (!id) return next(new CustomError('Please provide a request id.', 400));
-
-    // Checks if request exists
-    const request = await Notification.exists({
-      _id: id,
-      secondUser: req.user?._id,
-    });
-
-    if (request) {
-      await Notification.findByIdAndDelete(request._id);
-
-      return res.status(204).json({
-        status: 'success',
-        message: null,
-      });
-    } else {
-      return next(new CustomError('This request does not exist!', 404));
-    }
-  }
-);
-
 export const respondToRequest = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const { id } = req.params;

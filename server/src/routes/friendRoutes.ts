@@ -1,18 +1,21 @@
 import express from 'express';
 import protectRoute from '../middleware/protectRoute.js';
 import {
-  cancelRequest,
   getFriendsSugestions,
   getRequests,
   respondToRequest,
   sendRequest,
 } from '../controllers/friendController.js';
+import { cancelRequest } from '../utils/handleNotifications.js';
 
 const router = express.Router();
 
 router.use(protectRoute);
 
-router.route('/request/:id').post(sendRequest).delete(cancelRequest);
+router
+  .route('/request/:id')
+  .post(sendRequest)
+  .delete(cancelRequest('friend_request'));
 
 router.post('/request/respond/:id', respondToRequest);
 

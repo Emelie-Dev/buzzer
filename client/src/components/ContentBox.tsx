@@ -69,7 +69,8 @@ const ContentBox = ({
     userBookmark,
     bookmarksCount,
     sharesCount,
-    src,hasSound
+    src,
+    hasSound,
   } = data;
   const type =
     contentType === 'reels'
@@ -115,6 +116,15 @@ const ContentBox = ({
   const [shares, setShares] = useState<number>(sharesCount);
   const [viewed, setViewed] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [collaboratorsList, setCollaboratorsList] = useState<{
+    value: any[];
+    loading: boolean;
+    isCollaborator: boolean;
+  }>({
+    isCollaborator: data.isCollaborator,
+    loading: false,
+    value: collaborators,
+  });
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -147,11 +157,11 @@ const ContentBox = ({
 
   useEffect(() => {
     setFollowersList(
-      collaborators
+      collaboratorsList.value
         .map((user: any) => user.isFollowing)
         .filter((data: any) => data)
     );
-  }, [collaborators]);
+  }, [collaboratorsList]);
 
   useEffect(() => {
     if (descriptionRef.current) {
@@ -200,7 +210,10 @@ const ContentBox = ({
             duration: 100,
           }
         );
-        animation.onfinish = () => setHideMenu(true);
+        animation.onfinish = () => {
+          setHideMenu(true);
+          listRef.current.style.overflowY = 'auto';
+        };
       }
     }
 
@@ -275,8 +288,8 @@ const ContentBox = ({
   };
 
   const getNames = () => {
-    if (collaborators.length === 1) {
-      const secondUser = collaborators[0];
+    if (collaboratorsList.value.length === 1) {
+      const secondUser = collaboratorsList.value[0];
 
       return (
         <>
@@ -306,9 +319,9 @@ const ContentBox = ({
           </span>{' '}
           &nbsp;and &nbsp;
           <div className={styles.collaborators}>
-            {collaborators.length} others
+            {collaboratorsList.value.length} others
             <ul className={styles['collaborators-list']}>
-              {collaborators.map((user: any) => (
+              {collaboratorsList.value.map((user: any) => (
                 <li key={user._id} className={styles['collaborators-item']}>
                   <a
                     className={styles['collaborators-link']}
@@ -598,6 +611,34 @@ const ContentBox = ({
     return !!reel;
   };
 
+  const leaveCollaboration = async () => {
+    setShowMenu(false);
+
+    if (collaboratorsList.loading) return;
+    setCollaboratorsList((prev) => ({ ...prev, loading: true }));
+
+    try {
+      await apiClient.patch(`v1/users/collaborate/leave/${data._id}`, {
+        type: contentType === 'reels' ? 'reel' : 'content',
+      });
+      setCollaboratorsList((prev) => ({
+        ...prev,
+        value: prev.value.filter((user) => user._id !== authUser._id),
+        isCollaborator: false,
+      }));
+
+      toast.success('You’ve successfully left the collaboration.');
+    } catch (err: any) {
+      if (!err.response) {
+        toast.error(`Could not leave collaboration. Please Try again.`);
+      } else {
+        toast.error(err.response.data.message);
+      }
+    } finally {
+      setCollaboratorsList((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
   return (
     <LikeContext.Provider
       value={{
@@ -613,6 +654,10 @@ const ContentBox = ({
         setMuted,
         handlePinnedReels,
         isReelPinned,
+        collaboratorsList,
+        handleFollow,
+        followList,
+        getFollowText,
       }}
     >
       {shareMedia && (
@@ -657,7 +702,7 @@ const ContentBox = ({
             setComments,
             hasStory,
             hasUnviewedStory,
-            collaborators,
+            collaborators: collaboratorsList.value,
             handleSave,
             shares,
           }}
@@ -673,7 +718,7 @@ const ContentBox = ({
         {contentType !== 'reels' && (
           <h1 className={styles['content-head']}>
             <span className={styles['content-head-box']}>
-              {collaborators.length === 0 ? (
+              {collaboratorsList.value.length === 0 ? (
                 <span className={styles['content-name-box']}>
                   <a
                     className={styles['user-link']}
@@ -735,6 +780,14 @@ const ContentBox = ({
                   >
                     Report
                   </li>
+                  {collaboratorsList.isCollaborator && (
+                    <li
+                      className={styles['menu-item']}
+                      onClick={leaveCollaboration}
+                    >
+                      Leave Collaboration
+                    </li>
+                  )}
                   <li className={styles['menu-item']} onClick={excludeContent}>
                     Not interested
                   </li>
@@ -818,6 +871,14 @@ const ContentBox = ({
                     >
                       Report
                     </li>
+                    {collaboratorsList.isCollaborator && (
+                      <li
+                        className={styles['menu-item']}
+                        onClick={leaveCollaboration}
+                      >
+                        Leave Collaboration
+                      </li>
+                    )}
                     <li className={styles['menu-item']} onClick={muteReel}>
                       {muted ? 'Unmute' : 'Mute'}
                     </li>

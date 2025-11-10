@@ -3,12 +3,14 @@ import styles from '../styles/CarouselItem.module.css';
 import { FaPause, FaPlay } from 'react-icons/fa';
 import { BiSolidErrorAlt } from 'react-icons/bi';
 import { GoUnmute, GoMute } from 'react-icons/go';
-import { ContentContext, LikeContext } from '../Contexts';
+import { AuthContext, ContentContext, LikeContext } from '../Contexts';
 import { BsDot } from 'react-icons/bs';
 import { MdLibraryMusic } from 'react-icons/md';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { RiPushpinFill, RiUnpinFill } from 'react-icons/ri';
 import { getTime, getUrl } from '../Utilities';
+import { GiMeepleCircle } from 'react-icons/gi';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 export interface Content {
   type: 'image' | 'video';
@@ -72,6 +74,10 @@ const CarouselItem = ({
     setMuted,
     handlePinnedReels,
     isReelPinned,
+    collaboratorsList,
+    handleFollow,
+    getFollowText,
+    followList,
   } = useContext(LikeContext);
   const { seenSlides, setSeenSlides } = viewsData;
   const [showLike, setShowLike] = useState<boolean>(false);
@@ -83,11 +89,13 @@ const CarouselItem = ({
   const [isProgressChanging, setIsProgressChanging] = useState<boolean>(false);
   const [duration, setDuration] = useState<string>('');
   const [elapsedTime, setElapsedTime] = useState<string>('');
+  const { user: authUser } = useContext(AuthContext);
 
   const imageRef = useRef<HTMLImageElement>(null!);
   const videoRef = useRef<HTMLVideoElement>(null!);
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const progressRef = useRef<HTMLInputElement>(null!);
+  const collaboratorsRef = useRef<HTMLUListElement>(null!);
 
   useEffect(() => {
     const networkHandler = () => {
@@ -132,8 +140,25 @@ const CarouselItem = ({
   }, [contentIndex]);
 
   useEffect(() => {
-    if (descriptionRef.current)
+    if (descriptionRef.current) {
       setDescriptionHeight(descriptionRef.current.scrollHeight);
+    }
+
+    const resizeHandler = () => {
+      if (collaboratorsRef.current && videoRef.current) {
+        collaboratorsRef.current.style.width = `${
+          videoRef.current.offsetWidth - 4
+        }px`;
+      }
+    };
+
+    resizeHandler();
+
+    window.addEventListener('resize', resizeHandler);
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
   }, []);
 
   useEffect(() => {
@@ -614,6 +639,94 @@ const CarouselItem = ({
             {viewType !== 'comment' && (
               <div className={styles['reel-details']}>
                 <span className={styles['reel-owner']}>{name}</span>
+                {collaboratorsList.value.length > 0 && (
+                  <div className={styles['collaborators-div']}>
+                    <ul
+                      className={styles['collaborators-list']}
+                      ref={collaboratorsRef}
+                    >
+                      {collaboratorsList.value.map((user: any) => (
+                        <li
+                          key={user._id}
+                          className={styles['collaborators-item']}
+                        >
+                          <a
+                            className={styles['collaborators-link']}
+                            href={`/@${user.username}`}
+                          >
+                            <img
+                              className={styles['collaborators-img']}
+                              src={getUrl(user.photo, 'users')}
+                            />
+
+                            <span className={styles['collaborators-names']}>
+                              <span
+                                className={`${styles['collaborators-name']} ${
+                                  user._id === authUser._id
+                                    ? styles['auth-user']
+                                    : ''
+                                }`}
+                              >
+                                {user._id === authUser._id ? 'You' : user.name}
+                              </span>
+                              <span
+                                className={styles['collaborators-username']}
+                              >
+                                @{user.username}
+                              </span>
+                            </span>
+
+                            {user._id !== authUser._id && (
+                              <span
+                                className={styles['follow-btn-box']}
+                                onClick={(e) => handleFollow(e, user._id)}
+                              >
+                                <button
+                                  className={`${styles['follow-btn']} ${
+                                    followList.has(user._id)
+                                      ? styles['disable-btn']
+                                      : ''
+                                  }`}
+                                >
+                                  <span
+                                    className={`${
+                                      followList.has(user._id)
+                                        ? styles['follow-txt']
+                                        : ''
+                                    } `}
+                                  >
+                                    {getFollowText(user._id)}
+                                  </span>
+                                </button>
+
+                                {followList.has(user._id) && (
+                                  <LoadingAnimation
+                                    style={{
+                                      position: 'absolute',
+                                      zIndex: 2,
+                                      width: 60,
+                                      height: 60,
+                                      opacity: 0.7,
+                                    }}
+                                  />
+                                )}
+                              </span>
+                            )}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                    <span
+                      className={styles['collaborators-box']}
+                      title="Collaborators"
+                    >
+                      <GiMeepleCircle
+                        className={styles['collaborators-icon']}
+                      />
+                      <span>{collaboratorsList.value.length} </span>
+                    </span>
+                  </div>
+                )}
                 <BsDot className={styles.dot} />
                 <time className={styles['reel-time']}>
                   {getTime(createdAt)}

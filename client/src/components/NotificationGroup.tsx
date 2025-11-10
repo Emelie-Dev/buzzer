@@ -1,26 +1,35 @@
 import styles from '../styles/Notifications.module.css';
 import { TiPlus } from 'react-icons/ti';
 import NotificationBox from '../components/NotificationBox';
-import { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { TiMinus } from 'react-icons/ti';
+import { days, monthLabels } from '../Utilities';
+import { NotificationContext } from '../Contexts';
 
 type NotificationGroupProps = {
-  selectCount: number;
   index: number;
-  setSelectCount: React.Dispatch<React.SetStateAction<number>>;
+  date: string;
+  category: 'all' | 'posts' | 'mentions' | 'followers' | 'requests' | 'system';
+  data: any[];
 };
 
 const NotificationGroup = ({
-  setSelectCount,
   index,
-  selectCount,
+  date,
+  category,
+  data,
 }: NotificationGroupProps) => {
   const [collapse, setCollapse] = useState<boolean>(index === 0 ? false : true);
+  const { deleteData, setDeleteData } = useContext(NotificationContext);
 
   const groupRef = useRef<HTMLDivElement>(null!);
   const checkBoxRef = useRef<HTMLInputElement[]>([]);
 
   const prevCollapseValue = useRef<boolean>(collapse);
+
+  useEffect(() => {
+    setCollapse(index === 0 ? false : true);
+  }, [category]);
 
   useEffect(() => {
     if (collapse) {
@@ -47,41 +56,55 @@ const NotificationGroup = ({
   }, [collapse]);
 
   useEffect(() => {
-    if (selectCount === 1) {
-      prevCollapseValue.current = collapse;
+    if (deleteData.list.size === 1) {
+      prevCollapseValue.current = collapse || prevCollapseValue.current;
       setCollapse(false);
-    } else if (selectCount >= 1) {
+    } else if (deleteData.list.size >= 1) {
       setCollapse(false);
     } else {
       setCollapse(prevCollapseValue.current);
-      checkBoxRef.current.forEach((elem) => (elem.checked = false));
     }
-  }, [selectCount]);
+  }, [deleteData]);
+
+  const isAllChecked = () => {
+    return data.every((obj) => deleteData.list.has(obj._id));
+  };
 
   const handleSelect = () => {
-    const unCheckedLength = checkBoxRef.current.filter((elem) => {
-      return !elem.checked;
-    }).length;
+    const list = new Set(deleteData.list);
 
-    if (unCheckedLength === 0) {
-      checkBoxRef.current.forEach((elem) => (elem.checked = false));
-      setSelectCount((prev) => prev - checkBoxRef.current.length);
+    if (isAllChecked()) {
+      data.forEach((obj) => list.delete(obj._id));
     } else {
-      checkBoxRef.current.forEach((elem) => (elem.checked = true));
-      setSelectCount((prev) => prev + unCheckedLength);
+      data.forEach((obj) => list.add(obj._id));
     }
+
+    setDeleteData((prev) => ({ ...prev, list }));
+  };
+
+  const getDateValue = (date: string) => {
+    const dateValue = new Date(date);
+
+    const year = dateValue.getFullYear();
+    const month = dateValue.getMonth();
+    const dateNumber = dateValue.getDate();
+    const day = dateValue.getDay();
+
+    return `${days[day]}, ${monthLabels[month]} ${dateNumber}, ${year}`;
   };
 
   return (
     <div className={styles['notifications-div']} ref={groupRef}>
       <span className={styles['notifications-head']}>
-        <span className={styles['notifications-date']}>Today</span>
+        <span className={styles['notifications-date']}>
+          {getDateValue(date)}
+        </span>
 
-        {selectCount > 0 ? (
+        {deleteData.list.size > 0 ? (
           <input
             type="checkbox"
             className={`${styles['group-checkbox']}`}
-            checked={checkBoxRef.current.every((elem) => elem.checked)}
+            checked={isAllChecked()}
             onChange={handleSelect}
           />
         ) : collapse ? (
@@ -98,16 +121,11 @@ const NotificationGroup = ({
       </span>
 
       <div className={styles.notifications}>
-        {new Array(3).fill(null).map((_, index) => (
-          <NotificationBox
-            key={index}
-            checkBoxRef={checkBoxRef}
-            setSelectCount={setSelectCount}
-            selectCount={selectCount}
-          />
+        {data.map((value, index) => (
+          <NotificationBox key={index} data={value} checkBoxRef={checkBoxRef} />
         ))}
       </div>
     </div>
   );
 };
-export default NotificationGroup;
+export default React.memo(NotificationGroup);

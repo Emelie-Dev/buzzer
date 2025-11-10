@@ -7,6 +7,7 @@ import View from '../models/viewModel.js';
 import User from '../models/userModel.js';
 import Reel from '../models/reelModel.js';
 import Story from '../models/storyModel.js';
+import { isValidDateString } from './commentController.js';
 
 export const viewItem = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -79,6 +80,11 @@ export const viewItem = asyncErrorHandler(
 
 export const getProfileViews = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
+    let { count, createdAt } = req.query as any;
+
+    count = Number(count) || Infinity;
+    createdAt = isValidDateString(createdAt) ? new Date(createdAt) : new Date();
+
     const views = await View.aggregate([
       {
         $match: {
@@ -88,27 +94,37 @@ export const getProfileViews = asyncErrorHandler(
       },
       {
         $lookup: {
-          from: 'users',
-          foreignField: '_id',
-          localField: 'user',
-          as: 'user',
-        },
-      },
-      {
-        $unwind: '$user',
-      },
-      {
-        $lookup: {
           from: 'follows',
-          let: { userId: '$user._id' },
+          let: { userId: '$user', viewerId: req.user?._id },
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $and: [
-                    { $eq: ['$follower', req.user?._id] },
-                    { $eq: ['$following', '$$userId'] },
-                  ],
+                  $eq: ['$following', '$$userId'],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                followers: { $push: '$$ROOT' },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                count: { $ifNull: ['$count', 0] },
+                isFollowing: {
+                  $first: {
+                    $filter: {
+                      input: '$followers',
+                      as: 'f',
+                      cond: {
+                        $eq: ['$$f.follower', '$$viewerId'],
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -118,20 +134,55 @@ export const getProfileViews = asyncErrorHandler(
       },
       {
         $addFields: {
-          isFollowing: { $gt: [{ $size: '$followInfo' }, 0] },
+          followersCount: {
+            $cond: [
+              { $eq: [{ $size: { $ifNull: ['$followInfo', []] } }, 0] },
+              0,
+              { $arrayElemAt: ['$followInfo.count', 0] },
+            ],
+          },
+          isFollowing: {
+            $cond: [
+              { $eq: [{ $size: { $ifNull: ['$followInfo', []] } }, 0] },
+              null,
+              { $arrayElemAt: ['$followInfo.isFollowing', 0] },
+            ],
+          },
         },
       },
       {
+        $match: {
+          followersCount: { $lte: count },
+          createdAt: { $lt: createdAt },
+        },
+      },
+      {
+        $sort: {
+          followersCount: -1,
+          createdAt: -1,
+        },
+      },
+      { $limit: 20 },
+      {
+        $lookup: {
+          from: 'users',
+          as: 'users',
+          foreignField: '_id',
+          localField: 'user',
+        },
+      },
+      { $addFields: { user: { $first: '$users' } } },
+      {
         $project: {
-          collectionName: 1,
-          documentId: 1,
-          createdAt: 1,
-          isFollowing: 1,
           user: {
-            name: 1,
-            username: 1,
-            photo: 1,
+            _id: '$user._id',
+            name: '$user.name',
+            username: '$user.username',
+            photo: '$user.photo',
           },
+          followersCount: 1,
+          isFollowing: 1,
+          createdAt: 1,
         },
       },
     ]);

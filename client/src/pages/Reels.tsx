@@ -391,11 +391,7 @@ const Reels = () => {
                           <option className={styles['speed-value']} value={1.5}>
                             1.5x
                           </option>
-                          <option
-                            className={styles['speed-value']}
-                            value={1}
-                            selected
-                          >
+                          <option className={styles['speed-value']} value={1}>
                             1x
                           </option>
                           <option className={styles['speed-value']} value={0.5}>
@@ -464,11 +460,7 @@ const Reels = () => {
                         <option className={styles['speed-value']} value={1.5}>
                           1.5x
                         </option>
-                        <option
-                          className={styles['speed-value']}
-                          value={1}
-                          selected
-                        >
+                        <option className={styles['speed-value']} value={1}>
                           1x
                         </option>
                         <option className={styles['speed-value']} value={0.5}>

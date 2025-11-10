@@ -735,8 +735,11 @@ const NavBar = ({
                   </li>
                   <hr className={styles['logout-line']} />
                   <li className={styles['more-item']}>
-                    <FiLogOut className={styles['more-item-icon']} />
-                    Log out
+                    <a>
+                      {' '}
+                      <FiLogOut className={styles['more-item-icon']} />
+                      Log out
+                    </a>
                   </li>
                 </ul>
               )}
@@ -1197,8 +1200,11 @@ const NavBar = ({
                     </li>
                     <hr className={styles['logout-line']} />
                     <li className={styles['more-item']}>
-                      <FiLogOut className={styles['more-item-icon']} />
-                      Log out
+                      <a>
+                        {' '}
+                        <FiLogOut className={styles['more-item-icon']} />
+                        Log out
+                      </a>
                     </li>
                   </ul>
                 )}

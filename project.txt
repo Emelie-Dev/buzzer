@@ -29,6 +29,8 @@ Pages =>
   - Create analytics page
   - Show email in proile page
   - Hide search before any page unmounts
+  - Add time to requests in the frontend
+  
 
 
 Server =>
@@ -64,4 +66,5 @@ Server =>
   - Enable users to view sent friend requests
   - Handle duplicate documents in pagination
   - Delete failed processed files from cloudinary
+  - add private user functionality to user queries.
  

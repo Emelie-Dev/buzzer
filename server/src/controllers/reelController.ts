@@ -14,7 +14,10 @@ import CustomEvent from '../utils/CustomEvent.js';
 import getUserLocation from '../utils/getUserLocation.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
-import { handleMentionNotifications } from '../utils/handleNotifications.js';
+import {
+  handleMentionNotifications,
+  sendCollaborationRequests,
+} from '../utils/handleNotifications.js';
 import handleCloudinary from '../utils/handleCloudinary.js';
 import { ContentAccessibility } from '../models/storyModel.js';
 import { Types } from 'mongoose';
@@ -361,6 +364,18 @@ export const getReels = asyncErrorHandler(
               },
             },
           },
+          isCollaborator: {
+            $in: [
+              viewerId,
+              {
+                $map: {
+                  input: '$collaborators',
+                  as: 'user',
+                  in: '$$user._id',
+                },
+              },
+            ],
+          },
           comments: '$$REMOVE',
           shares: '$$REMOVE',
           likes: '$$REMOVE',
@@ -392,6 +407,7 @@ export const validateReelFiles = asyncErrorHandler(
     ]);
 
     uploader(req, res, async (error: any) => {
+      const collaborators = JSON.parse(req.body.collaborators) || [];
       let files =
         (req.files as {
           [fieldname: string]: Express.Multer.File[];
@@ -403,6 +419,13 @@ export const validateReelFiles = asyncErrorHandler(
       };
 
       try {
+        if (collaborators.length > 3) {
+          throw new CustomError(
+            'You can only have up to 3 collaborators per post.',
+            400
+          );
+        }
+
         if (error) {
           let message = error.isOperational
             ? error.message
@@ -501,6 +524,7 @@ export const saveReel = asyncErrorHandler(
     try {
       const mentions = JSON.parse(req.body.mentions);
       const settings = JSON.parse(req.body.settings);
+      const collaborators = JSON.parse(req.body.collaborators) || [];
 
       const file = files.reel[0];
 
@@ -527,16 +551,6 @@ export const saveReel = asyncErrorHandler(
 
           return undefined;
         })(),
-        collaborators: (() => {
-          if (req.body.collaborators) {
-            const collaborators = new Set(JSON.parse(req.body.collaborators));
-            collaborators.delete(String(req.user?._id));
-
-            return [...collaborators];
-          }
-
-          return undefined;
-        })(),
         location,
         settings,
         hasSound: files.sound.length > 0,
@@ -551,6 +565,14 @@ export const saveReel = asyncErrorHandler(
         reel._id,
         settings.accessibility,
         { text: req.body.description }
+      );
+
+      // send collaboration notifications
+      await sendCollaborationRequests(
+        collaborators,
+        req.user?._id,
+        'reel',
+        reel._id
       );
 
       return res.status(201).end(

@@ -22,6 +22,7 @@ import { randomUUID } from 'crypto';
 import { manageUserDevices, signToken } from './authController.js';
 import View from '../models/viewModel.js';
 import handleCloudinary from '../utils/handleCloudinary.js';
+import { isValidDateString } from './commentController.js';
 
 const upload = multerConfig('users');
 
@@ -745,7 +746,9 @@ export const deleteAccount = asyncErrorHandler(
       Comment.deleteMany({ user: user._id }),
       Like.deleteMany({ user: user._id }),
       Bookmark.deleteMany({ user: user._id }),
-      Notification.deleteMany({ user: user._id }),
+      Notification.deleteMany({
+        $or: [{ user: user._id }, { secondUser: user._id }],
+      }),
       Follow.deleteMany({
         $or: [{ follower: user._id }, { following: user._id }],
       }),
@@ -1000,5 +1003,338 @@ export const getWatchHistory = asyncErrorHandler(
       status: 'success',
       data: { history },
     });
+  }
+);
+
+export const replyCollaborationRequest = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { action } = req.body;
+
+    if (!id) return next(new CustomError('Please provide a request id.', 400));
+
+    const request = await Notification.findById(id);
+    if (!request) {
+      return next(new CustomError('This request does not exist!', 404));
+    }
+
+    const [_, type] = request.type;
+    const post =
+      type === 'reel'
+        ? await Reel.findById(request.documentId)
+        : await Content.findById(request.documentId);
+
+    if (!post) {
+      return next(new CustomError(`This ${type} does not exist!`, 404));
+    }
+
+    if (action === 'accept') {
+      const collaborators = new Set(
+        post.collaborators.map((id) => String(id))
+      ).add(String(req.user?._id));
+
+      if (collaborators.size > 3) {
+        return next(
+          new CustomError(
+            'This post already has the maximum number of collaborators.',
+            400
+          )
+        );
+      }
+
+      await post.updateOne({ collaborators: [...collaborators] });
+
+      await Notification.create({
+        user: request.secondUser,
+        secondUser: req.user?._id,
+        documentId: request.documentId,
+        type: ['collaborate', type, 'accept'],
+      });
+    } else if (action === 'reject') {
+      await Notification.create({
+        user: request.secondUser,
+        secondUser: req.user?._id,
+        documentId: request.documentId,
+        type: ['collaborate', type, 'reject'],
+      });
+    } else {
+      return next(new CustomError('Invalid request body.', 400));
+    }
+
+    await request.deleteOne();
+
+    return res.status(200).json({
+      status: 'success',
+      message:
+        action === 'accept'
+          ? 'Collaboration request accepted.'
+          : 'Collaboration request declined.',
+    });
+  }
+);
+
+export const getCollaborationRequests = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const limit = 20;
+    let { type, cursor } = req.query;
+
+    const cursorDate = isValidDateString(String(cursor))
+      ? new Date(String(cursor))
+      : new Date();
+
+    let requests;
+
+    if (type === 'received') {
+      requests = await Notification.aggregate([
+        {
+          $match: {
+            user: req.user?._id,
+            $or: [
+              { type: ['collaborate', 'content'] },
+              { type: ['collaborate', 'reel'] },
+            ],
+            createdAt: { $lt: cursorDate },
+          },
+        },
+        { $sort: { createdAt: -1 } },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: 'users',
+            foreignField: '_id',
+            localField: 'secondUser',
+            as: 'requester',
+          },
+        },
+        { $unwind: '$requester' },
+        {
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$requester' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$user', '$$userId._id'] },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'views',
+                  let: { storyId: '$_id' },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$documentId', '$$storyId'] },
+                            { $eq: ['$user', req.user?._id] },
+                          ],
+                        },
+                      },
+                    },
+                    { $project: { _id: 1 } },
+                  ],
+                  as: 'storyView',
+                },
+              },
+              { $project: { _id: 1, storyView: 1 } },
+            ],
+            as: 'stories',
+          },
+        },
+        {
+          $project: {
+            hasStory: {
+              $gt: [{ $size: '$stories' }, 0],
+            },
+            hasUnviewedStory: {
+              $anyElementTrue: {
+                $map: {
+                  input: '$stories',
+                  as: 'story',
+                  in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+                },
+              },
+            },
+            requester: {
+              _id: 1,
+              username: 1,
+              photo: 1,
+            },
+            user: 1,
+            secondUser: 1,
+            type: 1,
+            createdAt: 1,
+            data: 1,
+            documentId: 1,
+          },
+        },
+      ]);
+    } else if (type === 'sent') {
+      requests = await Notification.aggregate([
+        {
+          $match: {
+            secondUser: req.user?._id,
+            $or: [
+              { type: ['collaborate', 'content'] },
+              { type: ['collaborate', 'reel'] },
+            ],
+            createdAt: { $lt: cursorDate },
+          },
+        },
+        { $sort: { createdAt: -1 } },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: 'users',
+            foreignField: '_id',
+            localField: 'user',
+            as: 'recipient',
+          },
+        },
+        { $unwind: '$recipient' },
+        {
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$recipient' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$user', '$$userId._id'] },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'views',
+                  let: { storyId: '$_id' },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$documentId', '$$storyId'] },
+                            { $eq: ['$user', req.user?._id] },
+                          ],
+                        },
+                      },
+                    },
+                    { $project: { _id: 1 } },
+                  ],
+                  as: 'storyView',
+                },
+              },
+              { $project: { _id: 1, storyView: 1 } },
+            ],
+            as: 'stories',
+          },
+        },
+        {
+          $project: {
+            hasStory: {
+              $gt: [{ $size: '$stories' }, 0],
+            },
+            hasUnviewedStory: {
+              $anyElementTrue: {
+                $map: {
+                  input: '$stories',
+                  as: 'story',
+                  in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+                },
+              },
+            },
+            recipient: {
+              _id: 1,
+              username: 1,
+              photo: 1,
+            },
+            user: 1,
+            secondUser: 1,
+            type: 1,
+            createdAt: 1,
+            data: 1,
+            documentId: 1,
+          },
+        },
+      ]);
+    } else {
+      return next(new CustomError('Invalid request!', 400));
+    }
+
+    if (requests.length > 0) {
+      requests = requests.map(async (obj) => {
+        let [_, collection] = obj.type;
+
+        const query =
+          collection === 'reel'
+            ? Reel.findById(obj.documentId)
+            : collection === 'content'
+            ? Content.findById(obj.documentId)
+            : null;
+
+        if (query) {
+          const data = (await query) as any;
+
+          if (data) {
+            const src = collection === 'reel' ? data.src : data.media[0].src;
+            const mediaType =
+              collection === 'reel' ? 'video' : data.media[0].mediaType;
+
+            obj.post = {
+              _id: data._id,
+              src,
+              type: mediaType,
+            };
+          }
+        }
+
+        return obj;
+      });
+
+      requests = await Promise.all(requests);
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        requests,
+      },
+    });
+  }
+);
+
+export const leaveCollaboration = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { type } = req.body;
+    const viewerId = String(req.user?._id);
+
+    if (!id) return next(new CustomError('Please provide a post id.', 400));
+
+    const query =
+      type === 'reel'
+        ? Reel.findById(id)
+        : type === 'content'
+        ? Content.findById(id)
+        : null;
+
+    if (!query) return next(new CustomError('Invalid request.', 400));
+
+    const post = await query;
+
+    if (!post)
+      return next(new CustomError(`This ${type} does not exist!`, 404));
+
+    const collaborators = new Set(post.collaborators.map((id) => String(id)));
+
+    if (!collaborators.has(viewerId)) {
+      return next(
+        new CustomError(`You’re not a collaborator on this ${type}.`, 400)
+      );
+    }
+    collaborators.delete(viewerId);
+
+    await post.updateOne({ collaborators: [...collaborators] });
+
+    return res.status(204).json({ status: 'success', message: null });
   }
 );
