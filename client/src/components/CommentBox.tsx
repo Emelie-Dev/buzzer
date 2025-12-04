@@ -10,13 +10,12 @@ import { IoClose } from 'react-icons/io5';
 import { FaArrowUp } from 'react-icons/fa';
 import Carousel from './Carousel';
 import { ContentContext, LikeContext } from '../Contexts';
-import { apiClient, debounce, getUrl } from '../Utilities';
+import { apiClient, debounce, getUrl, sanitizeInput } from '../Utilities';
 import { toast } from 'sonner';
 import { IoMdHeart } from 'react-icons/io';
 import LoadingAnimation from './LoadingAnimation';
 import { CommentData } from './ContentBox';
 import { BsDot } from 'react-icons/bs';
-import DOMPurify from 'dompurify';
 
 type CommentBoxProps = {
   data: CommentData;
@@ -347,7 +346,8 @@ const CommentBox = ({
   };
 
   const handleBeforeInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const data = (e.nativeEvent as InputEvent).data;
+    const data = (e as any).data;
+    if (typeof data !== 'string') e.preventDefault();
 
     if (data === '@') {
       e.preventDefault();
@@ -360,20 +360,12 @@ const CommentBox = ({
     const event = e.nativeEvent as InputEvent;
 
     if (!event.inputType.includes('delete')) {
-      const convertedHTML = newComment
-        .replace(/<span([^>]*)>/g, '<a$1>')
-        .replace(/<\/span>/g, '</a>');
-
-      const clean = sanitizeHTML(convertedHTML, ['app-user-tags']);
-
-      const formatted = clean
-        .replace(/(<br\s*\/?>\s*){2,}/gi, '<br />')
-        .replace(/(&nbsp;\s*){2,}/gi, '&nbsp;');
+      const formatted = sanitizeInput(newComment);
 
       const div = document.createElement('div');
       div.innerHTML = formatted;
 
-      if (div.textContent!.length >= 2000) {
+      if (div.textContent?.length >= 2000) {
         textRef.current.innerHTML = newComment;
 
         const selection = window.getSelection();
@@ -573,48 +565,8 @@ const CommentBox = ({
     }
   };
 
-  const sanitizeHTML = (dirtyHtml: string, allowedClasses: string[]) => {
-    const hook = (_: Element, data: any) => {
-      if (data.attrName === 'class') {
-        const classes = (data.attrValue || '').split(/\s+/);
-        const filtered = classes.filter((cls: any) =>
-          allowedClasses.includes(cls)
-        );
-
-        if (filtered.length > 0) {
-          data.attrValue = filtered.join(' ');
-          data.keepAttr = true;
-        } else {
-          data.keepAttr = false;
-        }
-      }
-    };
-
-    // Add the hook temporarily
-    DOMPurify.addHook('uponSanitizeAttribute', hook);
-
-    const clean = DOMPurify.sanitize(dirtyHtml, {
-      ALLOWED_TAGS: ['a', 'br'],
-      ALLOWED_ATTR: ['class', 'href'],
-      ALLOW_DATA_ATTR: false,
-    });
-
-    // Remove the hook so it doesn't affect other sanitizations
-    DOMPurify.removeHook('uponSanitizeAttribute', hook);
-
-    return clean;
-  };
-
   const addComment = () => async () => {
-    const convertedHTML = newComment
-      .replace(/<span([^>]*)>/g, '<a$1>')
-      .replace(/<\/span>/g, '</a>');
-
-    const text = sanitizeHTML(convertedHTML, ['app-user-tags']);
-
-    const formatted = text
-      .replace(/(<br\s*\/?>\s*){2,}/gi, '<br />')
-      .replace(/(&nbsp;\s*){2,}/gi, '&nbsp;');
+    const formatted = sanitizeInput(newComment);
 
     setPosting(true);
 
@@ -949,6 +901,7 @@ const CommentBox = ({
                 onPaste={handlePaste}
                 onKeyUp={saveSelection}
                 onMouseUp={saveSelection}
+                onDrop={(e) => e.preventDefault()}
               ></div>
 
               {isEmpty.div && (

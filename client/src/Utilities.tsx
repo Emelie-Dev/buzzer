@@ -1,4 +1,6 @@
 import axios from 'axios';
+import DOMPurify from 'dompurify';
+import React from 'react';
 
 type FileData = {
   filter: string;
@@ -30,6 +32,38 @@ function urlBase64ToUint8Array(base64String: string) {
   const raw = atob(base64);
   return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)));
 }
+
+const sanitizeHTML = (dirtyHtml: string, allowedClasses: string[]) => {
+  const hook = (_: Element, data: any) => {
+    if (data.attrName === 'class') {
+      const classes = (data.attrValue || '').split(/\s+/);
+      const filtered = classes.filter((cls: any) =>
+        allowedClasses.includes(cls)
+      );
+
+      if (filtered.length > 0) {
+        data.attrValue = filtered.join(' ');
+        data.keepAttr = true;
+      } else {
+        data.keepAttr = false;
+      }
+    }
+  };
+
+  // Add the hook temporarily
+  DOMPurify.addHook('uponSanitizeAttribute', hook);
+
+  const clean = DOMPurify.sanitize(dirtyHtml, {
+    ALLOWED_TAGS: ['a', 'br'],
+    ALLOWED_ATTR: ['class', 'href'],
+    ALLOW_DATA_ATTR: false,
+  });
+
+  // Remove the hook so it doesn't affect other sanitizations
+  DOMPurify.removeHook('uponSanitizeAttribute', hook);
+
+  return clean;
+};
 
 export const filters = [
   {
@@ -302,5 +336,134 @@ export const getEngagementValue = (field: number) => {
     return `${Number((field / 1_000).toFixed(1))}K`;
   } else {
     return field;
+  }
+};
+
+export const sanitizeInput = (textContent: string) => {
+  const convertedHTML = textContent
+    .replace(/<span([^>]*)>/g, '<a$1>')
+    .replace(/<\/span>/g, '</a>');
+
+  const text = sanitizeHTML(convertedHTML, ['app-user-tags', 'app-hashtags']);
+
+  const formatted = text
+    .replace(/(<br\s*\/?>\s*){2,}/gi, '<br />')
+    .replace(/(&nbsp;\s*){2,}/gi, '&nbsp;');
+
+  return formatted.trim();
+};
+
+export const saveSelection = (
+  container: HTMLElement,
+  stateSetter: React.Dispatch<
+    React.SetStateAction<{
+      range: Range;
+      selection: Selection;
+    }>
+  >,
+  setState: boolean = true
+) => {
+  if (document.activeElement !== container) container.focus();
+
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+
+  // Makes sure the range is inside the container
+  if (!container.contains(range.startContainer)) return;
+
+  if (setState) stateSetter({ range: range.cloneRange(), selection: sel });
+
+  return { sel, range };
+};
+
+export const moveRangeOutOfInlineParents = (
+  range: Range,
+  container: HTMLElement
+) => {
+  let node = range.startContainer;
+
+  while (node && node !== container) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as HTMLElement;
+
+      const display = window.getComputedStyle(el).display;
+
+      if (
+        display === 'inline' ||
+        display === 'inline-block' ||
+        el.tagName === 'SPAN'
+      ) {
+        range.setStartAfter(el);
+        range.collapse(true);
+        return;
+      }
+    }
+
+    node = node.parentNode!;
+  }
+};
+
+export const streamResponse = async (
+  url: string,
+  body: FormData,
+  updatePostStage: (data: any) => void
+) => {
+  const request = new Request(url, {
+    method: 'POST',
+    body,
+    credentials: 'include',
+  });
+
+  const response = await fetch(request);
+  if (!response.body) throw new Error();
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      // decode incrementally so multi-byte UTF-8 characters are handled correctly
+      const chunkText = decoder.decode(value, { stream: true });
+      buffer += chunkText;
+
+      const streams = buffer.split('\n');
+      buffer = streams.pop()!;
+
+      for (const stream of streams) {
+        if (!stream.trim()) continue;
+        const data = JSON.parse(stream);
+
+        if (data.status !== 'success') {
+          throw new Error(data.message);
+        }
+
+        updatePostStage(data);
+      }
+    }
+
+    // flush remaining bytes from decoder (multi-byte chars)
+    const rest = decoder.decode();
+    if (rest) buffer += rest;
+
+    // finally parse any remaining JSON object
+    if (buffer.trim()) {
+      updatePostStage(JSON.parse(buffer));
+    }
+  } catch (err) {
+    try {
+      await reader.cancel();
+      // eslint-disable-next-line no-empty
+    } catch {}
+    throw err;
+  } finally {
+    try {
+      reader.releaseLock();
+      // eslint-disable-next-line no-empty
+    } catch {}
   }
 };

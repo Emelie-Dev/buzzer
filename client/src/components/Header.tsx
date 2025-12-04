@@ -46,7 +46,7 @@ const Header = ({
     useContext(GeneralContext);
 
   const { deleteData, setDeleteData, deleteNotifications } =
-    useContext(NotificationContext);
+    useContext(NotificationContext) || {};
 
   const [engagementModal, setEngagementModal] = useState<
     'followers' | 'following' | 'friends' | 'suggested' | 'private' | null

@@ -103,6 +103,7 @@
   height: calc(100% - 2rem);
   background: rgb(168, 85, 247, 0.1);
   border-radius: 10px;
+  position: relative;
 }
 
 .content-icon {
@@ -260,12 +261,29 @@
   color: var(--app-theme-color);
 }
 
+
+.loader-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* backdrop-filter: blur(2px); */
+  background: rgba(0, 0, 0, 0.15);
+}
+
 /* Animations */
 
 @keyframes showModal {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }

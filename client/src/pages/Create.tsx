@@ -14,8 +14,12 @@ import { GeneralContext } from '../Contexts';
 import { FaTasks } from 'react-icons/fa';
 import { IoClose, IoArrowBack } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import LoadingAnimation from '../components/LoadingAnimation';
+import { Area } from 'react-easy-crop';
 
 export interface Content {
+  key: string;
   src: string | ArrayBuffer | null;
   type: 'image' | 'video' | null;
   filter: string;
@@ -30,6 +34,7 @@ export interface Content {
 }
 
 export interface StoryData {
+  key: string;
   src: string | ArrayBuffer | null;
   type: 'image' | 'video' | null;
   filter: string;
@@ -94,9 +99,9 @@ const Create = () => {
     reel: string | ArrayBuffer | null;
     story: StoryData[];
   }>({ content: [], reel: null, story: [] });
-  const setRawFiles = useState<File[] | FileList>(null!)[1];
+  const [rawFiles, setRawFiles] = useState<Map<string, File>>(null!);
   const setRawReelFile = useState<File>(null!)[1];
-  const setRawStoryFiles = useState<File[] | FileList>(null!)[1];
+  const setRawStoryFiles = useState<Map<string, File>>(null!)[1];
   const [addFiles, setAddFiles] = useState(false);
   const [contentIndex, setContentIndex] = useState<number>(0);
   const [aspectRatio, setAspectRatio] = useState<'initial' | number>(1);
@@ -117,6 +122,15 @@ const Create = () => {
   const [hideVideo, setHideVideo] = useState<boolean>(true);
   const [currentSound, setCurrentSound] = useState<string | null>(null);
   const [showGuidelines, setShowGuidelines] = useState<boolean>(false);
+  const [videosCropArea, setVideosCropArea] = useState<Map<string, Area>>(
+    new Map()
+  );
+
+  const [processing, setProcessing] = useState<{
+    content: boolean;
+    reel: boolean;
+    story: boolean;
+  }>({ content: false, reel: false, story: false });
 
   const navigate = useNavigate();
 
@@ -204,116 +218,169 @@ const Create = () => {
       setSliderValues([0, 100]);
       setHideVideo(true);
       setCurrentSound(null);
+      setFiles((prev) => ({ ...prev, reel: null }));
+      setRawReelFile(null!);
     }
+
+    if (stage.content === 'select') {
+      files.content.forEach((file) => URL.revokeObjectURL(file.src as string));
+      setFiles((prev) => ({ ...prev, content: [] }));
+      setRawFiles(null!);
+    }
+
+    if (stage.story === 'select') {
+      files.story.forEach((file) => URL.revokeObjectURL(file.src as string));
+      setFiles((prev) => ({ ...prev, story: [] }));
+      setRawStoryFiles(null!);
+    }
+
+    setProcessing((prev) => ({ ...prev, [category]: false }));
   }, [stage]);
 
-  // Add animation while reading files.
   // Remeber to revoke object urls after file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (category === 'content') {
-      const uploadFiles = e.target.files;
+    setProcessing((prev) => ({ ...prev, [category]: true }));
 
-      if (uploadFiles && uploadFiles.length > 0) {
-        const filesData: Content[] = [];
+    const uploadFiles = e.target.files;
 
-        const uploadLength = addFiles ? 20 - files.content.length : 20;
+    try {
+      if (category === 'content') {
+        if (uploadFiles && uploadFiles.length > 0) {
+          const filesData: Content[] = [];
 
-        // Handle error
-        if (uploadFiles.length > uploadLength) {
+          const uploadLength = addFiles ? 20 - files.content.length : 20;
+
+          // Handle error
+          if (uploadFiles.length > uploadLength) {
+            e.target.files = new DataTransfer().files;
+            throw new Error('You can only upload 20 files at once.');
+          }
+
+          const promises = [...uploadFiles].map((file) => isFileValid(file));
+
+          try {
+            const results = await Promise.all(promises);
+            results.forEach((result) => filesData.push(result as Content));
+          } catch (error: any) {
+            filesData.forEach((data) =>
+              URL.revokeObjectURL(data.src as string)
+            );
+            e.target.files = new DataTransfer().files;
+
+            throw new Error(error);
+          }
+
           e.target.files = new DataTransfer().files;
-          return;
-        }
+          setRawFiles((prevFiles) => {
+            const mapData: [string, File][] = [...uploadFiles].map(
+              (file, index) => [filesData[index].key, file]
+            );
 
-        const promises = [...uploadFiles].map((file) => isFileValid(file));
+            if (addFiles) return new Map([...prevFiles, ...mapData]);
+            else return new Map(mapData);
+          });
+          setFiles((prevFiles) => {
+            if (addFiles) {
+              return {
+                ...prevFiles,
+                content: [...prevFiles.content, ...filesData],
+              };
+            } else return { ...prevFiles, content: filesData };
+          });
+        } else throw new Error();
+      } else if (category === 'reel') {
+        const uploadFile = e.target.files && e.target.files[0];
 
-        try {
-          const results = await Promise.all(promises);
-          results.forEach((result) => filesData.push(result as Content));
-        } catch (error) {
-          filesData.forEach((data) => URL.revokeObjectURL(data.src as string));
-          e.target.files = new DataTransfer().files;
-          return alert(error);
-        }
+        if (uploadFile) {
+          try {
+            const result = await isFileValid(uploadFile, true);
+            setRawReelFile(uploadFile);
+            setFiles((prevFiles) => ({ ...prevFiles, reel: result.src }));
+            e.target.files = new DataTransfer().files;
+          } catch (error: any) {
+            e.target.files = new DataTransfer().files;
+            throw new Error(error);
+          }
 
-        e.target.files = new DataTransfer().files;
-        setRawFiles((prevFiles) => {
-          if (addFiles) return [...prevFiles, ...uploadFiles];
-          else return uploadFiles;
-        });
-        setFiles((prevFiles) => {
-          if (addFiles) {
-            return {
-              ...prevFiles,
-              content: [...prevFiles.content, ...filesData],
-            };
-          } else return { ...prevFiles, content: filesData };
-        });
+          setCategory('content');
+          setTimeout(() => setCategory('reel'), 0);
+        } else throw new Error();
       } else {
-        return;
+        if (uploadFiles && uploadFiles.length > 0) {
+          const filesData: StoryData[] = [];
+
+          const uploadLength = addFiles ? 10 - files.story.length : 10;
+
+          if (uploadFiles.length > uploadLength) {
+            e.target.files = new DataTransfer().files;
+            throw new Error('You can only upload 10 files at once.');
+          }
+
+          const promises = [...uploadFiles].map((file) =>
+            isFileValid(file, false, true)
+          );
+
+          try {
+            const results = await Promise.all(promises);
+            results.forEach((result) => filesData.push(result as StoryData));
+          } catch (error: any) {
+            filesData.forEach((data) =>
+              URL.revokeObjectURL(data.src as string)
+            );
+            e.target.files = new DataTransfer().files;
+
+            throw new Error(error);
+          }
+
+          e.target.files = new DataTransfer().files;
+
+          setRawStoryFiles((prevFiles) => {
+            const mapData: [string, File][] = [...uploadFiles].map(
+              (file, index) => [filesData[index].key, file]
+            );
+
+            if (addFiles) return new Map([...prevFiles, ...mapData]);
+            else return new Map(mapData);
+          });
+          setFiles((prevFiles) => {
+            if (addFiles) {
+              return {
+                ...prevFiles,
+                story: [...prevFiles.story, ...filesData],
+              };
+            } else return { ...prevFiles, story: filesData };
+          });
+        } else throw new Error();
       }
-    } else if (category === 'reel') {
-      const uploadFile = e.target.files && e.target.files[0];
 
-      if (uploadFile) {
-        try {
-          const result = await isFileValid(uploadFile, true);
-          setRawReelFile(uploadFile);
-          setFiles((prevFiles) => ({ ...prevFiles, reel: result.src }));
-          e.target.files = new DataTransfer().files;
-        } catch (err) {
-          e.target.files = new DataTransfer().files;
-          return alert(err);
-        }
+      setStage({ ...stage, [category]: 'edit' });
+      setAddFiles(false);
+    } catch (error: any) {
+      const durationError =
+        uploadFiles && uploadFiles.length === 1
+          ? 'The file exceeds the allowed length.'
+          : 'Some files exceed the allowed length.';
 
-        setCategory('content');
-        setTimeout(() => setCategory('reel'), 0);
-      } else return;
-    } else {
-      const uploadFiles = e.target.files;
+      const sizeError =
+        uploadFiles && uploadFiles.length === 1
+          ? 'The file exceeds the size limit.'
+          : 'Some selected files exceed the size limit';
 
-      if (uploadFiles && uploadFiles.length > 0) {
-        const filesData: StoryData[] = [];
+      const defaultError =
+        uploadFiles && uploadFiles.length === 1
+          ? 'We couldn’t process your file. Please try again.'
+          : 'We couldn’t process some files. Please try again.';
 
-        const uploadLength = addFiles ? 10 - files.story.length : 10;
-
-        // Handle error
-        if (uploadFiles.length > uploadLength) {
-          e.target.files = new DataTransfer().files;
-          return;
-        }
-
-        const promises = [...uploadFiles].map((file) =>
-          isFileValid(file, false, true)
-        );
-
-        try {
-          const results = await Promise.all(promises);
-          results.forEach((result) => filesData.push(result as StoryData));
-        } catch (error) {
-          filesData.forEach((data) => URL.revokeObjectURL(data.src as string));
-          e.target.files = new DataTransfer().files;
-          return alert(error);
-        }
-
-        e.target.files = new DataTransfer().files;
-
-        setRawStoryFiles((prevFiles) => {
-          if (addFiles) return [...prevFiles, ...uploadFiles];
-          else return uploadFiles;
-        });
-        setFiles((prevFiles) => {
-          if (addFiles) {
-            return {
-              ...prevFiles,
-              story: [...prevFiles.story, ...filesData],
-            };
-          } else return { ...prevFiles, story: filesData };
-        });
-      } else return;
+      toast.error(
+        error.message === 'Size Error'
+          ? sizeError
+          : error.message === 'Duration Error'
+          ? durationError
+          : defaultError
+      );
+    } finally {
+      setProcessing((prev) => ({ ...prev, [category]: false }));
     }
-
-    setStage({ ...stage, [category]: 'edit' });
-    setAddFiles(false);
   };
 
   const isFileValid = (
@@ -344,12 +411,14 @@ const Create = () => {
           } else {
             if (story) {
               resolve({
+                key: crypto.randomUUID(),
                 src: fileURL,
                 type,
                 filter: 'Original',
               });
             } else {
               resolve({
+                key: crypto.randomUUID(),
                 src: fileURL,
                 type,
                 filter: 'Original',
@@ -372,12 +441,14 @@ const Create = () => {
 
         if (story) {
           resolve({
+            key: crypto.randomUUID(),
             src: fileURL,
             type,
             filter: 'Original',
           });
         } else {
           resolve({
+            key: crypto.randomUUID(),
             src: fileURL,
             type,
             filter: 'Original',
@@ -452,8 +523,8 @@ const Create = () => {
             ref={fileRef}
             accept={
               category === 'content' || category === 'story'
-                ? 'video/*,image/*'
-                : 'video/*'
+                ? 'image/*,video/mp4,video/webm,video/ogg'
+                : 'video/mp4,video/webm,video/ogg'
             }
             multiple={category === 'content' || category === 'story'}
             onChange={handleFileUpload}
@@ -474,6 +545,18 @@ const Create = () => {
                   >
                     Select
                   </button>
+
+                  {processing[category] && (
+                    <div className={styles['loader-container']}>
+                      <LoadingAnimation
+                        style={{
+                          width: '3rem',
+                          height: '3rem',
+                          transform: 'scale(2.5)',
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : stage.content === 'edit' ? (
                 <UploadCarousel
@@ -483,21 +566,26 @@ const Create = () => {
                   setAddFiles={setAddFiles}
                   fileRef={fileRef}
                   uploadProps={{
+                    rawFiles,
                     files: files.content,
                     setRawFiles,
                     contentIndex,
                     setContentIndex,
                     aspectRatio,
                     setAspectRatio,
+                    videosCropArea,
+                    setVideosCropArea,
                   }}
                 />
               ) : (
                 <UploadDetails
                   setStage={setStage}
                   editedFiles={files.content}
+                  rawFiles={rawFiles}
                   contentIndex={contentIndex}
                   aspectRatio={aspectRatio}
                   setContentIndex={setContentIndex}
+                  videosCropArea={videosCropArea}
                 />
               )}
             </div>
@@ -590,7 +678,8 @@ const Create = () => {
                 <span className={styles['guideline-head']}>File Format</span>
                 <br />
                 <span className={styles['guideline-text']}>
-                  Major file formats for photos and videos are supported.
+                  Major file formats for photos and videos (mp4, webm, ogg) are
+                  supported.
                 </span>
               </li>
 
@@ -684,7 +773,8 @@ const Create = () => {
                 <span className={styles['guideline-head']}>File Format</span>
                 <br />
                 <span className={styles['guideline-text']}>
-                  Major file formats for photos and videos are supported.
+                  Major file formats for photos and videos (mp4, webm, ogg) are
+                  supported.
                 </span>
               </li>
 

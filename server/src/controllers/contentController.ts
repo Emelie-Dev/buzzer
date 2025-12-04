@@ -113,7 +113,7 @@ export const processContentFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     res.setHeader('Content-Type', 'text/plain');
     res.write(
-      JSON.stringify({ status: 'success', message: 'Processing started' })
+      JSON.stringify({ status: 'success', message: 'processing' }) + '\n'
     );
 
     const files = req.files as Express.Multer.File[];
@@ -125,7 +125,7 @@ export const processContentFiles = asyncErrorHandler(
         [files, JSON.parse(req.body.filters).value],
         {
           on: function (event) {
-            res.write(JSON.stringify(event));
+            res.write(JSON.stringify(event) + '\n');
           },
         }
       );
@@ -138,7 +138,7 @@ export const processContentFiles = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to process files.',
-        })
+        }) + '\n'
       );
     }
   }
@@ -204,8 +204,9 @@ export const saveContent = asyncErrorHandler(
       return res.status(201).end(
         JSON.stringify({
           status: 'success',
+          message: 'finish',
           data: { content },
-        })
+        }) + '\n'
       );
     } catch {
       await deleteContentFiles(files);
@@ -214,7 +215,7 @@ export const saveContent = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to create content.',
-        })
+        }) + '\n'
       );
     }
   }

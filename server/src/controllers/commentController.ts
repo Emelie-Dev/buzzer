@@ -52,7 +52,7 @@ export const addComment = asyncErrorHandler(
       }
     }
 
-    const textContent = convert(text, { wordwrap: null });
+    const textContent = convert(text.trim(), { wordwrap: null });
 
     if (textContent.length > 2000) {
       return next(

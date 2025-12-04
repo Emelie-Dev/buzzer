@@ -274,7 +274,7 @@ export const processFiles = async (files: any[], filters: any[]) => {
       fileIndex++;
       emitEvent({
         status: 'success',
-        message: `File ${fileIndex} successfully processed.`,
+        message: `processing`,
         fileIndex,
       });
     })

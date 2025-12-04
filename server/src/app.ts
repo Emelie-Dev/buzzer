@@ -153,7 +153,13 @@ app.use(
 );
 
 // Compresses response
-app.use(compression());
+app.use((req, _, next) => {
+  const conditions = [req.path === '/api/v1/contents' && req.method === 'POST'];
+  const match = conditions.find((condition) => condition);
+  if (!match) compression();
+
+  next();
+});
 
 // Displays response details in terminal
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));

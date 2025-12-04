@@ -8,7 +8,7 @@ import {
   IoColorFilterOutline,
   IoClose,
 } from 'react-icons/io5';
-import Cropper from 'react-easy-crop';
+import Cropper, { Area } from 'react-easy-crop';
 import { Content, StoryData } from '../pages/Create';
 import { getFilterValue, getDurationText, filters } from '../Utilities';
 import { TbAdjustmentsFilled } from 'react-icons/tb';
@@ -17,19 +17,23 @@ import MobileAdjustments from './MobileAdjustments';
 import { PiMusicNotesBold } from 'react-icons/pi';
 import MobileSound from './MobileSound';
 import { FaPause, FaPlay } from 'react-icons/fa6';
+import { toast } from 'sonner';
 
 type StoryProps = {
   storyFiles: StoryData[];
-  setRawStoryFiles: React.Dispatch<React.SetStateAction<FileList | File[]>>;
+  setRawStoryFiles: React.Dispatch<React.SetStateAction<Map<string, File>>>;
 };
 
 type ContentProps = {
   files: Content[];
-  setRawFiles: React.Dispatch<React.SetStateAction<FileList | File[]>>;
+  rawFiles: Map<string, File>;
+  setRawFiles: React.Dispatch<React.SetStateAction<Map<string, File>>>;
   contentIndex: number;
   setContentIndex: React.Dispatch<React.SetStateAction<number>>;
   aspectRatio: number | 'initial';
   setAspectRatio: React.Dispatch<React.SetStateAction<number | 'initial'>>;
+  videosCropArea: Map<string, Area>;
+  setVideosCropArea: React.Dispatch<React.SetStateAction<Map<string, Area>>>;
 };
 
 type UploadCarouselProps = {
@@ -72,12 +76,21 @@ const UploadCarousel = ({
     aspectRatio,
     setAspectRatio,
     setRawFiles,
+    rawFiles,
+    videosCropArea,
+    setVideosCropArea,
   } = uploadProps as ContentProps;
 
   const { setRawStoryFiles } = uploadProps as StoryProps;
   const sizeLimit = uploadType === 'content' ? 20 : 10;
 
   const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [cropArea, setCropArea] = useState<Area>({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
 
   const [currentIndex, setCurrentIndex] = useState<number>(
     uploadType === 'content' ? contentIndex : 0
@@ -115,6 +128,7 @@ const UploadCarousel = ({
     adjustments: boolean;
     sound: boolean;
   }>({ sound: false, adjustments: false, filter: false });
+  const [initialAspectRatio, setInitialAspectRatio] = useState(1);
 
   const dotRef = useRef<HTMLSpanElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -140,6 +154,7 @@ const UploadCarousel = ({
     sepia: null,
   });
   const carouselRef = useRef<HTMLDivElement>(null!);
+  const canvasRef = useRef<HTMLCanvasElement>(null!);
 
   useEffect(() => {
     const resizeHandler = () => {
@@ -179,6 +194,18 @@ const UploadCarousel = ({
       if (storySound) {
         if (playStorySound) storySoundRef.current.play();
       }
+    }
+
+    if (uploadType === 'content') {
+      const image = new Image();
+      image.src = files[0].src as string;
+
+      image.onload = () => {
+        const imageWidth = image.naturalWidth;
+        const imageHeight = image.naturalHeight;
+
+        setInitialAspectRatio(imageWidth / imageHeight);
+      };
     }
 
     setEditedFiles(files);
@@ -273,7 +300,58 @@ const UploadCarousel = ({
       filter: (editedFiles as Content[])[currentIndex].filter,
       adjustments: (editedFiles as Content[])[currentIndex].adjustments,
     });
+    setCrop({ x: 0, y: 0 });
+    setCropArea({
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    });
   }, [currentIndex]);
+
+  useEffect(() => {
+    let animationId: number;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    let eventListener = () => {};
+
+    if (
+      files[currentIndex].type === 'video' &&
+      videosCropArea.has(files[currentIndex].key)
+    ) {
+      if (!video || !canvas) return;
+
+      const ctx = canvas.getContext('2d')!;
+
+      const render = () => {
+        if (!video.paused && !video.ended) {
+          const { x, y, width, height } = videosCropArea.get(
+            files[currentIndex].key
+          )!;
+
+          canvas.width = width;
+          canvas.height = height;
+
+          if (ctx) {
+            ctx.drawImage(video, x, y, width, height, 0, 0, width, height);
+          }
+        }
+        animationId = requestAnimationFrame(render);
+      };
+
+      eventListener = () => {
+        animationId = requestAnimationFrame(render);
+      };
+
+      video.removeEventListener('play', eventListener);
+      video.addEventListener('play', eventListener);
+    }
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      video?.removeEventListener('play', eventListener);
+    };
+  }, [currentIndex, cropImage]);
 
   useEffect(() => {
     if (files[currentIndex].type === 'video') {
@@ -334,14 +412,23 @@ const UploadCarousel = ({
       }
 
       if (uploadType === 'content') {
-        setRawFiles((prevFiles) =>
-          [...prevFiles].filter((_, index) => index !== itemIndex)
-        );
+        setRawFiles((prevFiles) => {
+          const map = new Map(prevFiles);
+          const key = files[itemIndex].key;
+          map.delete(key);
+          return map;
+        });
       } else {
-        setRawStoryFiles((prevFiles) =>
-          [...prevFiles].filter((_, index) => index !== itemIndex)
-        );
+        setRawStoryFiles((prevFiles) => {
+          const map = new Map(prevFiles);
+          const key = files[itemIndex].key;
+          map.delete(key);
+          return map;
+        });
       }
+
+      const fileSrc = files[itemIndex].src;
+      if (fileSrc) URL.revokeObjectURL(fileSrc as string);
 
       setFiles((prevFiles) => {
         return {
@@ -352,12 +439,15 @@ const UploadCarousel = ({
         };
       });
     } else {
-      if (uploadType === 'content') setRawFiles([]);
-      else setRawStoryFiles([]);
+      if (uploadType === 'content') setRawFiles(new Map());
+      else setRawStoryFiles(new Map());
+
+      const fileSrc = files[0].src;
+      if (fileSrc) URL.revokeObjectURL(fileSrc as string);
 
       setFiles((prevFiles) => ({
         ...prevFiles,
-        [uploadType]: [],
+        [uploadType]: new Map(),
       }));
       setStage((prevStage) => ({ ...prevStage, [uploadType]: 'select' }));
     }
@@ -453,14 +543,15 @@ const UploadCarousel = ({
     if (e.target.files) {
       if (e.target.files.length > 0) {
         const file = e.target.files[0];
+        let fileURL: string;
 
         try {
           const data: { name: string; duration: string; src: string } =
             await new Promise((resolve, reject) => {
               if (file.size > 1_073_741_824) {
-                reject('');
+                reject('Size Error');
               } else {
-                const fileURL = URL.createObjectURL(file);
+                fileURL = URL.createObjectURL(file);
                 const audio = document.createElement('audio');
 
                 audio.src = fileURL;
@@ -470,7 +561,7 @@ const UploadCarousel = ({
                   const duration = Math.round(audio.duration);
                   const durationText: string = getDurationText(duration);
 
-                  if (duration > 3600) reject('');
+                  if (duration > 3600) reject('Duration Error');
                   else
                     resolve({
                       name: file.name,
@@ -479,16 +570,40 @@ const UploadCarousel = ({
                     });
                 };
 
-                audio.onerror = () => reject('');
+                audio.onerror = () => reject('Video Error');
               }
             });
 
           storySoundRef.current.src = data.src;
           setPlayStorySound(false);
           setStorySound(data);
-        } catch (err) {
+        } catch (error: any) {
           e.target.files = new DataTransfer().files;
-          return alert(err);
+
+          if (fileURL!) URL.revokeObjectURL(fileURL);
+
+          const durationError =
+            files && files.length === 1
+              ? 'The file exceeds the allowed length.'
+              : 'Some files exceed the allowed length.';
+
+          const sizeError =
+            files && files.length === 1
+              ? 'The file exceeds the size limit.'
+              : 'Some selected files exceed the size limit';
+
+          const defaultError =
+            files && files.length === 1
+              ? 'We couldn’t process your file. Please try again.'
+              : 'We couldn’t process some files. Please try again.';
+
+          toast.error(
+            error.message === 'Size Error'
+              ? sizeError
+              : error.message === 'Duration Error'
+              ? durationError
+              : defaultError
+          );
         }
       }
     }
@@ -507,6 +622,123 @@ const UploadCarousel = ({
     });
     setContentIndex(currentIndex);
     setStage((prevStage) => ({ ...prevStage, content: 'finish' }));
+  };
+
+  const handleImageCrop = async (): Promise<unknown> => {
+    return new Promise((resolve, reject) => {
+      const imageSrc = files[currentIndex].src;
+      const image = new Image();
+
+      // prevents CORS issues
+      image.crossOrigin = 'anonymous';
+      image.src = imageSrc as string;
+
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const { x, y, width, height } = cropArea;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        if (ctx) {
+          ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                canvas.remove();
+                return reject();
+              }
+
+              const fileItem = files.find((file) => file.src === imageSrc);
+
+              if (fileItem) {
+                const key = fileItem.key;
+                const fileName = rawFiles.get(key)?.name;
+
+                const file = new File([blob], String(fileName), {
+                  type: 'image/jpeg',
+                });
+
+                setRawFiles((prevFiles) => {
+                  const map = new Map(prevFiles);
+                  map.set(key, file);
+                  return map;
+                });
+
+                setFiles((prev) => {
+                  URL.revokeObjectURL(imageSrc as string);
+
+                  const newSrc = URL.createObjectURL(file);
+
+                  const list = [...prev[uploadType]].map((obj) => {
+                    if (obj.key === key) obj.src = newSrc;
+
+                    return obj;
+                  });
+
+                  return { ...prev, [uploadType]: list };
+                });
+
+                setCrop({ x: 0, y: 0 });
+                setCropArea({
+                  x: 0,
+                  y: 0,
+                  width: 0,
+                  height: 0,
+                });
+                setCropImage(false);
+                resolve(undefined);
+              } else reject();
+
+              canvas.remove();
+            },
+            'image/jpeg',
+            1
+          );
+        } else reject();
+      };
+
+      image.onerror = () => reject();
+    }).catch(() => {
+      toast.error('An error occured while cropping file.');
+    });
+  };
+
+  const handleMediaCrop = async () => {
+    if (files[currentIndex].type === 'video') {
+      setVideosCropArea((prev) => {
+        const map = new Map(prev);
+        map.set(files[currentIndex].key, cropArea);
+
+        return map;
+      });
+      setCrop({ x: 0, y: 0 });
+      setCropArea({
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      });
+      setCropImage(false);
+    } else {
+      await handleImageCrop();
+    }
+  };
+
+  const cancelCropping = () => {
+    setCropImage(false);
+    setCrop({ x: 0, y: 0 });
+    setCropArea({
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    });
+
+    if (videoRef.current) videoRef.current.play();
   };
 
   return (
@@ -529,7 +761,7 @@ const UploadCarousel = ({
                   className={`${styles['mark-icon-box']} ${
                     !cropImage ? styles['hide-visibility'] : ''
                   }`}
-                  onClick={() => setCropImage(false)}
+                  onClick={cancelCropping}
                   title="Cancel"
                 >
                   <IoClose className={styles['mark-icon']} />
@@ -538,8 +770,8 @@ const UploadCarousel = ({
                 {cropImage ? (
                   <span
                     className={styles['mark-icon-box']}
-                    onClick={() => setCropImage(false)}
                     title="Done"
+                    onClick={handleMediaCrop}
                   >
                     <IoCheckmarkSharp className={styles['mark-icon']} />
                   </span>
@@ -621,14 +853,15 @@ const UploadCarousel = ({
                       : undefined
                   }
                   crop={crop}
-                  aspect={1}
+                  aspect={aspectRatio as number}
                   onCropChange={setCrop}
-                  // onInteractionEnd={handleInteractionEnd}
+                  onCropComplete={(_, croppedAreaPixels) =>
+                    setCropArea(croppedAreaPixels)
+                  }
                   restrictPosition={true}
                   zoomWithScroll={false}
                   objectFit={'cover'}
                   classes={{
-                    // containerClassName: styles['img-container'],
                     mediaClassName: styles.img,
                   }}
                   style={{
@@ -660,27 +893,54 @@ const UploadCarousel = ({
                       }
                     />
                   ) : (
-                    <video
-                      className={styles.img}
-                      ref={videoRef}
-                      style={{
-                        aspectRatio,
-                        filter: getFilterValue(currentFileData),
-                      }}
-                      autoPlay={true}
-                      loop={true}
-                      onMouseDown={(e) =>
-                        (e.currentTarget.style.filter = 'none')
-                      }
-                      onMouseUp={(e) =>
-                        (e.currentTarget.style.filter = getFilterValue(
-                          currentFileData
-                        ) as string)
-                      }
-                    >
-                      <source type="video/mp4" />
-                      Your browser does not support playing video.
-                    </video>
+                    <>
+                      <video
+                        className={`${styles.img} ${
+                          files[currentIndex].type === 'video' &&
+                          videosCropArea.has(files[currentIndex].key)
+                            ? styles['hide-video']
+                            : ''
+                        }`}
+                        ref={videoRef}
+                        style={{
+                          aspectRatio,
+                          filter: getFilterValue(currentFileData),
+                        }}
+                        autoPlay={true}
+                        loop={true}
+                        onMouseDown={(e) =>
+                          (e.currentTarget.style.filter = 'none')
+                        }
+                        onMouseUp={(e) =>
+                          (e.currentTarget.style.filter = getFilterValue(
+                            currentFileData
+                          ) as string)
+                        }
+                      >
+                        <source type="video/mp4" />
+                        Your browser does not support playing video.
+                      </video>
+
+                      {files[currentIndex].type === 'video' &&
+                        videosCropArea.has(files[currentIndex].key) && (
+                          <canvas
+                            ref={canvasRef}
+                            className={styles.img}
+                            style={{
+                              aspectRatio,
+                              filter: getFilterValue(currentFileData),
+                            }}
+                            onMouseDown={(e) =>
+                              (e.currentTarget.style.filter = 'none')
+                            }
+                            onMouseUp={(e) =>
+                              (e.currentTarget.style.filter = getFilterValue(
+                                currentFileData
+                              ) as string)
+                            }
+                          ></canvas>
+                        )}
+                    </>
                   )}
                 </>
               ))}
@@ -1050,7 +1310,7 @@ const UploadCarousel = ({
                 onChange={(e) =>
                   setAspectRatio(
                     e.target.value === 'initial'
-                      ? 'initial'
+                      ? initialAspectRatio
                       : Number(e.target.value)
                   )
                 }
@@ -1195,7 +1455,6 @@ const UploadCarousel = ({
           <button
             className={`${styles['next-btn']} ${styles['cancel-btn']}`}
             onClick={() => {
-              files.forEach((file) => URL.revokeObjectURL(file.src as string));
               setStage((prevStage) => ({
                 ...prevStage,
                 [uploadType]: 'select',
