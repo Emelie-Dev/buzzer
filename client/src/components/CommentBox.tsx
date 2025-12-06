@@ -365,7 +365,7 @@ const CommentBox = ({
       const div = document.createElement('div');
       div.innerHTML = formatted;
 
-      if (div.textContent?.length >= 2000) {
+      if ((div.textContent || '').length >= 2000) {
         textRef.current.innerHTML = newComment;
 
         const selection = window.getSelection();

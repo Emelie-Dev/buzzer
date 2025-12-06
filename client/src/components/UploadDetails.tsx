@@ -138,7 +138,7 @@ const UploadDetails = ({
       }
     };
 
-    const clickHandler = (e: PointerEvent) => {
+    const clickHandler = (e: MouseEvent) => {
       if (collaboratorSearchRef.current) {
         const target = e.target as HTMLElement;
         if (
@@ -353,7 +353,7 @@ const UploadDetails = ({
     const div = document.createElement('div');
     div.innerHTML = formattedText;
 
-    if (div.textContent?.trim().length >= 2200) {
+    if ((div.textContent || '').trim().length >= 2200) {
       e.preventDefault();
       return toast.info(`Content description can’t exceed 2200 characters.`);
     }
@@ -417,7 +417,7 @@ const UploadDetails = ({
       const div = document.createElement('div');
       div.innerHTML = formattedText;
 
-      if (div.textContent?.trim().length + pastedText.length >= 2200) {
+      if ((div.textContent || '').trim().length + pastedText.length >= 2200) {
         return toast.info(`Content description can’t exceed 2200 characters.`);
       }
 
