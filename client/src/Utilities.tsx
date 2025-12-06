@@ -161,7 +161,7 @@ const getAdjustmentsValue = (currentFileData: FileData) => {
   return adjustments;
 };
 
-export const getFilterValue = (currentFileData: FileData) => {
+export const getFilterValue = (currentFileData: FileData, request = false) => {
   const filter = filters.find(
     (filter) => filter.name === currentFileData.filter
   )?.filter;
@@ -203,9 +203,15 @@ export const getFilterValue = (currentFileData: FileData) => {
         (filterObj[value] || initialValues[value]) + (adjustments[value] || 0);
 
       if (value === 'hue-rotate') {
-        return accumulator + `${value}(${result}deg) `;
+        return (
+          accumulator +
+          (request ? `${value}(${result}) ` : `${value}(${result}deg) `)
+        );
       } else if (value === 'blur') {
-        return accumulator + `${value}(${result}px) `;
+        return (
+          accumulator +
+          (request ? `${value}(${result}) ` : `${value}(${result}px) `)
+        );
       }
 
       return accumulator + `${value}(${result}) `;

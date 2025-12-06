@@ -741,9 +741,12 @@ const Search = () => {
                             </span>
                           </div>
 
-                          <div className={styles['content-description']}>
-                            {post.description}
-                          </div>
+                          <div
+                            className={styles['content-description']}
+                            dangerouslySetInnerHTML={{
+                              __html: post.description,
+                            }}
+                          ></div>
                         </article>
                       ))}
                     </div>
@@ -1069,9 +1072,12 @@ const Search = () => {
                       </span>
                     </div>
 
-                    <div className={styles['content-description']}>
-                      {post.description}
-                    </div>
+                    <div
+                      className={styles['content-description']}
+                      dangerouslySetInnerHTML={{
+                        __html: post.description,
+                      }}
+                    ></div>
                   </article>
                 ))
               )}

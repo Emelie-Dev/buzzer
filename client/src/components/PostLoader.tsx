@@ -6,16 +6,22 @@ type PostLoaderProps = {
     filesIndexes: Set<number>;
   };
   postProgress: number;
+  postLength: number;
 };
 
-const PostLoader = ({ postStage, postProgress }: PostLoaderProps) => {
+const PostLoader = ({
+  postStage,
+  postProgress,
+  postLength,
+}: PostLoaderProps) => {
+  const fileText = postLength === 1 ? 'File' : 'Files';
   const stage =
     postStage.value === 'preparing'
-      ? 'Preparing Files'
+      ? `Preparing ${fileText}`
       : postStage.value === 'validating'
-      ? 'Validating Files'
+      ? `Validating ${fileText}`
       : postStage.value === 'processing'
-      ? 'Processing Files'
+      ? `Processing ${fileText}`
       : 'Saving Content';
 
   return (

@@ -237,7 +237,6 @@ const Create = () => {
     setProcessing((prev) => ({ ...prev, [category]: false }));
   }, [stage]);
 
-  // Remeber to revoke object urls after file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setProcessing((prev) => ({ ...prev, [category]: true }));
 
@@ -353,8 +352,8 @@ const Create = () => {
         } else throw new Error();
       }
 
-      setStage({ ...stage, [category]: 'edit' });
       setAddFiles(false);
+      setTimeout(() => setStage({ ...stage, [category]: 'edit' }), 10);
     } catch (error: any) {
       const durationError =
         uploadFiles && uploadFiles.length === 1

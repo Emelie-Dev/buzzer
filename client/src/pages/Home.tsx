@@ -513,7 +513,7 @@ const Home = () => {
                       key={request._id}
                       className={styles['pinned-video-box']}
                     >
-                      <Link to={'#'}>
+                      <Link to={'#'} className={styles['pinned-video-link']}>
                         {request.post.type === 'video' ? (
                           <video className={styles['pinned-video']}>
                             <source
@@ -595,7 +595,7 @@ const Home = () => {
                       key={request._id}
                       className={styles['pinned-video-box']}
                     >
-                      <Link to={'#'}>
+                      <Link to={'#'} className={styles['pinned-video-link']}>
                         {request.post.type === 'video' ? (
                           <video className={styles['pinned-video']}>
                             <source

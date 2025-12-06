@@ -453,13 +453,20 @@
   height: 8rem;
 }
 
+
 .pinned-video-box {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pinned-video-link {
   width: 100%;
   height: 8rem;
   background: black;
   border-radius: 5px;
   position: relative;
-  margin-bottom: 1.5rem;
 }
 
 .pinned-video {
@@ -571,7 +578,6 @@
 .friend-btn-box {
   display: flex;
   align-items: center;
-  margin-top: 1rem;
   justify-content: space-around;
 }
 

@@ -83,13 +83,14 @@ const CarouselItem = ({
   const [showLike, setShowLike] = useState<boolean>(false);
   const [webkit, setWebkit] = useState<boolean>(true);
   const [showMore, setShowMore] = useState<boolean>(false);
-  const { setActiveVideo } = useContext(ContentContext);
+  const { setActiveVideo, activeVideo } = useContext(ContentContext);
   const [descriptionHeight, setDescriptionHeight] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
   const [isProgressChanging, setIsProgressChanging] = useState<boolean>(false);
   const [duration, setDuration] = useState<string>('');
   const [elapsedTime, setElapsedTime] = useState<string>('');
   const { user: authUser } = useContext(AuthContext);
+  const [isActive, setIsActive] = useState<boolean>(false);
 
   const imageRef = useRef<HTMLImageElement>(null!);
   const videoRef = useRef<HTMLVideoElement>(null!);
@@ -125,7 +126,7 @@ const CarouselItem = ({
         videoRef.current.pause();
         setCurrentTime(videoRef.current.currentTime);
       } else {
-        if (contentType !== 'reels') {
+        if (contentType !== 'reels' && !activeVideo && isActive) {
           videoRef.current.currentTime = currentTime;
           videoRef.current.play();
           setActiveVideo(videoRef.current);
@@ -170,7 +171,7 @@ const CarouselItem = ({
   useEffect(() => {
     if (contentIndex === itemIndex) {
       if (type === 'video') {
-        if (!viewComment) {
+        if (!viewComment && !activeVideo && isActive) {
           videoRef.current.play();
           setActiveVideo(videoRef.current);
         }
@@ -400,6 +401,8 @@ const CarouselItem = ({
         entries.forEach((entry) => {
           const ratio = entry.intersectionRatio;
           if (viewType === 'content') {
+            if (ratio === 1) setIsActive(true);
+
             if (ratio >= 0.4) {
               // Element is at least 40% visible
 

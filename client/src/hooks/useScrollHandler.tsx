@@ -81,7 +81,7 @@ const useScrollHandler = (
 
   const scrollHandler = (e?: React.UIEvent<HTMLElement, UIEvent>) => {
     const target = e && (e.target as HTMLDivElement);
-    if (!(disableFunctionality || disablePosts)) {
+    if (posts && !(disableFunctionality || disablePosts)) {
       const videos = contentRef.current;
       const deviceHeight = window.innerHeight;
 

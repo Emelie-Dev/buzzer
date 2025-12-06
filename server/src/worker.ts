@@ -106,7 +106,8 @@ const processVideo = (
   filter: any,
   filePath: string,
   tempFilePath: string,
-  filename: string
+  filename: string,
+  cropArea: any
 ): Promise<void> => {
   const {
     brightness,
@@ -130,8 +131,11 @@ const processVideo = (
     const filters = [eqFilter];
 
     if (grayscale > 0 && grayscale < 1) {
+      // filters.push(
+      //   `[0:v]format=gray[gray];[0:v][gray]blend=all_mode='overlay':all_opacity=${grayscale}`
+      // );
       filters.push(
-        `[0:v]format=gray[gray];[0:v][gray]blend=all_mode='overlay':all_opacity=${grayscale}`
+        `format=gray,blend=all_mode='overlay':all_opacity=${grayscale}`
       );
     } else if (grayscale >= 1) {
       filters.push(`hue=s=0`);
@@ -143,8 +147,11 @@ const processVideo = (
 
     if (sepia > 0 && sepia < 1) {
       const sepiaMatrix = `colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131`;
+      // filters.push(
+      //   `[0:v]${sepiaMatrix}[sepia];[0:v][sepia]blend=all_mode='overlay':all_opacity=${sepia}`
+      // );
       filters.push(
-        `[0:v]${sepiaMatrix}[sepia];[0:v][sepia]blend=all_mode='overlay':all_opacity=${sepia}`
+        `${sepiaMatrix},blend=all_mode='overlay':all_opacity=${sepia}`
       );
     } else if (sepia >= 1) {
       filters.push(
@@ -155,6 +162,11 @@ const processVideo = (
     if (blur > 0) {
       const radius = blur * 20; // CSS blur(1px) ≈ boxblur radius 20
       filters.push(`boxblur=luma_radius=${radius}:luma_power=1`);
+    }
+
+    if (cropArea) {
+      const { width, height, x, y } = cropArea;
+      filters.push(`crop=${width}:${height}:${x}:${y}`);
     }
 
     const complexFilter = filters.join(',');
@@ -221,7 +233,11 @@ export const checkVideoFilesDuration = async (
   );
 };
 
-export const processFiles = async (files: any[], filters: any[]) => {
+export const processFiles = async (
+  files: any[],
+  filters: any[],
+  videosCropArea: any[]
+) => {
   let fileIndex = 0;
   const initialValues = {
     brightness: 1,
@@ -263,7 +279,13 @@ export const processFiles = async (files: any[], filters: any[]) => {
         );
 
         if (file.mimetype.startsWith('video')) {
-          await processVideo(filter, file.path, tempFilePath, file.filename);
+          await processVideo(
+            filter,
+            file.path,
+            tempFilePath,
+            file.filename,
+            videosCropArea[index]
+          );
         }
 
         if (file.mimetype.startsWith('image')) {

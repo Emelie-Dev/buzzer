@@ -635,6 +635,7 @@ const UploadDetails = ({
     setCropIndex(0);
     setPostProgress(0);
 
+    if (videoRef.current) videoRef.current.pause();
     for (let i = 0; i < editedFiles.length; i++) {
       setCropIndex(i);
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -667,8 +668,6 @@ const UploadDetails = ({
   };
 
   const postContent = async () => {
-    // preparing files, validating files, processing files, saving content
-
     // Preparing stage
     const formData = new FormData();
 
@@ -750,13 +749,20 @@ const UploadDetails = ({
 
       if (hashTags.length > 0) {
         hashTags.forEach((elem) =>
-          elem.setAttribute('href', elem.textContent?.trim())
+          elem.setAttribute('href', `/search?q=${elem.textContent?.trim()}`)
         );
       }
 
       const filters = editedFiles.map((file) =>
-        getFilterValue({ filter: file.filter, adjustments: file.adjustments })
+        getFilterValue(
+          {
+            filter: file.filter,
+            adjustments: file.adjustments,
+          },
+          true
+        )?.trim()
       );
+
       const descriptions = editedFiles.map(
         (obj) => fileDescriptions.get(obj.key) || ''
       );
@@ -823,7 +829,11 @@ const UploadDetails = ({
       )}
 
       {cropping && (
-        <PostLoader postStage={postStage} postProgress={postProgress} />
+        <PostLoader
+          postStage={postStage}
+          postProgress={postProgress}
+          postLength={editedFiles.length}
+        />
       )}
 
       <div className={styles['carousel-details-container']} ref={carouselRef}>

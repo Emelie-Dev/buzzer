@@ -94,11 +94,7 @@ export const validateContentFiles = asyncErrorHandler(
         );
 
         // Checks if video files duration is valid
-        if (process.env.NODE_ENV === 'development') {
-          await pool.exec('checkVideoFilesDuration', [videoFiles, 60]);
-        } else {
-          await checkVideoFilesDuration(videoFiles, 60);
-        }
+        await pool.exec('checkVideoFilesDuration', [videoFiles, 60]);
 
         next();
       } catch (err) {
@@ -122,7 +118,11 @@ export const processContentFiles = asyncErrorHandler(
       // Process files
       await pool.exec(
         'processFiles',
-        [files, JSON.parse(req.body.filters).value],
+        [
+          files,
+          JSON.parse(req.body.filters).value,
+          JSON.parse(req.body.videosCropArea),
+        ],
         {
           on: function (event) {
             res.write(JSON.stringify(event) + '\n');
