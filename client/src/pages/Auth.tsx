@@ -580,6 +580,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                       height: 70,
                       opacity: 0.7,
                     }}
+                    className={styles['loading-animation']}
                   />
                 ) : (
                   ''
@@ -705,6 +706,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                         height: 70,
                         opacity: 0.7,
                       }}
+                      className={styles['loading-animation']}
                     />
                   ) : (
                     ''
