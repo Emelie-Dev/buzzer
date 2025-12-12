@@ -10,7 +10,7 @@ import UploadReel from '../components/UploadReel';
 import UploadReelDetails, {
   ReelDetails,
 } from '../components/UploadReelDetails';
-import { GeneralContext } from '../Contexts';
+import { GeneralContext, StoryContext } from '../Contexts';
 import { FaTasks } from 'react-icons/fa';
 import { IoClose, IoArrowBack } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
@@ -114,7 +114,7 @@ const Create = () => {
   }>({ content: [], reel: null, story: [] });
   const [rawFiles, setRawFiles] = useState<Map<string, File>>(null!);
   const [rawReelFile, setRawReelFile] = useState<File>(null!);
-  const setRawStoryFiles = useState<Map<string, File>>(null!)[1];
+  const [rawStoryFiles, setRawStoryFiles] = useState<Map<string, File>>(null!);
   const [addFiles, setAddFiles] = useState(false);
   const [contentIndex, setContentIndex] = useState<number>(0);
   const [aspectRatio, setAspectRatio] = useState<'initial' | number>(1);
@@ -141,6 +141,9 @@ const Create = () => {
   const [videosCropArea, setVideosCropArea] = useState<Map<string, Area>>(
     new Map()
   );
+  const [storyCropArea, setStoryCropArea] = useState<Map<string, Area>>(
+    new Map()
+  );
   const [volume, setVolume] = useState<{ sound: number; original: number }>({
     sound: 100,
     original: 0,
@@ -151,6 +154,7 @@ const Create = () => {
     reel: boolean;
     story: boolean;
   }>({ content: false, reel: false, story: false });
+  const { userStory } = useContext(StoryContext);
 
   const navigate = useNavigate();
 
@@ -258,12 +262,14 @@ const Create = () => {
       files.content.forEach((file) => URL.revokeObjectURL(file.src as string));
       setFiles((prev) => ({ ...prev, content: [] }));
       setRawFiles(null!);
+      setVideosCropArea(new Map());
     }
 
     if (stage.story === 'select') {
       files.story.forEach((file) => URL.revokeObjectURL(file.src as string));
       setFiles((prev) => ({ ...prev, story: [] }));
       setRawStoryFiles(null!);
+      setStoryCropArea(new Map());
     }
 
     setProcessing((prev) => ({ ...prev, [category]: false }));
@@ -284,7 +290,9 @@ const Create = () => {
           // Handle error
           if (uploadFiles.length > uploadLength) {
             e.target.files = new DataTransfer().files;
-            throw new Error('You can only upload 20 files at once.');
+            const error = new Error('You can only upload 20 files at once.');
+            error.name = 'operational';
+            throw error;
           }
 
           const promises = [...uploadFiles].map((file) => isFileValid(file));
@@ -339,12 +347,19 @@ const Create = () => {
       } else {
         if (uploadFiles && uploadFiles.length > 0) {
           const filesData: StoryData[] = [];
+          const storyLength = 10 - userStory.length;
 
-          const uploadLength = addFiles ? 10 - files.story.length : 10;
+          const uploadLength = addFiles
+            ? storyLength - files.story.length
+            : storyLength;
 
           if (uploadFiles.length > uploadLength) {
             e.target.files = new DataTransfer().files;
-            throw new Error('You can only upload 10 files at once.');
+            const error = new Error(
+              'You can have a maximum of 10 story files at once.'
+            );
+            error.name = 'operational';
+            throw error;
           }
 
           const promises = [...uploadFiles].map((file) =>
@@ -403,7 +418,9 @@ const Create = () => {
           : 'We couldn’t process some files. Please try again.';
 
       toast.error(
-        error.message === 'Size Error'
+        error.name === 'operational'
+          ? error.message
+          : error.message === 'Size Error'
           ? sizeError
           : error.message === 'Duration Error'
           ? durationError
@@ -554,8 +571,8 @@ const Create = () => {
             ref={fileRef}
             accept={
               category === 'content' || category === 'story'
-                ? 'image/*,video/mp4,video/webm,video/ogg'
-                : 'video/mp4,video/webm,video/ogg'
+                ? 'image/*,video/mp4,video/webm,video/ogg,video/mpeg'
+                : 'video/mp4,video/webm,video/ogg,video/mpeg'
             }
             multiple={category === 'content' || category === 'story'}
             onChange={handleFileUpload}
@@ -597,16 +614,16 @@ const Create = () => {
                   setAddFiles={setAddFiles}
                   fileRef={fileRef}
                   uploadProps={{
-                    rawFiles,
                     files: files.content,
-                    setRawFiles,
                     contentIndex,
                     setContentIndex,
                     aspectRatio,
                     setAspectRatio,
-                    videosCropArea,
-                    setVideosCropArea,
                   }}
+                  videosCropArea={videosCropArea}
+                  setVideosCropArea={setVideosCropArea}
+                  rawFiles={rawFiles}
+                  setRawFiles={setRawFiles}
                 />
               ) : (
                 <UploadDetails
@@ -700,8 +717,11 @@ const Create = () => {
                   fileRef={fileRef}
                   uploadProps={{
                     storyFiles: files.story,
-                    setRawStoryFiles,
                   }}
+                  videosCropArea={storyCropArea}
+                  setVideosCropArea={setStoryCropArea}
+                  rawFiles={rawStoryFiles}
+                  setRawFiles={setRawStoryFiles}
                 />
               ) : (
                 ''

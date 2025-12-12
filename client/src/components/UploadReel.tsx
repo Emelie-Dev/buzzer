@@ -182,9 +182,14 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
   }, [category]);
 
   useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = volume.original / 100;
-    if (audioRef.current) audioRef.current.volume = volume.sound / 100;
-  }, [volume]);
+    if (currentSound) {
+      if (videoRef.current) videoRef.current.volume = volume.original / 100;
+      if (audioRef.current) audioRef.current.volume = volume.sound / 100;
+    } else {
+      if (videoRef.current) videoRef.current.volume = 1;
+      if (audioRef.current) audioRef.current.volume = 1;
+    }
+  }, [volume, currentSound]);
 
   // Handle upload for mobile
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -780,7 +785,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
             <input
               type="file"
               ref={fileRef}
-              accept="audio/mp3, audio/wav, audio/aac, audio/ogg"
+              accept="audio/mpeg,audio/wav,audio/ogg,audio/mp3"
               multiple={true}
               onChange={handleFileUpload}
             />
@@ -788,7 +793,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
             <input
               type="file"
               ref={coverRef}
-              accept="image/jpeg, image/png, image/webp, image/avif"
+              accept="image/*"
               onChange={handleCoverPhoto}
             />
 

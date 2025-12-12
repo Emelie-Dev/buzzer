@@ -18,6 +18,10 @@
     left: 100%;
 }
 
+.story-section {
+    left: auto;
+}
+
 .liquid-loader {
     display: flex;
     flex-direction: column;

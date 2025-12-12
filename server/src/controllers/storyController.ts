@@ -787,7 +787,9 @@ export const getStories = asyncErrorHandler(
     }
 
     const userData = protectData(user!, 'user');
-    const userStories = await Story.find({ user: req.user?._id });
+    const userStories = await Story.find({ user: req.user?._id }).select(
+      '-__v -user -accessibility'
+    );
 
     return res.status(200).json({
       status: 'success',
@@ -834,7 +836,8 @@ export const getStory = asyncErrorHandler(
 
 export const validateStoryFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const storyCount = (await Story.find({ user: req.user?._id })).length || 0;
+    const storyCount =
+      (await Story.countDocuments({ user: req.user?._id })) || 0;
 
     const maxCount = 10 - storyCount;
 
@@ -844,6 +847,11 @@ export const validateStoryFiles = asyncErrorHandler(
     ]);
 
     uploader(req, res, async (error: any) => {
+      res.setHeader('Content-Type', 'text/plain');
+      res.write(
+        JSON.stringify({ status: 'success', message: 'validating' }) + '\n'
+      );
+
       let files =
         (req.files as {
           [fieldname: string]: Express.Multer.File[];
@@ -885,16 +893,21 @@ export const validateStoryFiles = asyncErrorHandler(
         );
 
         // Checks if video files duration is valid
-        if (process.env.NODE_ENV === 'development') {
-          await pool.exec('checkVideoFilesDuration', [videoFiles, 300]);
-        } else {
-          await checkVideoFilesDuration(videoFiles, 300);
-        }
+        await pool.exec('checkVideoFilesDuration', [videoFiles, 300]);
 
         next();
-      } catch (err) {
+      } catch (err: any) {
         await deleteStoryFiles(files);
-        next(err);
+        res.status(err.statusCode || 500).end(
+          JSON.stringify({
+            status: 'fail',
+            message: err.isOperational
+              ? err.message
+              : `Error occured while validating file${
+                  files.story.length === 1 ? '' : 's'
+                }. Please try again.`,
+          }) + '\n'
+        );
       }
     });
   }
@@ -902,9 +915,8 @@ export const validateStoryFiles = asyncErrorHandler(
 
 export const processStoryFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    res.setHeader('Content-Type', 'text/plain');
     res.write(
-      JSON.stringify({ status: 'success', message: 'Processing started' })
+      JSON.stringify({ status: 'success', message: 'processing' }) + '\n'
     );
 
     const files = req.files as {
@@ -917,10 +929,14 @@ export const processStoryFiles = asyncErrorHandler(
       // Process files
       await pool.exec(
         'processFiles',
-        [files.story, JSON.parse(req.body.filters).value],
+        [
+          files.story,
+          JSON.parse(req.body.filters).value,
+          JSON.parse(req.body.videosCropArea),
+        ],
         {
           on: function (event) {
-            res.write(JSON.stringify(event));
+            res.write(JSON.stringify(event) + '\n');
           },
         }
       );
@@ -933,7 +949,7 @@ export const processStoryFiles = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to process files.',
-        })
+        }) + '\n'
       );
     }
   }
@@ -973,7 +989,10 @@ export const saveStory = asyncErrorHandler(
             ? files.sound[0].path
             : path.basename(files.sound[0].path)
           : '',
-        volume,
+        volume: {
+          sound: Math.min(volume.sound, 1),
+          story: Math.min(volume.story, 1),
+        },
       }));
 
       await Story.insertMany(newStory);
@@ -985,8 +1004,9 @@ export const saveStory = asyncErrorHandler(
       return res.status(201).end(
         JSON.stringify({
           status: 'success',
+          message: 'finish',
           data: { story },
-        })
+        }) + '\n'
       );
     } catch {
       await deleteStoryFiles(files);
@@ -994,8 +1014,8 @@ export const saveStory = asyncErrorHandler(
       return res.status(500).end(
         JSON.stringify({
           status: 'fail',
-          message: 'Unable to update story!',
-        })
+          message: 'Unable to create story!',
+        }) + '\n'
       );
     }
   }

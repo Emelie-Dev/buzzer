@@ -618,7 +618,7 @@ export const saveReel = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to create reel.',
-        })
+        }) + '\n'
       );
     }
   }

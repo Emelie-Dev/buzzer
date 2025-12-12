@@ -426,6 +426,7 @@ const StoryItem = ({
       toast.info('Maximum story limit reached.');
     } else {
       setCreateCategory('story');
+      setViewStory(false);
       navigate('/create');
     }
   };

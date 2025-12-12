@@ -61,6 +61,7 @@ type PostDetailsProps = {
       }>
     >;
   };
+  posting: boolean;
 };
 
 type MentionModalProps = {
@@ -93,6 +94,7 @@ const PostDetails = ({
   setStage,
   submitHandler,
   postDetails,
+  posting,
 }: PostDetailsProps) => {
   const {
     generalDescription,
@@ -867,7 +869,9 @@ const PostDetails = ({
 
         <div className={styles['post-btn-div']}>
           <button
-            className={`${styles['post-btn']} ${styles['cancel-btn']}`}
+            className={`${styles['post-btn']} ${styles['cancel-btn']} ${
+              posting ? styles['disable-btn'] : ''
+            }`}
             onClick={() => {
               setStage((prevStage) => ({
                 ...prevStage,
@@ -878,7 +882,12 @@ const PostDetails = ({
             Discard
           </button>
 
-          <button className={styles['post-btn']} onClick={submitHandler}>
+          <button
+            className={`${styles['post-btn']} ${
+              posting ? styles['disable-btn'] : ''
+            }`}
+            onClick={submitHandler}
+          >
             Post
           </button>
         </div>

@@ -81,11 +81,20 @@
 }
 
 .pinned-videos-div {
-    padding: 1rem 1.5rem 0.5rem;
+    padding: 1rem 1.5rem 1rem;
     margin-top: 1.5rem;
 }
 
+
 .pinned-video-box {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+
+.pinned-video-link {
     width: 100%;
     height: 8rem;
     background: black;
@@ -93,11 +102,13 @@
     position: relative;
 }
 
+
 .pinned-video {
     width: 100%;
     height: 100%;
     border-radius: 5px;
     object-fit: cover;
+    z-index: -1;
 }
 
 .pinned-video-details {
@@ -105,7 +116,7 @@
     background: rgba(0, 0, 0, 0.5);
     top: 0;
     left: 0;
-    z-index: 2;
+    z-index: 1;
     width: 100%;
     height: 100%;
     border-radius: 5px;

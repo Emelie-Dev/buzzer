@@ -415,7 +415,7 @@ const UploadDetails = ({
       return toast.error(
         err.name === 'operational'
           ? err.message
-          : 'Failed to create post. Please try again.'
+          : 'Failed to create content. Please try again.'
       );
     }
   };
@@ -596,6 +596,7 @@ const UploadDetails = ({
         postType="content"
         setStage={setStage}
         submitHandler={getCroppedAreas}
+        posting={cropping}
         postDetails={{
           editedFiles,
           generalDescription,

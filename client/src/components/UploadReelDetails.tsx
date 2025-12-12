@@ -188,9 +188,14 @@ const UploadReelDetails = ({
   }, [postProgress, postStage]);
 
   useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = volume.original / 100;
-    if (audioRef.current) audioRef.current.volume = volume.sound / 100;
-  }, [volume]);
+    if (currentSound) {
+      if (videoRef.current) videoRef.current.volume = volume.original / 100;
+      if (audioRef.current) audioRef.current.volume = volume.sound / 100;
+    } else {
+      if (videoRef.current) videoRef.current.volume = 1;
+      if (audioRef.current) audioRef.current.volume = 1;
+    }
+  }, [volume, currentSound]);
 
   const handleProgressUpdate = (e: React.SyntheticEvent) => {
     const target = e.target as HTMLVideoElement;
@@ -248,6 +253,7 @@ const UploadReelDetails = ({
   };
 
   const postContent = async () => {
+    setPauseVideo(true);
     setPosting(true);
 
     // Preparing stage
@@ -337,7 +343,7 @@ const UploadReelDetails = ({
       return toast.error(
         err.name === 'operational'
           ? err.message
-          : 'Failed to create post. Please try again.'
+          : 'Failed to create reel. Please try again.'
       );
     }
   };
@@ -420,6 +426,7 @@ const UploadReelDetails = ({
         postType="reel"
         setStage={setStage}
         submitHandler={postContent}
+        posting={posting}
         postDetails={{
           generalDescription,
           setGeneralDescription,

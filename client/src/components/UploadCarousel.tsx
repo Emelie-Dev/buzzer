@@ -2,7 +2,7 @@ import styles from '../styles/UploadCarousel.module.css';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { FaPlus } from 'react-icons/fa6';
 import { IoMdCrop } from 'react-icons/io';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
   IoCheckmarkSharp,
   IoColorFilterOutline,
@@ -10,7 +10,13 @@ import {
 } from 'react-icons/io5';
 import Cropper, { Area } from 'react-easy-crop';
 import { Content, StoryData } from '../pages/Create';
-import { getFilterValue, getDurationText, filters } from '../Utilities';
+import {
+  getFilterValue,
+  getDurationText,
+  filters,
+  streamResponse,
+  serverUrl,
+} from '../Utilities';
 import { TbAdjustmentsFilled } from 'react-icons/tb';
 import MobileFilter from './MobileFilter';
 import MobileAdjustments from './MobileAdjustments';
@@ -18,22 +24,20 @@ import { PiMusicNotesBold } from 'react-icons/pi';
 import MobileSound from './MobileSound';
 import { FaPause, FaPlay } from 'react-icons/fa6';
 import { toast } from 'sonner';
+import LoadingAnimation from './LoadingAnimation';
+import PostLoader from './PostLoader';
+import { StoryContext } from '../Contexts';
 
 type StoryProps = {
   storyFiles: StoryData[];
-  setRawStoryFiles: React.Dispatch<React.SetStateAction<Map<string, File>>>;
 };
 
 type ContentProps = {
   files: Content[];
-  rawFiles: Map<string, File>;
-  setRawFiles: React.Dispatch<React.SetStateAction<Map<string, File>>>;
   contentIndex: number;
   setContentIndex: React.Dispatch<React.SetStateAction<number>>;
   aspectRatio: number | 'initial';
   setAspectRatio: React.Dispatch<React.SetStateAction<number | 'initial'>>;
-  videosCropArea: Map<string, Area>;
-  setVideosCropArea: React.Dispatch<React.SetStateAction<Map<string, Area>>>;
 };
 
 type UploadCarouselProps = {
@@ -55,6 +59,10 @@ type UploadCarouselProps = {
   >;
   setAddFiles: React.Dispatch<React.SetStateAction<boolean>>;
   fileRef: React.MutableRefObject<HTMLInputElement>;
+  videosCropArea: Map<string, Area>;
+  setVideosCropArea: React.Dispatch<React.SetStateAction<Map<string, Area>>>;
+  rawFiles: Map<string, File>;
+  setRawFiles: React.Dispatch<React.SetStateAction<Map<string, File>>>;
 };
 
 const UploadCarousel = ({
@@ -64,24 +72,19 @@ const UploadCarousel = ({
   setStage,
   fileRef,
   setAddFiles,
+  videosCropArea,
+  setVideosCropArea,
+  setRawFiles,
+  rawFiles,
 }: UploadCarouselProps) => {
   const files =
     uploadType === 'content'
       ? (uploadProps as ContentProps).files
       : (uploadProps as StoryProps).storyFiles;
 
-  const {
-    contentIndex,
-    setContentIndex,
-    aspectRatio,
-    setAspectRatio,
-    setRawFiles,
-    rawFiles,
-    videosCropArea,
-    setVideosCropArea,
-  } = uploadProps as ContentProps;
+  const { contentIndex, setContentIndex, aspectRatio, setAspectRatio } =
+    uploadProps as ContentProps;
 
-  const { setRawStoryFiles } = uploadProps as StoryProps;
   const sizeLimit = uploadType === 'content' ? 20 : 10;
 
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -121,6 +124,7 @@ const UploadCarousel = ({
     name: string;
     duration: string;
     src: string;
+    file: File;
   }>(null!);
   const [playStorySound, setPlayStorySound] = useState<boolean>(false);
   const [showMobile, setShowMobile] = useState<{
@@ -129,6 +133,23 @@ const UploadCarousel = ({
     sound: boolean;
   }>({ sound: false, adjustments: false, filter: false });
   const [initialAspectRatio, setInitialAspectRatio] = useState(1);
+  const [processing, setProcessing] = useState<boolean>(false);
+  const [settings, setSettings] = useState({
+    accessibility: 0,
+    disableComments: false,
+    volume: {
+      sound: 100,
+      story: 30,
+    },
+  });
+  const [posting, setPosting] = useState(false);
+  const [postStage, setPostStage] = useState<{
+    value: 'preparing' | 'validating' | 'processing' | 'saving' | 'finish';
+    filesIndexes: Set<number>;
+    percent: number;
+  }>({ value: 'preparing', filesIndexes: new Set(), percent: 0 });
+  const [postProgress, setPostProgress] = useState(0);
+  const { setUserStory } = useContext(StoryContext);
 
   const dotRef = useRef<HTMLSpanElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -155,6 +176,7 @@ const UploadCarousel = ({
   });
   const carouselRef = useRef<HTMLDivElement>(null!);
   const canvasRef = useRef<HTMLCanvasElement>(null!);
+  const progressInterval = useRef<number>(null!);
 
   useEffect(() => {
     const resizeHandler = () => {
@@ -379,6 +401,68 @@ const UploadCarousel = ({
     }
   }, [playStorySound]);
 
+  useEffect(() => {
+    if (uploadType === 'story') {
+      if (storySound) {
+        if (videoRef.current)
+          videoRef.current.volume = settings.volume.story / 100;
+        if (storySoundRef.current)
+          storySoundRef.current.volume = settings.volume.sound / 100;
+      } else {
+        if (videoRef.current) videoRef.current.volume = 1;
+        if (storySoundRef.current) storySoundRef.current.volume = 1;
+      }
+    }
+  }, [settings, storySound]);
+
+  useEffect(() => {
+    clearInterval(progressInterval.current);
+
+    if (posting) {
+      const limit =
+        postStage.value === 'preparing'
+          ? 10
+          : postStage.value === 'validating'
+          ? 30
+          : postStage.value === 'processing'
+          ? 30 + (postStage.filesIndexes.size + 1) * (50 / editedFiles.length)
+          : postStage.value === 'saving'
+          ? 95
+          : 100;
+
+      const delay =
+        postStage.value === 'preparing'
+          ? 20
+          : postStage.value === 'validating'
+          ? 100
+          : postStage.value === 'processing'
+          ? 200
+          : postStage.value === 'saving'
+          ? 100
+          : 20;
+
+      progressInterval.current = setInterval(() => {
+        setPostProgress((prev) => {
+          return Math.floor(Math.min(prev + 1, limit));
+        });
+      }, delay);
+    }
+  }, [postStage]);
+
+  useEffect(() => {
+    if (postStage.value === 'finish' && postProgress === 100) {
+      setTimeout(() => {
+        clearInterval(progressInterval.current);
+        setPosting(false);
+        setStage((prevStage) => ({
+          ...prevStage,
+          story: 'select',
+        }));
+        return toast.success('Story created successfully!');
+      }, 500);
+    }
+  }, [postProgress, postStage]);
+
   const handleSmallImgsScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
 
@@ -411,21 +495,19 @@ const UploadCarousel = ({
         else setCurrentIndex(0);
       }
 
-      if (uploadType === 'content') {
-        setRawFiles((prevFiles) => {
-          const map = new Map(prevFiles);
-          const key = files[itemIndex].key;
-          map.delete(key);
-          return map;
-        });
-      } else {
-        setRawStoryFiles((prevFiles) => {
-          const map = new Map(prevFiles);
-          const key = files[itemIndex].key;
-          map.delete(key);
-          return map;
-        });
-      }
+      setRawFiles((prevFiles) => {
+        const map = new Map(prevFiles);
+        const key = files[itemIndex].key;
+        map.delete(key);
+        return map;
+      });
+
+      setVideosCropArea((prev) => {
+        const map = new Map(prev);
+        const key = files[itemIndex].key;
+        map.delete(key);
+        return map;
+      });
 
       const fileSrc = files[itemIndex].src;
       if (fileSrc) URL.revokeObjectURL(fileSrc as string);
@@ -439,8 +521,7 @@ const UploadCarousel = ({
         };
       });
     } else {
-      if (uploadType === 'content') setRawFiles(new Map());
-      else setRawStoryFiles(new Map());
+      setRawFiles(new Map());
 
       const fileSrc = files[0].src;
       if (fileSrc) URL.revokeObjectURL(fileSrc as string);
@@ -538,41 +619,46 @@ const UploadCarousel = ({
       }
     };
 
-  // Add animation for sound processing
   const handleStorySound = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProcessing(true);
     if (e.target.files) {
       if (e.target.files.length > 0) {
         const file = e.target.files[0];
         let fileURL: string;
 
         try {
-          const data: { name: string; duration: string; src: string } =
-            await new Promise((resolve, reject) => {
-              if (file.size > 1_073_741_824) {
-                reject('Size Error');
-              } else {
-                fileURL = URL.createObjectURL(file);
-                const audio = document.createElement('audio');
+          const data: {
+            name: string;
+            duration: string;
+            src: string;
+            file: File;
+          } = await new Promise((resolve, reject) => {
+            if (file.size > 1_073_741_824) {
+              reject('Size Error');
+            } else {
+              fileURL = URL.createObjectURL(file);
+              const audio = document.createElement('audio');
 
-                audio.src = fileURL;
-                audio.preload = 'metadata';
+              audio.src = fileURL;
+              audio.preload = 'metadata';
 
-                audio.onloadedmetadata = () => {
-                  const duration = Math.round(audio.duration);
-                  const durationText: string = getDurationText(duration);
+              audio.onloadedmetadata = () => {
+                const duration = Math.round(audio.duration);
+                const durationText: string = getDurationText(duration);
 
-                  if (duration > 3600) reject('Duration Error');
-                  else
-                    resolve({
-                      name: file.name,
-                      duration: durationText,
-                      src: fileURL,
-                    });
-                };
+                if (duration > 3600) reject('Duration Error');
+                else
+                  resolve({
+                    name: file.name,
+                    duration: durationText,
+                    src: fileURL,
+                    file,
+                  });
+              };
 
-                audio.onerror = () => reject('Video Error');
-              }
-            });
+              audio.onerror = () => reject('Video Error');
+            }
+          });
 
           storySoundRef.current.src = data.src;
           setPlayStorySound(false);
@@ -607,6 +693,8 @@ const UploadCarousel = ({
         }
       }
     }
+
+    setProcessing(false);
   };
 
   const nextStage = () => {
@@ -741,8 +829,118 @@ const UploadCarousel = ({
     if (videoRef.current) videoRef.current.play();
   };
 
+  const updatePostStage = (data: any) => {
+    const { message, data: resData } = data;
+    if (message === 'processing') {
+      if (data.fileIndex) {
+        if (!postStage.filesIndexes.has(data.fileIndex)) {
+          setPostStage((prev) => {
+            const set = new Set(prev.filesIndexes).add(data.fileIndex);
+            return {
+              value: set.size === editedFiles.length ? 'saving' : 'processing',
+              filesIndexes: set,
+              percent: 0,
+            };
+          });
+        }
+      } else {
+        setPostStage((prev) => ({ ...prev, value: 'processing' }));
+      }
+    } else setPostStage((prev) => ({ ...prev, value: message }));
+
+    if (message === 'finish') {
+      setUserStory(resData.story);
+    }
+  };
+
+  const postStory = async () => {
+    setPosting(true);
+
+    if (videoRef.current) videoRef.current.pause();
+    if (storySoundRef.current) storySoundRef.current.pause();
+
+    // Preparing stage
+    setPostStage((prev) => ({ ...prev, value: 'preparing' }));
+
+    const formData = new FormData();
+
+    try {
+      const story = editedFiles.map((file) => {
+        return rawFiles.get(file.key)!;
+      });
+      const filters = editedFiles.map((file) =>
+        getFilterValue(
+          {
+            filter: file.filter,
+            adjustments: {
+              brightness: 0,
+              contrast: 0,
+              grayscale: 0,
+              'hue-rotate': 0,
+              saturate: 0,
+              sepia: 0,
+            },
+          },
+          true
+        )?.trim()
+      );
+      const videosCrop = editedFiles.map((file) => {
+        if (file.type === 'video') {
+          return videosCropArea.get(file.key);
+        }
+        return null;
+      });
+
+      story.forEach((file) => formData.append('story', file));
+      if (storySound) formData.append('sound', storySound.file);
+      formData.append('filters', JSON.stringify({ value: filters }));
+      formData.append(
+        'settings',
+        JSON.stringify({
+          ...settings,
+          volume: storySound
+            ? {
+                sound: settings.volume.sound / 100,
+                story: settings.volume.story / 100,
+              }
+            : { sound: 0, story: 1 },
+        })
+      );
+      formData.append('videosCropArea', JSON.stringify(videosCrop));
+    } catch {
+      clearInterval(progressInterval.current);
+      setPosting(false);
+      return toast.error('Error preparing files. Please try again.');
+    }
+
+    try {
+      await streamResponse(
+        `${serverUrl}api/v1/stories`,
+        formData,
+        updatePostStage
+      );
+    } catch (err: any) {
+      clearInterval(progressInterval.current);
+      setPosting(false);
+      return toast.error(
+        err.name === 'operational'
+          ? err.message
+          : 'Failed to create story. Please try again.'
+      );
+    }
+  };
+
   return (
     <>
+      {posting && (
+        <PostLoader
+          postStage={postStage}
+          postProgress={postProgress}
+          postLength={editedFiles.length}
+          postType="Story"
+        />
+      )}
+
       <div className={styles.carousel}>
         <div className={styles['carousel-container']} ref={carouselRef}>
           <div className={styles['carousel-box']}>
@@ -853,7 +1051,9 @@ const UploadCarousel = ({
                       : undefined
                   }
                   crop={crop}
-                  aspect={aspectRatio as number}
+                  aspect={
+                    uploadType === 'story' ? 9 / 16 : (aspectRatio as number)
+                  }
                   onCropChange={setCrop}
                   onCropComplete={(_, croppedAreaPixels) =>
                     setCropArea(croppedAreaPixels)
@@ -862,11 +1062,14 @@ const UploadCarousel = ({
                   zoomWithScroll={false}
                   objectFit={'cover'}
                   classes={{
-                    mediaClassName: styles.img,
+                    mediaClassName: `${styles.img} ${
+                      uploadType === 'story' ? styles['img2'] : ''
+                    }`,
                   }}
                   style={{
                     mediaStyle: {
-                      aspectRatio,
+                      aspectRatio:
+                        uploadType === 'story' ? 'initial' : aspectRatio,
                       filter: getFilterValue(currentFileData),
                       height: `${imageRef.current?.offsetHeight}px`,
                     },
@@ -876,11 +1079,14 @@ const UploadCarousel = ({
                 <>
                   {files[currentIndex].type === 'image' ? (
                     <img
-                      className={styles.img}
+                      className={`${styles.img} ${
+                        uploadType === 'story' ? styles['img2'] : ''
+                      }`}
                       src={files[currentIndex].src as string}
                       ref={imageRef}
                       style={{
-                        aspectRatio,
+                        aspectRatio:
+                          uploadType === 'story' ? 'initial' : aspectRatio,
                         filter: getFilterValue(currentFileData),
                       }}
                       onMouseDown={(e) =>
@@ -896,6 +1102,8 @@ const UploadCarousel = ({
                     <>
                       <video
                         className={`${styles.img} ${
+                          uploadType === 'story' ? styles['img2'] : ''
+                        } ${
                           files[currentIndex].type === 'video' &&
                           videosCropArea.has(files[currentIndex].key)
                             ? styles['hide-video']
@@ -903,7 +1111,8 @@ const UploadCarousel = ({
                         }`}
                         ref={videoRef}
                         style={{
-                          aspectRatio,
+                          aspectRatio:
+                            uploadType === 'story' ? 'initial' : aspectRatio,
                           filter: getFilterValue(currentFileData),
                         }}
                         autoPlay={true}
@@ -925,9 +1134,14 @@ const UploadCarousel = ({
                         videosCropArea.has(files[currentIndex].key) && (
                           <canvas
                             ref={canvasRef}
-                            className={styles.img}
+                            className={`${styles.img} ${
+                              uploadType === 'story' ? styles['img2'] : ''
+                            }`}
                             style={{
-                              aspectRatio,
+                              aspectRatio:
+                                uploadType === 'story'
+                                  ? 'initial'
+                                  : aspectRatio,
                               filter: getFilterValue(currentFileData),
                             }}
                             onMouseDown={(e) =>
@@ -1243,58 +1457,123 @@ const UploadCarousel = ({
                   <div className={styles['hide-sound']}>
                     <input
                       type="file"
-                      accept="audio/mp3, audio/wav, audio/aac, audio/ogg"
+                      accept="audio/mpeg,audio/wav,audio/ogg,audio/mp3"
                       ref={soundInputRef}
                       onChange={handleStorySound}
                     />
 
                     <audio ref={storySoundRef}>
-                      <source />
                       Your browser does not support the audio element.
                     </audio>
                   </div>
 
-                  {storySound && (
-                    <div
-                      className={`${styles['sound-box']} ${
-                        playStorySound ? styles['active-sound'] : ''
-                      }`}
-                    >
-                      <span
-                        className={styles['sound-details']}
-                        onClick={() => setPlayStorySound(!playStorySound)}
-                      >
-                        <span className={styles['sound-name']}>
-                          {storySound.name}
-                        </span>
-                        <span className={styles['sound-duration']}>
-                          {storySound.duration}
-                        </span>
-                      </span>
+                  {processing ? (
+                    <div className={styles['loader-box']}>
+                      <LoadingAnimation
+                        style={{
+                          width: '3rem',
+                          height: '3rem',
+                          transform: 'scale(2.5)',
+                        }}
+                      />
                     </div>
+                  ) : (
+                    storySound && (
+                      <>
+                        <div
+                          className={`${styles['sound-box']} ${
+                            playStorySound ? styles['active-sound'] : ''
+                          }`}
+                        >
+                          <span
+                            className={styles['sound-details']}
+                            onClick={() => setPlayStorySound(!playStorySound)}
+                          >
+                            <span className={styles['sound-name']}>
+                              {storySound.name}
+                            </span>
+                            <span className={styles['sound-duration']}>
+                              {storySound.duration}
+                            </span>
+                          </span>
+                        </div>
+
+                        <div className={styles['sound-volume-container']}>
+                          <span className={styles['sound-volume-head']}>
+                            Volume
+                          </span>
+
+                          <div className={styles['sound-volume-box']}>
+                            <span className={styles['sound-volume-heading']}>
+                              Sound Volume
+                            </span>
+                            <div className={styles['sound-volume-slider']}>
+                              <input
+                                type="range"
+                                value={settings.volume.sound}
+                                onChange={(e) => {
+                                  setSettings((prev) => ({
+                                    ...prev,
+                                    volume: {
+                                      ...prev.volume,
+                                      sound: Number(e.target.value),
+                                    },
+                                  }));
+                                }}
+                              />
+                              <span>{settings.volume.sound}%</span>
+                            </div>
+                          </div>
+
+                          <div className={styles['sound-volume-box']}>
+                            <span className={styles['sound-volume-heading']}>
+                              Story Volume
+                            </span>
+                            <div className={styles['sound-volume-slider']}>
+                              <input
+                                type="range"
+                                value={settings.volume.story}
+                                onChange={(e) => {
+                                  setSettings((prev) => ({
+                                    ...prev,
+                                    volume: {
+                                      ...prev.volume,
+                                      story: Number(e.target.value),
+                                    },
+                                  }));
+                                }}
+                              />
+                              <span>{settings.volume.story}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )
                   )}
 
-                  <div className={styles['sound-btn-div']}>
-                    <button
-                      className={styles['sound-btn']}
-                      onClick={() => soundInputRef.current.click()}
-                    >
-                      {storySound ? 'Change' : 'Select Sound'}
-                    </button>
-                    {storySound && (
+                  {!processing && (
+                    <div className={styles['sound-btn-div']}>
                       <button
-                        className={styles['remove-btn']}
-                        onClick={() => {
-                          URL.revokeObjectURL(storySound.src);
-                          storySoundRef.current.src = '';
-                          setPlayStorySound(false);
-                          setStorySound(null!);
-                        }}
+                        className={styles['sound-btn']}
+                        onClick={() => soundInputRef.current.click()}
                       >
-                        Remove
+                        {storySound ? 'Change' : 'Select Sound'}
                       </button>
-                    )}
-                  </div>
+                      {storySound && (
+                        <button
+                          className={styles['remove-btn']}
+                          onClick={() => {
+                            URL.revokeObjectURL(storySound.src);
+                            storySoundRef.current.src = '';
+                            setPlayStorySound(false);
+                            setStorySound(null!);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1427,10 +1706,20 @@ const UploadCarousel = ({
               <span className={styles['settings-box-head']}>
                 Accessibility:
               </span>
-              <select className={styles['accessibility-select']}>
-                <option value={'everyone'}>Everyone</option>
-                <option value={'friends'}>Friends</option>
-                <option value={'only-you'}>Only you</option>
+
+              <select
+                className={styles['accessibility-select']}
+                value={settings.accessibility}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    accessibility: parseInt(e.target.value),
+                  }))
+                }
+              >
+                <option value={0}>Everyone</option>
+                <option value={1}>Friends</option>
+                <option value={2}>Only you</option>
               </select>
             </div>
 
@@ -1439,6 +1728,13 @@ const UploadCarousel = ({
                 type="checkbox"
                 id="comments2"
                 className={styles['settings-checkbox']}
+                checked={settings.disableComments}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    disableComments: e.target.checked,
+                  }))
+                }
               />
 
               <label
@@ -1466,7 +1762,7 @@ const UploadCarousel = ({
 
           <button
             className={styles['next-btn']}
-            onClick={uploadType === 'content' ? nextStage : undefined}
+            onClick={uploadType === 'content' ? nextStage : postStory}
           >
             {uploadType === 'content' ? 'Next' : 'Post'}
           </button>
@@ -1500,6 +1796,9 @@ const UploadCarousel = ({
           storySoundRef={storySoundRef}
           setPlayStorySound={setPlayStorySound}
           setStorySound={setStorySound}
+          processing={processing}
+          settings={settings}
+          setSettings={setSettings}
         />
       )}
     </>

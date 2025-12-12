@@ -313,7 +313,9 @@ export const transformReelFiles = (
   sound = savedSound ? [{ path: savedSound }] : sound;
 
   const { start = 0, end = 1 } = position;
-  const { original: originalVolume = 0, sound: soundVolume = 1 } = volume;
+  let { original: originalVolume = 0, sound: soundVolume = 1 } = volume;
+  originalVolume = Math.min(originalVolume, 1);
+  soundVolume = Math.min(soundVolume, 1);
 
   const ext = path.extname(reelFile[0].originalname);
   const tempFilePath = path.join(

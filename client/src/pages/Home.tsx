@@ -258,7 +258,7 @@ const Home = () => {
               ) : stories.length === 0 ? (
                 userStory.length > 0 ? (
                   <article
-                    className={styles.user}
+                    className={styles.userStory}
                     onClick={() => {
                       setStoryIndex(0);
                       setViewStory(true);
@@ -304,7 +304,7 @@ const Home = () => {
                 <>
                   {userStory.length > 0 ? (
                     <article
-                      className={styles.user}
+                      className={styles.userStory}
                       onClick={() => {
                         setStoryIndex(0);
                         setViewStory(true);
@@ -331,7 +331,6 @@ const Home = () => {
                         setCreateCategory('story');
                       }}
                     >
-                      {' '}
                       <Link to={'/create'}>
                         <span className={styles['add-story']}>
                           <span className={styles['add-story-box']}>

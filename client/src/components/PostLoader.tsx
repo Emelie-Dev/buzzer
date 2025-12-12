@@ -29,9 +29,9 @@ const PostLoader = ({
 
   return (
     <section
-      className={`${styles.section}  ${
+      className={`${styles.section} ${
         postType === 'Reel' ? styles['reel-section'] : ''
-      }`}
+      } ${postType === 'Story' ? styles['story-section'] : ''}`}
     >
       <div className={styles['liquid-loader']}>
         <div className={styles['loading-text']}>

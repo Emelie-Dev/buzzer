@@ -150,7 +150,7 @@
   align-items: center;
   width: 100%;
   padding: 1rem 1.5rem;
-  z-index: 1;
+  z-index: 2;
 }
 
 .reply-input {
@@ -260,11 +260,9 @@
   justify-content: center;
   padding: 0.17rem;
   border-radius: 50%;
-  background: linear-gradient(
-    to bottom left,
-    #dc143c,
-    var(--app-theme-color) 60%
-  );
+  background: linear-gradient(to bottom left,
+      #dc143c,
+      var(--app-theme-color) 60%);
 }
 
 .next-story-img {
@@ -389,16 +387,12 @@
   border-radius: 50%;
   padding: 1px;
   background: conic-gradient(#0000 10%, var(--app-theme-color)) content-box;
-  -webkit-mask: repeating-conic-gradient(
-      #0000 0deg,
+  -webkit-mask: repeating-conic-gradient(#0000 0deg,
       #000 1deg 20deg,
-      #0000 21deg 36deg
-    ),
-    radial-gradient(
-      farthest-side,
+      #0000 21deg 36deg),
+    radial-gradient(farthest-side,
       #0000 calc(100% - var(--b) - 1px),
-      #000 calc(100% - var(--b))
-    );
+      #000 calc(100% - var(--b)));
   -webkit-mask-composite: destination-in;
   mask-composite: intersect;
   animation: l4 1s infinite steps(10);
@@ -450,6 +444,9 @@
   width: 100%;
   padding: 1rem 1.5rem;
   column-gap: 1.5rem;
+  position: absolute;
+  bottom: 0;
+  z-index: 2;
 }
 
 .add-story-btn {
@@ -608,6 +605,7 @@
   from {
     transform: scale(0);
   }
+
   to {
     transform: scale(1);
   }
@@ -617,6 +615,7 @@
   from {
     width: 0;
   }
+
   to {
     width: 100%;
   }

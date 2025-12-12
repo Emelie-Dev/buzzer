@@ -154,9 +154,12 @@ app.use(
 
 // Compresses response
 app.use((req, _, next) => {
-  const conditions = [req.path === '/api/v1/contents' && req.method === 'POST'];
-  const match = conditions.find((condition) => condition);
-  if (!match) compression();
+  const paths = ['/api/v1/contents', '/api/v1/reels', '/api/v1/stories'];
+  if (
+    !(paths.includes(req.path.trim()) && req.method.toLowerCase() == 'post')
+  ) {
+    compression();
+  }
 
   next();
 });

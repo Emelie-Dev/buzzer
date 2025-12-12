@@ -804,6 +804,11 @@
   color: black;
 }
 
+.disable-btn {
+  opacity: 0.5 !important;
+  pointer-events: none;
+}
+
 /* Media Queries */
 
 @media screen and (max-width: 1200px) {

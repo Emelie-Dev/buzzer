@@ -47,8 +47,8 @@ export default (folder: String) => {
     limits: { fileSize: 1_073_741_824 },
     fileFilter: (_, file, cb) => {
       const fieldnames = ['story', 'content'];
-      const videoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
-      const audioTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg'];
+      const videoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/mpeg'];
+      const audioTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3'];
 
       if (fieldnames.includes(file.fieldname)) {
         if (
