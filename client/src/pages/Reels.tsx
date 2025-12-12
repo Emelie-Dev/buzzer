@@ -44,7 +44,7 @@ const Reels = () => {
   }>({ autoScroll: false, playBackSpeed: 1 });
 
   const mainRef = useRef<HTMLDivElement>(null!);
-  const timeout = useRef<number | NodeJS.Timeout>();
+  const timeout = useRef<number>();
   const reelsRef = useRef<HTMLDivElement>(null!);
   const reelOptionsRef = useRef<HTMLDivElement>(null!);
 
