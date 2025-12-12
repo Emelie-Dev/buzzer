@@ -30,7 +30,7 @@ const ContentItem = ({
   const { viewed, setViewed, handleView } = viewObj;
 
   const contentRef = useRef<HTMLDivElement>(null!);
-  const timeout = useRef<number | NodeJS.Timeout | undefined>(undefined);
+  const timeout = useRef<number | undefined>(undefined);
   const waitTime = useRef(3000);
   const time = useRef<Date>(null!);
   const viewValue = useRef(viewed);
