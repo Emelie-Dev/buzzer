@@ -1,7 +1,7 @@
 import styles from '../styles/UploadReel.module.css';
 import { MdOutlineMonochromePhotos } from 'react-icons/md';
 import { IoMusicalNotes } from 'react-icons/io5';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useContext } from 'react';
 import { IoBookmarkOutline } from 'react-icons/io5';
 import { MdDelete } from 'react-icons/md';
 import { FaPlus } from 'react-icons/fa6';
@@ -11,13 +11,18 @@ import { FaPlay } from 'react-icons/fa6';
 import { FaPause } from 'react-icons/fa6';
 import { IoClose } from 'react-icons/io5';
 import { MdChangeCircle } from 'react-icons/md';
-import { getDurationText } from '../Utilities';
+import { apiClient, getDurationText, getUrl } from '../Utilities';
 import { soundData, videoData, AudioFile } from '../pages/Create';
 import { FaCheck } from 'react-icons/fa6';
 import { HiMenuAlt3 } from 'react-icons/hi';
 import { GrPowerCycle } from 'react-icons/gr';
 import MobileCoverPhoto from './MobileCoverPhoto';
 import MobileSounds from './MobileSounds';
+import LoadingAnimation from './LoadingAnimation';
+import { toast } from 'sonner';
+import { AuthContext } from '../Contexts';
+import { ImVolumeMedium } from 'react-icons/im';
+import MobileVolume from './MobileVolume';
 
 type UploadReelProps = {
   videoProps: videoData;
@@ -32,7 +37,11 @@ type UploadReelProps = {
 };
 
 const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
-  const [category, setCategory] = useState<'cover' | 'sound'>('cover');
+  const { user, setUser } = useContext(AuthContext);
+  const savedSounds: AudioFile[] = user.reelSounds;
+  const [category, setCategory] = useState<'cover' | 'sound' | 'volume'>(
+    'cover'
+  );
   const [soundCategory, setSoundCategory] = useState<'local' | 'saved'>(
     'local'
   );
@@ -50,7 +59,11 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
   const [showMobile, setShowMobile] = useState<{
     coverPhoto: boolean;
     sounds: boolean;
-  }>({ coverPhoto: false, sounds: false });
+    volume: boolean;
+  }>({ coverPhoto: false, sounds: false, volume: false });
+  const [loadSounds, setLoadSounds] = useState(false);
+  const [savedList, setSavedList] = useState<Set<string>>(new Set());
+  const [bufferingList, setBufferingList] = useState<Set<string>>(new Set());
 
   const {
     src,
@@ -67,16 +80,18 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
     setHideVideo,
     currentSound,
     setCurrentSound,
+    setLocalCoverFile,
+    setRawCoverUrls,
   } = videoProps;
 
   const {
     sounds,
-    setSounds,
     rawSounds,
+    setSounds,
     setRawSounds,
-    savedSounds,
-    setSavedSounds,
     setReelData,
+    volume,
+    setVolume,
   } = soundProps;
 
   const fileRef = useRef<HTMLInputElement>(null!);
@@ -91,6 +106,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
   const coverContainerRef = useRef<HTMLDivElement>(null!);
   const soundContainerRef = useRef<HTMLDivElement>(null!);
   const coverPhotoBoxRef = useRef<HTMLDivElement>(null!);
+  const volumeContainerRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     if (loaded) {
@@ -158,36 +174,76 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
   useEffect(() => {
     if (category === 'cover') {
       if (coverContainerRef.current) coverContainerRef.current.scrollTop = 0;
-    } else soundContainerRef.current.scrollTop = 0;
+    } else if (category === 'sound') {
+      if (soundContainerRef.current) soundContainerRef.current.scrollTop = 0;
+    } else {
+      if (volumeContainerRef.current) volumeContainerRef.current.scrollTop = 0;
+    }
   }, [category]);
 
-  // Add animation for sound processing
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume.original / 100;
+    if (audioRef.current) audioRef.current.volume = volume.sound / 100;
+  }, [volume]);
+
+  // Handle upload for mobile
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoadSounds(true);
     if (e.target.files) {
       const uploadFiles = [...e.target.files];
       const filesData: AudioFile[] = [];
+
+      if (uploadFiles.length + sounds.length > 20) {
+        e.target.files = new DataTransfer().files;
+        setLoadSounds(false);
+        return toast.error('You can only select 20 sounds at once.');
+      }
 
       const promises = uploadFiles.map((file) => isFileValid(file));
 
       try {
         const results = await Promise.all(promises);
         results.forEach((result) => filesData.push(result));
-      } catch (error) {
+
+        e.target.files = new DataTransfer().files;
+
+        setRawSounds((prevFiles) => {
+          return addSounds ? [...prevFiles, ...uploadFiles] : uploadFiles;
+        });
+        setSounds((prevFiles) => {
+          return addSounds ? [...prevFiles, ...filesData] : filesData;
+        });
+      } catch (error: any) {
+        const durationError =
+          uploadFiles.length === 1
+            ? 'The file exceeds the allowed length.'
+            : 'Some files exceed the allowed length.';
+
+        const sizeError =
+          uploadFiles.length === 1
+            ? 'The file exceeds the size limit.'
+            : 'Some selected files exceed the size limit';
+
+        const defaultError =
+          uploadFiles.length === 1
+            ? 'We couldn’t process your file. Please try again.'
+            : 'We couldn’t process some files. Please try again.';
+
         filesData.forEach((data) => URL.revokeObjectURL(data.src as string));
         e.target.files = new DataTransfer().files;
-        return alert(error);
+
+        toast.error(
+          error.message === 'Size Error'
+            ? sizeError
+            : error.message === 'Duration Error'
+            ? durationError
+            : defaultError
+        );
       }
 
-      e.target.files = new DataTransfer().files;
-      console.log(rawSounds);
-      setRawSounds((prevFiles) => {
-        return addSounds ? [...prevFiles, ...uploadFiles] : uploadFiles;
-      });
-      setSounds((prevFiles) => {
-        return addSounds ? [...prevFiles, ...filesData] : filesData;
-      });
       setAddSounds(false);
     }
+    setLoadSounds(false);
   };
 
   const isFileValid = (file: File): Promise<AudioFile> => {
@@ -205,7 +261,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
           const duration = Math.round(audio.duration);
           const durationText: string = getDurationText(duration);
 
-          if (duration > 3600) reject('Duration error');
+          if (duration > 3600) return reject('Duration error');
 
           resolve({
             name: file.name,
@@ -215,18 +271,15 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
           });
         };
 
-        audio.onerror = () =>
-          resolve({
-            name: file.name,
-            duration: '',
-            src: fileURL,
-            id: `ID-${Math.random()}`,
-          });
+        audio.onerror = () => reject('Audio Error');
       }
     });
   };
 
   const handlePlayingSound = (soundId: string) => () => {
+    setBufferingList(new Set());
+    audioRef.current.oncanplay = null;
+
     const id = sounds.findIndex((file) => file.id === soundId);
 
     setPauseVideo(true);
@@ -260,35 +313,94 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
     );
   };
 
-  const handleSavedSounds = (soundId: string) => () => {
-    if (savedSounds.length < 10) {
-      const id = sounds.findIndex((file) => file.id === soundId);
-      const isSoundSaved = savedSounds.find((sound) => sound.id === soundId);
+  const handleSavedSounds = (soundId: string) => async () => {
+    if (savedList.has(soundId)) return;
 
-      if (isSoundSaved) {
-        setSavedSounds((prevSounds) =>
-          prevSounds.filter((sound) => sound.id !== soundId)
+    const sound = sounds.find((obj) => obj.id === soundId);
+    const soundIndex = sounds.findIndex((obj) => obj.id === soundId);
+
+    if (!sound) return toast.error('This sound deos not exist!');
+
+    const set = new Set(savedList).add(soundId);
+    setSavedList(set);
+
+    try {
+      if (sound.savedId) {
+        const { data } = await apiClient.post(
+          `v1/reels/sounds/${sound.savedId}`
         );
-        setSounds((prevFiles) => {
-          prevFiles[id].saved = false;
-          return [...prevFiles];
+        setUser(data.data.user);
+        setSounds((prev) => {
+          prev[soundIndex].savedId = undefined;
+          return [...prev];
         });
+        toast.success('Sound deleted successfully.');
       } else {
-        const sound: AudioFile = {
-          name: sounds[id].name,
-          duration: sounds[id].duration,
-          src: sounds[id].src,
-          id: sounds[id].id,
-        };
+        if (savedSounds.length >= 10) {
+          const set = new Set(savedList);
+          set.delete(soundId);
+          setSavedList(set);
+          return toast.error('You can only save up to ten sounds.');
+        }
 
-        setSavedSounds([...savedSounds, sound]);
+        const body = new FormData();
+        body.append('sound', rawSounds[soundIndex]);
+
+        const { data } = await apiClient.post('v1/reels/sounds', body);
+
         setSounds((prevFiles) => {
-          prevFiles[id].saved = true;
+          prevFiles[soundIndex].savedId = data.data.soundId;
           return [...prevFiles];
         });
+        setUser(data.data.user);
+        toast.success('Sound saved successfully.');
       }
-    } else {
-      return alert('You can only save ten sounds.');
+    } catch (err: any) {
+      const message = sound.savedId
+        ? 'Couldn’t delete the sound. Please try again.'
+        : 'Failed to save sound. Please try again.';
+
+      if (err.response) {
+        return toast.error(err.response.data.message || message);
+      } else {
+        return toast.error(message);
+      }
+    } finally {
+      const set = new Set(savedList);
+      set.delete(soundId);
+      setSavedList(set);
+    }
+  };
+
+  const deleteSavedSound = (id: string) => async () => {
+    if (savedList.has(id)) return;
+
+    const set = new Set(savedList).add(id);
+    setSavedList(set);
+
+    try {
+      const { data } = await apiClient.post(`v1/reels/sounds/${id}`);
+      setUser(data.data.user);
+      setSounds((prev) => {
+        return [...prev].map((obj) => {
+          if (obj.savedId === id) obj.savedId = undefined;
+          return obj;
+        });
+      });
+
+      toast.success('Sound deleted successfully.');
+    } catch (err: any) {
+      const message = 'Couldn’t delete the sound. Please try again.';
+
+      if (err.response) {
+        return toast.error(err.response.data.message || message);
+      } else {
+        return toast.error(message);
+      }
+    } finally {
+      const set = new Set(savedList);
+      set.delete(id);
+      setSavedList(set);
     }
   };
 
@@ -297,6 +409,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const urls: string[] = [];
+      const files: File[] = [];
 
       if (video && canvas) {
         const duration = video.duration;
@@ -306,9 +419,16 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
 
         if (ctx) {
           for (let i = 0; i < 10; i++) {
-            const src = await captureFrameAt(video, canvas, ctx, i * interval);
+            const { url, file } = await captureFrameAt(
+              video,
+              canvas,
+              ctx,
+              i * interval,
+              i
+            );
 
-            urls.push(src);
+            urls.push(url);
+            files.push(file);
           }
         }
 
@@ -317,6 +437,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
 
       setHideVideo(false);
       setCoverUrls(urls);
+      setRawCoverUrls(files);
     }
 
     setSliderValues((values) => {
@@ -330,9 +451,10 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
     video: HTMLVideoElement,
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
-    time: number
+    time: number,
+    index: number
   ) => {
-    return new Promise<string>((resolve) => {
+    return new Promise<{ url: string; file: File }>((resolve) => {
       video.currentTime = time;
       video.onseeked = () => {
         // Set canvas size to match video
@@ -342,10 +464,22 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
         // Draw the current frame from video to canvas
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Get the image data URL from the canvas
-        const dataUrl = canvas.toDataURL('image/png');
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              return resolve({ url: '', file: null! });
+            }
 
-        resolve(dataUrl);
+            const file = new File([blob], `Cover-${index + 1}`, {
+              type: 'image/jpeg',
+            });
+            const url = URL.createObjectURL(file);
+
+            resolve({ url, file });
+          },
+          'image/jpeg',
+          0.9
+        );
       };
     });
   };
@@ -355,10 +489,11 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
       const file = e.target.files[0];
 
       if (file.size > 1_073_741_824) {
-        return alert('Size Error');
+        return toast.error('The file exceeds the size limit.');
       } else {
         const fileURL = URL.createObjectURL(file);
         setLocalCoverUrl(fileURL);
+        setLocalCoverFile(file);
         setPauseVideo(true);
         setCoverIndex('local');
         setShowCover(true);
@@ -390,6 +525,8 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
           return file;
         })
       );
+
+      setPlayingIndex((prev) => (prev === soundId ? '' : prev));
     } else {
       setSounds((prevFiles) =>
         prevFiles.map((file) => {
@@ -400,6 +537,41 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
       );
       setPlayingIndex(soundId);
       setCurrentSound(soundId);
+    }
+
+    audioRef.current.src = '';
+    if (!pauseVideo) setPauseVideo(true);
+  };
+
+  const handleCurrentSavedSound = (id: string) => () => {
+    const sound = sounds.find((sound) => sound.savedId === id);
+
+    if (currentSound === id) {
+      setCurrentSound(null);
+      setSounds((prevFiles) =>
+        prevFiles.map((file) => {
+          if (file.savedId === id) file.current = false;
+          return file;
+        })
+      );
+      setPlayingIndex((prev) => {
+        if (sound) {
+          return prev === id || prev === sound.id ? '' : prev;
+        }
+
+        return prev === id ? '' : prev;
+      });
+    } else {
+      setSounds((prevFiles) =>
+        prevFiles.map((file) => {
+          if (file.savedId === id) file.current = true;
+          else file.current = false;
+          return file;
+        })
+      );
+
+      setPlayingIndex(sound ? sound.id : id);
+      setCurrentSound(id);
     }
 
     audioRef.current.src = '';
@@ -417,12 +589,37 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
 
     if (currentSound) {
       const sound = sounds.find((file) => file.id === currentSound);
+      const savedSound = savedSounds.find((file) => file._id === currentSound);
 
-      if (sound) {
+      if (savedSound) {
+        const localSound = sounds.find((obj) => obj.savedId === savedSound._id);
+
+        if (localSound) {
+          audioRef.current.src = localSound.src;
+          audioRef.current.currentTime = target.currentTime - durationValues[0];
+          audioRef.current.play();
+        } else {
+          audioRef.current.src = getUrl(savedSound!.src, 'reels');
+          setBufferingList((prev) => {
+            const set = new Set(prev).add(savedSound._id!);
+            return set;
+          });
+
+          audioRef.current.oncanplay = () => {
+            audioRef.current.currentTime =
+              target.currentTime - durationValues[0];
+            audioRef.current.play();
+
+            setBufferingList(new Set());
+            audioRef.current.oncanplay = null;
+          };
+        }
+      } else if (sound) {
         audioRef.current.src = sound.src;
         audioRef.current.currentTime = target.currentTime - durationValues[0];
         audioRef.current.play();
       }
+
       setPlayingIndex(currentSound);
     } else {
       audioRef.current.pause();
@@ -439,8 +636,102 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
     );
 
     animation.onfinish = () => {
-      progressRef.current.style.display = 'none';
+      if (progressRef.current) progressRef.current.style.display = 'none';
     };
+  };
+
+  const handleAddSound = (add: boolean) => () => {
+    if (sounds.length >= 20) {
+      return toast.error('You can only select 20 sounds at once.');
+    }
+
+    fileRef.current.click();
+    setPauseVideo(true);
+    if (add) setAddSounds(true);
+  };
+
+  const handlePlayingSavedSound = (id: string) => () => {
+    if (bufferingList.has(id)) return;
+
+    setBufferingList(new Set());
+    audioRef.current.oncanplay = null;
+
+    const localSound = sounds.find((obj) => obj.savedId === id);
+
+    if (localSound) {
+      return handlePlayingSound(localSound.id)();
+    } else {
+      setPauseVideo(true);
+      const sound = savedSounds.find((obj) => obj._id === id);
+
+      if (id === playingIndex) {
+        if (audioRef.current.paused) {
+          audioRef.current.play();
+        } else {
+          audioRef.current.pause();
+        }
+      } else {
+        audioRef.current.src = getUrl(sound!.src, 'reels');
+        setBufferingList((prev) => {
+          const set = new Set(prev);
+          set.add(id);
+          return set;
+        });
+
+        audioRef.current.oncanplay = () => {
+          audioRef.current.play();
+          setBufferingList(new Set());
+          audioRef.current.oncanplay = null;
+        };
+
+        setPlayingIndex(id);
+      }
+    }
+  };
+
+  const isPlayingSound = (id: string) => {
+    const sound = sounds.find((obj) => obj.savedId === id);
+
+    if (sound) {
+      return sound.id === playingIndex || id === playingIndex;
+    } else return id === playingIndex;
+  };
+
+  const isCurrentSound = (id: string) => {
+    const sound = sounds.find((obj) => obj.savedId === id);
+
+    if (sound) {
+      return sound.id === currentSound || id === currentSound;
+    } else return id === currentSound;
+  };
+
+  const getSound = () => {
+    if (currentSound) {
+      const localSound = sounds.find((obj) => obj.id === currentSound);
+      const sound = savedSounds.find((obj) => obj._id === currentSound);
+
+      if (sound) {
+        const savedSound = sounds.find((obj) => obj.savedId === sound._id);
+
+        if (savedSound) {
+          return { src: savedSound.src, value: true, reelSound: sound.src };
+        } else {
+          return {
+            src: getUrl(sound.src, 'reels'),
+            value: true,
+            reelSound: sound.src,
+          };
+        }
+      } else {
+        return {
+          src: localSound!.src,
+          value: false,
+          reelSound: localSound!.src,
+        };
+      }
+    } else {
+      return { src: undefined, value: false, reelSound: '' };
+    }
   };
 
   return (
@@ -462,16 +753,20 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
               <span
                 className={`${styles['close-edit-box']} ${styles['next-stage-btn']}`}
                 onClick={() => {
-                  setReelData({
-                    video: src,
-                    sound: sounds.find((sound) => sound.id === currentSound)
-                      ?.src,
-                    duration: durationValues,
-                    coverPhoto: coverIndex
-                      ? coverIndex === 'local'
-                        ? localCoverUrl
-                        : coverUrls[coverIndex]
-                      : '',
+                  setReelData(() => {
+                    const sound = getSound();
+                    return {
+                      video: src,
+                      sound: sound.src,
+                      duration: durationValues,
+                      coverPhoto: coverIndex
+                        ? coverIndex === 'local'
+                          ? localCoverUrl
+                          : coverUrls[coverIndex]
+                        : '',
+                      savedSound: sound.value,
+                      reelSound: sound.reelSound,
+                    };
                   });
                   setStage((prevStage) => ({ ...prevStage, reel: 'finish' }));
                 }}
@@ -497,10 +792,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
               onChange={handleCoverPhoto}
             />
 
-            <audio ref={audioRef}>
-              <source />
-              Your browser does not support the audio element.
-            </audio>
+            <audio ref={audioRef}></audio>
 
             <canvas ref={canvasRef} />
           </div>
@@ -525,6 +817,15 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                 <IoMusicalNotes className={styles['edit-icon']} />
                 <span className={styles['category-name']}> Sounds </span>
               </li>
+              <li
+                className={`${styles['category-item']} ${
+                  category === 'volume' ? styles['current-category'] : ''
+                }`}
+                onClick={() => setCategory('volume')}
+              >
+                <ImVolumeMedium className={styles['edit-icon']} />
+                <span className={styles['category-name']}> Volume </span>
+              </li>
 
               <MdChangeCircle
                 className={styles['swap-icon']}
@@ -546,7 +847,18 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                 </div>
 
                 <div className={styles['cover-photo-div']}>
-                  {coverUrls.length > 0 &&
+                  {coverUrls.length === 0 ? (
+                    <div className={styles['loader-container']}>
+                      <LoadingAnimation
+                        style={{
+                          width: '3rem',
+                          height: '3rem',
+                          transform: 'scale(2.5)',
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    coverUrls.length > 0 &&
                     coverUrls.map((src, index) => (
                       <span
                         key={index}
@@ -565,7 +877,8 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                         )}
                         <img src={src} className={styles['cover-photo-img']} />
                       </span>
-                    ))}
+                    ))
+                  )}
                 </div>
 
                 {localCoverUrl && (
@@ -608,7 +921,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                   </button>
                 </div>
               </div>
-            ) : (
+            ) : category === 'sound' ? (
               <div
                 className={styles['add-sound-container']}
                 ref={soundContainerRef}
@@ -669,14 +982,22 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                               {file.current ? 'Remove' : 'Use'}
                             </button>
 
-                            {file.saved ? (
+                            {file.savedId ? (
                               <IoBookmark
-                                className={styles['sound-save-icon']}
+                                className={`${styles['sound-save-icon']} ${
+                                  savedList.has(file.savedId || file.id)
+                                    ? styles['disable-save-icon']
+                                    : ''
+                                }`}
                                 onClick={handleSavedSounds(file.id)}
                               />
                             ) : (
                               <IoBookmarkOutline
-                                className={styles['sound-save-icon']}
+                                className={`${styles['sound-save-icon']} ${
+                                  savedList.has(file.savedId || file.id)
+                                    ? styles['disable-save-icon']
+                                    : ''
+                                }`}
                                 onClick={handleSavedSounds(file.id)}
                               />
                             )}
@@ -692,34 +1013,45 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
 
                     {soundCategory === 'saved' &&
                       savedSounds.length > 0 &&
-                      savedSounds.map((file, index) => (
-                        <article
-                          key={`${Math.random()}-${index}`}
-                          className={styles['sound-box']}
-                        >
+                      savedSounds.map((file) => (
+                        <article key={file._id} className={styles['sound-box']}>
                           <span
                             className={`${styles['sound-details']} ${
-                              playingIndex === file.id
+                              isPlayingSound(file._id!)
                                 ? styles['playing-sound']
                                 : ''
+                            } ${
+                              bufferingList.has(file._id!)
+                                ? styles.downloading
+                                : ''
                             }`}
-                            onClick={handlePlayingSound(file.id)}
+                            onClick={handlePlayingSavedSound(file._id!)}
                           >
                             <span className={styles['sound-name']}>
                               {file.name}
                             </span>
                             <span className={styles['sound-duration']}>
-                              {file.duration}
+                              {getDurationText(
+                                Math.round(Number(file.duration))
+                              )}
                             </span>
                           </span>
 
                           <span className={styles['sound-btn-box']}>
-                            <button className={styles['sound-use-button']}>
-                              Use
+                            <button
+                              className={styles['sound-use-button']}
+                              onClick={handleCurrentSavedSound(file._id!)}
+                            >
+                              {isCurrentSound(file._id!) ? 'Remove' : 'Use'}
                             </button>
+
                             <IoBookmark
-                              className={styles['sound-save-icon']}
-                              onClick={handleSavedSounds(file.id)}
+                              className={`${styles['sound-save-icon']} ${
+                                savedList.has(file._id!)
+                                  ? styles['disable-save-icon']
+                                  : ''
+                              }`}
+                              onClick={deleteSavedSound(file._id!)}
                             />
                           </span>
                         </article>
@@ -730,11 +1062,7 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                         <span
                           className={styles['plus-icon-box']}
                           title="Add sound"
-                          onClick={() => {
-                            setAddSounds(true);
-                            fileRef.current.click();
-                            setPauseVideo(true);
-                          }}
+                          onClick={handleAddSound(true)}
                         >
                           <FaPlus className={styles['plus-icon']} />
                         </span>
@@ -743,34 +1071,104 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                   </div>
                 </div>
 
-                {soundCategory === 'local' && sounds.length === 0 && (
-                  <div className={styles['add-sound-btn-div']}>
-                    <span className={styles['add-sound-txt']}>
-                      You can select multiple songs and pick one to use
-                    </span>
-
-                    <button
-                      className={styles['add-sound-btn']}
-                      onClick={() => {
-                        fileRef.current.click();
-                        setPauseVideo(true);
-                      }}
-                    >
-                      Select from computer
-                    </button>
-                  </div>
-                )}
+                {soundCategory === 'local' &&
+                  (loadSounds ? (
+                    <div className={styles['loader-container']}>
+                      <LoadingAnimation
+                        style={{
+                          width: '3rem',
+                          height: '3rem',
+                          transform: 'scale(2.5)',
+                        }}
+                      />
+                    </div>
+                  ) : sounds.length === 0 ? (
+                    <div className={styles['add-sound-btn-div']}>
+                      <span className={styles['add-sound-txt']}>
+                        You can select multiple sounds and pick one to use
+                      </span>
+                      <br />
+                      <button
+                        className={styles['add-sound-btn']}
+                        onClick={handleAddSound(false)}
+                      >
+                        Select from computer
+                      </button>
+                    </div>
+                  ) : (
+                    ''
+                  ))}
 
                 {soundCategory === 'saved' && savedSounds.length === 0 && (
                   <span className={styles['add-sound-txt2']}>
-                    You have no saved songs
+                    You have no saved sounds
                   </span>
+                )}
+              </div>
+            ) : (
+              <div
+                className={styles['cover-photo-container']}
+                ref={volumeContainerRef}
+              >
+                <div className={styles['cover-photo-head']}>
+                  Set sound volume
+                </div>
+
+                {currentSound ? (
+                  <div className={styles['sound-volume-container']}>
+                    <div className={styles['sound-volume-box']}>
+                      <span className={styles['sound-volume-heading']}>
+                        Sound Volume
+                      </span>
+                      <div className={styles['sound-volume-slider']}>
+                        <input
+                          type="range"
+                          value={volume.sound}
+                          onChange={(e) => {
+                            setVolume({
+                              sound: Number(e.target.value),
+                              original: 100 - Number(e.target.value),
+                            });
+                          }}
+                        />
+                        <span>{volume.sound}%</span>
+                      </div>
+                    </div>
+
+                    <div className={styles['sound-volume-box']}>
+                      <span className={styles['sound-volume-heading']}>
+                        Original Audio Volume
+                      </span>
+                      <div className={styles['sound-volume-slider']}>
+                        <input type="range" value={volume.original} disabled />
+                        <span>{volume.original}%</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles['add-sound-btn-div']}>
+                    <span className={styles['add-sound-txt']}>
+                      No sound selected
+                    </span>
+                  </div>
                 )}
               </div>
             )}
 
             <div className={styles['video-box']}>
               <div className={styles['video-div']}>
+                {hideVideo && (
+                  <div className={styles['loader-box']}>
+                    <LoadingAnimation
+                      style={{
+                        width: '3rem',
+                        height: '3rem',
+                        transform: 'scale(2.5)',
+                      }}
+                    />
+                  </div>
+                )}
+
                 <video
                   className={`${styles.video}  ${
                     hideVideo ? styles['hide-item'] : ''
@@ -864,6 +1262,16 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                 <li
                   className={styles['menu-item']}
                   onClick={() => {
+                    setShowMobile((prev) => ({ ...prev, volume: true }));
+                    setCategory('volume');
+                  }}
+                >
+                  <ImVolumeMedium className={styles['menu-item-icon']} />
+                  Volume
+                </li>
+                <li
+                  className={styles['menu-item']}
+                  onClick={() => {
                     setStage((prevStage) => ({ ...prevStage, reel: 'select' }));
                     inputRef.current.click();
                   }}
@@ -910,8 +1318,8 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                   max={100}
                   pearling
                   minDistance={1}
-                  renderThumb={(props) => (
-                    <div {...props} className={styles['thumb']}>
+                  renderThumb={({ key, ...props }: any) => (
+                    <div key={key} {...props} className={styles['thumb']}>
                       <img
                         src="../../assets/images/suppository-capsule-svgrepo-com (4).svg"
                         alt="Thumb"
@@ -949,16 +1357,20 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
                 <button
                   className={styles['next-btn']}
                   onClick={() => {
-                    setReelData({
-                      video: src,
-                      sound: sounds.find((sound) => sound.id === currentSound)
-                        ?.src,
-                      duration: durationValues,
-                      coverPhoto: coverIndex
-                        ? coverIndex === 'local'
-                          ? localCoverUrl
-                          : coverUrls[coverIndex]
-                        : '',
+                    setReelData(() => {
+                      const sound = getSound();
+                      return {
+                        video: src,
+                        sound: sound.src,
+                        duration: durationValues,
+                        coverPhoto: coverIndex
+                          ? coverIndex === 'local'
+                            ? localCoverUrl
+                            : coverUrls[coverIndex]
+                          : '',
+                        savedSound: sound.value,
+                        reelSound: sound.reelSound,
+                      };
                     });
                     setStage((prevStage) => ({ ...prevStage, reel: 'finish' }));
                   }}
@@ -999,9 +1411,17 @@ const UploadReel = ({ videoProps, soundProps, setStage }: UploadReelProps) => {
           handleSavedSounds={handleSavedSounds}
           deleteSound={deleteSound}
           fileRef={fileRef}
-          savedSounds={savedSounds}
           setPlayingIndex={setPlayingIndex}
           audioRef={audioRef}
+        />
+      )}
+
+      {showMobile.volume && (
+        <MobileVolume
+          setShowMobile={setShowMobile}
+          currentSound={currentSound}
+          volume={volume}
+          setVolume={setVolume}
         />
       )}
     </>

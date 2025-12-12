@@ -21,6 +21,8 @@ import {
 import handleCloudinary from '../utils/handleCloudinary.js';
 import { ContentAccessibility } from '../models/storyModel.js';
 import { Types } from 'mongoose';
+import ffmpeg from 'fluent-ffmpeg';
+import crypto from 'crypto';
 
 const upload = multerConfig('reels');
 
@@ -407,6 +409,11 @@ export const validateReelFiles = asyncErrorHandler(
     ]);
 
     uploader(req, res, async (error: any) => {
+      res.setHeader('Content-Type', 'text/plain');
+      res.write(
+        JSON.stringify({ status: 'success', message: 'validating' }) + '\n'
+      );
+
       const collaborators = JSON.parse(req.body.collaborators) || [];
       let files =
         (req.files as {
@@ -447,16 +454,19 @@ export const validateReelFiles = asyncErrorHandler(
           throw new CustomError('You can only upload video files.', 400);
 
         // Checks if video files duration is valid
-        if (process.env.NODE_ENV === 'development') {
-          await pool.exec('checkVideoFilesDuration', [reelFiles, 3600]);
-        } else {
-          await checkVideoFilesDuration(reelFiles, 3600);
-        }
+        await pool.exec('checkVideoFilesDuration', [reelFiles, 3600]);
 
         next();
-      } catch (err) {
+      } catch (err: any) {
         await deleteReelFiles(files);
-        next(err);
+        res.status(err.statusCode || 500).end(
+          JSON.stringify({
+            status: 'fail',
+            message: err.isOperational
+              ? err.message
+              : 'Error occured while validating file. Please try again.',
+          }) + '\n'
+        );
       }
     });
   }
@@ -464,9 +474,8 @@ export const validateReelFiles = asyncErrorHandler(
 
 export const processReelFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    res.setHeader('Content-Type', 'text/plain');
     res.write(
-      JSON.stringify({ status: 'success', message: 'Processing started' })
+      JSON.stringify({ status: 'success', message: 'processing' }) + '\n'
     );
 
     let files =
@@ -479,32 +488,49 @@ export const processReelFiles = asyncErrorHandler(
       cover: files.cover || [],
     };
 
+    const savedSound = req.body.savedSound;
+    let savedSoundError = false;
+
     try {
+      if (savedSound && files.sound.length < 1) {
+        const fileExists = fs.existsSync(`src/public/reels/${savedSound}`);
+
+        if (!fileExists) {
+          savedSoundError = true;
+          throw new Error();
+        }
+      }
+
       // Process files
-      if (process.env.NODE_ENV === 'development') {
-        await pool.exec('transformReelFiles', [
+      await pool.exec(
+        'transformReelFiles',
+        [
           files,
           req.body.position ? JSON.parse(req.body.position) : undefined,
           req.body.volume ? JSON.parse(req.body.volume) : undefined,
-        ]);
-      } else {
-        await transformReelFiles(
-          files,
-          req.body.position ? JSON.parse(req.body.position) : undefined,
-          req.body.volume ? JSON.parse(req.body.volume) : undefined
-        );
-      }
+          savedSound && files.sound.length < 1
+            ? `src/public/reels/${savedSound}`
+            : undefined,
+        ],
+        {
+          on: function (event) {
+            res.write(JSON.stringify(event) + '\n');
+          },
+        }
+      );
 
       // Delete unneccessary files (sound, cover)
       await deleteReelFiles(files, ['reel']);
       next();
     } catch {
       await deleteReelFiles(files);
-      res.status(500).end(
+      res.status(savedSoundError ? 404 : 500).end(
         JSON.stringify({
           status: 'fail',
-          message: 'Unable to process files.',
-        })
+          message: savedSoundError
+            ? 'This saved sound does not exist!'
+            : 'Unable to process files.',
+        }) + '\n'
       );
     }
   }
@@ -512,6 +538,8 @@ export const processReelFiles = asyncErrorHandler(
 
 export const saveReel = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
+    res.write(JSON.stringify({ status: 'success', message: 'saving' }) + '\n');
+
     let files =
       (req.files as {
         [fieldname: string]: Express.Multer.File[];
@@ -553,7 +581,7 @@ export const saveReel = asyncErrorHandler(
         })(),
         location,
         settings,
-        hasSound: files.sound.length > 0,
+        hasSound: !!req.body.savedSound || files.sound.length > 0,
       });
 
       // send mention notifications
@@ -578,10 +606,11 @@ export const saveReel = asyncErrorHandler(
       return res.status(201).end(
         JSON.stringify({
           status: 'success',
+          message: 'finish',
           data: {
             reel,
           },
-        })
+        }) + '\n'
       );
     } catch {
       await deleteReelFiles(files);
@@ -618,6 +647,10 @@ export const saveReelSound = asyncErrorHandler(
         if (!file)
           throw new CustomError('Please select a file to upload.', 400);
 
+        // Check if file is an audio
+        if (!file.mimetype.startsWith('audio'))
+          throw new CustomError('Invalid file type.', 400);
+
         const reelSounds = req.user?.reelSounds || [];
         if (reelSounds.length >= 10)
           throw new CustomError(
@@ -625,12 +658,43 @@ export const saveReelSound = asyncErrorHandler(
             400
           );
 
+        const duration = await new Promise<number>((resolve, reject) => {
+          ffmpeg.ffprobe(file.path, (err, metadata) => {
+            const error = new Error() as CustomError;
+            error.statusCode = 400;
+
+            if (err) {
+              error.statusCode = 500;
+              error.message = 'Error occured while uploading file.';
+              return reject(error);
+            }
+
+            const duration = metadata.format.duration;
+
+            if (!duration) {
+              error.message = 'Please select a valid file type.';
+              return reject(error);
+            }
+
+            if (duration > 3600) {
+              error.message = `Audio duration must not exceed an hour.`;
+              return reject(error);
+            }
+
+            resolve(duration);
+          });
+        });
+
+        const soundId = crypto.randomUUID();
+
         reelSounds.push({
+          _id: soundId,
           name: file.originalname,
           src:
             process.env.NODE_ENV === 'production'
               ? file.path
               : path.basename(file.path),
+          duration,
         });
 
         const user = await User.findByIdAndUpdate(
@@ -649,6 +713,7 @@ export const saveReelSound = asyncErrorHandler(
           status: 'success',
           data: {
             user: userData,
+            soundId,
           },
         });
       } catch (err) {
@@ -668,7 +733,7 @@ export const saveReelSound = asyncErrorHandler(
 export const deleteReelSound = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    let reelSounds = req.user?.reelSounds;
+    let reelSounds = req.user?.reelSounds || [];
 
     const sound = reelSounds.find((file: any) => String(file._id) === id);
 
@@ -686,7 +751,11 @@ export const deleteReelSound = asyncErrorHandler(
           `src/public/reels/${sound.src as fs.PathLike}`
         );
       }
-    } catch {}
+    } catch {
+      return next(
+        new CustomError('An error occured while deleting sound.', 500)
+      );
+    }
 
     reelSounds = reelSounds.filter((file: any) => String(file._id) !== id);
 

@@ -306,9 +306,11 @@ export const processFiles = async (
 export const transformReelFiles = (
   files: any,
   position: any = {},
-  volume: any = {}
+  volume: any = {},
+  savedSound: string
 ) => {
-  const { reel: reelFile, sound = [], cover = [] } = files;
+  let { reel: reelFile, sound = [], cover = [] } = files;
+  sound = savedSound ? [{ path: savedSound }] : sound;
 
   const { start = 0, end = 1 } = position;
   const { original: originalVolume = 0, sound: soundVolume = 1 } = volume;
@@ -372,7 +374,7 @@ export const transformReelFiles = (
           audioFilter =
             `[${videoIndex}:a]volume=${originalVolume}[a1];` +
             `[${inputIndex}:a]volume=${soundVolume}[a2];` +
-            `[a1][a2]amix=inputs=2:duration=longest:dropout_transition=2[outa]`;
+            `[a1][a2]amix=inputs=2:duration=longest:dropout_transition=2:normalize=1[outa]`;
         } else {
           audioFilter = `[${videoIndex}:a]volume=${originalVolume}[outa]`;
         }
@@ -409,6 +411,13 @@ export const transformReelFiles = (
       transformProcess
         .outputOptions(outputOpts)
         .output(tempFilePath)
+        .on('progress', (data) =>
+          emitEvent({
+            status: 'success',
+            message: 'processing',
+            percent: data.percent,
+          })
+        )
         .on('error', reject)
         .on('end', () => {
           if (process.env.NODE_ENV === 'production') {

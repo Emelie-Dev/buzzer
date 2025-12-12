@@ -1,16 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import styles from '../styles/MobileSounds.module.css';
 import ReactDOM from 'react-dom';
 import { AudioFile } from '../pages/Create';
 import { IoBookmarkOutline } from 'react-icons/io5';
 import { MdDelete } from 'react-icons/md';
 import { IoBookmark } from 'react-icons/io5';
+import { AuthContext } from '../Contexts';
 
 type MobileSoundsProps = {
   setShowMobile: React.Dispatch<
     React.SetStateAction<{
       coverPhoto: boolean;
       sounds: boolean;
+      volume: boolean;
     }>
   >;
   soundCategory: 'local' | 'saved';
@@ -24,7 +26,6 @@ type MobileSoundsProps = {
   setAddSounds: React.Dispatch<React.SetStateAction<boolean>>;
   fileRef: React.MutableRefObject<HTMLInputElement>;
   setPauseVideo: React.Dispatch<React.SetStateAction<boolean>>;
-  savedSounds: AudioFile[];
   setPlayingIndex: React.Dispatch<React.SetStateAction<string>>;
   audioRef: React.MutableRefObject<HTMLAudioElement>;
 };
@@ -42,18 +43,19 @@ const MobileSounds = ({
   handleSavedSounds,
   deleteSound,
   fileRef,
-  savedSounds,
   setPlayingIndex,
   audioRef,
 }: MobileSoundsProps) => {
+  const { user } = useContext(AuthContext);
   const containerRef = useRef<HTMLDivElement>(null!);
 
+  const savedSounds: AudioFile[] = user.reelSounds;
   const target = document.getElementById('sounds-portal') || document.body;
 
   useEffect(() => {
     containerRef.current.animate(
       {
-        height: ['0', '65vh'],
+        height: ['0', `${containerRef.current.scrollHeight + 50}px`],
       },
       {
         fill: 'both',
@@ -121,7 +123,7 @@ const MobileSounds = ({
                         {file.current ? 'Remove' : 'Use'}
                       </button>
 
-                      {file.saved ? (
+                      {file.savedId ? (
                         <IoBookmark
                           className={styles['sound-save-icon']}
                           onClick={handleSavedSounds(file.id)}

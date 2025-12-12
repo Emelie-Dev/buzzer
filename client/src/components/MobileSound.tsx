@@ -44,7 +44,7 @@ const MobileSound = ({
   useEffect(() => {
     containerRef.current.animate(
       {
-        height: ['0px', '261px'],
+        height: ['0px', `${containerRef.current.scrollHeight + 25}px`],
       },
       {
         fill: 'both',

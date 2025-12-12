@@ -67,6 +67,7 @@
   align-items: center;
   column-gap: 0.2rem;
   padding: 1rem 0.5rem 0.5rem;
+  min-height: 7.3rem;
 }
 
 .filter-box {

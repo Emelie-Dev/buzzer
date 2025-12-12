@@ -64,7 +64,7 @@ const MobileAdjustments = ({
   useEffect(() => {
     containerRef.current.animate(
       {
-        height: ['0px', '255px'],
+        height: ['0px', `${containerRef.current.scrollHeight + 25}px`],
       },
       {
         fill: 'both',

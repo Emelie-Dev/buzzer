@@ -1,19 +1,44 @@
 import styles from '../styles/UploadDetails.module.css';
 import { useEffect, useRef, useState } from 'react';
-import { IoClose } from 'react-icons/io5';
 import { IoArrowBack } from 'react-icons/io5';
 import { FaPlay } from 'react-icons/fa';
-import { getDurationText } from '../Utilities';
+import {
+  getDurationText,
+  sanitizeInput,
+  serverUrl,
+  streamResponse,
+} from '../Utilities';
+import { AudioFile } from '../pages/Create';
+import PostDetails from './PostDetails';
+import PostLoader from './PostLoader';
+import { toast } from 'sonner';
 
 export type ReelDetails = {
   video: string | ArrayBuffer | null;
   sound: string | undefined;
   duration: number[];
   coverPhoto: string;
+  savedSound: boolean;
+  reelSound: string;
 };
 
 type UploadReelDetailsProps = {
   data: ReelDetails;
+  rawReelFile: File;
+  soundData: {
+    sounds: AudioFile[];
+    rawSounds: FileList | File[];
+    currentSound: string | null;
+    volume: {
+      sound: number;
+      original: number;
+    };
+  };
+  coverData: {
+    coverIndex: number | 'local' | null;
+    localCoverFile: File;
+    rawCoverUrls: FileList | File[];
+  };
   setStage: React.Dispatch<
     React.SetStateAction<{
       reel: 'select' | 'edit' | 'finish';
@@ -23,10 +48,16 @@ type UploadReelDetailsProps = {
   >;
 };
 
-const UploadReelDetails = ({ data, setStage }: UploadReelDetailsProps) => {
-  const { video, sound, duration, coverPhoto } = data;
-  const [generalDescription, setGeneralDescription] = useState<string>('');
-  const [collaborator, setCollaborator] = useState<string>('');
+const UploadReelDetails = ({
+  data,
+  setStage,
+  rawReelFile,
+  soundData,
+  coverData,
+}: UploadReelDetailsProps) => {
+  const { video, sound, duration, coverPhoto, savedSound, reelSound } = data;
+  const { sounds, rawSounds, currentSound, volume } = soundData;
+  const { coverIndex, localCoverFile, rawCoverUrls } = coverData;
   const [pauseVideo, setPauseVideo] = useState<boolean>(true);
   const [progress, setProgress] = useState<number>(0);
   const [durationValues, setDurationValues] = useState<number[]>([
@@ -34,16 +65,35 @@ const UploadReelDetails = ({ data, setStage }: UploadReelDetailsProps) => {
     Math.floor(duration[1]) - Math.floor(duration[0]),
   ]);
   const [isProgressChanging, setIsProgressChanging] = useState<boolean>(false);
+  const [collaborators, setCollaborators] = useState<
+    { id: string; username: string }[]
+  >([]);
+  const [settings, setSettings] = useState({
+    accessibility: 0,
+    disableComments: false,
+    hideEngagements: false,
+  });
+  const [mentions, setMentions] = useState<Set<string>>(new Set());
+  const [generalDescription, setGeneralDescription] = useState<string>('');
+  const [postStage, setPostStage] = useState<{
+    value: 'preparing' | 'validating' | 'processing' | 'saving' | 'finish';
+    filesIndexes: Set<number>;
+    percent: number;
+  }>({ value: 'preparing', filesIndexes: new Set(), percent: 0 });
+  const [postProgress, setPostProgress] = useState(0);
+  const [posting, setPosting] = useState(false);
 
-  const collaboratorRef = useRef<HTMLInputElement>(null!);
   const videoRef = useRef<HTMLVideoElement>(null!);
   const progressRef = useRef<HTMLInputElement>(null!);
   const audioRef = useRef<HTMLAudioElement>(null!);
   const carouselRef = useRef<HTMLDivElement>(null!);
   const durationBoxRef = useRef<HTMLDivElement>(null!);
+  const progressInterval = useRef<number>(null!);
+  const containerRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     if (videoRef.current) videoRef.current.currentTime = duration[0];
+    if (containerRef.current) containerRef.current.scrollTop = 0;
 
     const resizeHandler = () => {
       if (window.matchMedia('(max-width: 510px)').matches) {
@@ -86,6 +136,61 @@ const UploadReelDetails = ({ data, setStage }: UploadReelDetailsProps) => {
       progressRef.current.style.background = `linear-gradient(to right, white ${progress}%, gray ${progress}%)`;
     }
   }, [progress]);
+
+  useEffect(() => {
+    // 10, 20, 50, 20
+
+    clearInterval(progressInterval.current);
+
+    if (posting) {
+      const limit =
+        postStage.value === 'preparing'
+          ? 10
+          : postStage.value === 'validating'
+          ? 30
+          : postStage.value === 'processing'
+          ? Math.min(30 + (postStage.percent / 100) * 50, 80)
+          : postStage.value === 'saving'
+          ? 95
+          : 100;
+
+      const delay =
+        postStage.value === 'preparing'
+          ? 20
+          : postStage.value === 'validating'
+          ? 100
+          : postStage.value === 'processing'
+          ? 100
+          : postStage.value === 'saving'
+          ? 100
+          : 20;
+
+      progressInterval.current = setInterval(() => {
+        setPostProgress((prev) => {
+          return Math.floor(Math.min(prev + 1, limit));
+        });
+      }, delay);
+    }
+  }, [postStage]);
+
+  useEffect(() => {
+    if (postStage.value === 'finish' && postProgress === 100) {
+      setTimeout(() => {
+        clearInterval(progressInterval.current);
+        setPosting(false);
+        setStage((prevStage) => ({
+          ...prevStage,
+          reel: 'select',
+        }));
+        return toast.success('Reel created successfully!');
+      }, 500);
+    }
+  }, [postProgress, postStage]);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume.original / 100;
+    if (audioRef.current) audioRef.current.volume = volume.sound / 100;
+  }, [volume]);
 
   const handleProgressUpdate = (e: React.SyntheticEvent) => {
     const target = e.target as HTMLVideoElement;
@@ -130,10 +235,127 @@ const UploadReelDetails = ({ data, setStage }: UploadReelDetailsProps) => {
     }
   };
 
+  const updatePostStage = (data: any) => {
+    const { message, percent } = data;
+
+    if (message === 'processing') {
+      setPostStage((prev) => ({
+        ...prev,
+        value: 'processing',
+        percent: Math.min(Math.floor(Number(percent) || 0), 100),
+      }));
+    } else setPostStage((prev) => ({ ...prev, value: message }));
+  };
+
+  const postContent = async () => {
+    setPosting(true);
+
+    // Preparing stage
+    setPostStage((prev) => ({ ...prev, value: 'preparing' }));
+
+    const formData = new FormData();
+
+    try {
+      const container = document.createElement('div');
+      container.innerHTML = generalDescription;
+
+      const hashTags = container.querySelectorAll('.app-hashtags');
+
+      if (hashTags.length > 0) {
+        hashTags.forEach((elem) =>
+          elem.setAttribute(
+            'href',
+            `/search?q=${elem.textContent?.trim().slice(1)}`
+          )
+        );
+      }
+
+      const description = sanitizeInput(container.innerHTML) || '';
+      const collaboratorsList = collaborators.map((obj) => obj.id);
+      const mentionsList = [...mentions];
+
+      if (currentSound) {
+        if (savedSound) {
+          formData.append('savedSound', reelSound);
+        } else {
+          const soundIndex = sounds.findIndex((obj) => obj.id === currentSound);
+          if (soundIndex !== -1) {
+            formData.append('sound', rawSounds[soundIndex]);
+          }
+        }
+
+        formData.append(
+          'volume',
+          JSON.stringify({
+            original: volume.original / 100,
+            sound: volume.sound / 100,
+          })
+        );
+      } else {
+        formData.append('volume', JSON.stringify({ original: 1, sound: 0 }));
+      }
+
+      if (coverIndex) {
+        if (coverIndex === 'local') {
+          formData.append('cover', localCoverFile);
+        } else {
+          formData.append('cover', rawCoverUrls[coverIndex]);
+        }
+      }
+
+      formData.append('reel', rawReelFile);
+      formData.append(
+        'position',
+        JSON.stringify({
+          start: Math.floor(duration[0]),
+          end: Math.floor(duration[1]),
+        })
+      );
+      formData.append('settings', JSON.stringify(settings));
+      formData.append('description', description);
+      formData.append('collaborators', JSON.stringify(collaboratorsList));
+      formData.append('mentions', JSON.stringify(mentionsList));
+    } catch {
+      clearInterval(progressInterval.current);
+      setPosting(false);
+      setPostStage((prev) => ({ ...prev, value: 'preparing' }));
+      return toast.error(
+        'Error occured while preparing file. Please try again.'
+      );
+    }
+
+    try {
+      await streamResponse(
+        `${serverUrl}api/v1/reels`,
+        formData,
+        updatePostStage
+      );
+    } catch (err: any) {
+      clearInterval(progressInterval.current);
+      setPosting(false);
+      setPostStage((prev) => ({ ...prev, value: 'preparing' }));
+      return toast.error(
+        err.name === 'operational'
+          ? err.message
+          : 'Failed to create post. Please try again.'
+      );
+    }
+  };
+
   return (
     <div
       className={`${styles['carousel-details-section']} ${styles['reels-details-section']}`}
+      ref={containerRef}
     >
+      {posting && (
+        <PostLoader
+          postStage={postStage}
+          postProgress={postProgress}
+          postLength={1}
+          postType="Reel"
+        />
+      )}
+
       <div className={styles['video-container']} ref={carouselRef}>
         <span
           className={styles['back-arrow-box']}
@@ -194,113 +416,21 @@ const UploadReelDetails = ({ data, setStage }: UploadReelDetailsProps) => {
         />
       </div>
 
-      <div className={styles['upload-details-container']}>
-        <div className={styles['description-container']}>
-          <span className={styles['description-head']}>Description</span>
-
-          <div className={styles['description-box']}>
-            <div
-              className={styles.description}
-              contentEditable={true}
-              onInput={(e) => {
-                setGeneralDescription(e.currentTarget.textContent || '');
-              }}
-            ></div>
-
-            {generalDescription.length === 0 && (
-              <span className={styles.placeholder}>
-                Add video description....
-              </span>
-            )}
-
-            <div className={styles['description-details']}>
-              <span className={styles['links-box']}>
-                <span className={styles['mention-box']}>@ Mention</span>
-                <span className={styles['hashtag-box']}># Hashtags</span>
-              </span>
-
-              <span className={styles['description-length']}>200/3000</span>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles['collaborator-container']}>
-          <span className={styles['collaborator-head']}>Add collaborators</span>
-
-          <span className={styles['collaborators-box']}>
-            <input
-              type="text"
-              className={styles['collaborators-input']}
-              ref={collaboratorRef}
-              placeholder="Search for user...."
-              value={collaborator}
-              onChange={(e) => setCollaborator(e.target.value)}
-            />
-
-            {collaborator.length > 0 && (
-              <IoClose
-                className={styles['clear-icon']}
-                onClick={() => {
-                  setCollaborator('');
-                  collaboratorRef.current.focus();
-                }}
-              />
-            )}
-          </span>
-        </div>
-
-        <div className={styles['settings-container']}>
-          <span className={styles['settings-head']}>Settings</span>
-
-          <div className={styles['settings-div']}>
-            <div className={styles['settings-box']}>
-              <span className={styles['settings-box-head']}>
-                Accessibility:
-              </span>
-              <select className={styles['accessibility-select']}>
-                <option value={'everyone'}>Everyone</option>
-                <option value={'friends'}>Friends</option>
-                <option value={'only-you'}>Only you</option>
-              </select>
-            </div>
-
-            <div className={styles['settings-box2']}>
-              <input
-                type="checkbox"
-                id="views"
-                className={styles['settings-checkbox']}
-              />
-
-              <label className={styles['settings-box-label']} htmlFor="views">
-                Hide the like and view counts for this post
-              </label>
-            </div>
-
-            <div className={styles['settings-box2']}>
-              <input
-                type="checkbox"
-                id="comments"
-                className={styles['settings-checkbox']}
-              />
-
-              <label
-                className={styles['settings-box-label']}
-                htmlFor="comments"
-              >
-                Disable comments on this post
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles['post-btn-div']}>
-          <button className={`${styles['post-btn']} ${styles['cancel-btn']}`}>
-            Discard
-          </button>
-
-          <button className={styles['post-btn']}>Post</button>
-        </div>
-      </div>
+      <PostDetails
+        postType="reel"
+        setStage={setStage}
+        submitHandler={postContent}
+        postDetails={{
+          generalDescription,
+          setGeneralDescription,
+          collaborators,
+          setCollaborators,
+          mentions,
+          setMentions,
+          settings,
+          setSettings,
+        }}
+      />
     </div>
   );
 };

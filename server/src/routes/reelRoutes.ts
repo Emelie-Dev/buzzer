@@ -24,7 +24,7 @@ router
   .post(validateReelFiles, processReelFiles, saveReel);
 
 router.post('/sounds', saveReelSound);
-router.delete('/sounds/:id', deleteReelSound);
+router.post('/sounds/:id', deleteReelSound);
 
 router.patch('/not-interested/:id', excludeReelType);
 

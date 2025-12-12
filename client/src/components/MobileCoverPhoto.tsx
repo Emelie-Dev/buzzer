@@ -15,6 +15,7 @@ type MobileCoverPhotoProps = {
     React.SetStateAction<{
       coverPhoto: boolean;
       sounds: boolean;
+      volume: boolean;
     }>
   >;
   coverPhotoBoxRef: React.MutableRefObject<HTMLDivElement>;
@@ -38,7 +39,7 @@ const MobileCoverPhoto = ({
   useEffect(() => {
     containerRef.current.animate(
       {
-        height: ['0px', '303px'],
+        height: ['0px', `${containerRef.current.scrollHeight + 25}px`],
       },
       {
         fill: 'both',

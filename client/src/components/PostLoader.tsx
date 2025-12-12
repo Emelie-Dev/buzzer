@@ -4,15 +4,18 @@ type PostLoaderProps = {
   postStage: {
     value: 'preparing' | 'validating' | 'processing' | 'saving' | 'finish';
     filesIndexes: Set<number>;
+    percent: number;
   };
   postProgress: number;
   postLength: number;
+  postType: 'Content' | 'Reel' | 'Story';
 };
 
 const PostLoader = ({
   postStage,
   postProgress,
   postLength,
+  postType,
 }: PostLoaderProps) => {
   const fileText = postLength === 1 ? 'File' : 'Files';
   const stage =
@@ -22,10 +25,14 @@ const PostLoader = ({
       ? `Validating ${fileText}`
       : postStage.value === 'processing'
       ? `Processing ${fileText}`
-      : 'Saving Content';
+      : `Saving ${postType}`;
 
   return (
-    <section className={styles.section}>
+    <section
+      className={`${styles.section}  ${
+        postType === 'Reel' ? styles['reel-section'] : ''
+      }`}
+    >
       <div className={styles['liquid-loader']}>
         <div className={styles['loading-text']}>
           {stage}

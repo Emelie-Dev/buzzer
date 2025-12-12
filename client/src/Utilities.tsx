@@ -445,7 +445,9 @@ export const streamResponse = async (
         const data = JSON.parse(stream);
 
         if (data.status !== 'success') {
-          throw new Error(data.message);
+          const error = new Error(data.message);
+          error.name = 'operational';
+          throw error;
         }
 
         updatePostStage(data);
@@ -458,7 +460,15 @@ export const streamResponse = async (
 
     // finally parse any remaining JSON object
     if (buffer.trim()) {
-      updatePostStage(JSON.parse(buffer));
+      const data = JSON.parse(buffer);
+
+      if (data.status !== 'success') {
+        const error = new Error(data.message);
+        error.name = 'operational';
+        throw error;
+      }
+
+      updatePostStage(data);
     }
   } catch (err) {
     try {

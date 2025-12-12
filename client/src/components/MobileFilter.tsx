@@ -51,7 +51,7 @@ const MobileFilter = ({
   useEffect(() => {
     containerRef.current.animate(
       {
-        height: ['0px', '230px'],
+        height: ['0px', `${containerRef.current.scrollHeight + 25}px`],
       },
       {
         fill: 'both',

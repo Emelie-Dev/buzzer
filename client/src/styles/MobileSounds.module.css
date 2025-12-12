@@ -81,6 +81,8 @@
   overflow: auto;
   padding: 0 1rem;
   margin-bottom: 0.5rem;
+  height: fit-content;
+  min-height: 200px;
 }
 
 .sound-category-container {

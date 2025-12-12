@@ -50,7 +50,7 @@ export interface IUser extends Document {
     query: String;
     searchedAt: Date;
   }[];
-  reelSounds: { name: string; src: string }[];
+  reelSounds: { _id: string; name: string; src: string; duration: number }[];
   settings: ISettings;
   pushSubscription: Object;
   createdAt: Date;
@@ -173,8 +173,10 @@ const UserSchema = new Schema<IUser>({
   reelSounds: {
     type: [
       {
+        _id: String,
         name: String,
         src: String,
+        duration: Number,
       },
     ],
     default: [],

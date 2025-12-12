@@ -743,9 +743,8 @@ const CarouselItem = ({
                   showMore ? styles['show-desc'] : ''
                 }  ${webkit ? styles['webkit-style'] : ''}`}
                 ref={descriptionRef}
-              >
-                {description}
-              </span>
+                dangerouslySetInnerHTML={{ __html: description || '' }}
+              ></span>
 
               {descriptionHeight > 50 && (
                 <span
