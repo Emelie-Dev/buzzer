@@ -186,7 +186,7 @@ const Profile = () => {
       }
     };
 
-    const clickHandler = (e: PointerEvent) => {
+    const clickHandler = (e: Event) => {
       const target = e.target as HTMLElement;
 
       if (showSort) {
