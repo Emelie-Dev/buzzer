@@ -302,7 +302,7 @@ export const getTime = (time: string, comment = false) => {
   let value;
 
   if (diff > 31_536_000_000) {
-    value = value = comment
+    value = comment
       ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
           2,
           '0'

@@ -374,6 +374,7 @@ export const getComments = asyncErrorHandler(
                       $match: {
                         $expr: {
                           $and: [
+                            { $eq: ['$collectionName', 'story'] },
                             { $eq: ['$documentId', '$$storyId'] },
                             { $eq: ['$user', viewerId] },
                           ],
@@ -679,6 +680,7 @@ export const getComments = asyncErrorHandler(
                       $match: {
                         $expr: {
                           $and: [
+                            { $eq: ['$collectionName', 'story'] },
                             { $eq: ['$documentId', '$$storyId'] },
                             { $eq: ['$user', viewerId] },
                           ],

@@ -16,6 +16,8 @@ import {
   replyCollaborationRequest,
   getCollaborationRequests,
   leaveCollaboration,
+  getPrivateAudience,
+  removeSuggestedUser,
 } from '../controllers/userController.js';
 import protectRoute from '../middleware/protectRoute.js';
 import { cancelRequest } from '../utils/handleNotifications.js';
@@ -25,12 +27,16 @@ const router = express.Router();
 router.use(protectRoute);
 
 router.get('/suggested', getSuggestedUsers);
+router.patch('/suggested/:id', removeSuggestedUser);
 
 router.get('/profile', getProfileData);
 
 router.get('/posts/:type', getUserPosts);
 
-router.patch('/private-audience', updatePrivateAudience);
+router
+  .route('/private-audience')
+  .get(getPrivateAudience)
+  .patch(updatePrivateAudience);
 
 router.patch('/settings/:category', updateSettings);
 

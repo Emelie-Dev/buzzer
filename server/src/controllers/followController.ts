@@ -5,6 +5,8 @@ import User from '../models/userModel.js';
 import CustomError from '../utils/CustomError.js';
 import Follow from '../models/followModel.js';
 import Notification from '../models/notificationModel.js';
+import { isValidDateString } from './commentController.js';
+import { PipelineStage } from 'mongoose';
 
 export const followUser = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -120,6 +122,275 @@ export const unfollowUser = asyncErrorHandler(
 
     const batchNotification = await Notification.findOne({
       user: follow.following,
+      type: ['follow', 'batch'],
+    });
+
+    if (notification) await notification.deleteOne();
+
+    if (batchNotification && !notification) {
+      await Notification.findByIdAndUpdate(
+        batchNotification._id,
+        {
+          $inc: { 'data.batchCount': -1 },
+        },
+        {
+          runValidators: true,
+        }
+      );
+    }
+
+    return res.status(204).json({
+      status: 'success',
+      message: null,
+    });
+  }
+);
+
+export const getConnections = (type: 'followers' | 'following') =>
+  asyncErrorHandler(async (req: AuthRequest, res: Response) => {
+    const { cursor } = req.query;
+    const cursorDate = isValidDateString(String(cursor))
+      ? new Date(String(cursor))
+      : new Date();
+
+    const viewerId = req.user?._id;
+    const limit = 20;
+    let pipeline: PipelineStage[];
+
+    if (type === 'followers') {
+      pipeline = [
+        {
+          $match: {
+            following: viewerId,
+            followedAt: { $lt: cursorDate },
+          },
+        },
+        { $sort: { followedAt: -1 } },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'follower',
+            foreignField: '_id',
+            pipeline: [
+              {
+                $project: {
+                  name: 1,
+                  username: 1,
+                  photo: 1,
+                },
+              },
+            ],
+            as: 'users',
+          },
+        },
+        {
+          $addFields: {
+            user: {
+              $first: '$users',
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'follows',
+            let: { viewerId: req.user?._id, userId: '$follower' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$follower', '$$viewerId'] },
+                      { $eq: ['$following', '$$userId'] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'follow',
+          },
+        },
+        {
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$follower' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$user', '$$userId'] },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'views',
+                  let: { storyId: '$_id', viewerId },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$collectionName', 'story'] },
+                            { $eq: ['$documentId', '$$storyId'] },
+                            { $eq: ['$user', '$$viewerId'] },
+                          ],
+                        },
+                      },
+                    },
+                    { $project: { _id: 1 } },
+                  ],
+                  as: 'storyView',
+                },
+              },
+              { $project: { _id: 1, storyView: 1 } },
+            ],
+            as: 'stories',
+          },
+        },
+        {
+          $addFields: {
+            follow: { $first: '$follow' },
+            hasStory: {
+              $gt: [{ $size: '$stories' }, 0],
+            },
+            hasUnviewedStory: {
+              $anyElementTrue: {
+                $map: {
+                  input: '$stories',
+                  as: 'story',
+                  in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            stories: 0,
+            users: 0,
+          },
+        },
+      ];
+    } else {
+      pipeline = [
+        {
+          $match: {
+            follower: viewerId,
+            followedAt: { $lt: cursorDate },
+          },
+        },
+        { $sort: { followedAt: -1 } },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'following',
+            foreignField: '_id',
+            pipeline: [
+              {
+                $project: {
+                  name: 1,
+                  username: 1,
+                  photo: 1,
+                },
+              },
+            ],
+            as: 'users',
+          },
+        },
+        {
+          $addFields: {
+            user: {
+              $first: '$users',
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$following' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$user', '$$userId'] },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'views',
+                  let: { storyId: '$_id', viewerId },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$collectionName', 'story'] },
+                            { $eq: ['$documentId', '$$storyId'] },
+                            { $eq: ['$user', '$$viewerId'] },
+                          ],
+                        },
+                      },
+                    },
+                    { $project: { _id: 1 } },
+                  ],
+                  as: 'storyView',
+                },
+              },
+              { $project: { _id: 1, storyView: 1 } },
+            ],
+            as: 'stories',
+          },
+        },
+        {
+          $addFields: {
+            hasStory: {
+              $gt: [{ $size: '$stories' }, 0],
+            },
+            hasUnviewedStory: {
+              $anyElementTrue: {
+                $map: {
+                  input: '$stories',
+                  as: 'story',
+                  in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            stories: 0,
+            users: 0,
+          },
+        },
+      ];
+    }
+
+    const users = await Follow.aggregate(pipeline);
+
+    return res.status(200).json({
+      status: 'success',
+      data: { users },
+    });
+  });
+
+export const removeFollower = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const follow = await Follow.findById(req.params.id);
+
+    if (!follow || String(follow.following) !== String(req.user?._id)) {
+      return next(new CustomError('Could not remove follower.', 404));
+    }
+
+    await follow.deleteOne();
+
+    const notification = await Notification.findOne({
+      user: req.user?._id,
+      type: ['follow'],
+      secondUser: follow.follower,
+    });
+
+    const batchNotification = await Notification.findOne({
+      user: follow.follower,
       type: ['follow', 'batch'],
     });
 

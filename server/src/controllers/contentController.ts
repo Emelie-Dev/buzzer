@@ -515,6 +515,7 @@ export const getContents = asyncErrorHandler(
                     $match: {
                       $expr: {
                         $and: [
+                          { $eq: ['$collectionName', 'story'] },
                           { $eq: ['$documentId', '$$storyId'] },
                           { $eq: ['$user', viewerId] },
                         ],

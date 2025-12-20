@@ -5,7 +5,7 @@ import Search from '../models/searchModel.js';
 import getUserLocation from '../utils/getUserLocation.js';
 import User from '../models/userModel.js';
 import protectData from '../utils/protectData.js';
-import mongoose, { Document, Types } from 'mongoose';
+import mongoose, { Document, PipelineStage, Types } from 'mongoose';
 import queryFromTypesense from '../utils/queryFromTypesense.js';
 import Content from '../models/contentModel.js';
 import Reel from '../models/reelModel.js';
@@ -744,33 +744,66 @@ export const getSearchSuggestions = asyncErrorHandler(
 );
 
 export const searchForUsers = asyncErrorHandler(
-  async (req: AuthRequest, res: Response) => {
-    const { query, page, cursor } = req.query;
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { query, page, cursor, engagement, type } = req.query;
 
     let result: any[] = [];
+    let resultLength = 0;
 
     const viewerId = req.user?._id;
+    const privateAudience: string[] =
+      req.user?.settings.general.privacy.users || [];
+
+    if (type) {
+      if (type !== 'followers' && type !== 'following') {
+        return next(new CustomError('Invalid request', 400));
+      }
+    }
 
     if (query) {
-      const users = await queryFromTypesense(
-        'users',
-        {
-          q: String(query),
-          query_by: 'username,name',
-          filter_by: `id:!=${String(viewerId)}`,
-          page: Number(page),
-          per_page: 30,
-        },
-        ['id']
-      );
+      const users =
+        (await queryFromTypesense(
+          'users',
+          {
+            q: String(query),
+            query_by: 'username,name',
+            filter_by: `id:!=${String(viewerId)}`,
+            page: Number(page),
+            per_page: 30,
+          },
+          ['id']
+        )) || [];
 
-      if (users?.length! > 0) {
-        const userIds = users!.map(
+      resultLength = users.length;
+
+      if (users.length > 0) {
+        const userIds = users.map(
           (user) => new Types.ObjectId(String(user.id))
         );
 
-        result = await User.aggregate([
+        const pipeline: PipelineStage[] = [
           { $match: { _id: { $in: userIds } } },
+          {
+            $lookup: {
+              from: 'follows',
+              let: { user: '$_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$following', '$$user'] },
+                        {
+                          $eq: ['$follower', viewerId],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'followInfo',
+            },
+          },
           {
             $lookup: {
               from: 'friends',
@@ -805,27 +838,6 @@ export const searchForUsers = asyncErrorHandler(
             },
           },
           {
-            $lookup: {
-              from: 'follows',
-              let: { user: '$_id' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$following', '$$user'] },
-                        {
-                          $eq: ['$follower', viewerId],
-                        },
-                      ],
-                    },
-                  },
-                },
-              ],
-              as: 'followInfo',
-            },
-          },
-          {
             $addFields: {
               type: {
                 $cond: [
@@ -842,7 +854,119 @@ export const searchForUsers = asyncErrorHandler(
               },
             },
           },
-          {
+        ];
+
+        if (engagement === 'true') {
+          if (type) {
+            if (type === 'followers') {
+              pipeline.splice(
+                1,
+                0,
+                {
+                  $lookup: {
+                    from: 'follows',
+                    let: { user: '$_id' },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $and: [
+                              { $eq: ['$following', viewerId] },
+                              {
+                                $eq: ['$follower', '$$user'],
+                              },
+                            ],
+                          },
+                        },
+                      },
+                    ],
+                    as: 'followerInfo',
+                  },
+                },
+                {
+                  $match: {
+                    $expr: {
+                      $gt: [{ $size: '$followerInfo' }, 0],
+                    },
+                  },
+                }
+              );
+            } else {
+              pipeline.splice(2, 0, {
+                $match: {
+                  $expr: {
+                    $gt: [{ $size: '$followInfo' }, 0],
+                  },
+                },
+              });
+            }
+          }
+
+          pipeline.push(
+            {
+              $lookup: {
+                from: 'stories',
+                let: { userId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ['$user', '$$userId'] },
+                    },
+                  },
+                  {
+                    $lookup: {
+                      from: 'views',
+                      let: { storyId: '$_id', viewerId: req.user?._id },
+                      pipeline: [
+                        {
+                          $match: {
+                            $expr: {
+                              $and: [
+                                { $eq: ['$collectionName', 'story'] },
+                                { $eq: ['$documentId', '$$storyId'] },
+                                { $eq: ['$user', '$$viewerId'] },
+                              ],
+                            },
+                          },
+                        },
+                        { $project: { _id: 1 } },
+                      ],
+                      as: 'storyView',
+                    },
+                  },
+                  { $project: { _id: 1, storyView: 1 } },
+                ],
+                as: 'stories',
+              },
+            },
+            {
+              $project: {
+                username: 1,
+                photo: 1,
+                name: 1,
+                createdAt: 1,
+                friendObj: { $first: '$friendInfo' },
+                followObj: { $first: '$followInfo' },
+                hasStory: {
+                  $gt: [{ $size: '$stories' }, 0],
+                },
+                hasUnviewedStory: {
+                  $anyElementTrue: {
+                    $map: {
+                      input: '$stories',
+                      as: 'story',
+                      in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+                    },
+                  },
+                },
+                private: {
+                  $in: ['$_id', privateAudience],
+                },
+              },
+            }
+          );
+        } else {
+          pipeline.push({
             $project: {
               username: 1,
               photo: 1,
@@ -850,8 +974,10 @@ export const searchForUsers = asyncErrorHandler(
               createdAt: 1,
               type: 1,
             },
-          },
-        ]);
+          });
+        }
+
+        result = await User.aggregate(pipeline);
       }
     } else {
       const cursorDate = isValidDateString(String(cursor))
@@ -963,7 +1089,7 @@ export const searchForUsers = asyncErrorHandler(
 
     return res.status(200).json({
       status: 'success',
-      data: { result },
+      data: { result, resultLength },
     });
   }
 );

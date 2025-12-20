@@ -57,7 +57,11 @@ const updateProfileDetails = async (
             throw new CustomError('You can only upload image files.', 400);
 
           // Delete previous photo
-          if (photo !== 'default.jpeg') {
+          if (
+            photo !== 'default.jpg' &&
+            photo !==
+              'https://res.cloudinary.com/dtwsoibt0/image/upload/v1765614386/default.jpg'
+          ) {
             try {
               if (process.env.NODE_ENV === 'production') {
                 await handleCloudinary(
@@ -113,8 +117,12 @@ const updateProfileDetails = async (
 
 export const getSuggestedUsers = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
-    const excludedUsers =
+    const notInterested =
       req.user?.settings.content.notInterested.content || [];
+    const suggestionBlacklist =
+      req.user?.settings.general.suggestionBlacklist || [];
+
+    const excludedUsers = [...notInterested, ...suggestionBlacklist];
 
     const users = await User.aggregate([
       { $match: { _id: { $nin: [req.user?._id, ...excludedUsers] } } },
@@ -149,12 +157,14 @@ export const getSuggestedUsers = asyncErrorHandler(
           let: { userId: '$_id' },
           pipeline: [
             {
-              $match: { $expr: { $eq: ['$$userId', '$user'] } },
+              $match: {
+                $expr: { $eq: ['$user', '$$userId'] },
+              },
             },
             {
               $lookup: {
                 from: 'views',
-                let: { viewerId: req.user?._id, storyId: '$_id' },
+                let: { storyId: '$_id', viewerId: req.user?._id },
                 pipeline: [
                   {
                     $match: {
@@ -167,13 +177,12 @@ export const getSuggestedUsers = asyncErrorHandler(
                       },
                     },
                   },
+                  { $project: { _id: 1 } },
                 ],
-                as: 'hasViewed',
+                as: 'storyView',
               },
             },
-            {
-              $addFields: { hasViewed: { $gt: [{ $size: '$hasViewed' }, 0] } },
-            },
+            { $project: { _id: 1, storyView: 1 } },
           ],
           as: 'stories',
         },
@@ -183,7 +192,18 @@ export const getSuggestedUsers = asyncErrorHandler(
           name: 1,
           username: 1,
           photo: 1,
-          stories: 1,
+          hasStory: {
+            $gt: [{ $size: '$stories' }, 0],
+          },
+          hasUnviewedStory: {
+            $anyElementTrue: {
+              $map: {
+                input: '$stories',
+                as: 'story',
+                in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+              },
+            },
+          },
         },
       },
     ]);
@@ -199,17 +219,62 @@ export const getSuggestedUsers = asyncErrorHandler(
   }
 );
 
+export const removeSuggestedUser = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    let id = req.params.id;
+    id = String(id).trim();
+
+    const user = await User.findById(id);
+
+    if (!user) return next(new CustomError('This user does not exist!', 404));
+
+    if (String(user._id) === String(req.user?._id)) {
+      return next(new CustomError('This action is not allowed.', 403));
+    }
+
+    const suggestionBlacklist =
+      req.user?.settings.general.suggestionBlacklist || [];
+    const users = new Set(suggestionBlacklist.map((user: any) => String(user)));
+
+    users.add(id);
+
+    if (users.size > 100) {
+      users.delete(String(suggestionBlacklist[0]));
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        'settings.general.suggestionBlacklist': [...users],
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    const userData = protectData(updatedUser!, 'user');
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: userData,
+      },
+    });
+  }
+);
+
 export const getProfileData = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
-    const followers = await Follow.find({
+    const followers = await Follow.countDocuments({
       following: req.user?._id,
-    }).countDocuments();
+    });
 
-    const following = await Follow.find({
+    const following = await Follow.countDocuments({
       follower: req.user?._id,
-    }).countDocuments();
+    });
 
-    const friends = await Friend.find({
+    const friends = await Friend.countDocuments({
       $or: [
         {
           requester: req.user?._id,
@@ -218,20 +283,20 @@ export const getProfileData = asyncErrorHandler(
           recipient: req.user?._id,
         },
       ],
-    }).countDocuments();
+    });
 
-    const contents = await Content.find({
+    const contents = await Content.countDocuments({
       user: req.user?._id,
-    }).countDocuments();
+    });
 
-    const reels = await Reel.find({
+    const reels = await Reel.countDocuments({
       user: req.user?._id,
-    }).countDocuments();
+    });
 
-    const likes = await Like.find({
+    const likes = await Like.countDocuments({
       creator: req.user?._id,
       collectionName: { $in: ['content', 'reel'] },
-    }).countDocuments();
+    });
 
     return res.status(200).json({
       status: 'success',
@@ -248,7 +313,7 @@ export const getProfileData = asyncErrorHandler(
 
 export const getUserPosts = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const allowedTypes = ['all', 'reels', 'private'];
+    const allowedTypes = ['all', 'reels', 'private', 'bookmarks', 'liked'];
     const {
       type,
     }: {
@@ -270,9 +335,113 @@ export const getUserPosts = asyncErrorHandler(
   }
 );
 
+export const getPrivateAudience = asyncErrorHandler(
+  async (req: AuthRequest, res: Response) => {
+    let page: any = req.query.page;
+    page = page ? Number(page) : 1;
+
+    const limit = 20;
+
+    const privateAudience: string[] =
+      req.user?.settings.general.privacy.users || [];
+    const userIds = privateAudience.slice((page - 1) * limit, page * limit);
+
+    const users = await User.aggregate([
+      {
+        $match: {
+          _id: { $in: userIds },
+        },
+      },
+      {
+        $lookup: {
+          from: 'follows',
+          let: { viewerId: req.user?._id, userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$follower', '$$viewerId'] },
+                    { $eq: ['$following', '$$userId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'follow',
+        },
+      },
+      {
+        $lookup: {
+          from: 'stories',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$user', '$$userId'] },
+              },
+            },
+            {
+              $lookup: {
+                from: 'views',
+                let: { storyId: '$_id', viewerId: req.user?._id },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$collectionName', 'story'] },
+                          { $eq: ['$documentId', '$$storyId'] },
+                          { $eq: ['$user', '$$viewerId'] },
+                        ],
+                      },
+                    },
+                  },
+                  { $project: { _id: 1 } },
+                ],
+                as: 'storyView',
+              },
+            },
+            { $project: { _id: 1, storyView: 1 } },
+          ],
+          as: 'stories',
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          username: 1,
+          photo: 1,
+          follow: { $first: '$follow' },
+          hasStory: {
+            $gt: [{ $size: '$stories' }, 0],
+          },
+          hasUnviewedStory: {
+            $anyElementTrue: {
+              $map: {
+                input: '$stories',
+                as: 'story',
+                in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        users,
+      },
+    });
+  }
+);
+
 export const updatePrivateAudience = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const { id, action } = req.body;
+    let { id, action } = req.body;
+    id = String(id).trim();
 
     const user = await User.findById(id);
 
@@ -290,23 +459,33 @@ export const updatePrivateAudience = asyncErrorHandler(
     }
 
     if (!value) {
-      return next(new CustomError('This action is not allowed.', 403));
+      return next(new CustomError('Your account is not private.', 403));
     }
 
-    const privateAudience = new Set(users);
+    let privateAudience = new Set(users);
+    if (privateAudience.has(id)) {
+      return next(
+        new CustomError('This user is already in your private audience.', 409)
+      );
+    }
 
     if (action === 'add') {
-      privateAudience.add(id);
+      privateAudience = new Set([id, ...users]);
 
-      if (privateAudience.size > 1000) {
-        privateAudience.delete(users[0]);
+      if (privateAudience.size > 500) {
+        return next(
+          new CustomError(
+            'You’ve reached the maximum number of private audience. Remove someone to add another.',
+            400
+          )
+        );
       }
     } else {
       privateAudience.delete(id);
     }
 
     const updatedUser = await User.findByIdAndUpdate(
-      id,
+      req.user?._id,
       {
         'settings.general.privacy.users': [...privateAudience],
       },
@@ -1126,6 +1305,7 @@ export const getCollaborationRequests = asyncErrorHandler(
                       $match: {
                         $expr: {
                           $and: [
+                            { $eq: ['$collectionName', 'story'] },
                             { $eq: ['$documentId', '$$storyId'] },
                             { $eq: ['$user', req.user?._id] },
                           ],
@@ -1212,6 +1392,7 @@ export const getCollaborationRequests = asyncErrorHandler(
                       $match: {
                         $expr: {
                           $and: [
+                            { $eq: ['$collectionName', 'story'] },
                             { $eq: ['$documentId', '$$storyId'] },
                             { $eq: ['$user', req.user?._id] },
                           ],

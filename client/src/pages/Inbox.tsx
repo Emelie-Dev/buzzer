@@ -11,7 +11,7 @@ import { GeneralContext } from '../Contexts';
 
 const Inbox = () => {
   const [category, setCategory] = useState<'friends' | 'others'>('friends');
-  const { scrollHandler } = useScrollHandler(true);
+  const { scrollHandler } = useScrollHandler(true, undefined, true);
 
   const containerRef = useRef<HTMLDivElement>(null!);
 

@@ -91,12 +91,51 @@ const UserSchema = new Schema<IUser>({
   bio: {
     type: String,
     trim: true,
+    maxLength: [150, 'Bio cannot exceed 150 characters.'],
   },
   links: {
     type: {
-      website: String,
-      youtube: String,
-      instagram: String,
+      website: {
+        type: String,
+        trim: true,
+        maxLength: [255, 'Website link is too long.'],
+        validate: {
+          validator: (value: string) =>
+            validator.isURL(value, {
+              require_protocol: true,
+              require_tld: true,
+              protocols: ['http', 'https'],
+            }),
+          message: 'Please provide a valid website URL.',
+        },
+      },
+      youtube: {
+        type: String,
+        trim: true,
+        maxLength: [255, 'Youtube link is too long.'],
+        validate: {
+          validator: (value) =>
+            validator.isURL(value, {
+              require_protocol: true,
+              protocols: ['https'],
+            }) &&
+            (value.includes('youtube.com') || value.includes('youtu.be')),
+          message: 'Please provide a valid YouTube link.',
+        },
+      },
+      instagram: {
+        type: String,
+        trim: true,
+        maxLength: [255, 'Instagram link is too long.'],
+        validate: {
+          validator: (value) =>
+            validator.isURL(value, {
+              require_protocol: true,
+              protocols: ['https'],
+            }) && value.includes('instagram.com'),
+          message: 'Please provide a valid Instagram link',
+        },
+      },
     },
     default: {
       website: '',
@@ -121,7 +160,7 @@ const UserSchema = new Schema<IUser>({
   },
   photo: {
     type: String,
-    default: 'default.jpeg',
+    required: [true, 'Please provide a profile photo.'],
   },
   active: {
     type: Boolean,

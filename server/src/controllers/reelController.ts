@@ -281,6 +281,7 @@ export const getReels = asyncErrorHandler(
                     $match: {
                       $expr: {
                         $and: [
+                          { $eq: ['$collectionName', 'story'] },
                           { $eq: ['$documentId', '$$storyId'] },
                           { $eq: ['$user', viewerId] },
                         ],
@@ -938,6 +939,7 @@ export const getPinnedReels = asyncErrorHandler(
                     $match: {
                       $expr: {
                         $and: [
+                          { $eq: ['$collectionName', 'story'] },
                           { $eq: ['$documentId', '$$storyId'] },
                           { $eq: ['$user', req.user?._id] },
                         ],

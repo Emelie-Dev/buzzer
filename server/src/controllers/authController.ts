@@ -211,6 +211,10 @@ export const signup = asyncErrorHandler(
     const user = await User.create({
       ...req.body,
       location,
+      photo:
+        process.env.NODE_ENV === 'production'
+          ? 'https://res.cloudinary.com/dtwsoibt0/image/upload/v1765614386/default.jpg'
+          : 'default.jpg',
     });
 
     return await sendEmail(req, res, next, user, true);

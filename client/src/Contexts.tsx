@@ -100,6 +100,22 @@ export const GeneralContext = createContext<{
   setShowFriendRequests: React.Dispatch<React.SetStateAction<boolean>>;
   showCollaborationRequests: boolean;
   setShowCollaborationRequests: React.Dispatch<React.SetStateAction<boolean>>;
+  profileData: {
+    followers: number;
+    following: number;
+    friends: number;
+    posts: number;
+    likes: number;
+  };
+  setProfileData: React.Dispatch<
+    React.SetStateAction<{
+      followers: number;
+      following: number;
+      friends: number;
+      posts: number;
+      likes: number;
+    }>
+  >;
 }>(null!);
 
 export const SettingsContext = createContext<{

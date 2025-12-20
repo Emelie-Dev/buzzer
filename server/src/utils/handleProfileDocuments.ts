@@ -3,6 +3,8 @@ import Reel from '../models/reelModel.js';
 import { ContentAccessibility } from '../models/storyModel.js';
 import Bookmark from '../models/bookmarkModel.js';
 import Like from '../models/likeModel.js';
+import { isValidDateString } from '../controllers/commentController.js';
+import { PipelineStage } from 'mongoose';
 
 export default async (
   userId: string,
@@ -10,8 +12,9 @@ export default async (
   query: Record<string, any>
 ) => {
   const limit = 20;
-  const { sort, cursor, views = Infinity } = query;
+  let { sort, cursor, views } = query;
   const cursorDate = new Date(cursor as string);
+  views = isNaN(Number(views)) ? Infinity : views;
 
   const timestamp =
     category === 'bookmarks'
@@ -37,39 +40,74 @@ export default async (
       ? { views: -1, [timestamp]: -1 }
       : { [timestamp]: -1 };
 
-  const cursorObj =
-    String(cursorDate) !== 'Invalid Date'
-      ? sort === 'oldest'
-        ? { [timestamp]: { $gt: cursorDate } }
-        : sort === 'popular'
-        ? {
-            $or: [
-              { views: { $lt: +views } },
-              { views: +views, [timestamp]: { $lt: cursorDate } },
-            ],
-          }
-        : { [timestamp]: { $lt: cursorDate } }
-      : {};
+  const cursorObj = isValidDateString(cursor)
+    ? sort === 'oldest'
+      ? { [timestamp]: { $gt: cursorDate } }
+      : sort === 'popular'
+      ? {
+          $or: [
+            { views: { $lt: +views } },
+            { views: +views, [timestamp]: { $lt: cursorDate } },
+          ],
+        }
+      : { [timestamp]: { $lt: cursorDate } }
+    : {};
 
-  const initialStages =
-    category === 'bookmarks' || category === 'liked'
-      ? [
-          {
-            $match: {
-              user: userId,
-            },
-          },
-          {
-            $lookup: {
-              from: 'contents',
-              localField: 'documentId',
-              foreignField: '_id',
-              as: 'post',
-            },
-          },
-          { $unwind: '$post' },
-        ]
-      : [];
+  const initialStages = (index: number): PipelineStage[] => {
+    const stages: PipelineStage[] = [
+      {
+        $match: {
+          user: userId,
+        },
+      },
+      {
+        $match: {
+          post: { $ne: [] },
+        },
+      },
+      { $unwind: '$post' },
+    ];
+    const collection = index === 0 ? 'content' : 'reel';
+
+    if (category === 'bookmarks' || category === 'liked') {
+      stages.splice(
+        1,
+        0,
+        category === 'bookmarks'
+          ? {
+              $lookup: {
+                from: `${collection}s`,
+                localField: 'documentId',
+                foreignField: '_id',
+                as: 'post',
+              },
+            }
+          : {
+              $lookup: {
+                from: `${collection}s`,
+                as: 'post',
+                let: { documentId: '$documentId', collection },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$collectionName', '$$collection'] },
+                          { $eq: ['$_id', '$$documentId'] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+            }
+      );
+
+      return stages;
+    } else {
+      return [];
+    }
+  };
 
   const mainStages = [
     {
@@ -118,13 +156,25 @@ export default async (
     },
     {
       $project: {
-        viewsArray: 0,
-        likesArray: 0,
-        commentsArray: 0,
-        'post.settings': 0,
-        'post.location': 0,
-        'post.__v': 0,
-        __v: 0,
+        createdAt: 1,
+        views: 1,
+        likes: 1,
+        comments: 1,
+        src: 1,
+        media: {
+          src: 1,
+          mediaType: 1,
+        },
+        post: {
+          src: 1,
+          media: {
+            src: 1,
+            mediaType: 1,
+          },
+          _id: 1,
+        },
+        likedAt: 1,
+        savedAt: 1,
       },
     },
   ];
@@ -139,7 +189,7 @@ export default async (
   let [contents, reels] = await Promise.all(
     collections.map(async (collection, index) => {
       const pipeline = [
-        ...initialStages,
+        ...initialStages(index),
         ...mainStages,
         {
           $addFields: {

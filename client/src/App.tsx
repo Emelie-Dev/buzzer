@@ -35,6 +35,13 @@ const App = () => {
   const [showFriendRequests, setShowFriendRequests] = useState<boolean>(false);
   const [showCollaborationRequests, setShowCollaborationRequests] =
     useState<boolean>(false);
+  const [profileData, setProfileData] = useState<{
+    followers: number;
+    following: number;
+    friends: number;
+    posts: number;
+    likes: number;
+  }>({ followers: 0, following: 0, friends: 0, posts: 0, likes: 0 });
 
   useEffect(() => {
     const deviceId = crypto.randomUUID();
@@ -50,7 +57,17 @@ const App = () => {
       }
     };
 
+    const getProfileData = async () => {
+      try {
+        const { data } = await apiClient('v1/users/profile');
+        setProfileData(data.data);
+
+        // eslint-disable-next-line no-empty
+      } catch {}
+    };
+
     getSuggestedUsers();
+    getProfileData();
   }, []);
 
   return (
@@ -79,6 +96,8 @@ const App = () => {
             setShowFriendRequests,
             showCollaborationRequests,
             setShowCollaborationRequests,
+            profileData,
+            setProfileData,
           }}
         >
           <StoryContext.Provider

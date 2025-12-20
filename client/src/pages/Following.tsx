@@ -70,10 +70,6 @@ const Following = () => {
     };
   }, []);
 
-  const hasViewedAll = (stories: any[]) => {
-    return stories.every((story) => story.hasViewed);
-  };
-
   const followUser = async (id: string) => {
     const newList = new Set(followList);
     newList.add(id);
@@ -203,10 +199,10 @@ const Following = () => {
                     <Link to={`/@${user.username}`}>
                       <span
                         className={`${styles['suggested-img-box']} ${
-                          user.stories.length > 0
-                            ? hasViewedAll(user.stories)
-                              ? styles['suggested-img-box2']
-                              : styles['suggested-img-box3']
+                          user.hasStory && user.hasUnviewedStory
+                            ? styles['suggested-img-box3']
+                            : user.hasStory
+                            ? styles['suggested-img-box2']
                             : ''
                         }`}
                       >

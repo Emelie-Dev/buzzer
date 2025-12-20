@@ -155,7 +155,8 @@ const CommentBox = ({
       comments.value !== 'error' &&
       container &&
       container.scrollHeight <= container.clientHeight &&
-      !loadingComments.end
+      !loadingComments.end &&
+      loadingComments.value === false
     ) {
       getComments();
     }
@@ -324,7 +325,8 @@ const CommentBox = ({
     const isBottom =
       target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
 
-    if (isBottom && !loadingComments.end) getComments();
+    if (isBottom && !loadingComments.end && loadingComments.value === false)
+      getComments();
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {

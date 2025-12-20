@@ -16,6 +16,7 @@ export interface ISettings extends Document {
       value: Boolean;
       users: Types.ObjectId[];
     };
+    suggestionBlacklist: Types.ObjectId[];
   };
   account: {
     emailVisibility: Boolean;
@@ -97,6 +98,12 @@ export default new Schema<ISettings>({
         },
       ],
     },
+    suggestionBlacklist: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   account: {
     emailVisibility: { type: Boolean, default: false },

@@ -558,6 +558,7 @@ export const getFriendsSugestions = asyncErrorHandler(
                     $match: {
                       $expr: {
                         $and: [
+                          { $eq: ['$collectionName', 'story'] },
                           { $eq: ['$documentId', '$$storyId'] },
                           { $eq: ['$user', req.user?._id] },
                         ],
@@ -657,6 +658,180 @@ export const getFriendsSugestions = asyncErrorHandler(
       data: {
         users: shuffleData(suggestions),
       },
+    });
+  }
+);
+
+export const getFriends = asyncErrorHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { cursor } = req.query;
+    const cursorDate = isValidDateString(String(cursor))
+      ? new Date(String(cursor))
+      : new Date();
+
+    const viewerId = req.user?._id;
+    const limit = 20;
+
+    const friends = await Friend.aggregate([
+      {
+        $match: {
+          $or: [
+            {
+              requester: viewerId,
+            },
+            {
+              recipient: viewerId,
+            },
+          ],
+          createdAt: { $lt: cursorDate },
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      { $limit: limit },
+      {
+        $addFields: {
+          user: {
+            $cond: [
+              { $eq: ['$requester', viewerId] },
+              '$recipient',
+              '$requester',
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+                username: 1,
+                photo: 1,
+              },
+            },
+          ],
+          as: 'users',
+        },
+      },
+      {
+        $addFields: {
+          user: {
+            $first: '$users',
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'follows',
+          let: { viewerId, userId: '$user._id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$follower', '$$viewerId'] },
+                    { $eq: ['$following', '$$userId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'follow',
+        },
+      },
+      {
+        $lookup: {
+          from: 'stories',
+          let: { userId: '$user._id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$user', '$$userId'] },
+              },
+            },
+            {
+              $lookup: {
+                from: 'views',
+                let: { storyId: '$_id', viewerId },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$collectionName', 'story'] },
+                          { $eq: ['$documentId', '$$storyId'] },
+                          { $eq: ['$user', '$$viewerId'] },
+                        ],
+                      },
+                    },
+                  },
+                  { $project: { _id: 1 } },
+                ],
+                as: 'storyView',
+              },
+            },
+            { $project: { _id: 1, storyView: 1 } },
+          ],
+          as: 'stories',
+        },
+      },
+      {
+        $project: {
+          user: 1,
+          follow: { $first: '$follow' },
+          hasStory: {
+            $gt: [{ $size: '$stories' }, 0],
+          },
+          hasUnviewedStory: {
+            $anyElementTrue: {
+              $map: {
+                input: '$stories',
+                as: 'story',
+                in: { $eq: [{ $size: '$$story.storyView' }, 0] },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      status: 'success',
+      data: { users: friends },
+    });
+  }
+);
+
+export const removeFriend = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const friend = await Friend.findById(req.params.id);
+
+    if (!friend) {
+      return next(new CustomError('You are not friends with this user.', 404));
+    }
+
+    if (
+      String(friend.requester) !== String(req.user?._id) &&
+      String(friend.recipient) !== String(req.user?._id)
+    ) {
+      return next(new CustomError('You are not friends with this user.', 404));
+    }
+
+    await friend.deleteOne();
+    await Notification.deleteOne({
+      $or: [
+        { user: friend.requester, secondUser: friend.recipient },
+        { user: friend.recipient, secondUser: friend.requester },
+      ],
+      type: ['friend_request', 'accept'],
+    });
+
+    return res.status(204).json({
+      status: 'success',
+      message: null,
     });
   }
 );

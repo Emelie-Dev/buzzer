@@ -196,7 +196,7 @@ const PostDetails = ({
   }, [generalDescription]);
 
   useEffect(() => {
-    if (loading.value) handleSearch();
+    handleSearch();
   }, [loading]);
 
   const handleFileDescription = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -401,16 +401,19 @@ const PostDetails = ({
     const isBottom =
       target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
 
-    if (isBottom && !searchData.end) {
+    if (isBottom && !searchData.end && loading.value === false) {
       if (loading.query === '') {
         setSearchData((prev) => ({
           ...prev,
-          cursor: searchResult[searchResult.length - 1].createdAt,
+          cursor:
+            loading.value === 'error'
+              ? prev.cursor
+              : searchResult[searchResult.length - 1].createdAt,
         }));
       } else {
         setSearchData((prev) => ({
           ...prev,
-          page: prev.page + 1,
+          page: loading.value === 'error' ? prev.page : prev.page + 1,
         }));
       }
 
@@ -720,7 +723,14 @@ const PostDetails = ({
                   searchData.page === 1 ? (
                   <div className={styles['error-text']}>
                     Couldn’t load users. Please try again.
-                    <button className={styles['error-btn']}>Try again</button>
+                    <button
+                      className={styles['error-btn']}
+                      onClick={() => {
+                        setLoading((prev) => ({ ...prev, value: true }));
+                      }}
+                    >
+                      Try again
+                    </button>
                   </div>
                 ) : searchResult.length === 0 ? (
                   <div className={styles['error-text']}>
@@ -969,16 +979,19 @@ const MentionModal = ({
     const isBottom =
       target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
 
-    if (isBottom && !searchData.end) {
+    if (isBottom && !searchData.end && loading.value === false) {
       if (loading.query === '') {
         setSearchData((prev) => ({
           ...prev,
-          cursor: searchResult[searchResult.length - 1].createdAt,
+          cursor:
+            loading.value === 'error'
+              ? prev.cursor
+              : searchResult[searchResult.length - 1].createdAt,
         }));
       } else {
         setSearchData((prev) => ({
           ...prev,
-          page: prev.page + 1,
+          page: loading.value === 'error' ? prev.page : prev.page + 1,
         }));
       }
 
@@ -1057,7 +1070,14 @@ const MentionModal = ({
             searchData.page === 1 ? (
             <div className={styles['error-text']}>
               Couldn’t load users. Please try again.
-              <button className={styles['error-btn']}>Try again</button>
+              <button
+                className={styles['error-btn']}
+                onClick={() => {
+                  setLoading((prev) => ({ ...prev, value: true }));
+                }}
+              >
+                Try again
+              </button>
             </div>
           ) : searchResult.length === 0 ? (
             <div className={styles['error-text']}>No matching user found.</div>

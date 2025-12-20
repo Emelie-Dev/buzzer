@@ -46,7 +46,6 @@ export default [
       },
       { name: 'searchCount', type: 'int32' },
     ],
-    symbols_to_index: symbolsToIndex,
     default_sorting_field: 'searchCount',
   },
   {
@@ -71,7 +70,6 @@ export default [
       },
       { name: 'createdAt', type: 'int64' },
     ],
-    symbols_to_index: symbolsToIndex,
   },
   {
     name: 'reels',
@@ -85,6 +83,5 @@ export default [
       },
       { name: 'createdAt', type: 'int64' },
     ],
-    symbols_to_index: symbolsToIndex,
   },
 ];

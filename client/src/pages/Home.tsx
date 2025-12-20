@@ -350,7 +350,7 @@ const Home = () => {
                   {stories.map(({ user }, index) => (
                     <article
                       key={index}
-                      className={styles.user}
+                      className={styles.userStory}
                       onClick={() => {
                         setStoryIndex(userStory.length > 0 ? index + 1 : index);
                         setViewStory(true);
