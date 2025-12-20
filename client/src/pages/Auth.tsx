@@ -571,17 +571,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                 </button>
 
                 {loading.signup ? (
-                  <LoadingAnimation
-                    style={{
-                      position: 'absolute',
-                      zIndex: 2,
-                      bottom: '2.1rem',
-                      width: 70,
-                      height: 70,
-                      opacity: 0.7,
-                    }}
-                    className={styles['loading-animation']}
-                  />
+                  <LoadingAnimation className={styles['loading-animation']} />
                 ) : (
                   ''
                 )}
@@ -697,17 +687,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                   </button>
 
                   {loading.signin ? (
-                    <LoadingAnimation
-                      style={{
-                        position: 'absolute',
-                        zIndex: 2,
-                        bottom: '2.1rem',
-                        width: 70,
-                        height: 70,
-                        opacity: 0.7,
-                      }}
-                      className={styles['loading-animation']}
-                    />
+                    <LoadingAnimation className={styles['loading-animation']} />
                   ) : (
                     ''
                   )}
@@ -767,16 +747,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                   </button>
 
                   {loading.forgot ? (
-                    <LoadingAnimation
-                      style={{
-                        position: 'absolute',
-                        zIndex: 2,
-                        bottom: '2.1rem',
-                        width: 70,
-                        height: 70,
-                        opacity: 0.7,
-                      }}
-                    />
+                    <LoadingAnimation className={styles['loading-animation']} />
                   ) : (
                     ''
                   )}
@@ -858,16 +829,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                   </button>
 
                   {loading.reset ? (
-                    <LoadingAnimation
-                      style={{
-                        position: 'absolute',
-                        zIndex: 2,
-                        bottom: '2.1rem',
-                        width: 70,
-                        height: 70,
-                        opacity: 0.7,
-                      }}
-                    />
+                    <LoadingAnimation className={styles['loading-animation']} />
                   ) : (
                     ''
                   )}

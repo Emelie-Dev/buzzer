@@ -786,7 +786,16 @@ const Profile = () => {
                 <div className={styles['no-data-text']}>
                   Unable to load posts. Check your connection and try again.
                   <div className={styles['error-btn']}>
-                    <button onClick={getPosts}>Try again</button>
+                    <button
+                      onClick={() => {
+                        setPostsData((prev) => ({
+                          ...prev,
+                          all: { ...prev.all, loading: true },
+                        }));
+                      }}
+                    >
+                      Try again
+                    </button>
                   </div>
                 </div>
               ) : posts.all === null && category !== 'all' ? (
@@ -956,7 +965,16 @@ const Profile = () => {
                 <div className={styles['no-data-text']}>
                   Unable to load reels. Check your connection and try again.
                   <div className={styles['error-btn']}>
-                    <button onClick={getPosts}>Try again</button>
+                    <button
+                      onClick={() => {
+                        setPostsData((prev) => ({
+                          ...prev,
+                          reels: { ...prev.reels, loading: true },
+                        }));
+                      }}
+                    >
+                      Try again
+                    </button>
                   </div>
                 </div>
               ) : posts.reels === null && category !== 'reels' ? (
@@ -1114,7 +1132,16 @@ const Profile = () => {
                   Unable to load private posts. Check your connection and try
                   again.
                   <div className={styles['error-btn']}>
-                    <button onClick={getPosts}>Try again</button>
+                    <button
+                      onClick={() => {
+                        setPostsData((prev) => ({
+                          ...prev,
+                          private: { ...prev.private, loading: true },
+                        }));
+                      }}
+                    >
+                      Try again
+                    </button>
                   </div>
                 </div>
               ) : posts.private === null && category !== 'private' ? (
@@ -1286,7 +1313,16 @@ const Profile = () => {
                   Unable to load saved posts. Check your connection and try
                   again.
                   <div className={styles['error-btn']}>
-                    <button onClick={getPosts}>Try again</button>
+                    <button
+                      onClick={() => {
+                        setPostsData((prev) => ({
+                          ...prev,
+                          bookmarks: { ...prev.bookmarks, loading: true },
+                        }));
+                      }}
+                    >
+                      Try again
+                    </button>
                   </div>
                 </div>
               ) : posts.bookmarks === null && category !== 'bookmarks' ? (
@@ -1459,7 +1495,16 @@ const Profile = () => {
                   Unable to load liked posts. Check your connection and try
                   again.
                   <div className={styles['error-btn']}>
-                    <button onClick={getPosts}>Try again</button>
+                    <button
+                      onClick={() => {
+                        setPostsData((prev) => ({
+                          ...prev,
+                          liked: { ...prev.liked, loading: true },
+                        }));
+                      }}
+                    >
+                      Try again
+                    </button>
                   </div>
                 </div>
               ) : posts.liked === null && category !== 'liked' ? (

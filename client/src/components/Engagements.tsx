@@ -1054,7 +1054,14 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
               <div className={styles['no-data-text']}>
                 Unable to load users. Check your connection and try again.
                 <div className={styles['error-btn']}>
-                  <button onClick={() => getUsers('followers')}>
+                  <button
+                    onClick={() => {
+                      setUsersData((prev) => ({
+                        ...prev,
+                        followers: { ...prev.followers, loading: true },
+                      }));
+                    }}
+                  >
                     Try again
                   </button>
                 </div>
@@ -1303,7 +1310,14 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
               <div className={styles['no-data-text']}>
                 Unable to load users. Check your connection and try again.
                 <div className={styles['error-btn']}>
-                  <button onClick={() => getUsers('following')}>
+                  <button
+                    onClick={() => {
+                      setUsersData((prev) => ({
+                        ...prev,
+                        following: { ...prev.following, loading: true },
+                      }));
+                    }}
+                  >
                     Try again
                   </button>
                 </div>
@@ -1537,7 +1551,16 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
               <div className={styles['no-data-text']}>
                 Unable to load users. Check your connection and try again.
                 <div className={styles['error-btn']}>
-                  <button onClick={() => getUsers('friends')}>Try again</button>
+                  <button
+                    onClick={() => {
+                      setUsersData((prev) => ({
+                        ...prev,
+                        friends: { ...prev.friends, loading: true },
+                      }));
+                    }}
+                  >
+                    Try again
+                  </button>
                 </div>
               </div>
             ) : users.friends === null ? (
@@ -1787,7 +1810,16 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
               <div className={styles['no-data-text']}>
                 Unable to load users. Check your connection and try again.
                 <div className={styles['error-btn']}>
-                  <button onClick={() => getUsers('private')}>Try again</button>
+                  <button
+                    onClick={() => {
+                      setUsersData((prev) => ({
+                        ...prev,
+                        private: { ...prev.private, loading: true },
+                      }));
+                    }}
+                  >
+                    Try again
+                  </button>
                 </div>
               </div>
             ) : users.private === null ? (
