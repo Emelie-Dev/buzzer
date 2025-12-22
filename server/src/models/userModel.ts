@@ -87,6 +87,7 @@ const UserSchema = new Schema<IUser>({
     lowercase: true,
     required: [true, 'Please provide a value for the email.'],
     validate: [validator.isEmail, 'Please provide a valid email.'],
+    maxLength: [254, 'Email cannot exceed 254 characters.'],
   },
   bio: {
     type: String,
@@ -100,12 +101,16 @@ const UserSchema = new Schema<IUser>({
         trim: true,
         maxLength: [255, 'Website link is too long.'],
         validate: {
-          validator: (value: string) =>
-            validator.isURL(value, {
-              require_protocol: true,
-              require_tld: true,
-              protocols: ['http', 'https'],
-            }),
+          validator: (value: string) => {
+            if (value) {
+              return validator.isURL(value, {
+                require_protocol: true,
+                require_tld: true,
+                protocols: ['http', 'https'],
+              });
+            }
+            return true;
+          },
           message: 'Please provide a valid website URL.',
         },
       },
@@ -114,12 +119,17 @@ const UserSchema = new Schema<IUser>({
         trim: true,
         maxLength: [255, 'Youtube link is too long.'],
         validate: {
-          validator: (value) =>
-            validator.isURL(value, {
-              require_protocol: true,
-              protocols: ['https'],
-            }) &&
-            (value.includes('youtube.com') || value.includes('youtu.be')),
+          validator: (value) => {
+            if (value) {
+              return (
+                validator.isURL(value, {
+                  require_protocol: true,
+                  protocols: ['https'],
+                }) &&
+                (value.includes('youtube.com') || value.includes('youtu.be'))
+              );
+            } else return true;
+          },
           message: 'Please provide a valid YouTube link.',
         },
       },
@@ -128,12 +138,17 @@ const UserSchema = new Schema<IUser>({
         trim: true,
         maxLength: [255, 'Instagram link is too long.'],
         validate: {
-          validator: (value) =>
-            validator.isURL(value, {
-              require_protocol: true,
-              protocols: ['https'],
-            }) && value.includes('instagram.com'),
-          message: 'Please provide a valid Instagram link',
+          validator: (value) => {
+            if (value) {
+              return (
+                validator.isURL(value, {
+                  require_protocol: true,
+                  protocols: ['https'],
+                }) && value.includes('instagram.com')
+              );
+            } else return true;
+          },
+          message: 'Please provide a valid Instagram link.',
         },
       },
     },

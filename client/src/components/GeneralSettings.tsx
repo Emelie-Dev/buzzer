@@ -1,21 +1,67 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import styles from '../styles/GeneralSettings.module.css';
 import Engagements from './Engagements';
 import Switch from './Switch';
 import { IoArrowBack } from 'react-icons/io5';
-import { SettingsContext } from '../Contexts';
+import { AuthContext, SettingsContext } from '../Contexts';
+import { toast } from 'sonner';
+import { apiClient } from '../Utilities';
 
 const GeneralSettings = () => {
-  const [category, setCategory] = useState<'light' | 'dark' | 'device'>(
-    'light'
+  const { user, setUser } = useContext(AuthContext);
+  const { setMainCategory } = useContext(SettingsContext);
+  const [category, setCategory] = useState<'light' | 'dark' | 'system'>(
+    user.settings.general.display
   );
-
   const [engagementModal, setEngagementModal] = useState<
     'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
   >(null);
+  const [privateAccount, setPrivateAccount] = useState<boolean>(
+    user.settings.general.privacy.value
+  );
+  const [inbox, setInbox] = useState(user.settings.general.inbox);
+  const [loading, setLoading] = useState({
+    display: false,
+    inbox: false,
+    private: false,
+  });
 
-  const [privateAccount, setPrivateAccount] = useState<boolean>(false);
-  const { setMainCategory } = useContext(SettingsContext);
+  useEffect(() => {
+    if (category !== user.settings.general.display)
+      updateGeneralSettings('display');
+  }, [category]);
+
+  useEffect(() => {
+    if (inbox !== user.settings.general.inbox) updateGeneralSettings('inbox');
+  }, [inbox]);
+
+  useEffect(() => {
+    if (privateAccount !== user.settings.general.privacy.value)
+      updateGeneralSettings('private');
+  }, [privateAccount]);
+
+  const updateGeneralSettings = async (
+    type: 'display' | 'inbox' | 'private'
+  ) => {
+    if (loading[type]) return;
+
+    setLoading((prev) => ({ ...prev, [type]: true }));
+
+    try {
+      const { data } = await apiClient.patch('v1/users/settings/general', {
+        display: category,
+        inbox,
+        privacy: privateAccount,
+      });
+      setUser(data.data.user);
+    } catch {
+      return toast.error(
+        `Could not update ${type === 'private' ? 'privacy' : type} settings.`
+      );
+    } finally {
+      setLoading((prev) => ({ ...prev, [type]: false }));
+    }
+  };
 
   return (
     <>
@@ -31,7 +77,11 @@ const GeneralSettings = () => {
         <div className={styles.category}>
           <span className={styles['category-head']}>Display</span>
 
-          <div className={styles['display-box']}>
+          <div
+            className={`${styles['display-box']} ${
+              loading.display ? styles['disable-category'] : ''
+            }`}
+          >
             <span className={styles['mode-box']}>
               <span
                 className={`${styles['img-box']} ${
@@ -47,6 +97,7 @@ const GeneralSettings = () => {
                   className={styles['mode-input']}
                   type="radio"
                   checked={category === 'light'}
+                  readOnly
                 />
               </span>
               <span className={styles['mode-name']}>Light</span>
@@ -67,6 +118,7 @@ const GeneralSettings = () => {
                   className={styles['mode-input']}
                   type="radio"
                   checked={category === 'dark'}
+                  readOnly
                 />
               </span>
               <span className={styles['mode-name']}>Dark</span>
@@ -75,9 +127,9 @@ const GeneralSettings = () => {
             <span className={styles['mode-box']}>
               <span
                 className={`${styles['img-box']} ${
-                  category === 'device' ? styles['current-category'] : ''
+                  category === 'system' ? styles['current-category'] : ''
                 }`}
-                onClick={() => setCategory('device')}
+                onClick={() => setCategory('system')}
               >
                 <img
                   className={styles['mode-img']}
@@ -86,7 +138,8 @@ const GeneralSettings = () => {
                 <input
                   className={styles['mode-input']}
                   type="radio"
-                  checked={category === 'device'}
+                  checked={category === 'system'}
+                  readOnly
                 />
               </span>
               <span className={styles['mode-name']}>System</span>
@@ -100,14 +153,19 @@ const GeneralSettings = () => {
           <div className={styles['inbox-div']}>
             <span className={styles['inbox-text']}>Who can message you.</span>
             {/* Everyone, friends, followers, no one */}
-            <div className={styles['inbox-list']}>
+            <div
+              className={`${styles['inbox-list']} ${
+                loading.inbox ? styles['disable-category'] : ''
+              }`}
+            >
               <span className={styles['inbox-box']}>
                 <input
                   className={styles['inbox-input']}
                   type="radio"
                   id="inbox-everyone"
                   name="inbox-value"
-                  defaultChecked={true}
+                  checked={inbox === 0}
+                  onChange={() => setInbox(0)}
                 />
                 <label
                   className={styles['inbox-label']}
@@ -122,6 +180,8 @@ const GeneralSettings = () => {
                   type="radio"
                   id="inbox-friends"
                   name="inbox-value"
+                  checked={inbox === 1}
+                  onChange={() => setInbox(1)}
                 />
                 <label
                   className={styles['inbox-label']}
@@ -136,6 +196,8 @@ const GeneralSettings = () => {
                   type="radio"
                   id="inbox-followers"
                   name="inbox-value"
+                  checked={inbox === 2}
+                  onChange={() => setInbox(2)}
                 />
                 <label
                   className={styles['inbox-label']}
@@ -150,6 +212,8 @@ const GeneralSettings = () => {
                   type="radio"
                   id="inbox-no-one"
                   name="inbox-value"
+                  checked={inbox === 3}
+                  onChange={() => setInbox(3)}
                 />
                 <label className={styles['inbox-label']} htmlFor="inbox-no-one">
                   No one
@@ -162,11 +226,16 @@ const GeneralSettings = () => {
         <div className={styles.category}>
           <span className={styles['category-head']}>Private Account</span>
 
-          <div className={styles['privacy-div']}>
+          <div
+            className={`${styles['privacy-div']} ${
+              loading.private ? styles['disable-category'] : ''
+            }`}
+          >
             <span className={styles['privacy-box']}>
               <span className={styles['privacy-text']}>
-                When your account is private, only approved users can follow you
-                and view your content. Your followers won't be affected.
+                Private accounts limit post and story visibility to approved
+                users only. Followers who aren’t approved won’t see your
+                content.
               </span>
 
               <Switch value={privateAccount} setter={setPrivateAccount} />
@@ -174,7 +243,7 @@ const GeneralSettings = () => {
 
             <button
               className={`${styles['privacy-btn']} ${
-                !privateAccount ? styles['disable-btn'] : ''
+                !privateAccount || loading.private ? styles['disable-btn'] : ''
               }`}
               onClick={
                 privateAccount ? () => setEngagementModal('private') : undefined

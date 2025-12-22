@@ -56,7 +56,7 @@ const checkFieldAvailability = async (
     await apiClient(`v1/auth/check-data/${field}/${value}`);
     return { ...state, [field as string]: 'valid' };
   } catch (err: any) {
-    if (!err.response) {
+    if (!err.response || err.response?.status !== 409) {
       return { ...state, [field as string]: 'error' };
     } else {
       return { ...state, [field as string]: 'exist' };

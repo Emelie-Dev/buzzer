@@ -36,6 +36,7 @@ const updateProfileDetails = async (
     uploader(req, res, async (error) => {
       const file = req.file as Express.Multer.File;
       const photo = req.user?.photo;
+      const removePhoto = req.body.removePhoto === 'true';
 
       try {
         if (error) {
@@ -51,10 +52,12 @@ const updateProfileDetails = async (
           );
         }
 
-        if (file) {
+        if (removePhoto || file) {
           // Check if file is an image
-          if (!file.mimetype.startsWith('image'))
-            throw new CustomError('You can only upload image files.', 400);
+          if (file) {
+            if (!file.mimetype.startsWith('image'))
+              throw new CustomError('You can only upload image files.', 400);
+          }
 
           // Delete previous photo
           if (
@@ -76,7 +79,24 @@ const updateProfileDetails = async (
           }
         }
 
+        if (removePhoto && file) {
+          if (process.env.NODE_ENV === 'production') {
+            await handleCloudinary('delete', file.filename, 'image');
+          } else {
+            await fs.promises.unlink(file.path as fs.PathLike);
+          }
+        }
+
         const { username, name, email, bio, links, emailVisibility } = req.body;
+        const newPhoto = removePhoto
+          ? process.env.NODE_ENV === 'production'
+            ? 'https://res.cloudinary.com/dtwsoibt0/image/upload/v1765614386/default.jpg'
+            : 'default.jpg'
+          : file
+          ? process.env.NODE_ENV === 'production'
+            ? file.path
+            : path.basename(file.path)
+          : photo;
 
         const user = await User.findByIdAndUpdate(
           req.user?._id,
@@ -86,13 +106,13 @@ const updateProfileDetails = async (
             email,
             bio,
             links: JSON.parse(links),
-            photo: file
-              ? process.env.NODE_ENV === 'production'
-                ? file.path
-                : path.basename(file.path)
-              : photo,
+            photo: newPhoto,
             'settings.account.emailVisibility':
-              emailVisibility ?? req.user?.settings.account.emailVisibility,
+              emailVisibility === 'true'
+                ? true
+                : emailVisibility === 'false'
+                ? false
+                : req.user?.settings.account.emailVisibility,
           },
           {
             runValidators: true,
@@ -463,7 +483,7 @@ export const updatePrivateAudience = asyncErrorHandler(
     }
 
     let privateAudience = new Set(users);
-    if (privateAudience.has(id)) {
+    if (action === 'add' && privateAudience.has(id)) {
       return next(
         new CustomError('This user is already in your private audience.', 409)
       );
@@ -533,7 +553,7 @@ export const updateSettings = asyncErrorHandler(
           req.user?._id,
           {
             'settings.general.display': body.display || display,
-            'settings.general.inbox': body.inbox || inbox,
+            'settings.general.inbox': body.inbox ?? inbox,
             'settings.general.privacy.value': body.privacy ?? privacy.value,
           },
           {
@@ -617,7 +637,10 @@ export const updateSettings = asyncErrorHandler(
 export const getPasswordToken = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     // Generate verification token
-    const verificationToken = String(Math.floor(Math.random() * 1_000_000));
+    const verificationToken = String(Math.floor(Math.random() * 1e14)).slice(
+      0,
+      6
+    );
     const user = req.user!;
 
     try {

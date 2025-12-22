@@ -88,12 +88,22 @@
   border: 1px solid var(--app-theme-color);
 }
 
-.username-text {
+.error-text {
   display: block;
   margin-top: 0.6rem;
   font-family: appFont;
   font-size: 0.9rem;
   width: 80%;
+  color: red;
+}
+
+.checking-text {
+  display: block;
+  margin-top: 0.6rem;
+  font-family: appFont;
+  font-size: 0.9rem;
+  width: 80%;
+  color: gray;
 }
 
 .bio {
@@ -392,12 +402,23 @@
   color: var(--app-theme-color);
 }
 
+.block-btn {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.loading-btn {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* Media Queries */
 
 @media screen and (max-width: 1200px) {
   .username,
   .bio,
-  .input-box {
+  .input-box,
+  .error-text {
     width: 90%;
   }
 
@@ -409,7 +430,8 @@
 @media screen and (max-width: 1000px) {
   .username,
   .bio,
-  .input-box {
+  .input-box,
+  .error-text {
     width: 100%;
   }
 

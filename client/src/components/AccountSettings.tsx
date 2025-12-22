@@ -3,8 +3,10 @@ import styles from '../styles/AccountSettings.module.css';
 import Switch from './Switch';
 import CropPhoto from './CropPhoto';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
-import { SettingsContext } from '../Contexts';
+import { AuthContext, SettingsContext } from '../Contexts';
 import { IoArrowBack } from 'react-icons/io5';
+import { apiClient, debounce, getUrl } from '../Utilities';
+import { toast } from 'sonner';
 
 type AccountSettingsProps = {
   category: string;
@@ -13,6 +15,42 @@ type AccountSettingsProps = {
 type DisableAccountProps = {
   type: string;
 };
+
+const checkFieldAvailability = async (...data: any[]) => {
+  const [field, value, setter] = data;
+  const stateSetter = setter as React.Dispatch<React.SetStateAction<any>>;
+
+  try {
+    await apiClient(`v1/auth/check-data/${field}/${value}`);
+    stateSetter((prev: any) => ({
+      ...prev,
+      [field as string]: {
+        message: '',
+        checking: false,
+      },
+    }));
+  } catch (err: any) {
+    if (!err.response || err.response?.status !== 409) {
+      stateSetter((prev: any) => ({
+        ...prev,
+        [field as string]: {
+          message: `Could not verify ${field}. Try again.`,
+          checking: false,
+        },
+      }));
+    } else {
+      stateSetter((prev: any) => ({
+        ...prev,
+        [field as string]: {
+          message: `This ${field} already exists.`,
+          checking: false,
+        },
+      }));
+    }
+  }
+};
+
+const fieldValidator = debounce(checkFieldAvailability, 300);
 
 const AccountSettings = ({ category }: AccountSettingsProps) => {
   return (
@@ -29,15 +67,55 @@ const AccountSettings = ({ category }: AccountSettingsProps) => {
 };
 
 const EditProfile = () => {
-  const [displayEmail, setDisplayEmail] = useState<boolean>(false);
+  const { user, setUser } = useContext(AuthContext);
+  const { setMainCategory } = useContext(SettingsContext);
+  const [displayEmail, setDisplayEmail] = useState<boolean>(
+    user.settings.account.emailVisibility
+  );
   const [cropPhoto, setCropPhoto] = useState<{ value: boolean; src: string }>({
     value: false,
     src: '',
   });
-
-  const { setMainCategory } = useContext(SettingsContext);
+  const [profilePhoto, setProfilePhoto] = useState<{
+    src: string;
+    file: File;
+    remove: boolean;
+  }>({ src: getUrl(user.photo, 'users'), file: null!, remove: false });
+  const [accountData, setAccountData] = useState<{
+    username: string;
+    name: string;
+    email: string;
+    bio: string;
+    links: {
+      website: string;
+      youtube: string;
+      instagram: string;
+    };
+  }>({
+    username: user.username,
+    name: user.name,
+    email: user.email,
+    bio: user.bio,
+    links: user.links,
+  });
+  const [errorMessage, setErrorMessage] = useState<{
+    username: {
+      message: string;
+      checking: boolean;
+    };
+    email: {
+      message: string;
+      checking: boolean;
+    };
+  }>({
+    username: { message: '', checking: false },
+    email: { message: '', checking: false },
+  });
+  const [loading, setLoading] = useState(false);
+  const [changed, setChanged] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null!);
+  const emailRef = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
     return () => {
@@ -45,14 +123,172 @@ const EditProfile = () => {
     };
   }, []);
 
+  useEffect(() => {
+    // Validate email
+    if (accountData.email !== user.email) {
+      if (accountData.email.length === 0) {
+        setErrorMessage((prev) => ({
+          ...prev,
+          email: {
+            message: 'Please provide a value for the email.',
+            checking: false,
+          },
+        }));
+      } else if (!emailRef.current.validity.valid) {
+        setErrorMessage((prev) => ({
+          ...prev,
+          email: { message: 'Please provide a valid email.', checking: false },
+        }));
+      } else {
+        setErrorMessage((prev) => ({
+          ...prev,
+          email: { message: '', checking: true },
+        }));
+        fieldValidator('email', accountData.email, setErrorMessage);
+      }
+    } else {
+      setErrorMessage((prev) => ({
+        ...prev,
+        email: { message: '', checking: false },
+      }));
+    }
+  }, [accountData.email, user]);
+
+  useEffect(() => {
+    // Validate username
+    if (accountData.username !== user.username) {
+      if (accountData.username.length === 0) {
+        setErrorMessage((prev) => ({
+          ...prev,
+          username: {
+            message: 'Please provide a value for the username.',
+            checking: false,
+          },
+        }));
+      } else if (accountData.username.match(/\W/g)) {
+        setErrorMessage((prev) => ({
+          ...prev,
+          username: {
+            message:
+              'Username must consist of letters, numbers, and underscores only.',
+            checking: false,
+          },
+        }));
+      } else {
+        setErrorMessage((prev) => ({
+          ...prev,
+          username: { message: '', checking: true },
+        }));
+        fieldValidator('username', accountData.username, setErrorMessage);
+      }
+    } else {
+      setErrorMessage((prev) => ({
+        ...prev,
+        username: { message: '', checking: false },
+      }));
+    }
+  }, [accountData.username, user]);
+
+  useEffect(() => {
+    const photoChanged = profilePhoto.remove || profilePhoto.file;
+    const emailVisibilityChanged =
+      displayEmail !== user.settings.account.emailVisibility;
+    let fieldChanged = false;
+
+    for (const prop in accountData) {
+      if (prop === 'links') {
+        for (const field in accountData.links) {
+          if (
+            accountData.links[field as 'website' | 'youtube' | 'instagram'] !==
+            user.links[field]
+          ) {
+            fieldChanged = true;
+            break;
+          }
+        }
+      } else {
+        if (
+          accountData[prop as 'username' | 'name' | 'email' | 'bio'] !==
+          user[prop]
+        ) {
+          fieldChanged = true;
+          break;
+        }
+      }
+    }
+
+    if (photoChanged || emailVisibilityChanged || fieldChanged) {
+      setChanged(true);
+    } else {
+      setChanged(false);
+    }
+  }, [accountData, profilePhoto, displayEmail, user]);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const file = e.target.files[0];
+      e.target.files = new DataTransfer().files;
 
-      if (file.size > 1_073_741_824) return;
+      if (file.size > 1_073_741_824) {
+        return toast.error('The file exceeds the size limit.');
+      }
 
       const fileURL = URL.createObjectURL(file);
       setCropPhoto({ value: true, src: fileURL });
+    }
+  };
+
+  const isDefaultPhoto = () => {
+    if (
+      user.photo ===
+        'https://res.cloudinary.com/dtwsoibt0/image/upload/v1765614386/default.jpg' ||
+      user.photo === 'default.jpg'
+    )
+      return true;
+
+    return;
+  };
+
+  const updateProfile = async () => {
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+
+      if (profilePhoto.remove) {
+        formData.append('removePhoto', String(true));
+      } else if (profilePhoto.file) {
+        formData.append('photo', profilePhoto.file);
+      }
+
+      formData.append('username', accountData.username);
+      formData.append('name', accountData.name);
+      formData.append('email', accountData.email);
+      formData.append('bio', accountData.bio);
+      formData.append('links', JSON.stringify(accountData.links));
+      formData.append('emailVisibility', String(displayEmail));
+
+      const { data } = await apiClient.patch(
+        'v1/users/settings/account',
+        formData
+      );
+
+      setUser(data.data.user);
+      setProfilePhoto({
+        src: getUrl(data.data.user.photo, 'users'),
+        file: null!,
+        remove: false,
+      });
+      return toast.success('Profile updated successfully!');
+    } catch (err: any) {
+      const message = 'Could not update profile.';
+      if (err.response) {
+        return toast.error(err.response.data.message || message);
+      } else {
+        return toast.error(message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,13 +315,39 @@ const EditProfile = () => {
           <span className={styles['category-head']}>Profile Photo</span>
 
           <div className={styles['photo-div']}>
-            <img
-              className={styles['profile-photo']}
-              src="../../assets/images/users/user14.jpeg"
-            />
+            <img className={styles['profile-photo']} src={profilePhoto.src} />
 
             <div className={styles['btn-div']}>
-              <button className={styles['remove-btn']}>Remove</button>
+              {profilePhoto.remove ? (
+                <button
+                  className={`${styles['remove-btn']}`}
+                  onClick={() =>
+                    setProfilePhoto({
+                      src: getUrl(user.photo, 'users'),
+                      file: null!,
+                      remove: false,
+                    })
+                  }
+                >
+                  Cancel
+                </button>
+              ) : (
+                <button
+                  className={`${styles['remove-btn']} ${
+                    isDefaultPhoto() ? styles['block-btn'] : ''
+                  }`}
+                  onClick={() =>
+                    setProfilePhoto({
+                      src: '../../assets/images/users/default.jpg',
+                      file: null!,
+                      remove: true,
+                    })
+                  }
+                >
+                  Remove
+                </button>
+              )}
+
               <button
                 className={styles['change-btn']}
                 onClick={() => fileRef.current.click()}
@@ -100,11 +362,29 @@ const EditProfile = () => {
           <span className={styles['category-head']}>Username</span>
 
           <div className={styles['username-div']}>
-            <input className={styles.username} maxLength={50} />
+            <input
+              className={styles.username}
+              maxLength={50}
+              value={accountData.username}
+              onChange={(e) =>
+                setAccountData((prev) => ({
+                  ...prev,
+                  username: e.target.value,
+                }))
+              }
+            />
 
-            <span className={styles['username-text']}>
-              Usernames can only contain letters, numbers and underscore.
-            </span>
+            {errorMessage.username.message ? (
+              <span className={styles['error-text']}>
+                {errorMessage.username.message}
+              </span>
+            ) : errorMessage.username.checking ? (
+              <span className={styles['checking-text']}>
+                Checking username....
+              </span>
+            ) : (
+              ''
+            )}
           </div>
         </div>
 
@@ -112,7 +392,17 @@ const EditProfile = () => {
           <span className={styles['category-head']}>Name</span>
 
           <div className={styles['username-div']}>
-            <input className={styles.username} />
+            <input
+              className={styles.username}
+              maxLength={30}
+              value={accountData.name}
+              onChange={(e) =>
+                setAccountData((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
+            />
           </div>
         </div>
 
@@ -120,7 +410,31 @@ const EditProfile = () => {
           <span className={styles['category-head']}>Email</span>
 
           <div className={styles['username-div']}>
-            <input className={styles.username} />
+            <input
+              className={styles.username}
+              type="email"
+              maxLength={254}
+              value={accountData.email}
+              onChange={(e) =>
+                setAccountData((prev) => ({
+                  ...prev,
+                  email: e.target.value,
+                }))
+              }
+              ref={emailRef}
+            />
+
+            {errorMessage.email.message ? (
+              <span className={styles['error-text']}>
+                {errorMessage.email.message}
+              </span>
+            ) : errorMessage.email.checking ? (
+              <span className={styles['checking-text']}>
+                Checking email....
+              </span>
+            ) : (
+              ''
+            )}
           </div>
         </div>
 
@@ -132,6 +446,13 @@ const EditProfile = () => {
               className={styles.bio}
               maxLength={150}
               rows={3}
+              value={accountData.bio}
+              onChange={(e) =>
+                setAccountData((prev) => ({
+                  ...prev,
+                  bio: e.target.value,
+                }))
+              }
             ></textarea>
           </div>
         </div>
@@ -142,17 +463,47 @@ const EditProfile = () => {
           <div className={styles['username-div']}>
             <span className={styles['link-box']}>
               <span className={styles['link-name']}>Website:</span>
-              <input className={styles['link-value']} />
+              <input
+                className={styles['link-value']}
+                maxLength={255}
+                value={accountData.links.website}
+                onChange={(e) =>
+                  setAccountData((prev) => ({
+                    ...prev,
+                    links: { ...prev.links, website: e.target.value },
+                  }))
+                }
+              />
             </span>
 
             <span className={styles['link-box']}>
               <span className={styles['link-name']}>Youtube:</span>
-              <input className={styles['link-value']} />
+              <input
+                className={styles['link-value']}
+                maxLength={255}
+                value={accountData.links.youtube}
+                onChange={(e) =>
+                  setAccountData((prev) => ({
+                    ...prev,
+                    links: { ...prev.links, youtube: e.target.value },
+                  }))
+                }
+              />
             </span>
 
             <span className={styles['link-box']}>
               <span className={styles['link-name']}>Instagram:</span>
-              <input className={styles['link-value']} />
+              <input
+                className={styles['link-value']}
+                maxLength={255}
+                value={accountData.links.instagram}
+                onChange={(e) =>
+                  setAccountData((prev) => ({
+                    ...prev,
+                    links: { ...prev.links, instagram: e.target.value },
+                  }))
+                }
+              />
             </span>
           </div>
         </div>
@@ -163,12 +514,28 @@ const EditProfile = () => {
         </div>
 
         <div className={styles['save-btn-div']}>
-          <button className={styles['save-btn']}>Save</button>
+          <button
+            className={`${styles['save-btn']} ${
+              !changed ||
+              loading ||
+              errorMessage.email.message ||
+              errorMessage.username.message
+                ? styles['loading-btn']
+                : ''
+            } `}
+            onClick={updateProfile}
+          >
+            Save
+          </button>
         </div>
       </section>
 
       {cropPhoto.value && (
-        <CropPhoto src={cropPhoto.src} setCropPhoto={setCropPhoto} />
+        <CropPhoto
+          src={cropPhoto.src}
+          setCropPhoto={setCropPhoto}
+          setProfilePhoto={setProfilePhoto}
+        />
       )}
     </>
   );
@@ -176,11 +543,23 @@ const EditProfile = () => {
 
 const ChangePassword = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [currentPassword, setCurrentPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
+  const [code, setCode] = useState({ sent: false, sending: false });
+  const [loading, setLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const [token, setToken] = useState<string>('');
 
   const { setMainCategory } = useContext(SettingsContext);
 
   const checkBoxRef = useRef<HTMLInputElement[]>([]);
+  const timerInterval = useRef<number>(null!);
+
+  useEffect(() => {
+    return () => {
+      clearInterval(timerInterval.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (checkBoxRef.current.length > 0) {
@@ -196,6 +575,17 @@ const ChangePassword = () => {
     }
   }, [newPassword]);
 
+  useEffect(() => {
+    if (timer === 60) {
+      timerInterval.current = setInterval(
+        () => setTimer((prev) => prev - 1),
+        1000
+      );
+    }
+
+    if (timer === 0) clearInterval(timerInterval.current);
+  }, [timer]);
+
   const addToRef =
     (ref: React.MutableRefObject<HTMLInputElement[]>) =>
     (el: HTMLInputElement) => {
@@ -203,6 +593,53 @@ const ChangePassword = () => {
         ref.current.push(el);
       }
     };
+
+  const isDisabled = () => {
+    const passwordValid = checkBoxRef.current.find((elem) => !elem.checked);
+    return (
+      !!passwordValid || loading || token.length < 6 || currentPassword === ''
+    );
+  };
+
+  const getToken = async () => {
+    setCode((prev) => ({ ...prev, sending: true }));
+
+    try {
+      const { data } = await apiClient('v1/users/password-token');
+      setTimer(60);
+      setCode({ sent: true, sending: false });
+      return toast.success(data.message);
+    } catch {
+      setCode((prev) => ({ ...prev, sending: false }));
+      return toast.error('An error occured while sending verification code.');
+    }
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+
+    try {
+      const { data } = await apiClient.patch('v1/users/password', {
+        code: token,
+        currentPassword,
+        newPassword,
+      });
+      toast.success(data.message);
+
+      return setTimeout(() => {
+        window.location.href = '/auth';
+      }, 1000);
+    } catch (err: any) {
+      const message = 'Could not change password.';
+      if (err.response) {
+        return toast.error(err.response.data.message || message);
+      } else {
+        return toast.error(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section className={styles.section}>
@@ -218,7 +655,11 @@ const ChangePassword = () => {
         <span className={styles['category-head']}>Current Password</span>
 
         <div className={styles['username-div']}>
-          <input className={styles.username} />
+          <input
+            className={styles.username}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
         </div>
       </div>
 
@@ -298,17 +739,42 @@ const ChangePassword = () => {
           <input
             type="number"
             className={styles['verification-input']}
+            value={token}
             onChange={(e) => {
               if (e.target.value.length > 6) {
-                e.target.value = `${e.target.value.slice(0, 6)}`;
+                setToken(`${e.target.value.slice(0, 6)}`);
+              } else {
+                setToken(e.target.value);
               }
             }}
           />
 
           <span className={styles['resend-box']}>
-            <span className={styles['resend-text']}>Resend Code</span>{' '}
-            <span className={styles['resend-time']}>30s</span>
+            <span
+              className={`${styles['resend-text']} ${
+                code.sending || timer > 0 ? styles['loading-btn'] : ''
+              }`}
+              onClick={getToken}
+            >
+              {code.sent ? 'Resend' : 'Send'} Code
+            </span>
+
+            {timer > 0 && (
+              <span className={styles['resend-time']}>{timer}s</span>
+            )}
           </span>
+        </div>
+
+        <br />
+        <div className={styles['save-btn-div']}>
+          <button
+            className={`${styles['save-btn']} ${
+              isDisabled() ? styles['loading-btn'] : ''
+            } `}
+            onClick={handleSubmit}
+          >
+            Change Password
+          </button>
         </div>
       </div>
     </section>

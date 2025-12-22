@@ -168,6 +168,11 @@
   color: var(--app-theme-color);
 }
 
+.disable-category {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
 /* Media Queries */
 
 @media screen and (max-width: 1200px) {
