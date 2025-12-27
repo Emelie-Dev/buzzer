@@ -149,7 +149,7 @@
 }
 
 .disable-btn {
-  opacity: 0.6;
+  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -172,11 +172,21 @@
   color: var(--app-theme-color);
 }
 
+.counter-box {
+  text-align: right;
+  font-family: monospace, appFont;
+  color: gray;
+  margin-top: 1rem;
+  width: 75%;
+}
+ 
+
 /* Media Queries */
 
 @media screen and (max-width: 1200px) {
   .topic-list,
-  .description {
+  .description,
+  .counter-box {
     width: 85%;
   }
 
@@ -187,7 +197,8 @@
 
 @media screen and (max-width: 1000px) {
   .topic-list,
-  .description {
+  .description,
+  .counter-box {
     width: 100%;
   }
 

@@ -685,6 +685,11 @@
   font-weight: bold;
 }
 
+.disable-link {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* Animation */
 
 @keyframes showMore {

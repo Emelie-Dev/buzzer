@@ -44,10 +44,6 @@ const App = () => {
   }>({ followers: 0, following: 0, friends: 0, posts: 0, likes: 0 });
 
   useEffect(() => {
-    const deviceId = crypto.randomUUID();
-    const id = localStorage.getItem('deviceId');
-    if (!id) localStorage.setItem('deviceId', deviceId);
-
     const getSuggestedUsers = async () => {
       try {
         const { data } = await apiClient('v1/users/suggested');

@@ -10,12 +10,34 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import protectData from '../utils/protectData.js';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import getUserLocation from '../utils/getUserLocation.js';
 import { UAParser } from 'ua-parser-js';
 import { randomUUID } from 'crypto';
 import Notification from '../models/notificationModel.js';
 import LoginAttempt from '../models/loginAttemptModel.js';
+import Session from '../models/sessionModel.js';
+
+type DeviceResult<T extends boolean> = T extends true
+  ? string
+  : {
+      type:
+        | 'mobile'
+        | 'tablet'
+        | 'console'
+        | 'smarttv'
+        | 'wearable'
+        | 'xr'
+        | 'embedded'
+        | undefined;
+      name: string | undefined;
+      version: string | undefined;
+      data: {
+        deviceName: string;
+        city: any;
+        country: any;
+      };
+    };
 
 const verifyResult = fs.readFileSync(
   join(
@@ -64,7 +86,11 @@ const sendEmail = async (
   }
 };
 
-const getDeviceDetails = async (userAgent: string, clientIp: string) => {
+export const getDeviceDetails = async <T extends boolean>(
+  userAgent: string,
+  clientIp: string,
+  onlyName: T
+): Promise<DeviceResult<T>> => {
   const result = new UAParser(userAgent).getResult();
 
   const { type, model, vendor } = result.device;
@@ -77,6 +103,10 @@ const getDeviceDetails = async (userAgent: string, clientIp: string) => {
       ? `${name} ${version}`
       : result.ua.slice(0, result.ua.indexOf('/'));
 
+  if (onlyName) {
+    return deviceName as DeviceResult<T>;
+  }
+
   const { city, country } = await getUserLocation(clientIp);
 
   return {
@@ -88,11 +118,11 @@ const getDeviceDetails = async (userAgent: string, clientIp: string) => {
       city,
       country,
     },
-  };
+  } as DeviceResult<T>;
 };
 
-export const signToken = (id: unknown, jwi: string) => {
-  return jwt.sign({ id, jwi }, String(process.env.JWT_SECRET), {
+export const signToken = (id: unknown, deviceId: string) => {
+  return jwt.sign({ id, deviceId }, String(process.env.JWT_SECRET), {
     expiresIn: Number(process.env.JWT_LOGIN_EXPIRES),
   });
 };
@@ -101,79 +131,84 @@ export const manageUserDevices = async (
   user: IUser,
   userAgent: string,
   method: 'email' | 'google' | 'facebook',
-  jwi: string,
+  deviceId: string,
   clientIp: string,
   switchAccount: Boolean = false
 ) => {
-  const sessions = user.settings.security.sessions || [];
+  const session = await Session.findOne({
+    user: user._id,
+    deviceId,
+  });
 
-  const { data, name, version, type } = await getDeviceDetails(
-    userAgent,
-    clientIp
-  );
-
-  const session = {
-    name: data.deviceName,
-    type: type ? type : name && version ? 'desktop' : 'api-client',
-    loginMethod: method,
-    jwi,
-    createdAt: new Date(),
-    lastUsed: new Date(),
-  };
-  sessions.unshift(session);
-
-  if (sessions.length > 10) sessions.pop();
-
-  user = (await User.findByIdAndUpdate(
-    user._id,
-    {
-      'settings.security.sessions': sessions,
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  )) as IUser;
-
-  if (!switchAccount) {
-    // create notification
-    await Notification.create({
-      user: user._id,
-      type: ['security', 'login', 'new'],
-      data,
+  if (session) {
+    await Session.findByIdAndUpdate(session._id, {
+      revokedAt: null,
+    });
+  } else {
+    const sessions = await Session.find({ user: user._id }).sort({
+      lastUsedAt: -1,
     });
 
-    if (sessions.length > 4) {
+    if (sessions.length >= 10) {
+      await Session.findByIdAndDelete(sessions[sessions.length - 1]._id);
+    }
+
+    const { data, name, version, type } = await getDeviceDetails(
+      userAgent,
+      clientIp,
+      false
+    );
+
+    await Session.create({
+      user: user._id,
+      deviceName: data.deviceName,
+      deviceId,
+      platform: type ? type : name && version ? 'desktop' : 'api-client',
+      loginMethod: method,
+    });
+
+    if (!switchAccount) {
       // create notification
       await Notification.create({
         user: user._id,
-        type: ['security', 'login', 'multiple'],
-        data: {
-          count: sessions.length,
-        },
+        type: ['security', 'login', 'new'],
+        data,
       });
-    }
 
-    const allowEmail = user.settings.content.notifications.email;
-
-    if (allowEmail) {
-      const url =
-        process.env.NODE_ENV === 'production'
-          ? 'https://buzzer-0z8q.onrender.com/settings'
-          : 'http://localhost:5173/settings';
-
-      // sends email to the user
-      try {
-        await new Email(user, url).sendSecurityEmail('new', {
-          device: data.deviceName,
-          location: `${data.city}, ${data.country}`,
-          time: new Date(),
+      if (sessions.length > 4) {
+        // create notification
+        await Notification.create({
+          user: user._id,
+          type: ['security', 'login', 'multiple'],
+          data: {
+            count: sessions.length,
+          },
         });
+      }
 
-        if (sessions.length > 4) {
-          await new Email(user, url).sendSecurityEmail('multiple', {});
-        }
-      } catch {}
+      const allowEmail = user.settings.content.notifications.email;
+
+      if (allowEmail) {
+        const url =
+          process.env.NODE_ENV === 'production'
+            ? 'https://buzzer-0z8q.onrender.com/settings'
+            : 'http://localhost:5173/settings';
+
+        // sends email to the user
+        try {
+          await new Email(user, url).sendSecurityEmail('new', {
+            device: data.deviceName,
+            location: `${data.city}, ${data.country}`,
+            time: new Date(),
+          });
+
+          if (sessions.length > 4) {
+            await new Email(user, url).sendSecurityEmail('multiple', {
+              deviceLength: sessions.length,
+            });
+          }
+        } catch {}
+      }
     }
   }
 };
@@ -209,7 +244,9 @@ export const signup = asyncErrorHandler(
     const location = await getUserLocation(req.clientIp);
 
     const user = await User.create({
-      ...req.body,
+      username: req.body.username,
+      email: req.body.email,
+      password: req.body.password,
       location,
       photo:
         process.env.NODE_ENV === 'production'
@@ -257,15 +294,15 @@ export const verifyEmail = asyncErrorHandler(
 
       await user.save({ validateBeforeSave: false });
 
-      // Gets JWT ID
-      const jwi = randomUUID();
+      // Gets device ID
+      const deviceId = randomUUID();
 
       // Handles logged in devices
       await manageUserDevices(
         user,
         req.get('user-agent')!,
         'email',
-        jwi,
+        deviceId,
         req.clientIp!,
         true
       );
@@ -277,12 +314,19 @@ export const verifyEmail = asyncErrorHandler(
         `script-src 'self' 'nonce-${nonce}';`
       );
 
-      res.cookie('jwt', signToken(user._id, jwi), {
-        maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-      });
+      res
+        .cookie('jwt', signToken(user._id, deviceId), {
+          maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none',
+        })
+        .cookie('deviceId', deviceId, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none',
+          maxAge: Number(process.env.JWT_DEVICE_EXPIRES),
+        });
 
       const resultPage = verifyResult
         .replace(
@@ -314,17 +358,13 @@ export const verifyEmail = asyncErrorHandler(
 
 export const login = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const { email, password, deviceId } = req.body;
-
+    const { email, password, addAccount } = req.body;
     const bearerToken = req.headers.authorization;
     const jwtToken =
       bearerToken && bearerToken.startsWith('Bearer')
         ? bearerToken.split(' ')[1]
         : req.cookies.jwt;
-
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-    cutoff.setMilliseconds(0);
+    let deviceId = req.cookies.deviceId;
 
     if (!email || !password) {
       return next(
@@ -335,7 +375,7 @@ export const login = asyncErrorHandler(
       );
     }
 
-    if (!deviceId) return next(new CustomError('Invalid device ID.', 400));
+    if (!deviceId) deviceId = randomUUID();
 
     let user = (await User.findOne({
       email,
@@ -365,7 +405,8 @@ export const login = asyncErrorHandler(
 
           const { data } = await getDeviceDetails(
             req.get('user-agent')!,
-            req.clientIp!
+            req.clientIp!,
+            false
           );
 
           await Notification.create({
@@ -417,12 +458,19 @@ export const login = asyncErrorHandler(
         }
       }
 
+      if (!req.cookies.deviceId) {
+        res.cookie('deviceId', deviceId, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none',
+          maxAge: Number(process.env.JWT_DEVICE_EXPIRES),
+        });
+      }
+
       return next(new CustomError('Incorrect email or password', 401));
     }
 
     await loginAttempt?.deleteOne();
-
-    let sessions = user.settings.security.sessions || [];
 
     if (!user.active) {
       user = (await User.findOneAndUpdate(
@@ -454,70 +502,76 @@ export const login = asyncErrorHandler(
       }
     }
 
-    if (sessions.length > 0) {
-      // delete expired sessions
-      user = (await User.findByIdAndUpdate(
-        user._id,
-        {
-          settings: {
-            security: {
-              sessions: sessions.filter(
-                (session) => session.createdAt > cutoff
-              ),
-            },
-          },
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      )) as IUser;
-      sessions = user.settings.security.sessions;
+    // check if user is logged in
+    if (jwtToken) {
+      try {
+        // verify the token
+        const decodedToken = jwt.verify(
+          jwtToken,
+          process.env.JWT_SECRET as string
+        ) as JwtPayload;
 
-      // check if user is logged in
-      if (jwtToken) {
-        try {
-          // verify the token
-          const decodedToken = jwt.verify(
-            jwtToken,
-            process.env.JWT_SECRET as string
-          ) as JwtPayload;
+        const session = await Session.findOne({
+          user: user._id,
+          deviceId,
+          revokedAt: null,
+        });
 
-          const session = sessions.find(
-            (session) => session.jwi === decodedToken.jwi
-          );
-
-          if (session) {
-            return res.status(200).json({
-              status: 'success',
-              message: 'You are already logged in.',
+        if (session) {
+          if (addAccount || decodedToken.deviceId !== deviceId) {
+            res.cookie('jwt', signToken(user._id, deviceId), {
+              maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
+              //  Prevents javascript access
+              httpOnly: true,
+              secure: true,
+              sameSite: 'none',
             });
           }
-        } catch {}
-      }
-    }
 
-    // Gets JWT ID
-    const jwi = randomUUID();
+          res.cookie('deviceId', deviceId, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: Number(process.env.JWT_DEVICE_EXPIRES),
+          });
+
+          return res.status(200).json({
+            status: 'success',
+            message: addAccount
+              ? 'Account added successfully!'
+              : 'You are already logged in.',
+          });
+        }
+      } catch {}
+    }
 
     // Handles logged in devices
     await manageUserDevices(
       user,
       req.get('user-agent')!,
       'email',
-      jwi,
+      deviceId,
       req.clientIp!
     );
 
-    const userData = protectData(user, 'user');
-
-    res.cookie('jwt', signToken(user._id, jwi), {
+    res.cookie('jwt', signToken(user._id, deviceId), {
       maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
       //  Prevents javascript access
       httpOnly: true,
       secure: true,
       sameSite: 'none',
     });
+
+    if (!req.cookies.deviceId) {
+      res.cookie('deviceId', deviceId, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: Number(process.env.JWT_DEVICE_EXPIRES),
+      });
+    }
+
+    const userData = protectData(user, 'user');
 
     return res.status(200).json({
       status: 'success',
@@ -529,22 +583,17 @@ export const login = asyncErrorHandler(
 );
 
 export const logout = asyncErrorHandler(
-  async (req: AuthRequest, res: Response) => {
-    let sessions = req.user?.settings.security.sessions || [];
-    const id = req.params.id;
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const session = await Session.findOne({
+      user: req.user?._id,
+      deviceId: req.cookies.deviceId,
+      revokedAt: null,
+    });
 
-    sessions = sessions.filter((device: any) => String(device._id) !== id);
+    if (!session) return next(new CustomError('This session is invalid.', 401));
 
-    await User.findByIdAndUpdate(
-      req.user?._id,
-      {
-        'settings.security.sessions': sessions,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    session.revokedAt = new Date();
+    await session.save();
 
     res.cookie('jwt', 'loggedout', {
       maxAge: Number(process.env.JWT_LOGOUT_EXPIRES),
@@ -643,9 +692,15 @@ export const resetPassword = asyncErrorHandler(
     user.passwordResetToken = undefined;
     user.passwordResetTokenExpires = undefined;
     user.passwordChangedAt = new Date();
-    user.settings.security.sessions = [];
 
     await user.save({ validateBeforeSave: false });
+
+    await Session.updateMany(
+      { user: user._id, revokedAt: null },
+      {
+        revokedAt: new Date(),
+      }
+    );
 
     return res.status(200).json({
       status: 'success',
@@ -654,34 +709,182 @@ export const resetPassword = asyncErrorHandler(
   }
 );
 
-export const removeSession = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    let sessions = req.user?.settings.security.sessions || [];
-    const id = req.params.id;
+export const getSessions = asyncErrorHandler(
+  async (req: AuthRequest, res: Response) => {
+    const activeSession = new Types.ObjectId(req.activeSession);
 
-    const session = sessions.find((device: any) => String(device._id) === id);
-
-    if (!session)
-      return next(new CustomError('This session does not exist!', 400));
-
-    sessions = sessions.filter((device: any) => String(device._id) !== id);
-
-    const user = await User.findByIdAndUpdate(
-      req.user?._id,
+    const sessions = await Session.aggregate([
       {
-        settings: {
-          security: {
-            sessions,
-          },
+        $match: {
+          user: req.user?._id,
         },
       },
       {
-        new: true,
-        runValidators: true,
-      }
-    );
+        $sort: {
+          revokedAt: 1,
+          lastUsedAt: -1,
+        },
+      },
+      {
+        $addFields: {
+          active: { $eq: ['$_id', activeSession] },
+        },
+      },
+      {
+        $project: {
+          deviceId: 0,
+          revokedAt: 0,
+        },
+      },
+    ]);
 
-    const userData = protectData(user!, 'user');
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        sessions,
+      },
+    });
+  }
+);
+
+export const removeSession = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const session = await Session.findById(req.params.id);
+
+    if (!session || String(session.user) !== String(req.user?._id)) {
+      return next(new CustomError('This device does not exist!', 400));
+    }
+
+    if (String(session._id) === String(req.activeSession)) {
+      return next(new CustomError(`You can't remove this device.`, 400));
+    }
+
+    await Session.findByIdAndDelete(session._id);
+
+    return res.status(200).json({
+      status: 'success',
+      message: null,
+    });
+  }
+);
+
+export const getDeviceAccounts = asyncErrorHandler(
+  async (req: AuthRequest, res: Response) => {
+    const sessions = await Session.aggregate([
+      { $match: { deviceId: req.cookies.deviceId } },
+      {
+        $sort: {
+          lastUsedAt: -1,
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          foreignField: '_id',
+          localField: 'user',
+          as: 'users',
+        },
+      },
+      {
+        $addFields: {
+          active: { $eq: ['$user', req.user?._id] },
+          user: { $first: '$users' },
+        },
+      },
+      {
+        $project: {
+          active: 1,
+          user: {
+            name: 1,
+            username: 1,
+            photo: 1,
+            _id: 1,
+          },
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        sessions,
+      },
+    });
+  }
+);
+
+export const switchAccount = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const session = await Session.findById(req.params.id);
+
+    if (!session) {
+      return next(
+        new CustomError(
+          'This session does not exist! Please log in again.',
+          400
+        )
+      );
+    }
+
+    if (session.deviceId !== req.cookies.deviceId) {
+      return next(
+        new CustomError(
+          'This session does not exist! Please log in again.',
+          400
+        )
+      );
+    }
+
+    if (String(session._id) === String(req.activeSession)) {
+      return next(
+        new CustomError('You are already logged in with this account.', 401)
+      );
+    }
+
+    const user = await User.findById(session.user);
+    if (!user) {
+      return next(new CustomError('This user does not exist!', 404));
+    }
+
+    const passwordChangedAt = user.passwordChangedAt;
+    const lastUsedAt = new Date(session.lastUsedAt);
+
+    if (passwordChangedAt) {
+      if (lastUsedAt < passwordChangedAt) {
+        return next(
+          new CustomError(
+            'The password has changed since your last login. Please log in again.',
+            400
+          )
+        );
+      }
+    }
+
+    if (session.revokedAt) {
+      return next(
+        new CustomError('This session has expired! Please log in again.', 400)
+      );
+    }
+
+    lastUsedAt.setDate(lastUsedAt.getDate() + 30);
+    if (lastUsedAt < new Date()) {
+      return next(
+        new CustomError('This session has expired! Please log in again.', 400)
+      );
+    }
+
+    session.lastUsedAt = new Date();
+    await session.save();
+
+    res.cookie('jwt', signToken(user._id, session.deviceId), {
+      maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
+      //  Prevents javascript access
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+
+    const userData = protectData(user, 'user');
 
     return res.status(200).json({
       status: 'success',

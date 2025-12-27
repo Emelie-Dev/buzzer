@@ -4,6 +4,7 @@ type SwitchProps =
   | {
       setter: React.Dispatch<React.SetStateAction<boolean>>;
       value: boolean;
+      className?: string;
     }
   | {
       interactions: boolean;
@@ -12,7 +13,7 @@ type SwitchProps =
         | 'comments'
         | 'followers'
         | 'mentions'
-        | 'views'
+        | 'profileViews'
         | 'messages';
       setter: React.Dispatch<
         React.SetStateAction<{
@@ -20,11 +21,12 @@ type SwitchProps =
           comments: boolean;
           followers: boolean;
           mentions: boolean;
-          views: boolean;
+          profileViews: boolean;
           messages: boolean;
         }>
       >;
       value: boolean;
+      className?: string;
     };
 
 const Switch = (props: SwitchProps) => {
@@ -42,7 +44,7 @@ const Switch = (props: SwitchProps) => {
   };
 
   return (
-    <label className={styles.switch}>
+    <label className={`${styles.switch} ${props.className || ''}`}>
       <input type="checkbox" checked={props.value} onChange={handleChange} />
       <span className={styles.slider}></span>
     </label>

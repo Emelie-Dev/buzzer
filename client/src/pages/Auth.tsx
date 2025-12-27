@@ -3,7 +3,7 @@ import styles from '../styles/Auth.module.css';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebookSquare } from 'react-icons/fa';
 import { IoMdEye, IoMdEyeOff } from 'react-icons/io';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { GeneralContext } from '../Contexts';
 import { debounce, apiClient } from '../Utilities';
 import LoadingAnimation from '../components/LoadingAnimation';
@@ -67,6 +67,9 @@ const checkFieldAvailability = async (
 const fieldValidator = debounce(checkFieldAvailability, 300);
 
 const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const addAccount = queryParams.get('add') === 'true';
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [signupData, setSignupData] = useState<SignupType>({
     username: '',
@@ -117,7 +120,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
       } catch {}
     };
 
-    checkUserAuth();
+    if (!addAccount) checkUserAuth();
 
     return () => {
       setShowSearchPage(false);
@@ -242,8 +245,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
             username,
             email,
             password,
-            name: '',
-            deviceId: localStorage.getItem('deviceId'),
+            addAccount,
           }
         );
 

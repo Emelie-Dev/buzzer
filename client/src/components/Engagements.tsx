@@ -381,6 +381,10 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
           end: data.data.users.length < 20,
         },
       }));
+
+      if (categoryText === 'private') {
+        setUser(data.data.user);
+      }
     } catch {
       setUsersData((prev) => ({
         ...prev,

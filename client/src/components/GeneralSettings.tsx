@@ -29,16 +29,16 @@ const GeneralSettings = () => {
   useEffect(() => {
     if (category !== user.settings.general.display)
       updateGeneralSettings('display');
-  }, [category]);
+  }, [category, user]);
 
   useEffect(() => {
     if (inbox !== user.settings.general.inbox) updateGeneralSettings('inbox');
-  }, [inbox]);
+  }, [inbox, user]);
 
   useEffect(() => {
     if (privateAccount !== user.settings.general.privacy.value)
       updateGeneralSettings('private');
-  }, [privateAccount]);
+  }, [privateAccount, user]);
 
   const updateGeneralSettings = async (
     type: 'display' | 'inbox' | 'private'
@@ -46,15 +46,19 @@ const GeneralSettings = () => {
     if (loading[type]) return;
 
     setLoading((prev) => ({ ...prev, [type]: true }));
+    const payload = { display: category, inbox, privacy: privateAccount };
 
     try {
-      const { data } = await apiClient.patch('v1/users/settings/general', {
-        display: category,
-        inbox,
-        privacy: privateAccount,
-      });
+      const { data } = await apiClient.patch(
+        'v1/users/settings/general',
+        payload
+      );
       setUser(data.data.user);
     } catch {
+      if (type === 'display') setCategory(user.settings.general.display);
+      else if (type === 'inbox') setInbox(user.settings.general.inbox);
+      else setPrivateAccount(user.settings.general.privacy.value);
+
       return toast.error(
         `Could not update ${type === 'private' ? 'privacy' : type} settings.`
       );

@@ -30,6 +30,7 @@ Pages =>
   - Show email in proile page
   - Hide search before any page unmounts
   - Add time to requests in the frontend
+  - Handle deactivated accounts on aggregation
   
 
 

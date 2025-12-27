@@ -92,6 +92,7 @@ const NavBar = ({
     searches: any[];
     users: any[];
   }>({ searches: [], users: [] });
+  const [logging, setLogging] = useState(false);
 
   const { showSearchPage, setShowSearchPage } = useContext(GeneralContext);
   const { user, setUser } = useContext(AuthContext);
@@ -286,6 +287,19 @@ const NavBar = ({
     setShowSearch(false);
     setShowSearchPage(false);
     if (setOverlaySearch) setOverlaySearch(false);
+  };
+
+  const logOut = async () => {
+    if (logging) return;
+    setLogging(true);
+
+    try {
+      await apiClient.post('v1/auth/logout');
+      window.location.href = '/auth';
+    } catch {
+      setLogging(false);
+      return toast.error('An error occured while logging out.');
+    }
   };
 
   return (
@@ -735,7 +749,10 @@ const NavBar = ({
                   </li>
                   <hr className={styles['logout-line']} />
                   <li className={styles['more-item']}>
-                    <a>
+                    <a
+                      className={`${logging ? styles['disable-link'] : ''}`}
+                      onClick={logOut}
+                    >
                       {' '}
                       <FiLogOut className={styles['more-item-icon']} />
                       Log out
@@ -1200,7 +1217,10 @@ const NavBar = ({
                     </li>
                     <hr className={styles['logout-line']} />
                     <li className={styles['more-item']}>
-                      <a>
+                      <a
+                        className={`${logging ? styles['disable-link'] : ''}`}
+                        onClick={logOut}
+                      >
                         {' '}
                         <FiLogOut className={styles['more-item-icon']} />
                         Log out

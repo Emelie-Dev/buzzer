@@ -532,10 +532,18 @@ const Notifications = () => {
       });
 
       setDeleteData((prev) => ({ ...prev, list: new Set() }));
-      toast.success('Notifications deleted successfully.');
+      toast.success(
+        `Notification${
+          deleteData.list.size > 1 ? 's' : ''
+        }  deleted successfully.`
+      );
     } catch {
       setIsGrouping(false);
-      toast.error('Unable to delete notifications. Please try again.');
+      toast.error(
+        `Unable to delete notification${
+          deleteData.list.size > 1 ? 's' : ''
+        }. Please try again.`
+      );
     } finally {
       setDeleteData((prev) => ({ ...prev, loading: false }));
     }
@@ -680,7 +688,9 @@ const Notifications = () => {
 
                   <div className={styles['select-btn-box']}>
                     <button
-                      className={styles['cancel-btn']}
+                      className={`${styles['cancel-btn']} ${
+                        deleteData.loading ? styles['disable-btn'] : ''
+                      }`}
                       onClick={() =>
                         setDeleteData((prev) => ({ ...prev, list: new Set() }))
                       }

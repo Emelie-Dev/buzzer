@@ -21,16 +21,6 @@ export interface ISettings extends Document {
   account: {
     emailVisibility: Boolean;
   };
-  security: {
-    sessions: {
-      name: string;
-      type: string;
-      loginMethod: string;
-      jwi: string;
-      createdAt: Date;
-      lastUsed: Date;
-    }[];
-  };
   content: {
     notInterested: {
       content: Types.ObjectId[];
@@ -108,22 +98,6 @@ export default new Schema<ISettings>({
   account: {
     emailVisibility: { type: Boolean, default: false },
   },
-  security: {
-    sessions: [
-      {
-        name: { type: String, required: true },
-        type: { type: String, required: true },
-        loginMethod: {
-          type: String,
-          enum: ['email', 'google', 'facebook'],
-          required: true,
-        },
-        jwi: { type: String, required: true },
-        createdAt: { type: Date, default: Date.now },
-        lastUsed: { type: Date, default: Date.now },
-      },
-    ],
-  },
   content: {
     notInterested: {
       content: [
@@ -161,7 +135,9 @@ export default new Schema<ISettings>({
         value: {
           startTime: { type: Number, min: 19, max: 22, default: 20 },
           endTime: { type: Number, min: 4, max: 7, default: 5 },
-          days: [{ type: Number, min: 0, max: 6 }],
+          days: [
+            { type: Number, min: 0, max: 6, default: [0, 1, 2, 3, 4, 5, 6] },
+          ],
         },
         notified: { type: Boolean, default: false },
       },

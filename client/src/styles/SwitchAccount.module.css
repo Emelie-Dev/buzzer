@@ -72,6 +72,10 @@
   padding: 0.5rem;
 }
 
+.active-account {
+  cursor: default;
+}
+
 .accounts-img {
   width: 4rem;
   height: 4rem;
@@ -114,7 +118,7 @@
   flex-shrink: 0;
 }
 
-.accounts:hover {
+.accounts:not(.active-account):hover {
   background: rgba(0, 0, 0, 0.1);
 }
 
@@ -148,6 +152,48 @@
 
 .add-account-box:hover {
   opacity: 0.8;
+}
+
+.device-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 3rem 0 4rem;
+}
+
+.no-data-text {
+  color: gray;
+  font-family: appFontMedium;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2rem 0 3rem;
+}
+
+.error-btn {
+  margin-top: 1rem;
+}
+
+.error-btn button {
+  background: var(--app-theme-color);
+  border: none;
+  outline: none;
+  border-radius: 5px;
+  padding: 0.5rem 1.2rem;
+  font-family: appFontMedium;
+  color: white;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.error-btn button:hover {
+  opacity: 0.8;
+}
+
+.disable-switching {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* Animations */

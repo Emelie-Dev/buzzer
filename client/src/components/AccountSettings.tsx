@@ -594,8 +594,18 @@ const ChangePassword = () => {
       }
     };
 
-  const isDisabled = () => {
+  const isDisabled = (isCode = false) => {
     const passwordValid = checkBoxRef.current.find((elem) => !elem.checked);
+
+    if (isCode) {
+      return (
+        code.sending ||
+        timer > 0 ||
+        !!passwordValid ||
+        loading ||
+        currentPassword === ''
+      );
+    }
     return (
       !!passwordValid || loading || token.length < 6 || currentPassword === ''
     );
@@ -630,14 +640,13 @@ const ChangePassword = () => {
         window.location.href = '/auth';
       }, 1000);
     } catch (err: any) {
+      setLoading(false);
       const message = 'Could not change password.';
       if (err.response) {
         return toast.error(err.response.data.message || message);
       } else {
         return toast.error(message);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -752,7 +761,7 @@ const ChangePassword = () => {
           <span className={styles['resend-box']}>
             <span
               className={`${styles['resend-text']} ${
-                code.sending || timer > 0 ? styles['loading-btn'] : ''
+                isDisabled(true) ? styles['loading-btn'] : ''
               }`}
               onClick={getToken}
             >
@@ -782,14 +791,92 @@ const ChangePassword = () => {
 };
 
 const DisableAccount = ({ type }: DisableAccountProps) => {
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [Password, setPassword] = useState<string>('');
-
   const { setMainCategory } = useContext(SettingsContext);
-
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [password, setPassword] = useState<string>('');
   const [stage, setStage] = useState<'password' | 'token'>('password');
+  const [loading, setLoading] = useState({ token: false, action: false });
+  const [timer, setTimer] = useState(0);
+  const [token, setToken] = useState<string>('');
 
-  useEffect(() => setStage('password'), [type]);
+  const timerInterval = useRef<number>(null!);
+
+  useEffect(() => {
+    return () => {
+      clearInterval(timerInterval.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    cleanUp();
+  }, [type]);
+
+  useEffect(() => {
+    if (timer === 60) {
+      timerInterval.current = setInterval(
+        () => setTimer((prev) => prev - 1),
+        1000
+      );
+    }
+
+    if (timer === 0) clearInterval(timerInterval.current);
+  }, [timer]);
+
+  const cleanUp = () => {
+    setStage('password');
+    setPassword('');
+    setShowPassword(false);
+    setLoading({ token: false, action: false });
+    setTimer(0);
+    setToken('');
+    clearInterval(timerInterval.current);
+  };
+
+  const getToken = async () => {
+    setLoading((prev) => ({ ...prev, token: true }));
+
+    try {
+      const { data } = await apiClient.patch(`v1/users/${type}/token`, {
+        password,
+      });
+      toast.success(data.message);
+      setTimer(60);
+      return setStage('token');
+    } catch (err: any) {
+      const message = 'An error occured while sending verification code.';
+      if (err.response) {
+        return toast.error(err.response.data.message || message);
+      } else {
+        return toast.error(message);
+      }
+    } finally {
+      setLoading((prev) => ({ ...prev, token: false }));
+    }
+  };
+
+  const handleSubmit = async () => {
+    setLoading((prev) => ({ ...prev, action: true }));
+
+    try {
+      await apiClient.patch(`v1/users/${type}/final`, {
+        code: token,
+      });
+
+      toast.success(`Your account has been ${type}d successfully!`);
+
+      return setTimeout(() => {
+        window.location.href = '/auth';
+      }, 1000);
+    } catch (err: any) {
+      setLoading((prev) => ({ ...prev, action: false }));
+      const message = `Could not ${type} account.`;
+      if (err.response) {
+        return toast.error(err.response.data.message || message);
+      } else {
+        return toast.error(message);
+      }
+    }
+  };
 
   return (
     <section className={styles.section}>
@@ -846,7 +933,7 @@ const DisableAccount = ({ type }: DisableAccountProps) => {
               <input
                 className={styles.password}
                 type={showPassword ? 'text' : 'password'}
-                value={Password}
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
 
@@ -866,8 +953,12 @@ const DisableAccount = ({ type }: DisableAccountProps) => {
 
           <div className={styles['disable-btn-div']}>
             <button
-              className={styles['disable-btn']}
-              onClick={() => setStage('token')}
+              className={`${styles['disable-btn']} ${
+                password.length < 1 || loading.token
+                  ? styles['loading-btn']
+                  : ''
+              }`}
+              onClick={getToken}
             >
               Continue
             </button>
@@ -886,27 +977,49 @@ const DisableAccount = ({ type }: DisableAccountProps) => {
             <input
               type="number"
               className={styles['verification-input']}
+              value={token}
               onChange={(e) => {
                 if (e.target.value.length > 6) {
-                  e.target.value = `${e.target.value.slice(0, 6)}`;
+                  setToken(`${e.target.value.slice(0, 6)}`);
+                } else {
+                  setToken(e.target.value);
                 }
               }}
             />
 
             <span className={styles['resend-box']}>
-              <span className={styles['resend-text']}>Resend Code</span>{' '}
-              <span className={styles['resend-time']}>30s</span>
+              <span
+                className={`${styles['resend-text']} ${
+                  loading.token || timer > 0 || loading.action
+                    ? styles['loading-btn']
+                    : ''
+                }`}
+                onClick={getToken}
+              >
+                Resend Code
+              </span>
+
+              {timer > 0 && (
+                <span className={styles['resend-time']}>{timer}s</span>
+              )}
             </span>
           </div>
 
           <div className={styles['account-btn-div']}>
             <button
-              className={styles['cancel-btn']}
-              onClick={() => setStage('password')}
+              className={`${styles['cancel-btn']} ${
+                loading.action ? styles['loading-btn'] : ''
+              }`}
+              onClick={cleanUp}
             >
               Cancel
             </button>
-            <button className={styles['delete-btn']}>
+            <button
+              className={`${styles['delete-btn']} ${
+                token.length < 6 || loading.action ? styles['block-btn'] : ''
+              }`}
+              onClick={handleSubmit}
+            >
               {type === 'delete' ? 'Delete' : 'Deactivate'}
             </button>
           </div>

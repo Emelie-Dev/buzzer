@@ -197,7 +197,7 @@ class Email {
         ? securityEmail
             .replace(
               '{{TEXT1}}',
-              'We noticed that your account is currently active on multiple devices.'
+              `We noticed that your account is currently active on multiple (${data.deviceLength}) devices.`
             )
             .replace(
               '{{TEXT2}}',

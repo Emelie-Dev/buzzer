@@ -228,3 +228,36 @@ export const deleteNotifications = asyncErrorHandler(
     return res.status(204).send({ status: 'success', message: null });
   }
 );
+
+export const getSecurityAlerts = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const pageSize = 20;
+    const cursor = req.query.cursor;
+    const cursorDate = isValidDateString(cursor as string)
+      ? new Date(String(cursor))
+      : new Date();
+
+    const notifications = await Notification.aggregate([
+      {
+        $match: {
+          createdAt: { $lt: cursorDate },
+          user: req.user?._id,
+          type: 'security',
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      { $limit: pageSize },
+    ]);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        notifications,
+      },
+    });
+  }
+);

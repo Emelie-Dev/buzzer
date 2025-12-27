@@ -307,6 +307,11 @@
   color: var(--app-theme-color);
 }
 
+.disable-switch {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* Media Queries */
 
 @media screen and (max-width: 1200px) {

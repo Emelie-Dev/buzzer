@@ -1,7 +1,6 @@
 import express from 'express';
 import {
   changePassword,
-  switchAccount,
   deactivateAccount,
   deleteAccount,
   getAccountToken,
@@ -50,11 +49,9 @@ router.patch(
   deactivateAccount
 );
 
-router.delete('/delete/:stage', getAccountToken('delete'), deleteAccount);
+router.patch('/delete/:stage', getAccountToken('delete'), deleteAccount);
 
 router.patch('/screen-time', updateScreenTime);
-
-router.post('/switch-account', switchAccount);
 
 router.post('/watch-history', getWatchHistory);
 

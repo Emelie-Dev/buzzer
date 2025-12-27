@@ -10,6 +10,8 @@ import SwitchAccount from '../components/SwitchAccount';
 import { GeneralContext, SettingsContext } from '../Contexts';
 import { IoArrowBack } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../Utilities';
+import { toast } from 'sonner';
 
 const initialCategory = window.matchMedia('(max-width: 700px)').matches
   ? ''
@@ -22,6 +24,7 @@ const Settings = () => {
     settingsCategory.length > 0 ? settingsCategory : initialCategory
   );
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
+  const [logging, setLogging] = useState(false);
 
   const navigate = useNavigate();
 
@@ -44,6 +47,19 @@ const Settings = () => {
   useEffect(() => {
     if (sectionRef.current) sectionRef.current.scrollTop = 0;
   }, [category]);
+
+  const logOut = async () => {
+    if (logging) return;
+    setLogging(true);
+
+    try {
+      await apiClient.post('v1/auth/logout');
+      window.location.href = '/auth';
+    } catch {
+      setLogging(false);
+      return toast.error('An error occured while logging out.');
+    }
+  };
 
   return (
     <>
@@ -134,7 +150,7 @@ const Settings = () => {
                 >
                   Manage devices
                 </li>
-                <li className={styles['category-item']}>2-step verification</li>
+                {/* <li className={styles['category-item']}>2-step verification</li> */}
               </ul>
             </div>
 
@@ -196,7 +212,14 @@ const Settings = () => {
                 >
                   Switch account
                 </li>
-                <li className={styles['category-item']}>Log out</li>
+                <li
+                  className={`${styles['category-item']} ${
+                    logging ? styles['disable-link'] : ''
+                  }`}
+                  onClick={logOut}
+                >
+                  Log out
+                </li>
               </ul>
             </div>
           </div>
@@ -208,7 +231,9 @@ const Settings = () => {
           }`}
           ref={sectionRef}
         >
-          <SettingsContext.Provider value={{ setMainCategory: setCategory }}>
+          <SettingsContext.Provider
+            value={{ setMainCategory: setCategory, sectionRef }}
+          >
             {category === 'general' && <GeneralSettings />}
 
             {accountCategories.includes(category) && (

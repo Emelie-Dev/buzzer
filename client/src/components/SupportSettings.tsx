@@ -3,6 +3,7 @@ import styles from '../styles/SupportSettings.module.css';
 import { MdDelete } from 'react-icons/md';
 import { SettingsContext } from '../Contexts';
 import { IoArrowBack } from 'react-icons/io5';
+import { toast } from 'sonner';
 
 type SupportSettingsProps = {
   category: string;
@@ -123,6 +124,9 @@ const ReportProblem = () => {
   const fileRef = useRef<HTMLInputElement>(null!);
   const [files, setFiles] = useState<File[]>([]);
   const [addFiles, setAddFiles] = useState<boolean>(false);
+  const [description, setDescription] = useState('');
+  const [topic, setTopic] = useState('');
+  const [sending, setSending] = useState(false);
 
   const { setMainCategory } = useContext(SettingsContext);
 
@@ -166,6 +170,20 @@ const ReportProblem = () => {
     }
   };
 
+  const handleSubmit = () => {
+    setSending(true);
+
+    setTimeout(() => {
+      setSending(false);
+      setDescription('');
+      setTopic('');
+      setFiles([]);
+      setAddFiles(false);
+
+      return toast.success('Report submitted successfully!');
+    }, 1000);
+  };
+
   return (
     <section className={styles.section}>
       <h1 className={styles['section-head']}>
@@ -180,7 +198,13 @@ const ReportProblem = () => {
         <span className={styles['category-head']}>Problem Topic</span>
 
         <div className={styles['report-div']}>
-          <input className={styles['topic-list']} list="topics" />
+          <input
+            className={styles['topic-list']}
+            list="topics"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="Issue"
+          />
 
           <datalist id="topics">
             <option value={'App crashes or freezes'} />
@@ -201,7 +225,16 @@ const ReportProblem = () => {
         <span className={styles['category-head']}>Description</span>
 
         <div className={styles['report-div']}>
-          <textarea className={styles.description}></textarea>
+          <textarea
+            className={styles.description}
+            placeholder="Briefly explain the issue you’re facing. Include what happened and when it occurred."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          ></textarea>
+
+          <div className={styles['counter-box']}>
+            <span>{description.length}</span>/<span>1000</span>
+          </div>
         </div>
       </div>
 
@@ -266,7 +299,19 @@ const ReportProblem = () => {
       </div>
 
       <div className={styles['btn-div2']}>
-        <button className={`${styles['file-btn']}`}>Submit</button>
+        <button
+          className={`${styles['file-btn']} ${
+            description.length > 1000 ||
+            sending ||
+            topic.length < 1 ||
+            description.length < 1
+              ? styles['disable-btn']
+              : ''
+          }`}
+          onClick={handleSubmit}
+        >
+          Submit
+        </button>
       </div>
     </section>
   );

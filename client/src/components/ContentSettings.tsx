@@ -15,14 +15,27 @@ import {
   Legend,
   BarElement,
 } from 'chart.js';
-import { monthLabels } from '../Utilities';
+import { apiClient, monthLabels } from '../Utilities';
 import crosshairPlugin from 'chartjs-plugin-crosshair';
-import { SettingsContext } from '../Contexts';
+import { AuthContext, SettingsContext } from '../Contexts';
 import { IoArrowBack } from 'react-icons/io5';
+import { toast } from 'sonner';
 
 type ContentSettingsProps = {
   category: string;
 };
+
+type InitialState<T extends 'limit' | 'break'> = T extends 'limit'
+  ? {
+      value: number | 'custom';
+      custom: number[];
+      done: boolean;
+    }
+  : {
+      value: number | 'custom';
+      custom: number;
+      done: boolean;
+    };
 
 ChartJS.register(
   CategoryScale,
@@ -36,6 +49,54 @@ ChartJS.register(
   Legend,
   crosshairPlugin
 );
+
+const getSettingsValue = <T extends 'limit' | 'break'>(
+  type: T,
+  value: number
+): InitialState<T> => {
+  const options = { limit: [30, 60, 90, 120], break: [10, 20, 30, 60] };
+
+  let result;
+
+  if (!options[type].includes(value)) {
+    if (type === 'limit') {
+      const hour = Math.trunc(value / 60);
+      const minute = value - hour * 60;
+      result = {
+        value: 'custom',
+        custom: [hour, minute],
+        done: true,
+      };
+    } else {
+      result = {
+        value: 'custom',
+        custom: value,
+        done: true,
+      };
+    }
+  } else {
+    if (type === 'limit') {
+      result = {
+        value,
+        custom: [0, 0],
+        done: false,
+      };
+    } else {
+      result = {
+        value,
+        custom: 0,
+        done: false,
+      };
+    }
+  }
+
+  return result as InitialState<T>;
+};
+
+const getInactiveDays = (value: number[]) => {
+  const days = [0, 1, 2, 3, 4, 5, 6];
+  return days.filter((day) => !value.includes(day));
+};
 
 const ContentSettings = ({ category }: ContentSettingsProps) => {
   return (
@@ -52,26 +113,131 @@ const ContentSettings = ({ category }: ContentSettingsProps) => {
 };
 
 const Notifications = () => {
-  const [pushNotifications, setPushNotifications] = useState<boolean>(false);
-  const [emailNotifications, setEmailNotifications] = useState<boolean>(false);
-
+  const { user, setUser } = useContext(AuthContext);
   const { setMainCategory } = useContext(SettingsContext);
+  const [pushNotifications, setPushNotifications] = useState<boolean>(
+    user.settings.content.notifications.push
+  );
+  const [emailNotifications, setEmailNotifications] = useState<boolean>(
+    user.settings.content.notifications.email
+  );
+  const [updateList, setUpdateList] = useState<Set<string>>(new Set());
 
   const [interactions, setInteractions] = useState<{
     likes: boolean;
     comments: boolean;
     followers: boolean;
     mentions: boolean;
-    views: boolean;
+    profileViews: boolean;
     messages: boolean;
   }>({
-    likes: true,
-    comments: true,
-    followers: true,
-    mentions: true,
-    views: true,
-    messages: true,
+    likes: user.settings.content.notifications.interactions.likes,
+    comments: user.settings.content.notifications.interactions.comments,
+    followers: user.settings.content.notifications.interactions.followers,
+    mentions: user.settings.content.notifications.interactions.mentions,
+    profileViews: user.settings.content.notifications.interactions.profileViews,
+    messages: user.settings.content.notifications.interactions.messages,
   });
+
+  useEffect(() => {
+    if (emailNotifications !== user.settings.content.notifications.email)
+      updateNotificationSettings('email');
+  }, [emailNotifications, user]);
+
+  useEffect(() => {
+    if (pushNotifications !== user.settings.content.notifications.push)
+      updateNotificationSettings('push');
+  }, [pushNotifications, user]);
+
+  useEffect(() => {
+    if (
+      interactions.likes !==
+      user.settings.content.notifications.interactions.likes
+    )
+      updateNotificationSettings('likes');
+  }, [interactions.likes, user]);
+
+  useEffect(() => {
+    if (
+      interactions.comments !==
+      user.settings.content.notifications.interactions.comments
+    )
+      updateNotificationSettings('comments');
+  }, [interactions.comments, user]);
+
+  useEffect(() => {
+    if (
+      interactions.followers !==
+      user.settings.content.notifications.interactions.followers
+    )
+      updateNotificationSettings('followers');
+  }, [interactions.followers, user]);
+
+  useEffect(() => {
+    if (
+      interactions.mentions !==
+      user.settings.content.notifications.interactions.mentions
+    )
+      updateNotificationSettings('mentions');
+  }, [interactions.mentions, user]);
+
+  useEffect(() => {
+    if (
+      interactions.messages !==
+      user.settings.content.notifications.interactions.messages
+    )
+      updateNotificationSettings('messages');
+  }, [interactions.messages, user]);
+
+  useEffect(() => {
+    if (
+      interactions.profileViews !==
+      user.settings.content.notifications.interactions.profileViews
+    )
+      updateNotificationSettings('profileViews');
+  }, [interactions.profileViews, user]);
+
+  const updateNotificationSettings = async (
+    type:
+      | 'push'
+      | 'email'
+      | 'likes'
+      | 'comments'
+      | 'followers'
+      | 'mentions'
+      | 'profileViews'
+      | 'messages'
+  ) => {
+    if (updateList.has(type)) return;
+
+    setUpdateList((prev) => new Set(prev).add(type));
+
+    try {
+      const { data } = await apiClient.patch(
+        'v1/users/settings/notifications',
+        { push: pushNotifications, email: emailNotifications, interactions }
+      );
+      setUser(data.data.user);
+    } catch {
+      if (type === 'push') {
+        setPushNotifications(user.settings.content.notifications.push);
+      } else if (type === 'email') {
+        setEmailNotifications(user.settings.content.notifications.email);
+      } else {
+        setInteractions((prev) => ({
+          ...prev,
+          [type]: user.settings.content.notifications.interactions[type],
+        }));
+      }
+      return toast.error('Could not update settings.');
+    } finally {
+      setUpdateList((prev) => {
+        const set = new Set(prev);
+        set.delete(type);
+        return set;
+      });
+    }
+  };
 
   return (
     <section className={styles.section}>
@@ -86,7 +252,13 @@ const Notifications = () => {
       <div className={`${styles.category} ${styles['push-category']}`}>
         <span className={styles['category-head']}>Push notifications</span>
 
-        <Switch value={pushNotifications} setter={setPushNotifications} />
+        <Switch
+          value={pushNotifications}
+          setter={setPushNotifications}
+          className={`${
+            updateList.has('push') ? styles['disable-switch'] : ''
+          }`}
+        />
       </div>
 
       <div className={`${styles.category} ${styles['push-category']}`}>
@@ -97,7 +269,13 @@ const Notifications = () => {
           </span>
         </div>
 
-        <Switch value={emailNotifications} setter={setEmailNotifications} />
+        <Switch
+          value={emailNotifications}
+          setter={setEmailNotifications}
+          className={`${
+            updateList.has('email') ? styles['disable-switch'] : ''
+          }`}
+        />
       </div>
 
       <div className={`${styles.category}`}>
@@ -111,6 +289,9 @@ const Notifications = () => {
               setter={setInteractions}
               type="likes"
               interactions={true}
+              className={`${
+                updateList.has('likes') ? styles['disable-switch'] : ''
+              }`}
             />
           </span>
 
@@ -121,6 +302,9 @@ const Notifications = () => {
               setter={setInteractions}
               type="comments"
               interactions={true}
+              className={`${
+                updateList.has('comments') ? styles['disable-switch'] : ''
+              }`}
             />
           </span>
 
@@ -131,6 +315,9 @@ const Notifications = () => {
               setter={setInteractions}
               type="followers"
               interactions={true}
+              className={`${
+                updateList.has('followers') ? styles['disable-switch'] : ''
+              }`}
             />
           </span>
           <span className={styles['interaction-box']}>
@@ -140,15 +327,21 @@ const Notifications = () => {
               setter={setInteractions}
               type="mentions"
               interactions={true}
+              className={`${
+                updateList.has('mentions') ? styles['disable-switch'] : ''
+              }`}
             />
           </span>
           <span className={styles['interaction-box']}>
             <span className={styles['interaction-name']}>Profile views</span>
             <Switch
-              value={interactions.views}
+              value={interactions.profileViews}
               setter={setInteractions}
-              type="views"
+              type="profileViews"
               interactions={true}
+              className={`${
+                updateList.has('profileViews') ? styles['disable-switch'] : ''
+              }`}
             />
           </span>
 
@@ -159,6 +352,9 @@ const Notifications = () => {
               setter={setInteractions}
               type="messages"
               interactions={true}
+              className={`${
+                updateList.has('messages') ? styles['disable-switch'] : ''
+              }`}
             />
           </span>
         </div>
@@ -168,28 +364,47 @@ const Notifications = () => {
 };
 
 const TimeManagement = () => {
-  const [dailyLimit, setDailyLimit] = useState<boolean>(false);
-  const [scrollBreak, setScrollBreak] = useState<boolean>(false);
+  const { user, setUser } = useContext(AuthContext);
+  const { setMainCategory } = useContext(SettingsContext);
+  const [dailyLimit, setDailyLimit] = useState<boolean>(
+    user.settings.content.timeManagement.dailyLimit.enabled
+  );
+  const [scrollBreak, setScrollBreak] = useState<boolean>(
+    user.settings.content.timeManagement.scrollBreak.enabled
+  );
   const [dailyLimitValue, setDailyLimitValue] = useState<{
     value: number | 'custom';
     custom: number[];
     done: boolean;
-  }>({
-    value: 120,
-    custom: [0, 0],
-    done: false,
-  });
+  }>(
+    getSettingsValue(
+      'limit',
+      user.settings.content.timeManagement.dailyLimit.value
+    )
+  );
   const [scrollBreakValue, setScrollBreakValue] = useState<{
     value: number | 'custom';
     custom: number;
     done: boolean;
-  }>({
-    value: 120,
-    custom: 0,
-    done: false,
+  }>(
+    getSettingsValue(
+      'break',
+      user.settings.content.timeManagement.scrollBreak.value
+    )
+  );
+  const [sleepReminder, setSleepReminder] = useState<boolean>(
+    user.settings.content.timeManagement.sleepReminders.enabled
+  );
+  const [inactiveDays, setInactiveDays] = useState<number[]>(
+    getInactiveDays(
+      user.settings.content.timeManagement.sleepReminders.value.days
+    )
+  );
+  const [sleepReminderTime, setSleepReminderTime] = useState({
+    startTime:
+      user.settings.content.timeManagement.sleepReminders.value.startTime,
+    endTime: user.settings.content.timeManagement.sleepReminders.value.endTime,
   });
-  const [sleepReminder, setSleepReminder] = useState<boolean>(false);
-  const [inactiveDays, setInactiveDays] = useState<number[]>([]);
   const [yUnit, setYUnit] = useState<'min' | 'hr'>(null!);
   const [graphDate, setGraphDate] = useState<{ start: string; end: string }>({
     start: '',
@@ -200,7 +415,9 @@ const TimeManagement = () => {
     { width: 650, height: 350 }
   );
   const [showGraph, setShowGraph] = useState<boolean>(true);
-  const { setMainCategory } = useContext(SettingsContext);
+  const [updateList, setUpdateList] = useState<
+    Set<'limit' | 'break' | 'reminder'>
+  >(new Set());
 
   useEffect(() => {
     const currentDate = new Date();
@@ -246,6 +463,83 @@ const TimeManagement = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (
+      dailyLimit !== user.settings.content.timeManagement.dailyLimit.enabled
+    ) {
+      updateTimeSettings('limit');
+    } else {
+      if (dailyLimitValue.value === 'custom') {
+        if (dailyLimitValue.done) {
+          const value =
+            dailyLimitValue.custom[0] * 60 + dailyLimitValue.custom[1];
+
+          if (value !== user.settings.content.timeManagement.dailyLimit.value) {
+            updateTimeSettings('limit');
+          }
+        }
+      } else {
+        if (
+          dailyLimitValue.value !==
+          user.settings.content.timeManagement.dailyLimit.value
+        ) {
+          updateTimeSettings('limit');
+        }
+      }
+    }
+  }, [dailyLimit, dailyLimitValue, user]);
+
+  useEffect(() => {
+    if (
+      scrollBreak !== user.settings.content.timeManagement.scrollBreak.enabled
+    ) {
+      updateTimeSettings('break');
+    } else {
+      if (scrollBreakValue.value === 'custom') {
+        if (scrollBreakValue.done) {
+          if (
+            scrollBreakValue.custom !==
+            user.settings.content.timeManagement.scrollBreak.value
+          ) {
+            updateTimeSettings('break');
+          }
+        }
+      } else {
+        if (
+          scrollBreakValue.value !==
+          user.settings.content.timeManagement.scrollBreak.value
+        ) {
+          updateTimeSettings('break');
+        }
+      }
+    }
+  }, [scrollBreak, scrollBreakValue, user]);
+
+  useEffect(() => {
+    if (
+      sleepReminder !==
+      user.settings.content.timeManagement.sleepReminders.enabled
+    ) {
+      updateTimeSettings('reminder');
+    } else {
+      if (
+        inactiveDays.length !==
+        getInactiveDays(
+          user.settings.content.timeManagement.sleepReminders.value.days
+        ).length
+      ) {
+        updateTimeSettings('reminder');
+      } else if (
+        sleepReminderTime.startTime !==
+          user.settings.content.timeManagement.sleepReminders.value.startTime ||
+        sleepReminderTime.endTime !==
+          user.settings.content.timeManagement.sleepReminders.value.endTime
+      ) {
+        updateTimeSettings('reminder');
+      }
+    }
+  }, [sleepReminder, sleepReminderTime, inactiveDays, user]);
+
   const days = [
     {
       name: 'Sunday',
@@ -277,7 +571,7 @@ const TimeManagement = () => {
     },
   ];
 
-  const timeSpent = [30, 240, 270, 130, 480, 420, 60];
+  const timeSpent = [30, 240, 270, 120, 480, 420, 60];
 
   const handleDays = (index: number) => () => {
     const active = inactiveDays.includes(index);
@@ -414,6 +708,99 @@ const TimeManagement = () => {
     },
   };
 
+  const updateTimeSettings = async (type: 'limit' | 'break' | 'reminder') => {
+    if (updateList.has(type)) return;
+
+    setUpdateList((prev) => new Set(prev).add(type));
+
+    try {
+      const { data } = await apiClient.patch(
+        'v1/users/settings/time-management',
+        {
+          dailyLimit: {
+            enabled: dailyLimit,
+            notified: user.settings.content.timeManagement.dailyLimit.notified,
+            value:
+              dailyLimitValue.value === 'custom'
+                ? dailyLimitValue.custom[0] * 60 + dailyLimitValue.custom[1]
+                : dailyLimitValue.value,
+          },
+          scrollBreak: {
+            enabled: scrollBreak,
+            value:
+              scrollBreakValue.value === 'custom'
+                ? scrollBreakValue.custom
+                : scrollBreakValue.value,
+          },
+          sleepReminders: {
+            enabled: sleepReminder,
+            notified:
+              user.settings.content.timeManagement.sleepReminders.notified,
+            value: {
+              ...sleepReminderTime,
+              days: (() => {
+                const days = [0, 1, 2, 3, 4, 5, 6];
+                return days.filter((day) => !inactiveDays.includes(day));
+              })(),
+            },
+          },
+        }
+      );
+      setUser(data.data.user);
+    } catch {
+      if (type === 'limit') {
+        setDailyLimit(user.settings.content.timeManagement.dailyLimit.enabled);
+        setDailyLimitValue(
+          getSettingsValue(
+            'limit',
+            user.settings.content.timeManagement.dailyLimit.value
+          )
+        );
+      } else if (type === 'break') {
+        setScrollBreak(
+          user.settings.content.timeManagement.scrollBreak.enabled
+        );
+        setScrollBreakValue(
+          getSettingsValue(
+            'break',
+            user.settings.content.timeManagement.scrollBreak.value
+          )
+        );
+      } else {
+        setSleepReminder(
+          user.settings.content.timeManagement.sleepReminders.enabled
+        );
+        setInactiveDays(
+          getInactiveDays(
+            user.settings.content.timeManagement.sleepReminders.value.days
+          )
+        );
+        setSleepReminderTime({
+          startTime:
+            user.settings.content.timeManagement.sleepReminders.value.startTime,
+          endTime:
+            user.settings.content.timeManagement.sleepReminders.value.endTime,
+        });
+      }
+
+      return toast.error(
+        `Could not update ${
+          type === 'limit'
+            ? 'daily limit'
+            : type === 'break'
+            ? 'scroll break'
+            : 'sleep reminders'
+        }.`
+      );
+    } finally {
+      setUpdateList((prev) => {
+        const set = new Set(prev);
+        set.delete(type);
+        return set;
+      });
+    }
+  };
+
   return (
     <section className={styles.section}>
       <h1 className={styles['section-head']}>
@@ -424,7 +811,11 @@ const TimeManagement = () => {
         Time Management
       </h1>
 
-      <div className={styles['time-category']}>
+      <div
+        className={`${styles['time-category']} ${
+          updateList.has('limit') ? styles['disable-switch'] : ''
+        }`}
+      >
         <div className={styles['time-category-box']}>
           <span className={styles['time-category-head']}>Daily Limit</span>
 
@@ -540,7 +931,11 @@ const TimeManagement = () => {
         )}
       </div>
 
-      <div className={styles['time-category']}>
+      <div
+        className={`${styles['time-category']} ${
+          updateList.has('break') ? styles['disable-switch'] : ''
+        }`}
+      >
         <div className={styles['time-category-box']}>
           <span className={styles['time-category-head']}>Scroll Break</span>
 
@@ -613,10 +1008,10 @@ const TimeManagement = () => {
                     })
                   }
                 >
-                  <option value={30}>10 mins</option>
-                  <option value={60}>20 mins</option>
-                  <option value={90}>30 mins</option>
-                  <option value={120}>1 hr</option>
+                  <option value={10}>10 mins</option>
+                  <option value={20}>20 mins</option>
+                  <option value={30}>30 mins</option>
+                  <option value={60}>1 hr</option>
                   <option value={'custom'}>Custom time</option>
                 </select>
 
@@ -637,7 +1032,11 @@ const TimeManagement = () => {
         )}
       </div>
 
-      <div className={styles['time-category']}>
+      <div
+        className={`${styles['time-category']} ${
+          updateList.has('reminder') ? styles['disable-switch'] : ''
+        }`}
+      >
         <div className={styles['time-category-box']}>
           <span className={styles['time-category-head']}>Sleep Reminders</span>
 
@@ -653,7 +1052,16 @@ const TimeManagement = () => {
             <div className={styles['reminder-div']}>
               <span className={styles['time-box']}>
                 <span className={styles['time-box-text']}>Start time:</span>
-                <select className={styles['time-input']}>
+                <select
+                  className={styles['time-input']}
+                  value={sleepReminderTime.startTime}
+                  onChange={(e) =>
+                    setSleepReminderTime((prev) => ({
+                      ...prev,
+                      startTime: Number(e.target.value),
+                    }))
+                  }
+                >
                   <option value={19}>19:00</option>
                   <option value={20}>20:00</option>
                   <option value={21}>21:00</option>
@@ -663,7 +1071,16 @@ const TimeManagement = () => {
 
               <span className={styles['time-box2']}>
                 <span className={styles['time-box-text']}>End time:</span>
-                <select className={styles['time-input']}>
+                <select
+                  className={styles['time-input']}
+                  value={sleepReminderTime.endTime}
+                  onChange={(e) =>
+                    setSleepReminderTime((prev) => ({
+                      ...prev,
+                      endTime: Number(e.target.value),
+                    }))
+                  }
+                >
                   <option value={4}>04:00</option>
                   <option value={5}>05:00</option>
                   <option value={6}>06:00</option>
@@ -729,12 +1146,12 @@ const TimeManagement = () => {
         <div className={styles['graph-time-div']}>
           <span className={styles['graph-time-box']}>
             <span className={styles['graph-time-label']}>Total time:</span>
-            <span className={styles['graph-time']}>14hr 32min</span>
+            <span className={styles['graph-time']}>27hr 0min</span>
           </span>
 
           <span className={styles['graph-time-box2']}>
             <span className={styles['graph-time-label']}>Average time:</span>
-            <span className={styles['graph-time']}>4hr 14min</span>
+            <span className={styles['graph-time']}>3hr 51min</span>
           </span>
         </div>
       </div>

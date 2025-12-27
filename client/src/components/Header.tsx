@@ -338,7 +338,9 @@ const Header = ({
 
                   <div className={styles['select-btn-box']}>
                     <IoClose
-                      className={styles['cancel-btn']}
+                      className={`${styles['cancel-btn']} ${
+                        deleteData.loading ? styles['disable-btn'] : ''
+                      }`}
                       title="Cancel"
                       onClick={() =>
                         setDeleteData((prev) => ({ ...prev, list: new Set() }))

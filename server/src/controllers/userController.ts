@@ -18,11 +18,11 @@ import Story from '../models/storyModel.js';
 import Comment from '../models/commentModel.js';
 import Bookmark from '../models/bookmarkModel.js';
 import Notification from '../models/notificationModel.js';
-import { randomUUID } from 'crypto';
-import { manageUserDevices, signToken } from './authController.js';
 import View from '../models/viewModel.js';
 import handleCloudinary from '../utils/handleCloudinary.js';
 import { isValidDateString } from './commentController.js';
+import Share from '../models/shareModel.js';
+import Session from '../models/sessionModel.js';
 
 const upload = multerConfig('users');
 
@@ -362,7 +362,7 @@ export const getPrivateAudience = asyncErrorHandler(
 
     const limit = 20;
 
-    const privateAudience: string[] =
+    let privateAudience: string[] =
       req.user?.settings.general.privacy.users || [];
     const userIds = privateAudience.slice((page - 1) * limit, page * limit);
 
@@ -449,10 +449,37 @@ export const getPrivateAudience = asyncErrorHandler(
       },
     ]);
 
+    // remove deleted users
+    const existingUserIds = new Set(users.map((user) => String(user._id)));
+
+    const deletedInBatch = userIds.filter(
+      (id) => !existingUserIds.has(String(id))
+    );
+
+    if (deletedInBatch.length) {
+      privateAudience = privateAudience.filter(
+        (id) => !deletedInBatch.includes(String(id))
+      );
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        'settings.general.privacy.users': [...privateAudience],
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    const userData = protectData(updatedUser!, 'user');
+
     return res.status(200).json({
       status: 'success',
       data: {
         users,
+        user: userData,
       },
     });
   }
@@ -532,7 +559,7 @@ export const updateSettings = asyncErrorHandler(
       'general',
       'account',
       'notifications',
-      'timeManagement',
+      'time-management',
     ];
     const category = req.params.category;
     const body = req.body;
@@ -597,7 +624,7 @@ export const updateSettings = asyncErrorHandler(
         );
         break;
 
-      case 'timeManagement':
+      case 'time-management':
         const { dailyLimit, scrollBreak, sleepReminders } =
           content.timeManagement;
 
@@ -694,10 +721,16 @@ export const changePassword = asyncErrorHandler(
     user.passwordChangedAt = new Date();
     await user.save();
 
-    user.settings.security.sessions = [];
     user.passwordVerificationToken = undefined;
     user.passwordVerificationTokenExpires = undefined;
     await user.save({ validateBeforeSave: false });
+
+    await Session.updateMany(
+      { user: user._id, revokedAt: null },
+      {
+        revokedAt: new Date(),
+      }
+    );
 
     // create notification
     await Notification.create({
@@ -728,7 +761,10 @@ export const getAccountToken = (type: 'delete' | 'deactivate') =>
         return next(new CustomError('Incorrect password.', 401));
       }
 
-      const verificationToken = String(Math.floor(Math.random() * 1_000_000));
+      const verificationToken = String(Math.floor(Math.random() * 1e14)).slice(
+        0,
+        6
+      );
 
       try {
         if (type === 'deactivate') {
@@ -747,7 +783,7 @@ export const getAccountToken = (type: 'delete' | 'deactivate') =>
 
         return res.status(200).json({
           status: 'success',
-          message: 'Verification code sent successfully.',
+          message: 'A verification code has been sent to your email address.',
         });
       } catch {
         if (type === 'deactivate') {
@@ -793,10 +829,16 @@ export const deactivateAccount = asyncErrorHandler(
     }
 
     user.active = false;
-    user.settings.security.sessions = [];
     user.deactivateVerificationToken = undefined;
     user.deactivateVerificationTokenExpires = undefined;
     await user.save({ validateBeforeSave: false });
+
+    await Session.updateMany(
+      { user: user._id, revokedAt: null },
+      {
+        revokedAt: new Date(),
+      }
+    );
 
     return res.status(200).json({
       status: 'success',
@@ -827,7 +869,7 @@ export const deleteAccount = asyncErrorHandler(
       );
     }
 
-    // Delete reels, reelSounds, contents, stories, comments, likes, account, photo, follows, friends, bookmarks, notifications
+    // Delete reels, reelSounds, contents, stories, comments, likes, account, photo, follows, friends, bookmarks, notifications, views, shares,sessions
 
     const contents = await Content.find({ user: user._id });
     const reels = await Reel.find({ user: user._id });
@@ -838,7 +880,11 @@ export const deleteAccount = asyncErrorHandler(
 
     await user.deleteOne();
 
-    if (user.photo !== 'default.jpeg') {
+    if (
+      user.photo !==
+        'https://res.cloudinary.com/dtwsoibt0/image/upload/v1765614386/default.jpg' &&
+      user.photo !== 'default.jpg'
+    ) {
       try {
         if (process.env.NODE_ENV === 'production') {
           await handleCloudinary(
@@ -942,12 +988,17 @@ export const deleteAccount = asyncErrorHandler(
     }
 
     await Promise.allSettled([
+      Session.deleteMany({ user: user._id }),
       Content.deleteMany({ user: user._id }),
       Reel.deleteMany({ user: user._id }),
       Story.deleteMany({ user: user._id }),
       Comment.deleteMany({ user: user._id }),
       Like.deleteMany({ user: user._id }),
       Bookmark.deleteMany({ user: user._id }),
+      ,
+      View.deleteMany({ user: user._id }),
+      ,
+      Share.deleteMany({ user: user._id }),
       Notification.deleteMany({
         $or: [{ user: user._id }, { secondUser: user._id }],
       }),
@@ -1000,91 +1051,6 @@ export const updateScreenTime = asyncErrorHandler(
     );
 
     const userData = protectData(user!, 'user');
-
-    return res.status(200).json({
-      status: 'success',
-      data: {
-        user: userData,
-      },
-    });
-  }
-);
-
-export const switchAccount = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const { id, loginDate } = req.body;
-
-    if (!(id || loginDate)) {
-      return next(new CustomError('Invalid request!', 400));
-    }
-
-    if (id === String(req.user?._id)) {
-      return next(
-        new CustomError('You are already logged in with this account.', 400)
-      );
-    }
-
-    const date = new Date(loginDate);
-    if (String(date) === 'Invalid Date') {
-      return next(new CustomError('Invalid request!', 400));
-    }
-
-    const user = await User.findById(id);
-    if (!user) {
-      return next(new CustomError('This user does not exist!', 404));
-    }
-
-    const passwordChangedAt = user.passwordChangedAt;
-    if (passwordChangedAt) {
-      if (date < passwordChangedAt) {
-        return next(
-          new CustomError(
-            'The password has changed since your last login. Please log in again.',
-            401
-          )
-        );
-      }
-    }
-
-    const sessions = req.user?.settings.security.sessions || [];
-    const currentSession = req.activeSession;
-
-    // deletes current session
-    await User.findByIdAndUpdate(
-      req.user?._id,
-      {
-        'settings.security.sessions': sessions.filter(
-          (device: any) => device.jwi !== currentSession
-        ),
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
-    // Gets JWT ID
-    const jwi = randomUUID();
-
-    // Handles logged in devices
-    await manageUserDevices(
-      user,
-      req.get('user-agent')!,
-      'email',
-      jwi,
-      req.clientIp!,
-      true
-    );
-
-    const userData = protectData(user, 'user');
-
-    res.cookie('jwt', signToken(user._id, jwi), {
-      maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
-      //  Prevents javascript access
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-    });
 
     return res.status(200).json({
       status: 'success',

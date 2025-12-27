@@ -4,6 +4,8 @@ import { NextFunction, Response } from 'express';
 import CustomError from '../utils/CustomError.js';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
+import Session from '../models/sessionModel.js';
+import { getDeviceDetails } from '../controllers/authController.js';
 
 export default asyncErrorHandler(
   async (req: AuthRequest, _: Response, next: NextFunction) => {
@@ -14,6 +16,7 @@ export default asyncErrorHandler(
       bearerToken && bearerToken.startsWith('Bearer')
         ? bearerToken.split(' ')[1]
         : req.cookies.jwt;
+    const deviceCookie = req.cookies.deviceId;
 
     if (!jwtToken) return next(new CustomError('You are not logged in.', 401));
 
@@ -22,6 +25,11 @@ export default asyncErrorHandler(
       jwtToken,
       process.env.JWT_SECRET as string
     ) as JwtPayload;
+    const deviceId = decodedToken.deviceId;
+
+    if (deviceId !== deviceCookie) {
+      return next(new CustomError('Invalid Device ID.', 401));
+    }
 
     // check if the user exists
     let user = await User.findById(decodedToken.id);
@@ -46,27 +54,27 @@ export default asyncErrorHandler(
     }
 
     // Checks if user session is valid
-    const jwi = decodedToken.jwi;
-    const sessions = user.settings.security.sessions || [];
-    const session = sessions.find((session) => session.jwi === jwi);
-
+    const session = await Session.findOne({
+      user: user._id,
+      deviceId,
+      revokedAt: null,
+    });
     if (!session) return next(new CustomError('This session is invalid.', 401));
 
-    session.lastUsed = new Date();
-
-    user = await User.findByIdAndUpdate(
-      user._id,
-      {
-        'settings.security.sessions': sessions,
-      },
-
-      {
-        new: true,
-        runValidators: true,
-      }
+    const deviceName = await getDeviceDetails(
+      req.get('user-agent')!,
+      req.clientIp!,
+      true
     );
 
-    req.activeSession = session.jwi;
+    if (session.deviceName !== deviceName) {
+      return next(new CustomError('This session is invalid.', 401));
+    }
+
+    session.lastUsedAt = new Date();
+    await session.save();
+
+    req.activeSession = String(session._id);
     req.user = user as Record<string, any>;
 
     // Allow the user access the route

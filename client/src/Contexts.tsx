@@ -120,6 +120,7 @@ export const GeneralContext = createContext<{
 
 export const SettingsContext = createContext<{
   setMainCategory: React.Dispatch<React.SetStateAction<string>>;
+  sectionRef: React.MutableRefObject<HTMLDivElement>;
 }>(null!);
 
 export const AuthContext = createContext<{
