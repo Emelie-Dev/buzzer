@@ -230,7 +230,7 @@ export const deleteNotifications = asyncErrorHandler(
 );
 
 export const getSecurityAlerts = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response) => {
     const pageSize = 20;
     const cursor = req.query.cursor;
     const cursorDate = isValidDateString(cursor as string)
