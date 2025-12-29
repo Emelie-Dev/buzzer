@@ -94,6 +94,7 @@ export const getStories = asyncErrorHandler(
             pipeline: [
               {
                 $match: {
+                  expired: false,
                   $expr: {
                     $and: [
                       { $eq: ['$user', '$$followingId'] },
@@ -279,6 +280,7 @@ export const getStories = asyncErrorHandler(
             pipeline: [
               {
                 $match: {
+                  expired: false,
                   $expr: {
                     $and: [
                       { $eq: ['$user', '$$followerId'] },
@@ -480,6 +482,7 @@ export const getStories = asyncErrorHandler(
             pipeline: [
               {
                 $match: {
+                  expired: false,
                   $expr: {
                     $and: [
                       { $eq: ['$user', '$$userId'] },
@@ -624,6 +627,7 @@ export const getStories = asyncErrorHandler(
       const usersStories = await Story.aggregate([
         {
           $match: {
+            expired: false,
             user: { $in: userFeed },
             accessibility: { $ne: ContentAccessibility.YOU },
           },
@@ -810,6 +814,7 @@ export const getStory = asyncErrorHandler(
     if (String(req.user?._id) === id) {
       story = await Story.find({
         user: id,
+        expired: false,
       }).select('-__v -user -accessibility');
     } else {
       const user = await User.findById(req.params.id);
@@ -821,6 +826,7 @@ export const getStory = asyncErrorHandler(
       // Check if user is friends
       story = await Story.find({
         user: req.params.id,
+        expired: false,
         accessibility: ContentAccessibility.EVERYONE,
       }).select('-__v -user -accessibility');
     }
@@ -1025,7 +1031,11 @@ export const deleteStory = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const story = (await Story.findById(req.params.id)) as StoryItem;
 
-    if (!story || String(story.user) !== String(req.user?._id)) {
+    if (
+      !story ||
+      String(story.user) !== String(req.user?._id) ||
+      story.expired
+    ) {
       return next(new CustomError('This story does not exist!', 404));
     }
 

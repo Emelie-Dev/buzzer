@@ -910,6 +910,7 @@ export const searchForUsers = asyncErrorHandler(
                 pipeline: [
                   {
                     $match: {
+                      expired: false,
                       $expr: { $eq: ['$user', '$$userId'] },
                     },
                   },

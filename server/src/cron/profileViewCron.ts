@@ -11,13 +11,32 @@ cron.schedule('*/5 * * * *', async () => {
   const storyCutoff = new Date();
   storyCutoff.setDate(storyCutoff.getDate() - 1);
 
-  await View.deleteMany({
-    collectionName: 'user',
-    createdAt: { $lt: viewCutoff },
-  });
+  const BATCH_SIZE = 5000;
+  const MAX_PER_JOB = 100000;
 
-  await View.deleteMany({
-    collectionName: 'story',
-    createdAt: { $lt: storyCutoff },
-  });
+  let deleted = 0;
+
+  const filter = {
+    $or: [
+      { collectionName: 'user', createdAt: { $lt: viewCutoff } },
+      { collectionName: 'story', createdAt: { $lt: storyCutoff } },
+    ],
+  };
+
+  while (deleted < MAX_PER_JOB) {
+    const remaining = MAX_PER_JOB - deleted;
+
+    const docs = await View.find(filter)
+      .sort({ createdAt: 1 })
+      .limit(Math.min(BATCH_SIZE, remaining))
+      .select('_id');
+
+    if (!docs.length) break;
+
+    const ids = docs.map((d) => d._id);
+
+    await View.deleteMany({ _id: { $in: ids } });
+
+    deleted += ids.length;
+  }
 });

@@ -17,6 +17,8 @@ import { convert } from 'html-to-text';
 import truncate from 'truncate-html';
 
 export const isValidDateString = (str: string): boolean => {
+  if (!str) return false;
+
   const date = new Date(str);
   return !isNaN(date.getTime());
 };
@@ -146,6 +148,7 @@ export const addComment = asyncErrorHandler(
           from: 'stories',
           localField: 'user',
           foreignField: 'user',
+          pipeline: [{ $match: { expired: false } }],
           as: 'stories',
         },
       },
@@ -362,6 +365,7 @@ export const getComments = asyncErrorHandler(
             pipeline: [
               {
                 $match: {
+                  expired: false,
                   $expr: { $eq: ['$user', '$$commentOwner'] },
                 },
               },
@@ -668,6 +672,7 @@ export const getComments = asyncErrorHandler(
             pipeline: [
               {
                 $match: {
+                  expired: false,
                   $expr: { $eq: ['$user', '$$commentOwner'] },
                 },
               },

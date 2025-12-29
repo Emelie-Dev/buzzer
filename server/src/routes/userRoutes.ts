@@ -11,7 +11,6 @@ import {
   updatePrivateAudience,
   updateScreenTime,
   updateSettings,
-  getWatchHistory,
   replyCollaborationRequest,
   getCollaborationRequests,
   leaveCollaboration,
@@ -52,8 +51,6 @@ router.patch(
 router.patch('/delete/:stage', getAccountToken('delete'), deleteAccount);
 
 router.patch('/screen-time', updateScreenTime);
-
-router.post('/watch-history', getWatchHistory);
 
 router.get('/collaborate', getCollaborationRequests);
 

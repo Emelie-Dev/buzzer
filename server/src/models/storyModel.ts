@@ -21,6 +21,7 @@ export interface StoryItem extends Document {
     story: Number;
   };
   createdAt: Date;
+  expired: boolean;
 }
 
 export interface StoryFeedItem
@@ -70,7 +71,10 @@ export const StorySchema = new Schema<StoryItem | StoryFeedItem>({
     },
   },
   createdAt: { type: Date, default: Date.now },
+  expired: { type: Boolean, default: false },
 });
+
+StorySchema.index({ expired: 1, createdAt: 1 });
 
 const Story = mongoose.model<StoryItem | StoryFeedItem>('Story', StorySchema);
 

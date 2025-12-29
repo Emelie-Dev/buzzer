@@ -1,42 +1,60 @@
 import fs from 'fs';
 import Story from '../models/storyModel.js';
+import handleCloudinary from './handleCloudinary.js';
+import path from 'path';
 
 export default async () => {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 1); // 24 hours ago
-  cutoff.setMilliseconds(0);
+  const MAX_PER_JOB = 20000;
+  const BATCH_SIZE = 1000;
+  let deleted = 0;
 
-  // Fetch stories older than 24 hours
-  const stories = await Story.find({ createdAt: { $lt: cutoff } });
+  while (true) {
+    const stories = await Story.find({ expired: true })
+      .sort({ createdAt: 1 })
+      .limit(BATCH_SIZE);
 
-  // Stories music files
-  const musicFiles = new Set();
+    if (!stories.length) break;
 
-  // If there are stories to delete
-  if (stories.length > 0) {
-    const promises = stories.map(async (story) => {
-      // Delete story from DB
-      await story.deleteOne();
+    const idsToDelete = stories.map((s) => s._id);
+    await Story.deleteMany({ _id: { $in: idsToDelete } });
+    deleted += idsToDelete.length;
 
-      // Add story music file
+    // Collect music files
+    const musicFiles = new Set();
+    const fileDeletionPromises = stories.map(async (story) => {
       if (story.sound) musicFiles.add(story.sound);
 
-      // If in production, don't delete local files
-      if (process.env.NODE_ENV !== 'production') {
-        // Try deleting the media file
-        await fs.promises.unlink(`src/public/stories/${story.media.src}`);
+      const mediaSrc = story.media.src;
+      if (!mediaSrc) return;
+
+      if (process.env.NODE_ENV === 'production') {
+        await handleCloudinary(
+          'delete',
+          `stories/${path.basename(String(mediaSrc))}`,
+          story.media.mediaType
+        );
+      } else {
+        await fs.promises.unlink(`src/public/stories/${mediaSrc}`);
       }
     });
 
-    // Wait for all delete operations to finish
-    await Promise.allSettled(promises);
+    await Promise.allSettled(fileDeletionPromises);
 
-    // Delete music files that are no longer needed
-    await Promise.allSettled(
-      [...musicFiles].map(async (path) => {
-        if (process.env.NODE_ENV !== 'production')
-          await fs.promises.unlink(`src/public/stories/${path}`);
-      })
-    );
+    // Delete music files
+    const musicDeletionPromises = [...musicFiles].map(async (src) => {
+      if (process.env.NODE_ENV === 'production') {
+        await handleCloudinary(
+          'delete',
+          `stories/${path.basename(String(src))}`,
+          'raw'
+        );
+      } else {
+        await fs.promises.unlink(`src/public/stories/${src}`);
+      }
+    });
+
+    await Promise.allSettled(musicDeletionPromises);
+
+    if (deleted >= MAX_PER_JOB) break;
   }
 };

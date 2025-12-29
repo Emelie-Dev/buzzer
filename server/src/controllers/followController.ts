@@ -217,6 +217,7 @@ export const getConnections = (type: 'followers' | 'following') =>
             pipeline: [
               {
                 $match: {
+                  expired: false,
                   $expr: { $eq: ['$user', '$$userId'] },
                 },
               },
@@ -311,6 +312,7 @@ export const getConnections = (type: 'followers' | 'following') =>
             pipeline: [
               {
                 $match: {
+                  expired: false,
                   $expr: { $eq: ['$user', '$$userId'] },
                 },
               },

@@ -544,6 +544,7 @@ export const getFriendsSugestions = asyncErrorHandler(
           pipeline: [
             {
               $match: {
+                expired: false,
                 $expr: {
                   $eq: ['$user', '$$userId'],
                 },
@@ -748,9 +749,7 @@ export const getFriends = asyncErrorHandler(
           let: { userId: '$user._id' },
           pipeline: [
             {
-              $match: {
-                $expr: { $eq: ['$user', '$$userId'] },
-              },
+              $match: { expired: false, $expr: { $eq: ['$user', '$$userId'] } },
             },
             {
               $lookup: {

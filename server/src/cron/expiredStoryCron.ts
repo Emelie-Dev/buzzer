@@ -1,10 +1,24 @@
 import cron from 'node-cron';
-import deleteExpiredStories from '../utils/deleteExpiredStories.js';
+import Story from '../models/storyModel.js';
 
 // Schedule the cron job to run every 5 minutes
 cron.schedule('*/5 * * * *', async () => {
-  console.log('Running expired story cleanup...');
+  console.log('Updating expired stories...');
 
-  // Run the deleteExpiredStories function
-  await deleteExpiredStories();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 1); // 24 hours ago
+  cutoff.setMilliseconds(0);
+
+  // Update stories
+  await Story.updateMany(
+    {
+      expired: false,
+      createdAt: { $lt: cutoff },
+    },
+    {
+      $set: {
+        expired: true,
+      },
+    }
+  );
 });

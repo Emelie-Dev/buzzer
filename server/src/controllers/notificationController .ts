@@ -220,6 +220,9 @@ export const deleteNotifications = asyncErrorHandler(
     if (notifications.length < 1)
       return next(new CustomError('Notification list cannot be empty!', 400));
 
+    if (notifications.length > 1000)
+      return next(new CustomError('Notification list is too large!', 400));
+
     await Notification.deleteMany({
       user: req.user?._id,
       _id: { $in: notifications },

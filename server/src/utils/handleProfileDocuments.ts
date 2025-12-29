@@ -109,75 +109,116 @@ export default async (
     }
   };
 
-  const mainStages = [
-    {
-      $match: category === 'bookmarks' || category === 'liked' ? {} : matchObj,
-    },
-    {
-      $lookup: {
-        from: 'views',
-        localField:
-          category === 'bookmarks' || category === 'liked' ? 'post._id' : '_id',
-        foreignField: 'documentId',
-        as: 'viewsArray',
+  const mainStages = (index: number): PipelineStage[] => {
+    const collection = index === 0 ? 'content' : 'reel';
+
+    return [
+      {
+        $match:
+          category === 'bookmarks' || category === 'liked' ? {} : matchObj,
       },
-    },
-    {
-      $addFields: {
-        views: { $size: '$viewsArray' },
-      },
-    },
-    { $match: cursorObj },
-    { $sort: sortObj },
-    { $limit: limit },
-    {
-      $lookup: {
-        from: 'likes',
-        localField:
-          category === 'bookmarks' || category === 'liked' ? 'post._id' : '_id',
-        foreignField: 'documentId',
-        as: 'likesArray',
-      },
-    },
-    {
-      $lookup: {
-        from: 'comments',
-        localField:
-          category === 'bookmarks' || category === 'liked' ? 'post._id' : '_id',
-        foreignField: 'documentId',
-        as: 'commentsArray',
-      },
-    },
-    {
-      $addFields: {
-        likes: { $size: '$likesArray' },
-        comments: { $size: '$commentsArray' },
-      },
-    },
-    {
-      $project: {
-        createdAt: 1,
-        views: 1,
-        likes: 1,
-        comments: 1,
-        src: 1,
-        media: {
-          src: 1,
-          mediaType: 1,
+      {
+        $lookup: {
+          from: 'views',
+          let: {
+            collection:
+              category === 'bookmarks' || category === 'liked'
+                ? '$collectionName'
+                : category === 'reels'
+                ? 'reel'
+                : collection,
+            docId:
+              category === 'bookmarks' || category === 'liked'
+                ? '$post._id'
+                : '$_id',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$collection'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'viewsArray',
         },
-        post: {
+      },
+      {
+        $lookup: {
+          from: 'views',
+          localField:
+            category === 'bookmarks' || category === 'liked'
+              ? 'post._id'
+              : '_id',
+          foreignField: 'documentId',
+          as: 'viewsArray',
+        },
+      },
+      {
+        $addFields: {
+          views: { $size: '$viewsArray' },
+        },
+      },
+      { $match: cursorObj },
+      { $sort: sortObj },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'likes',
+          localField:
+            category === 'bookmarks' || category === 'liked'
+              ? 'post._id'
+              : '_id',
+          foreignField: 'documentId',
+          as: 'likesArray',
+        },
+      },
+      {
+        $lookup: {
+          from: 'comments',
+          localField:
+            category === 'bookmarks' || category === 'liked'
+              ? 'post._id'
+              : '_id',
+          foreignField: 'documentId',
+          as: 'commentsArray',
+        },
+      },
+      {
+        $addFields: {
+          likes: { $size: '$likesArray' },
+          comments: { $size: '$commentsArray' },
+        },
+      },
+      {
+        $project: {
+          createdAt: 1,
+          views: 1,
+          likes: 1,
+          comments: 1,
           src: 1,
           media: {
             src: 1,
             mediaType: 1,
           },
-          _id: 1,
+          post: {
+            src: 1,
+            media: {
+              src: 1,
+              mediaType: 1,
+            },
+            _id: 1,
+          },
+          likedAt: 1,
+          savedAt: 1,
         },
-        likedAt: 1,
-        savedAt: 1,
       },
-    },
-  ];
+    ];
+  };
 
   const collections =
     category === 'bookmarks'
@@ -190,7 +231,7 @@ export default async (
     collections.map(async (collection, index) => {
       const pipeline = [
         ...initialStages(index),
-        ...mainStages,
+        ...mainStages(index),
         {
           $addFields: {
             postType: category === 'reels' || index === 1 ? 'reel' : 'content',

@@ -34,6 +34,8 @@ const ViewSchema = new Schema<IView>({
   },
 });
 
+ViewSchema.index({ collectionName: 1, createdAt: 1 });
+
 const View = mongoose.model<IView>('View', ViewSchema);
 
 export default View;

@@ -269,6 +269,7 @@ export const getReels = asyncErrorHandler(
           pipeline: [
             {
               $match: {
+                expired: false,
                 $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
               },
             },
@@ -927,6 +928,7 @@ export const getPinnedReels = asyncErrorHandler(
           pipeline: [
             {
               $match: {
+                expired: false,
                 $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
               },
             },

@@ -503,6 +503,7 @@ export const getContents = asyncErrorHandler(
           pipeline: [
             {
               $match: {
+                expired: false,
                 $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
               },
             },

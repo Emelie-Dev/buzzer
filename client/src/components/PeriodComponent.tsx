@@ -1,25 +1,42 @@
 import styles from '../styles/Analytics.module.css';
-import { useState } from 'react';
 import { getDate } from '../Utilities';
 
-export const PeriodComponent = () => {
-  const [period, setPeriod] = useState<string>('all');
-  const [customPeriod, setCustomPeriod] = useState<{
-    value: string[];
+type PeriodComponentProps = {
+  period: {
+    value: '1y' | '1m' | '1w' | '1d' | 'all' | 'custom';
+    custom: {
+      start: string;
+      end: string;
+    };
     done: boolean;
-  }>({ value: [], done: true });
+  };
+  setPeriod: React.Dispatch<
+    React.SetStateAction<{
+      value: '1y' | '1m' | '1w' | '1d' | 'all' | 'custom';
+      custom: {
+        start: string;
+        end: string;
+      };
+      done: boolean;
+    }>
+  >;
+};
 
+export const PeriodComponent = ({
+  period,
+  setPeriod,
+}: PeriodComponentProps) => {
   return (
     <div
       className={`${styles['select-div']} ${
-        period === 'custom' && !customPeriod.done
+        period.value === 'custom' && !period.done
           ? styles['custom-select-div']
           : ''
       }`}
     >
       <span className={styles['period-text']}>Select Period:</span>
 
-      {period === 'custom' && !customPeriod.done ? (
+      {period.value === 'custom' && !period.done ? (
         <div className={styles['custom-period-div']}>
           <div className={styles['custom-period-container']}>
             <span className={styles['custom-period-box']}>
@@ -27,12 +44,12 @@ export const PeriodComponent = () => {
               <input
                 className={styles['period-input']}
                 type="date"
-                value={customPeriod.value[0]}
+                value={period.custom.start}
                 onChange={(e) =>
-                  setCustomPeriod({
-                    ...customPeriod,
-                    value: [e.target.value, customPeriod.value[1]],
-                  })
+                  setPeriod((prev) => ({
+                    ...prev,
+                    custom: { ...prev.custom, start: e.target.value },
+                  }))
                 }
               />
             </span>
@@ -42,12 +59,12 @@ export const PeriodComponent = () => {
               <input
                 className={styles['period-input']}
                 type="date"
-                value={customPeriod.value[1]}
+                value={period.custom.end}
                 onChange={(e) =>
-                  setCustomPeriod({
-                    ...customPeriod,
-                    value: [customPeriod.value[0], e.target.value],
-                  })
+                  setPeriod((prev) => ({
+                    ...prev,
+                    custom: { ...prev.custom, end: e.target.value },
+                  }))
                 }
               />
             </span>
@@ -55,11 +72,11 @@ export const PeriodComponent = () => {
 
           <button
             className={`${styles['period-btn']} ${
-              !(customPeriod.value[0] && customPeriod.value[1])
+              !(period.custom.start && period.custom.end)
                 ? styles['disable-btn']
                 : ''
             }`}
-            onClick={() => setCustomPeriod({ ...customPeriod, done: true })}
+            onClick={() => setPeriod((prev) => ({ ...prev, done: true }))}
           >
             Done
           </button>
@@ -68,12 +85,20 @@ export const PeriodComponent = () => {
         <div className={styles['select-box']}>
           <select
             className={styles['period-select']}
-            value={period}
-            onChange={(e) => {
-              if (e.target.value === 'custom')
-                setCustomPeriod({ ...customPeriod, done: false });
-              setPeriod(e.target.value);
-            }}
+            value={period.value}
+            onChange={(e) =>
+              setPeriod((prev) => ({
+                ...prev,
+                value: e.target.value as
+                  | '1y'
+                  | '1m'
+                  | '1w'
+                  | '1d'
+                  | 'all'
+                  | 'custom',
+                done: false,
+              }))
+            }
           >
             <option value={'all'}>All Time</option>
             <option value={'1y'}>1y</option>
@@ -83,14 +108,14 @@ export const PeriodComponent = () => {
             <option value={'custom'}>Custom</option>
           </select>
 
-          {period === 'custom' && (
+          {period.value === 'custom' && period.done && (
             <div className={styles['custom-date-box']}>
               <span className={styles['custom-date']}>
-                {getDate(customPeriod.value[0])}
+                {getDate(period.custom.start)}
               </span>
               &nbsp;&nbsp;-&nbsp;&nbsp;
               <span className={styles['custom-date']}>
-                {getDate(customPeriod.value[1])}
+                {getDate(period.custom.end)}
               </span>
             </div>
           )}

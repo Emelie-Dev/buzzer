@@ -458,6 +458,12 @@ const Notifications = () => {
 
     setDeleteData((prev) => ({ ...prev, loading: true }));
 
+    if (deleteData.list.size > 1000) {
+      setDeleteData((prev) => ({ ...prev, loading: false }));
+      toast.error('Delete list is too large!');
+      return;
+    }
+
     try {
       await apiClient.delete('v1/notifications', {
         data: {
