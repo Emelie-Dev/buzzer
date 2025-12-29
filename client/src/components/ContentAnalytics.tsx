@@ -5,12 +5,27 @@ import { IoClose } from 'react-icons/io5';
 
 const ContentAnalytics = () => {
   const [viewData, setViewData] = useState<boolean>(false);
+  const [period, setPeriod] = useState<{
+    value: '1y' | '1m' | '1w' | '1d' | 'all' | 'custom';
+    custom: {
+      start: string;
+      end: string;
+    };
+    done: boolean;
+  }>({
+    value: 'all',
+    custom: {
+      start: null!,
+      end: null!,
+    },
+    done: true,
+  });
 
   return (
     <>
       <section className={styles.section}>
         <header className={styles.header}>
-          <PeriodComponent />
+          <PeriodComponent period={period} setPeriod={setPeriod} />
 
           <div className={styles['select-box']}>
             <span className={styles['period-text']}>Sort By:</span>

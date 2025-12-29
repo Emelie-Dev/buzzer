@@ -8,6 +8,21 @@ import { useEffect, useRef, useState } from 'react';
 const FollowersAnalytics = () => {
   const [graphWidth, setGraphWidth] = useState<number>(0);
   const [showGraph, setShowGraph] = useState<boolean>(true);
+  const [period, setPeriod] = useState<{
+    value: '1y' | '1m' | '1w' | '1d' | 'all' | 'custom';
+    custom: {
+      start: string;
+      end: string;
+    };
+    done: boolean;
+  }>({
+    value: 'all',
+    custom: {
+      start: null!,
+      end: null!,
+    },
+    done: true,
+  });
 
   const graphRef = useRef<HTMLDivElement>(null!);
 
@@ -117,7 +132,7 @@ const FollowersAnalytics = () => {
       <div className={styles['data-box2']}>
         <span className={styles['data-name2']}>New Followers</span>
 
-        <PeriodComponent />
+        <PeriodComponent period={period} setPeriod={setPeriod} />
       </div>
 
       <div className={styles['graph-box']} ref={graphRef}>

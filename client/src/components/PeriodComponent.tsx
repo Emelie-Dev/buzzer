@@ -44,7 +44,7 @@ export const PeriodComponent = ({
               <input
                 className={styles['period-input']}
                 type="date"
-                value={period.custom.start}
+                value={period.custom.start || ''}
                 onChange={(e) =>
                   setPeriod((prev) => ({
                     ...prev,
@@ -59,7 +59,7 @@ export const PeriodComponent = ({
               <input
                 className={styles['period-input']}
                 type="date"
-                value={period.custom.end}
+                value={period.custom.end || ''}
                 onChange={(e) =>
                   setPeriod((prev) => ({
                     ...prev,

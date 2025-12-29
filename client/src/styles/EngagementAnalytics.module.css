@@ -91,6 +91,13 @@
   flex-shrink: 0;
 }
 
+.category-range {
+  color: gray;
+  font-family: appFont;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
 .period-div {
   margin-top: 3rem;
 }

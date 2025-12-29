@@ -6,8 +6,10 @@ import { Line } from 'react-chartjs-2';
 import { ChartEvent, ActiveElement } from 'chart.js';
 import { Chart as ChartJS } from 'chart.js';
 import crosshairPlugin from 'chartjs-plugin-crosshair';
-import { monthLabels } from '../Utilities';
+import { apiClient, monthLabels } from '../Utilities';
 import { PeriodComponent } from './PeriodComponent';
+// import Skeleton from 'react-loading-skeleton';
+import { toast } from 'sonner';
 
 // Register the plugin with Chart.js
 ChartJS.register(crosshairPlugin);
@@ -19,6 +21,22 @@ const EngagementAnalytics = () => {
 
   const [graphWidth, setGraphWidth] = useState<number>(0);
   const [showGraph, setShowGraph] = useState<boolean>(true);
+  const [period, setPeriod] = useState<{
+    value: '1y' | '1m' | '1w' | '1d' | 'all' | 'custom';
+    custom: {
+      start: string;
+      end: string;
+    };
+    done: boolean;
+  }>({
+    value: 'all',
+    custom: {
+      start: null!,
+      end: null!,
+    },
+    done: true,
+  });
+  // const [monthlyStats, setMonthlyStats] = useState<any>(null);
 
   const graphRef = useRef<HTMLDivElement>(null!);
 
@@ -42,6 +60,7 @@ const EngagementAnalytics = () => {
     };
 
     resizeHandler();
+    getMonthlyStats();
 
     window.addEventListener('resize', resizeHandler);
 
@@ -118,6 +137,15 @@ const EngagementAnalytics = () => {
     },
   };
 
+  const getMonthlyStats = async () => {
+    try {
+      const { data } = await apiClient('v1/analytics/engagements');
+      console.log(data);
+    } catch {
+      return toast.error('Failed to load monthly stats.');
+    }
+  };
+
   return (
     <section className={styles.main}>
       <header className={styles['main-header']}>
@@ -131,6 +159,7 @@ const EngagementAnalytics = () => {
             <span className={styles['category-name']}>Profile Views</span>
             <span className={styles['category-value']}>25</span>
             <span className={styles['category-percentage']}>+3 (30%)</span>
+            <span className={styles['category-range']}>vs last month</span>
           </span>
 
           <FaArrowTrendUp className={styles['category-icon']} />
@@ -146,6 +175,7 @@ const EngagementAnalytics = () => {
             <span className={styles['category-name']}>Post Views</span>
             <span className={styles['category-value']}>25</span>
             <span className={styles['category-percentage2']}>-3 (-30%)</span>
+            <span className={styles['category-range']}>vs last month</span>
           </span>
 
           <FaArrowTrendDown className={styles['category-icon2']} />
@@ -161,6 +191,7 @@ const EngagementAnalytics = () => {
             <span className={styles['category-name']}>Likes</span>
             <span className={styles['category-value']}>25</span>
             <span className={styles['category-percentage']}>+3 (30%)</span>
+            <span className={styles['category-range']}>vs last month</span>
           </span>
 
           <FaArrowTrendUp className={styles['category-icon']} />
@@ -176,6 +207,7 @@ const EngagementAnalytics = () => {
             <span className={styles['category-name']}>Comments</span>
             <span className={styles['category-value']}>25</span>
             <span className={styles['category-percentage']}>+3 (30%)</span>
+            <span className={styles['category-range']}>vs last month</span>
           </span>
 
           <FaArrowTrendUp className={styles['category-icon']} />
@@ -191,6 +223,7 @@ const EngagementAnalytics = () => {
             <span className={styles['category-name']}>Shares</span>
             <span className={styles['category-value']}>25</span>
             <span className={styles['category-percentage2']}>-3 (-30%)</span>
+            <span className={styles['category-range']}>vs last month</span>
           </span>
 
           <FaArrowTrendDown className={styles['category-icon2']} />
@@ -198,7 +231,7 @@ const EngagementAnalytics = () => {
       </header>
 
       <div className={styles['period-div']}>
-        <PeriodComponent />
+        <PeriodComponent period={period} setPeriod={setPeriod} />
       </div>
 
       <div className={styles['graph-box']} ref={graphRef}>
