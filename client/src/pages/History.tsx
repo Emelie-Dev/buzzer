@@ -92,7 +92,7 @@ const History = () => {
         return {
           ...prev,
           loading: true,
-          cursor: history? history[history.length - 1]?.createdAt:null!,
+          cursor: history ? history[history.length - 1]?.createdAt : null!,
         };
       });
     }
@@ -203,7 +203,7 @@ const History = () => {
     const isBottom =
       target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
 
-    if (isBottom && !historyData.end && historyData.loading === false) {
+    if (isBottom && !historyData.end && historyData.loading !== true) {
       setHistoryData((prev) => {
         return {
           ...prev,

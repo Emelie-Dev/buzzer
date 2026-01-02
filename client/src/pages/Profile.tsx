@@ -427,7 +427,7 @@ const Profile = () => {
     if (
       isBottom &&
       !postsData[category].end &&
-      postsData[category].loading === false
+      postsData[category].loading !== true
     ) {
       setPostsData((prev) => {
         const arr = posts[category];
@@ -811,7 +811,10 @@ const Profile = () => {
               ) : (
                 <>
                   {posts.all.map((post) => (
-                    <article key={post._id} className={styles.content}>
+                    <article
+                      key={`${post.postType}-${post._id}`}
+                      className={styles.content}
+                    >
                       {post.postType === 'reel' && (
                         <svg
                           className={styles['reel-icon']}
@@ -1157,7 +1160,10 @@ const Profile = () => {
               ) : (
                 <>
                   {posts.private.map((post) => (
-                    <article key={post._id} className={styles.content}>
+                    <article
+                      key={`${post.postType}-${post._id}`}
+                      className={styles.content}
+                    >
                       {post.postType === 'reel' && (
                         <svg
                           className={styles['reel-icon']}
@@ -1338,7 +1344,10 @@ const Profile = () => {
               ) : (
                 <>
                   {posts.bookmarks.map((post) => (
-                    <article key={post._id} className={styles.content}>
+                    <article
+                      key={`${post.postType}-${post._id}`}
+                      className={styles.content}
+                    >
                       {post.postType === 'reel' && (
                         <svg
                           className={styles['reel-icon']}
@@ -1520,7 +1529,10 @@ const Profile = () => {
               ) : (
                 <>
                   {posts.liked.map((post) => (
-                    <article key={post._id} className={styles.content}>
+                    <article
+                      key={`${post.postType}-${post._id}`}
+                      className={styles.content}
+                    >
                       {post.postType === 'reel' && (
                         <svg
                           className={styles['reel-icon']}

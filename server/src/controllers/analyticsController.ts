@@ -10,6 +10,8 @@ import Share from '../models/shareModel.js';
 import Content from '../models/contentModel.js';
 import Reel from '../models/reelModel.js';
 import Follow from '../models/followModel.js';
+import { isValidDateString } from './commentController.js';
+import { DateTime } from 'luxon';
 
 const monthLabels = [
   'Jan',
@@ -51,6 +53,7 @@ const getStats = async (
   startDate: Date,
   endDate: Date,
   timeField: 'likedAt' | 'createdAt' | 'followedAt',
+  timezone: string,
   matchObj: {}
 ) => {
   const [value, type] = range;
@@ -88,6 +91,7 @@ const getStats = async (
           $dateToString: {
             format,
             date: `$${timeField}`,
+            timezone,
           },
         },
         count: { $sum: 1 },
@@ -126,6 +130,7 @@ const getStats = async (
                   { $multiply: [1000 * 60 * 60 * constant * +value, '$_id'] },
                 ],
               },
+              timezone,
             },
           },
           endDate: {
@@ -138,6 +143,7 @@ const getStats = async (
                   1000 * 60 * 60 * constant * (+value - 1),
                 ],
               },
+              timezone,
             },
           },
         },
@@ -148,25 +154,27 @@ const getStats = async (
   const stats = await model.aggregate(pipeline);
 
   const expr = (date: Date) => {
+    const clientDate = DateTime.fromJSDate(date, {
+      zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }).setZone(timezone);
+
     let labelText;
 
     switch (type) {
       case 'y':
-        labelText = `${date.getFullYear()}`;
+        labelText = `${clientDate.year}`;
         break;
 
       case 'm':
-        labelText = `${monthLabels[date.getMonth()]} ${date.getFullYear()}`;
+        labelText = `${monthLabels[clientDate.month - 1]} ${clientDate.year}`;
         break;
 
       case 'd':
-        labelText = `${
-          monthLabels[date.getMonth()]
-        } ${date.getDate()}, ${date.getFullYear()}`;
+        labelText = `${monthLabels[clientDate.month - 1]} ${clientDate.day}`;
         break;
 
       default:
-        const hour = date.getHours();
+        const hour = clientDate.hour;
         labelText =
           hour === 0
             ? '12 AM'
@@ -182,8 +190,13 @@ const getStats = async (
 
   const result = [];
 
-  while (startDate < endDate) {
-    const date = startDate.toISOString();
+  while (startDate <= endDate) {
+    const date = DateTime.fromJSDate(startDate, {
+      zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    })
+      .setZone(timezone)
+      .toISO()!;
+
     let timestamp =
       Date.parse(String(startDate)) + 1000 * 60 * 60 * constant * +value;
     const secondDate = new Date(
@@ -197,14 +210,15 @@ const getStats = async (
         ? date.slice(0, date.lastIndexOf('-'))
         : type === 'd'
         ? date.slice(0, date.indexOf('T'))
-        : date.slice(0, date.lastIndexOf(':'));
+        : date.slice(0, date.indexOf(':') + 3);
 
     const count = stats.find(
       (obj) => obj._id === label || obj.startDate === label
     );
 
     let labelText = expr(startDate);
-    if (+value > 1) labelText += ` - ${expr(secondDate)}`;
+    if (+value > 1 && secondDate <= endDate)
+      labelText += ` - ${expr(secondDate)}`;
 
     result.push({ label: labelText, value: count ? count.count : 0 });
     startDate = new Date(timestamp);
@@ -218,7 +232,7 @@ export const getEngagementStats = asyncErrorHandler(
     const type = req.params.type;
     const period = req.body.period;
 
-    const allowedTypes = ['profile', 'views', 'likes', 'comments', 'shares'];
+    const allowedTypes = ['profile', 'post', 'likes', 'comments', 'shares'];
     const allowedPeriod = ['1y', '1m', '1w', '1d', 'all'];
 
     if (
@@ -230,20 +244,19 @@ export const getEngagementStats = asyncErrorHandler(
       return next(new CustomError('Invalid request!', 400));
     }
 
+    if (period instanceof Object) {
+      if (!isValidDateString(period.start) || !isValidDateString(period.end)) {
+        return next(new CustomError('Invalid request!', 400));
+      }
+    }
+
+    const prevMonth = new Date();
     let startDate = period.start ? new Date(period.start) : new Date();
     const endDate = period.end ? new Date(period.end) : new Date();
     let model: Model<any>,
       matchObj = {},
       range;
     const timeField = type === 'likes' ? 'likedAt' : 'createdAt';
-
-    if (
-      period instanceof Object &&
-      (String(startDate) === 'Invalid Date' ||
-        String(endDate) === 'Invalid Date')
-    ) {
-      return next(new CustomError('Invalid request!', 400));
-    }
 
     if (period === '1d') startDate.setMinutes(0, 0, 0);
     else startDate.setHours(0, 0, 0, 0);
@@ -254,9 +267,9 @@ export const getEngagementStats = asyncErrorHandler(
         matchObj = { collectionName: 'user' };
         break;
 
-      case 'views':
+      case 'post':
         model = View;
-        matchObj = { collectionName: { $ne: 'user' } };
+        matchObj = { collectionName: { $in: ['content', 'reel'] } };
         break;
 
       case 'likes':
@@ -283,7 +296,9 @@ export const getEngagementStats = asyncErrorHandler(
         break;
 
       case '1m':
-        startDate.setMonth(startDate.getMonth() - 1);
+        startDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 0);
+        startDate.setDate(Math.min(prevMonth.getDate(), startDate.getDate()));
+        startDate.setHours(0, 0, 0, 0);
         range = [2, 'd'];
         break;
 
@@ -331,6 +346,7 @@ export const getEngagementStats = asyncErrorHandler(
       startDate,
       endDate,
       timeField,
+      req.clientTimeZone!,
       matchObj
     );
 
@@ -338,6 +354,7 @@ export const getEngagementStats = asyncErrorHandler(
       status: 'success',
       data: {
         stats,
+        rangeType: +range[0] > 1 ? 'r' : range[1],
       },
     });
   }
@@ -345,11 +362,21 @@ export const getEngagementStats = asyncErrorHandler(
 
 export const getMonthlyEngagementStats = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 1);
+    const prevMonth = new Date();
+    const startDate = new Date(
+      prevMonth.getFullYear(),
+      prevMonth.getMonth(),
+      0
+    );
+    startDate.setDate(Math.min(prevMonth.getDate(), startDate.getDate()));
     startDate.setHours(0, 0, 0, 0);
 
     const endDate = new Date();
+
+    const startString = `${startDate.getFullYear()}-${
+      startDate.getMonth() + 1
+    }`;
+    const endString = `${endDate.getFullYear()}-${endDate.getMonth() + 1}`;
 
     const models = [
       {
@@ -358,9 +385,9 @@ export const getMonthlyEngagementStats = asyncErrorHandler(
         matchObj: { collectionName: 'user' },
       },
       {
-        type: 'views',
+        type: 'post',
         model: View,
-        matchObj: { collectionName: { $ne: 'user' } },
+        matchObj: { collectionName: { $in: ['content', 'reel'] } },
       },
       {
         type: 'likes',
@@ -399,44 +426,37 @@ export const getMonthlyEngagementStats = asyncErrorHandler(
                   date: `$${timeField}`,
                 },
               },
-              count: { $sum: 1 },
+              total: { $sum: 1 },
             },
           },
           {
-            $sort: { _id: 1 },
-          },
-          {
-            $group: {
-              _id: null,
-              counts: { $push: '$count' },
+            $project: {
+              count: {
+                start: { $cond: [{ $eq: ['$_id', startString] }, '$total', 0] },
+                end: { $cond: [{ $eq: ['$_id', endString] }, '$total', 0] },
+              },
             },
           },
           {
             $project: {
               type,
               diff: {
-                $subtract: [
-                  { $arrayElemAt: ['$counts', 1] },
-                  { $arrayElemAt: ['$counts', 0] },
-                ],
+                $subtract: ['$count.end', '$count.start'],
               },
               percent: {
                 $multiply: [
                   {
                     $divide: [
                       {
-                        $subtract: [
-                          { $arrayElemAt: ['$counts', 1] },
-                          { $arrayElemAt: ['$counts', 0] },
-                        ],
+                        $subtract: ['$count.end', '$count.start'],
                       },
-                      { $max: [{ $arrayElemAt: ['$counts', 0] }, 1] },
+                      { $max: ['$count.start', 1] },
                     ],
                   },
                   100,
                 ],
               },
-              count: { $arrayElemAt: ['$counts', 1] },
+              count: '$count.end',
             },
           },
         ]);
@@ -486,20 +506,47 @@ export const getPosts = asyncErrorHandler(
       return next(new CustomError('Invalid request!', 400));
     }
 
+    if (period instanceof Object) {
+      if (!isValidDateString(period.start) || !isValidDateString(period.end)) {
+        return next(new CustomError('Invalid request!', 400));
+      }
+    }
+
+    const prevMonth = new Date();
+    let initialDate: Date = null!;
     let startDate = period.start ? new Date(period.start) : new Date();
     const endDate = period.end ? new Date(period.end) : new Date();
-    const cursorDate = new Date(cursor as string);
-    const timestamp = sort === 'liked' ? 'likedAt' : 'createdAt';
-    const operator = order === 'up' ? '$gt' : '$lt';
-    const limit = 20;
+    const cursorDate: Date = await new Promise(async (resolve) => {
+      if (isValidDateString(cursor)) {
+        resolve(new Date(cursor));
+      } else if (order === 'up') {
+        const [firstContent, firstReel] = await Promise.all([
+          Content.findOne({ user: req.user?._id }).sort({ createdAt: 1 }),
+          Reel.findOne({ user: req.user?._id }).sort({ createdAt: 1 }),
+        ]);
 
-    if (
-      period instanceof Object &&
-      (String(startDate) === 'Invalid Date' ||
-        String(endDate) === 'Invalid Date')
-    ) {
-      return next(new CustomError('Invalid request!', 400));
-    }
+        const date = new Date(
+          Math.min(
+            Date.parse(
+              String(firstContent ? firstContent?.createdAt : new Date())
+            ),
+            Date.parse(String(firstReel ? firstReel?.createdAt : new Date()))
+          )
+        );
+        initialDate = date;
+        resolve(date);
+      } else {
+        resolve(new Date());
+      }
+    });
+    const operator = order === 'up' ? '$gt' : '$lt';
+    const sortValue =
+      typeof req.body[sort] === 'number'
+        ? req.body[sort]
+        : order === 'up'
+        ? 0
+        : Infinity;
+    const limit = 20;
 
     switch (period) {
       case '1y':
@@ -508,7 +555,8 @@ export const getPosts = asyncErrorHandler(
         break;
 
       case '1m':
-        startDate.setMonth(startDate.getMonth() - 1);
+        startDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 0);
+        startDate.setDate(Math.min(prevMonth.getDate(), startDate.getDate()));
         break;
 
       case '1w':
@@ -520,96 +568,143 @@ export const getPosts = asyncErrorHandler(
         break;
 
       case 'all':
-        const [firstContent, firstReel] = await Promise.all([
-          Content.findOne({ user: req.user?._id }).sort({ createdAt: 1 }),
-          Reel.findOne({ user: req.user?._id }).sort({ createdAt: 1 }),
-        ]);
-        startDate = new Date(
-          Math.min(
-            Date.parse(
-              String(firstContent ? firstContent?.createdAt : new Date())
-            ),
-            Date.parse(String(firstReel ? firstReel?.createdAt : new Date()))
-          )
-        );
+        if (initialDate) {
+          startDate = initialDate;
+        } else {
+          const [firstContent, firstReel] = await Promise.all([
+            Content.findOne({ user: req.user?._id }).sort({ createdAt: 1 }),
+            Reel.findOne({ user: req.user?._id }).sort({ createdAt: 1 }),
+          ]);
+          startDate = new Date(
+            Math.min(
+              Date.parse(
+                String(firstContent ? firstContent?.createdAt : new Date())
+              ),
+              Date.parse(String(firstReel ? firstReel?.createdAt : new Date()))
+            )
+          );
+        }
         break;
     }
+
     if (period === '1d') startDate.setMinutes(0, 0, 0);
     else startDate.setHours(0, 0, 0, 0);
 
     const sortObj: Record<string, 1 | -1> = { [sort]: order === 'up' ? 1 : -1 };
     if (sort !== 'createdAt') sortObj.createdAt = -1;
 
-    const cursorObj =
-      String(cursorDate) !== 'Invalid Date'
-        ? sort !== 'createdAt'
-          ? {
-              $or: [
-                { [sort]: { [operator]: +req.body[sort] } },
-                { [sort]: +req.body[sort], [timestamp]: { $lt: cursorDate } },
-              ],
-            }
-          : { [timestamp]: { [operator]: cursorDate } }
-        : {};
+    const cursorObj = isValidDateString(cursor)
+      ? sort !== 'createdAt'
+        ? {
+            $or: [
+              { [sort]: { [operator]: +sortValue } },
+              { [sort]: +sortValue, createdAt: { $lt: cursorDate } },
+            ],
+          }
+        : { createdAt: { [operator]: cursorDate } }
+      : {};
 
-    const pipeline: PipelineStage[] = [
-      {
-        $match: {
-          user: req.user?._id,
-          createdAt: { $gte: startDate, $lte: endDate },
+    const pipeline = (index: number): PipelineStage[] => {
+      const collection = index === 0 ? 'content' : 'reel';
+      const result = [
+        {
+          $match: {
+            user: req.user?._id,
+            createdAt: { $gte: startDate, $lte: endDate },
+          },
         },
-      },
-      {
-        $lookup: {
-          from: 'views',
-          localField: '_id',
-          foreignField: 'documentId',
-          as: 'views',
+        {
+          $lookup: {
+            from: 'views',
+            as: 'views',
+            let: { collection, docId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$collectionName', '$$collection'] },
+                      { $eq: ['$documentId', '$$docId'] },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
         },
-      },
-      {
-        $addFields: {
-          views: { $size: '$views' },
-          likes: sort === 'likes' ? { $size: '$likes' } : null,
+        {
+          $addFields: {
+            views: { $size: '$views' },
+            likes: sort === 'likes' ? { $size: '$likes' } : null,
+            type: index === 0 ? 'content' : 'reel',
+          },
         },
-      },
-      { $match: cursorObj },
-      { $sort: sortObj },
-      { $limit: limit },
-      {
-        $project: {
-          settings: 0,
-          keywords: 0,
-          location: 0,
-          __v: 0,
+        { $match: cursorObj },
+        { $sort: sortObj },
+        { $limit: limit },
+        {
+          $project: {
+            type: 1,
+            createdAt: 1,
+            views: 1,
+            likes: 1,
+            description: 1,
+            src: 1,
+            mediaType: 1,
+          },
         },
-      },
-    ];
+      ];
 
-    if (sort === 'likes') {
-      pipeline.splice(2, 0, {
-        $lookup: {
-          from: 'likes',
-          localField: '_id',
-          foreignField: 'documentId',
-          as: 'likes',
-        },
-      });
-    }
+      if (index === 0) {
+        result[2].$addFields = {
+          ...result[2].$addFields,
+          src: { $first: '$media.src' },
+          mediaType: { $first: '$media.mediaType' },
+        } as any;
+      }
+
+      if (sort === 'likes') {
+        result.splice(2, 0, {
+          $lookup: {
+            from: 'likes',
+            as: 'likes',
+            let: { collection, docId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$collectionName', '$$collection'] },
+                      { $eq: ['$documentId', '$$docId'] },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        });
+      }
+
+      return result;
+    };
 
     const result = await Promise.all(
       [Content, Reel].map(
-        async (model, index) =>
-          await model.aggregate([
-            ...pipeline,
-            {
-              $addFields: {
-                type: index === 0 ? 'content' : 'reel',
-              },
-            },
-          ])
+        async (model, index) => await model.aggregate(pipeline(index))
       )
     );
+
+    const count = (
+      await Promise.all(
+        [Content, Reel].map(
+          async (model) =>
+            await model.countDocuments({
+              user: req.user?._id,
+              createdAt: { $gte: startDate, $lte: endDate },
+            })
+        )
+      )
+    ).reduce((acc, value) => acc + value, 0);
 
     const posts = result
       .flat()
@@ -619,7 +714,7 @@ export const getPosts = asyncErrorHandler(
             return order === 'up' ? a[sort] - b[sort] : b[sort] - a[sort];
           }
 
-          return +new Date(b[timestamp]) - +new Date(a[timestamp]);
+          return +new Date(b.createdAt) - +new Date(a.createdAt);
         } else {
           return order === 'up'
             ? +new Date(a.createdAt) - +new Date(b.createdAt)
@@ -632,6 +727,7 @@ export const getPosts = asyncErrorHandler(
       status: 'sucess',
       data: {
         posts,
+        count,
       },
     });
   }
@@ -662,48 +758,124 @@ export const getPostStats = asyncErrorHandler(
       {
         $lookup: {
           from: 'views',
-          localField: '_id',
-          foreignField: 'documentId',
           as: 'views',
+          let: { type, docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$type'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
         },
       },
       {
         $lookup: {
           from: 'likes',
-          localField: '_id',
-          foreignField: 'documentId',
+          let: { type, docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$type'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
           as: 'likes',
         },
       },
       {
         $lookup: {
           from: 'comments',
-          localField: '_id',
-          foreignField: 'documentId',
+          let: { type, docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$type'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
           as: 'comments',
         },
       },
       {
         $lookup: {
           from: 'shares',
-          localField: '_id',
-          foreignField: 'documentId',
+          let: { type, docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$type'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
           as: 'shares',
         },
       },
       {
         $lookup: {
+          from: 'bookmarks',
+          let: { type, docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$type'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'saves',
+        },
+      },
+      {
+        $lookup: {
           from: 'follows',
-          localField: '_id',
-          foreignField: 'documentId',
+          let: { type, docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$type'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
           as: 'followers',
         },
       },
       {
         $project: {
+          createdAt: 1,
           likes: { $size: '$likes' },
           comments: { $size: '$comments' },
           shares: { $size: '$shares' },
+          saves: { $size: '$saves' },
           followers: { $size: '$followers' },
           viewers: {
             $size: {
@@ -725,9 +897,17 @@ export const getPostStats = asyncErrorHandler(
             $divide: ['$playTime', { $max: [{ $size: '$views' }, 1] }],
           },
           watchedFully: {
-            $multiply: [
+            $min: [
               {
-                $divide: ['$watchedFully', { $max: [{ $size: '$views' }, 1] }],
+                $multiply: [
+                  {
+                    $divide: [
+                      '$watchedFully',
+                      { $max: [{ $size: '$views' }, 1] },
+                    ],
+                  },
+                  100,
+                ],
               },
               100,
             ],
@@ -754,17 +934,16 @@ export const getFollowersStats = asyncErrorHandler(
       return next(new CustomError('Invalid request!', 400));
     }
 
+    if (period instanceof Object) {
+      if (!isValidDateString(period.start) || !isValidDateString(period.end)) {
+        return next(new CustomError('Invalid request!', 400));
+      }
+    }
+
+    const prevMonth = new Date();
     let startDate = period.start ? new Date(period.start) : new Date();
     const endDate = period.end ? new Date(period.end) : new Date();
     let range;
-
-    if (
-      period instanceof Object &&
-      (String(startDate) === 'Invalid Date' ||
-        String(endDate) === 'Invalid Date')
-    ) {
-      return next(new CustomError('Invalid request!', 400));
-    }
 
     if (period === '1d') startDate.setMinutes(0, 0, 0);
     else startDate.setHours(0, 0, 0, 0);
@@ -777,7 +956,9 @@ export const getFollowersStats = asyncErrorHandler(
         break;
 
       case '1m':
-        startDate.setMonth(startDate.getMonth() - 1);
+        startDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 0);
+        startDate.setDate(Math.min(prevMonth.getDate(), startDate.getDate()));
+        startDate.setHours(0, 0, 0, 0);
         range = [2, 'd'];
         break;
 
@@ -822,13 +1003,24 @@ export const getFollowersStats = asyncErrorHandler(
       startDate,
       endDate,
       'followedAt',
+      req.clientTimeZone!,
       {}
     );
+
+    const count = await Follow.countDocuments({
+      following: req.user?._id,
+      followedAt: {
+        $gte: startDate,
+        $lte: endDate,
+      },
+    });
 
     return res.status(200).json({
       status: 'success',
       data: {
         stats,
+        rangeType: +range[0] > 1 ? 'r' : range[1],
+        count,
       },
     });
   }

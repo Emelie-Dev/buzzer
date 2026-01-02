@@ -1,13 +1,14 @@
 import styles from '../styles/FollowersAnalytics.module.css';
-import { monthLabels } from '../Utilities';
+import { apiClient } from '../Utilities';
 import { PeriodComponent } from './PeriodComponent';
 import { Line } from 'react-chartjs-2';
 import { ChartEvent, ActiveElement } from 'chart.js';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import Skeleton from 'react-loading-skeleton';
 
 const FollowersAnalytics = () => {
   const [graphWidth, setGraphWidth] = useState<number>(0);
-  const [showGraph, setShowGraph] = useState<boolean>(true);
   const [period, setPeriod] = useState<{
     value: '1y' | '1m' | '1w' | '1d' | 'all' | 'custom';
     custom: {
@@ -24,41 +25,34 @@ const FollowersAnalytics = () => {
     done: true,
   });
 
+  const [followersStats, setFollowersStats] = useState<{
+    labels: string[];
+    value: number[];
+    count: number;
+    loading: boolean | 'error';
+  }>({ labels: [], value: [], count: 0, loading: true });
+
   const graphRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
-    const resizeHandler = () => {
-      setShowGraph(false);
+    if (followersStats.loading === true) getFollowersStats();
+  }, [followersStats.loading]);
 
-      if (window.matchMedia('(max-width: 500px)').matches) {
-        setGraphWidth(500);
-      } else if (window.matchMedia('(max-width: 600px)').matches) {
-        setGraphWidth(graphRef.current.offsetWidth);
-      } else if (window.matchMedia('(max-width: 800px)').matches) {
-        setGraphWidth(graphRef.current.offsetWidth - 16);
-      } else {
-        setGraphWidth(graphRef.current.offsetWidth - 32);
+  useEffect(() => {
+    if (period.value === 'custom') {
+      if (period.done) {
+        setFollowersStats({ labels: [], value: [], count: 0, loading: true });
       }
-
-      setTimeout(() => {
-        setShowGraph(true);
-      }, 100);
-    };
-
-    resizeHandler();
-
-    window.addEventListener('resize', resizeHandler);
-
-    return () => {
-      window.removeEventListener('resize', resizeHandler);
-    };
-  }, []);
+    } else {
+      setFollowersStats({ labels: [], value: [], count: 0, loading: true });
+    }
+  }, [period]);
 
   const lineData = {
-    labels: monthLabels,
+    labels: followersStats.labels,
     datasets: [
       {
-        data: [2, 3, 2, 3, 1, 5, 7, 2, 3, 4, 1, 6, 1],
+        data: followersStats.value,
         fill: `#a855f7`,
         backgroundColor: `#a855f7`,
         borderColor: `#a855f7`,
@@ -83,6 +77,8 @@ const FollowersAnalytics = () => {
           font: {
             size: 14,
           },
+          maxRotation: 0,
+          minRotation: 0,
         },
       },
       y: {
@@ -122,11 +118,40 @@ const FollowersAnalytics = () => {
     },
   };
 
+  const getFollowersStats = async () => {
+    try {
+      const { data } = await apiClient.post('v1/analytics/followers', {
+        period: period.value === 'custom' ? period.custom : period.value,
+      });
+      const stats: any[] = data.data.stats;
+
+      const rangeType: 'y' | 'm' | 'r' | 'd' | 'h' = data.data.rangeType;
+      const width = {
+        y: 1200,
+        m: 1200,
+        r: 1800,
+        d: 1200,
+        h: 1500,
+      };
+
+      setFollowersStats(() => ({
+        labels: stats.map((obj) => obj.label),
+        value: stats.map((obj) => obj.value),
+        count: data.data.count,
+        loading: false,
+      }));
+      setGraphWidth(width[rangeType]);
+    } catch {
+      setFollowersStats((prev) => ({ ...prev, loading: 'error' }));
+      return toast.error('Could not get stats.');
+    }
+  };
+
   return (
     <section className={styles.section}>
       <div className={styles['data-box']}>
-        <span className={styles['data-name']}>Total Followers:</span>
-        <span className={styles['data-value']}>23567</span>
+        <span className={styles['data-name']}>Followers Count:</span>
+        <span className={styles['data-value']}>{followersStats.count}</span>
       </div>
 
       <div className={styles['data-box2']}>
@@ -136,15 +161,33 @@ const FollowersAnalytics = () => {
       </div>
 
       <div className={styles['graph-box']} ref={graphRef}>
-        {showGraph ? (
-          <Line
-            data={lineData}
-            options={lineOptions}
-            width={graphWidth}
-            height={450}
-          />
+        {followersStats.loading === true ? (
+          <Skeleton width={graphWidth} height={350} />
+        ) : followersStats.loading === 'error' ? (
+          <div className={styles['no-data-text']}>
+            Unable to load stats. Check your connection and try again.
+            <div className={styles['error-btn']}>
+              <button
+                onClick={() => {
+                  setFollowersStats((prev) => ({
+                    ...prev,
+                    loading: true,
+                  }));
+                }}
+              >
+                Try again
+              </button>
+            </div>
+          </div>
         ) : (
-          <>&nbsp;</>
+          <div className={styles.graph}>
+            <Line
+              data={lineData}
+              options={lineOptions}
+              height={350}
+              width={graphWidth}
+            />
+          </div>
         )}
       </div>
     </section>

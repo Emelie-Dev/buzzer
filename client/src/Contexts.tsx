@@ -116,6 +116,8 @@ export const GeneralContext = createContext<{
       likes: number;
     }>
   >;
+  display: 'light' | 'dark' | 'system';
+  setDisplay: React.Dispatch<React.SetStateAction<'light' | 'dark' | 'system'>>;
 }>(null!);
 
 export const SettingsContext = createContext<{

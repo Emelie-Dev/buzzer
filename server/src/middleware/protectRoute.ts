@@ -74,8 +74,15 @@ export default asyncErrorHandler(
     session.lastUsedAt = new Date();
     await session.save();
 
+    const timezone = Intl.supportedValuesOf('timeZone').includes(
+      req.get('x-timezone')!
+    )
+      ? req.get('x-timezone')
+      : 'UTC';
+
     req.activeSession = String(session._id);
     req.user = user as Record<string, any>;
+    req.clientTimeZone = timezone;
 
     // Allow the user access the route
     next();

@@ -42,6 +42,7 @@ const App = () => {
     posts: number;
     likes: number;
   }>({ followers: 0, following: 0, friends: 0, posts: 0, likes: 0 });
+  const [display, setDisplay] = useState<'light' | 'dark' | 'system'>('light');
 
   useEffect(() => {
     const getSuggestedUsers = async () => {
@@ -65,6 +66,10 @@ const App = () => {
     getSuggestedUsers();
     getProfileData();
   }, []);
+
+  useEffect(() => {
+    if (user) setDisplay(user.settings.general.display);
+  }, [user]);
 
   return (
     <>
@@ -94,6 +99,8 @@ const App = () => {
             setShowCollaborationRequests,
             profileData,
             setProfileData,
+            display,
+            setDisplay,
           }}
         >
           <StoryContext.Provider

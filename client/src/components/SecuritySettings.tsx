@@ -219,7 +219,7 @@ const SecurityAlerts = () => {
     const isBottom =
       target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
 
-    if (isBottom && !alertsData.end && alertsData.loading === false) {
+    if (isBottom && !alertsData.end && alertsData.loading !== true) {
       setAlertsData((prev) => {
         const cursor =
           alerts.length > 0 ? alerts[alerts.length - 1].createdAt : null;

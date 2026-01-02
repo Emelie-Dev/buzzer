@@ -148,17 +148,6 @@ export default async (
         },
       },
       {
-        $lookup: {
-          from: 'views',
-          localField:
-            category === 'bookmarks' || category === 'liked'
-              ? 'post._id'
-              : '_id',
-          foreignField: 'documentId',
-          as: 'viewsArray',
-        },
-      },
-      {
         $addFields: {
           views: { $size: '$viewsArray' },
         },
@@ -169,23 +158,61 @@ export default async (
       {
         $lookup: {
           from: 'likes',
-          localField:
-            category === 'bookmarks' || category === 'liked'
-              ? 'post._id'
-              : '_id',
-          foreignField: 'documentId',
+          let: {
+            collection:
+              category === 'bookmarks' || category === 'liked'
+                ? '$collectionName'
+                : category === 'reels'
+                ? 'reel'
+                : collection,
+            docId:
+              category === 'bookmarks' || category === 'liked'
+                ? '$post._id'
+                : '$_id',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$collection'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
           as: 'likesArray',
         },
       },
       {
         $lookup: {
           from: 'comments',
-          localField:
-            category === 'bookmarks' || category === 'liked'
-              ? 'post._id'
-              : '_id',
-          foreignField: 'documentId',
           as: 'commentsArray',
+          let: {
+            collection:
+              category === 'bookmarks' || category === 'liked'
+                ? '$collectionName'
+                : category === 'reels'
+                ? 'reel'
+                : collection,
+            docId:
+              category === 'bookmarks' || category === 'liked'
+                ? '$post._id'
+                : '$_id',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', '$$collection'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
         },
       },
       {

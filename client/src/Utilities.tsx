@@ -22,6 +22,9 @@ export const serverUrl =
 export const apiClient = axios.create({
   baseURL: `${serverUrl}api/`,
   withCredentials: true,
+  headers: {
+    'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+  },
 });
 
 // Helper: Convert base64 public key to Uint8Array

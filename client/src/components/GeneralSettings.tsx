@@ -3,16 +3,15 @@ import styles from '../styles/GeneralSettings.module.css';
 import Engagements from './Engagements';
 import Switch from './Switch';
 import { IoArrowBack } from 'react-icons/io5';
-import { AuthContext, SettingsContext } from '../Contexts';
+import { AuthContext, GeneralContext, SettingsContext } from '../Contexts';
 import { toast } from 'sonner';
 import { apiClient } from '../Utilities';
 
 const GeneralSettings = () => {
   const { user, setUser } = useContext(AuthContext);
   const { setMainCategory } = useContext(SettingsContext);
-  const [category, setCategory] = useState<'light' | 'dark' | 'system'>(
-    user.settings.general.display
-  );
+  const { display: category, setDisplay: setCategory } =
+    useContext(GeneralContext);
   const [engagementModal, setEngagementModal] = useState<
     'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
   >(null);

@@ -65,7 +65,7 @@ services:
     image: typesense/typesense:28.0
     command: [
       "typesense-server",
-      "--log-level=off",
+      "--log-level=error",
       "--data-dir=/data",
       "--api-key=xyz", 
       "--listen-port=8108"

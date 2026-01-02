@@ -1,6 +1,6 @@
 import NavBar from '../components/NavBar';
 import styles from '../styles/Analytics.module.css';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import SwitchAccount from '../components/SwitchAccount';
 import EngagementAnalytics from '../components/EngagementAnalytics';
 import ContentAnalytics from '../components/ContentAnalytics';
@@ -20,6 +20,8 @@ const Analytics = () => {
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const { setShowSearchPage } = useContext(GeneralContext);
+
+  const sectionRef = useRef<HTMLDivElement>(null!);
 
   const navigate = useNavigate();
 
@@ -45,7 +47,7 @@ const Analytics = () => {
     <>
       <NavBar page="analytics" />
 
-      <section className={styles.section}>
+      <section className={styles.section} ref={sectionRef}>
         <header className={styles['section-header']}>
           <h1 className={styles['section-head']}>
             <IoArrowBack
@@ -70,7 +72,7 @@ const Analytics = () => {
               }`}
               onClick={() => setCategory('Content')}
             >
-              Content
+              Post
             </li>
             <li
               className={`${styles['header-item']} ${
@@ -88,7 +90,7 @@ const Analytics = () => {
         {category === 'Engagement' ? (
           <EngagementAnalytics />
         ) : category === 'Content' ? (
-          <ContentAnalytics />
+          <ContentAnalytics sectionRef={sectionRef} />
         ) : (
           <FollowersAnalytics />
         )}

@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from '../styles/EngagementAnalytics.module.css';
-import { FaArrowTrendDown } from 'react-icons/fa6';
 import { FaArrowTrendUp } from 'react-icons/fa6';
 import { Line } from 'react-chartjs-2';
 import { ChartEvent, ActiveElement } from 'chart.js';
 import { Chart as ChartJS } from 'chart.js';
 import crosshairPlugin from 'chartjs-plugin-crosshair';
-import { apiClient, monthLabels } from '../Utilities';
+import { apiClient } from '../Utilities';
 import { PeriodComponent } from './PeriodComponent';
-// import Skeleton from 'react-loading-skeleton';
+import Skeleton from 'react-loading-skeleton';
 import { toast } from 'sonner';
 
 // Register the plugin with Chart.js
@@ -20,7 +19,6 @@ const EngagementAnalytics = () => {
   >('profile');
 
   const [graphWidth, setGraphWidth] = useState<number>(0);
-  const [showGraph, setShowGraph] = useState<boolean>(true);
   const [period, setPeriod] = useState<{
     value: '1y' | '1m' | '1w' | '1d' | 'all' | 'custom';
     custom: {
@@ -36,44 +34,71 @@ const EngagementAnalytics = () => {
     },
     done: true,
   });
-  // const [monthlyStats, setMonthlyStats] = useState<any>(null);
+  const [monthlyStats, setMonthlyStats] = useState<{
+    value: {
+      profile: {
+        count: number;
+        diff: string;
+        percent: number;
+      };
+      post: {
+        count: number;
+        diff: string;
+        percent: number;
+      };
+      likes: {
+        count: number;
+        diff: string;
+        percent: number;
+      };
+      comments: {
+        count: number;
+        diff: string;
+        percent: number;
+      };
+      shares: {
+        count: number;
+        diff: string;
+        percent: number;
+      };
+    };
+    loading: boolean | 'error';
+  }>({ value: null!, loading: true });
+  const [engagementStats, setEngagementStats] = useState<{
+    labels: string[];
+    value: number[];
+    loading: boolean | 'error';
+  }>({ labels: [], value: [], loading: true });
 
   const graphRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
-    const resizeHandler = () => {
-      setShowGraph(false);
-
-      if (window.matchMedia('(max-width: 500px)').matches) {
-        setGraphWidth(500);
-      } else if (window.matchMedia('(max-width: 600px)').matches) {
-        setGraphWidth(graphRef.current.offsetWidth);
-      } else if (window.matchMedia('(max-width: 800px)').matches) {
-        setGraphWidth(graphRef.current.offsetWidth - 16);
-      } else {
-        setGraphWidth(graphRef.current.offsetWidth - 32);
-      }
-
-      setTimeout(() => {
-        setShowGraph(true);
-      }, 100);
-    };
-
-    resizeHandler();
     getMonthlyStats();
-
-    window.addEventListener('resize', resizeHandler);
-
-    return () => {
-      window.removeEventListener('resize', resizeHandler);
-    };
   }, []);
 
+  useEffect(() => {
+    if (engagementStats.loading === true) getEngagementStats();
+  }, [engagementStats.loading]);
+
+  useEffect(() => {
+    setEngagementStats((prev) => ({ ...prev, loading: true }));
+  }, [category]);
+
+  useEffect(() => {
+    if (period.value === 'custom') {
+      if (period.done) {
+        setEngagementStats({ labels: [], value: [], loading: true });
+      }
+    } else {
+      setEngagementStats({ labels: [], value: [], loading: true });
+    }
+  }, [period]);
+
   const lineData = {
-    labels: monthLabels,
+    labels: engagementStats.labels,
     datasets: [
       {
-        data: [2, 3, 2, 3, 1, 5, 7, 2, 3, 4, 1, 6],
+        data: engagementStats.value,
         fill: `#a855f7`,
         backgroundColor: `#a855f7`,
         borderColor: `#a855f7`,
@@ -98,6 +123,8 @@ const EngagementAnalytics = () => {
           font: {
             size: 14,
           },
+          maxRotation: 0,
+          minRotation: 0,
         },
       },
       y: {
@@ -140,9 +167,41 @@ const EngagementAnalytics = () => {
   const getMonthlyStats = async () => {
     try {
       const { data } = await apiClient('v1/analytics/engagements');
-      console.log(data);
+      setMonthlyStats({ value: data.data.stats, loading: false });
     } catch {
+      setMonthlyStats((prev) => ({ ...prev, loading: 'error' }));
       return toast.error('Failed to load monthly stats.');
+    }
+  };
+
+  const getEngagementStats = async () => {
+    try {
+      const { data } = await apiClient.post(
+        `v1/analytics/engagements/${category}`,
+        {
+          period: period.value === 'custom' ? period.custom : period.value,
+        }
+      );
+      const stats: any[] = data.data.stats;
+
+      const rangeType: 'y' | 'm' | 'r' | 'd' | 'h' = data.data.rangeType;
+      const width = {
+        y: 1200,
+        m: 1200,
+        r: 1800,
+        d: 1200,
+        h: 1500,
+      };
+
+      setEngagementStats(() => ({
+        labels: stats.map((obj) => obj.label),
+        value: stats.map((obj) => obj.value),
+        loading: false,
+      }));
+      setGraphWidth(width[rangeType]);
+    } catch {
+      setEngagementStats((prev) => ({ ...prev, loading: 'error' }));
+      return toast.error('Could not get stats.');
     }
   };
 
@@ -157,12 +216,48 @@ const EngagementAnalytics = () => {
         >
           <span className={styles['category-details']}>
             <span className={styles['category-name']}>Profile Views</span>
-            <span className={styles['category-value']}>25</span>
-            <span className={styles['category-percentage']}>+3 (30%)</span>
+            <span className={styles['category-value']}>
+              {monthlyStats.loading === true ? (
+                <Skeleton width={60} />
+              ) : monthlyStats.loading === 'error' ? (
+                0
+              ) : (
+                monthlyStats.value.profile.count
+              )}
+            </span>
+            <span
+              className={`${styles['category-percentage']} ${
+                monthlyStats.loading === false
+                  ? monthlyStats.value.profile.percent > 0
+                    ? styles['category-percentage2']
+                    : monthlyStats.value.profile.percent < 0
+                    ? styles['category-percentage3']
+                    : ''
+                  : ''
+              }`}
+            >
+              {monthlyStats.loading === true ? (
+                <Skeleton width={90} />
+              ) : monthlyStats.loading === 'error' ? (
+                '0 (0%)'
+              ) : (
+                `${monthlyStats.value.profile.diff} (${monthlyStats.value.profile.percent}%)`
+              )}
+            </span>
             <span className={styles['category-range']}>vs last month</span>
           </span>
 
-          <FaArrowTrendUp className={styles['category-icon']} />
+          <FaArrowTrendUp
+            className={`${styles['category-icon']} ${
+              monthlyStats.loading === false
+                ? monthlyStats.value.profile.percent > 0
+                  ? styles['category-icon2']
+                  : monthlyStats.value.profile.percent < 0
+                  ? styles['category-icon3']
+                  : ''
+                : ''
+            }`}
+          />
         </div>
 
         <div
@@ -173,12 +268,48 @@ const EngagementAnalytics = () => {
         >
           <span className={styles['category-details']}>
             <span className={styles['category-name']}>Post Views</span>
-            <span className={styles['category-value']}>25</span>
-            <span className={styles['category-percentage2']}>-3 (-30%)</span>
+            <span className={styles['category-value']}>
+              {monthlyStats.loading === true ? (
+                <Skeleton width={60} />
+              ) : monthlyStats.loading === 'error' ? (
+                0
+              ) : (
+                monthlyStats.value.post.count
+              )}
+            </span>
+            <span
+              className={`${styles['category-percentage']} ${
+                monthlyStats.loading === false
+                  ? monthlyStats.value.post.percent > 0
+                    ? styles['category-percentage2']
+                    : monthlyStats.value.post.percent < 0
+                    ? styles['category-percentage3']
+                    : ''
+                  : ''
+              }`}
+            >
+              {monthlyStats.loading === true ? (
+                <Skeleton width={90} />
+              ) : monthlyStats.loading === 'error' ? (
+                '0 (0%)'
+              ) : (
+                `${monthlyStats.value.post.diff} (${monthlyStats.value.post.percent}%)`
+              )}
+            </span>
             <span className={styles['category-range']}>vs last month</span>
           </span>
 
-          <FaArrowTrendDown className={styles['category-icon2']} />
+          <FaArrowTrendUp
+            className={`${styles['category-icon']} ${
+              monthlyStats.loading === false
+                ? monthlyStats.value.post.percent > 0
+                  ? styles['category-icon2']
+                  : monthlyStats.value.post.percent < 0
+                  ? styles['category-icon3']
+                  : ''
+                : ''
+            }`}
+          />
         </div>
 
         <div
@@ -189,12 +320,48 @@ const EngagementAnalytics = () => {
         >
           <span className={styles['category-details']}>
             <span className={styles['category-name']}>Likes</span>
-            <span className={styles['category-value']}>25</span>
-            <span className={styles['category-percentage']}>+3 (30%)</span>
+            <span className={styles['category-value']}>
+              {monthlyStats.loading === true ? (
+                <Skeleton width={60} />
+              ) : monthlyStats.loading === 'error' ? (
+                0
+              ) : (
+                monthlyStats.value.likes.count
+              )}
+            </span>
+            <span
+              className={`${styles['category-percentage']} ${
+                monthlyStats.loading === false
+                  ? monthlyStats.value.likes.percent > 0
+                    ? styles['category-percentage2']
+                    : monthlyStats.value.likes.percent < 0
+                    ? styles['category-percentage3']
+                    : ''
+                  : ''
+              }`}
+            >
+              {monthlyStats.loading === true ? (
+                <Skeleton width={90} />
+              ) : monthlyStats.loading === 'error' ? (
+                '0 (0%)'
+              ) : (
+                `${monthlyStats.value.likes.diff} (${monthlyStats.value.likes.percent}%)`
+              )}
+            </span>
             <span className={styles['category-range']}>vs last month</span>
           </span>
 
-          <FaArrowTrendUp className={styles['category-icon']} />
+          <FaArrowTrendUp
+            className={`${styles['category-icon']} ${
+              monthlyStats.loading === false
+                ? monthlyStats.value.likes.percent > 0
+                  ? styles['category-icon2']
+                  : monthlyStats.value.likes.percent < 0
+                  ? styles['category-icon3']
+                  : ''
+                : ''
+            }`}
+          />
         </div>
 
         <div
@@ -205,12 +372,48 @@ const EngagementAnalytics = () => {
         >
           <span className={styles['category-details']}>
             <span className={styles['category-name']}>Comments</span>
-            <span className={styles['category-value']}>25</span>
-            <span className={styles['category-percentage']}>+3 (30%)</span>
+            <span className={styles['category-value']}>
+              {monthlyStats.loading === true ? (
+                <Skeleton width={60} />
+              ) : monthlyStats.loading === 'error' ? (
+                0
+              ) : (
+                monthlyStats.value.comments.count
+              )}
+            </span>
+            <span
+              className={`${styles['category-percentage']} ${
+                monthlyStats.loading === false
+                  ? monthlyStats.value.comments.percent > 0
+                    ? styles['category-percentage2']
+                    : monthlyStats.value.comments.percent < 0
+                    ? styles['category-percentage3']
+                    : ''
+                  : ''
+              }`}
+            >
+              {monthlyStats.loading === true ? (
+                <Skeleton width={90} />
+              ) : monthlyStats.loading === 'error' ? (
+                '0 (0%)'
+              ) : (
+                `${monthlyStats.value.comments.diff} (${monthlyStats.value.comments.percent}%)`
+              )}
+            </span>
             <span className={styles['category-range']}>vs last month</span>
           </span>
 
-          <FaArrowTrendUp className={styles['category-icon']} />
+          <FaArrowTrendUp
+            className={`${styles['category-icon']} ${
+              monthlyStats.loading === false
+                ? monthlyStats.value.comments.percent > 0
+                  ? styles['category-icon2']
+                  : monthlyStats.value.comments.percent < 0
+                  ? styles['category-icon3']
+                  : ''
+                : ''
+            }`}
+          />
         </div>
 
         <div
@@ -221,12 +424,48 @@ const EngagementAnalytics = () => {
         >
           <span className={styles['category-details']}>
             <span className={styles['category-name']}>Shares</span>
-            <span className={styles['category-value']}>25</span>
-            <span className={styles['category-percentage2']}>-3 (-30%)</span>
+            <span className={styles['category-value']}>
+              {monthlyStats.loading === true ? (
+                <Skeleton width={60} />
+              ) : monthlyStats.loading === 'error' ? (
+                0
+              ) : (
+                monthlyStats.value.shares.count
+              )}
+            </span>
+            <span
+              className={`${styles['category-percentage']} ${
+                monthlyStats.loading === false
+                  ? monthlyStats.value.shares.percent > 0
+                    ? styles['category-percentage2']
+                    : monthlyStats.value.shares.percent < 0
+                    ? styles['category-percentage3']
+                    : ''
+                  : ''
+              }`}
+            >
+              {monthlyStats.loading === true ? (
+                <Skeleton width={90} />
+              ) : monthlyStats.loading === 'error' ? (
+                '0 (0%)'
+              ) : (
+                `${monthlyStats.value.shares.diff} (${monthlyStats.value.shares.percent}%)`
+              )}
+            </span>
             <span className={styles['category-range']}>vs last month</span>
           </span>
 
-          <FaArrowTrendDown className={styles['category-icon2']} />
+          <FaArrowTrendUp
+            className={`${styles['category-icon']} ${
+              monthlyStats.loading === false
+                ? monthlyStats.value.shares.percent > 0
+                  ? styles['category-icon2']
+                  : monthlyStats.value.shares.percent < 0
+                  ? styles['category-icon3']
+                  : ''
+                : ''
+            }`}
+          />
         </div>
       </header>
 
@@ -235,15 +474,33 @@ const EngagementAnalytics = () => {
       </div>
 
       <div className={styles['graph-box']} ref={graphRef}>
-        {showGraph ? (
-          <Line
-            data={lineData}
-            options={lineOptions}
-            width={graphWidth}
-            height={350}
-          />
+        {engagementStats.loading === true ? (
+          <Skeleton width={graphWidth} height={350} />
+        ) : engagementStats.loading === 'error' ? (
+          <div className={styles['no-data-text']}>
+            Unable to load stats. Check your connection and try again.
+            <div className={styles['error-btn']}>
+              <button
+                onClick={() => {
+                  setEngagementStats((prev) => ({
+                    ...prev,
+                    loading: true,
+                  }));
+                }}
+              >
+                Try again
+              </button>
+            </div>
+          </div>
         ) : (
-          <>&nbsp;</>
+          <div className={styles.graph}>
+            <Line
+              data={lineData}
+              options={lineOptions}
+              height={350}
+              width={graphWidth}
+            />
+          </div>
         )}
       </div>
     </section>

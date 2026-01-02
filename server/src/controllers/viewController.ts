@@ -211,6 +211,7 @@ export const getWatchHistory = asyncErrorHandler(
       }
     }
 
+    const prevMonth = new Date();
     let startDate = period.start ? new Date(period.start) : new Date();
     const endDate = period.end ? new Date(period.end) : new Date();
     const cursorDate = isValidDateString(cursor)
@@ -228,7 +229,9 @@ export const getWatchHistory = asyncErrorHandler(
         break;
 
       case '1m':
-        startDate.setMonth(startDate.getMonth() - 1);
+        startDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 0);
+        startDate.setDate(Math.min(prevMonth.getDate(), startDate.getDate()));
+        startDate.setHours(0, 0, 0, 0);
         break;
 
       case '1w':

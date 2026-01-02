@@ -94,8 +94,11 @@ const NavBar = ({
   }>({ searches: [], users: [] });
   const [logging, setLogging] = useState(false);
 
-  const { showSearchPage, setShowSearchPage } = useContext(GeneralContext);
+  const { showSearchPage, setShowSearchPage, display, setDisplay } =
+    useContext(GeneralContext);
   const { user, setUser } = useContext(AuthContext);
+
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -241,6 +244,10 @@ const NavBar = ({
     getResults();
   }, [searchText]);
 
+  useEffect(() => {
+    if (display !== user.settings.general.display) updateDisplaySettings();
+  }, [display, user]);
+
   const deleteSearch = async (id: string, clear = false) => {
     const set = new Set(deleteSet);
 
@@ -299,6 +306,24 @@ const NavBar = ({
     } catch {
       setLogging(false);
       return toast.error('An error occured while logging out.');
+    }
+  };
+
+  const updateDisplaySettings = async () => {
+    if (loading) return;
+
+    setLoading(true);
+
+    try {
+      const { data } = await apiClient.patch('v1/users/settings/general', {
+        display,
+      });
+      setUser(data.data.user);
+    } catch {
+      setDisplay(user.settings.general.display);
+      return toast.error(`Could not update appearance.`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -733,17 +758,25 @@ const NavBar = ({
                     </Link>
                   </li>
                   <li
-                    className={`${styles['more-item']} ${styles['apperance-item']}`}
+                    className={`${styles['more-item']} ${
+                      styles['apperance-item']
+                    } ${loading ? styles['disable-link'] : ''}`}
                   >
                     <a>
                       <MdOutlineLightMode
                         className={styles['more-item-icon']}
                       />
                       Change appearance
-                      <select className={styles['appearance-select']}>
-                        <option>Light</option>
-                        <option>Dark</option>
-                        <option>Device default</option>
+                      <select
+                        className={styles['appearance-select']}
+                        value={display}
+                        onChange={(e) =>
+                          setDisplay(e.target.value as typeof display)
+                        }
+                      >
+                        <option value={'light'}>Light</option>
+                        <option value={'dark'}>Dark</option>
+                        <option value={'system'}>Device default</option>
                       </select>
                     </a>
                   </li>
@@ -1201,17 +1234,25 @@ const NavBar = ({
                       </Link>
                     </li>
                     <li
-                      className={`${styles['more-item']}  ${styles['apperance-item']}`}
+                      className={`${styles['more-item']}  ${
+                        styles['apperance-item']
+                      } ${loading ? styles['disable-link'] : ''}`}
                     >
                       <a>
                         <MdOutlineLightMode
                           className={styles['more-item-icon']}
                         />
                         Change appearance
-                        <select className={styles['appearance-select']}>
-                          <option>Light</option>
-                          <option>Dark</option>
-                          <option>Device default</option>
+                        <select
+                          className={styles['appearance-select']}
+                          value={display}
+                          onChange={(e) =>
+                            setDisplay(e.target.value as typeof display)
+                          }
+                        >
+                          <option value={'light'}>Light</option>
+                          <option value={'dark'}>Dark</option>
+                          <option value={'system'}>Device default</option>
                         </select>
                       </a>
                     </li>

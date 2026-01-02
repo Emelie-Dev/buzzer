@@ -3,6 +3,8 @@
   width: 82%;
   padding: 2rem;
   padding-top: 0;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 .section-header {

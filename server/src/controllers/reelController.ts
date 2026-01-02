@@ -92,6 +92,7 @@ export const getReels = asyncErrorHandler(
               $match: {
                 $expr: {
                   $and: [
+                    { $eq: ['$collectionName', 'reel'] },
                     { $eq: ['$documentId', '$$contentId'] },
                     { $eq: ['$user', viewerId] },
                   ],
@@ -302,32 +303,76 @@ export const getReels = asyncErrorHandler(
       {
         $lookup: {
           from: 'comments',
-          localField: '_id',
-          foreignField: 'documentId',
+          let: { docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', 'reel'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
           as: 'comments',
         },
       },
       {
         $lookup: {
           from: 'shares',
-          localField: '_id',
-          foreignField: 'documentId',
+          let: { docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', 'reel'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
           as: 'shares',
         },
       },
       {
         $lookup: {
           from: 'likes',
-          localField: '_id',
-          foreignField: 'documentId',
           as: 'likes',
+          let: { docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', 'reel'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
         },
       },
       {
         $lookup: {
           from: 'bookmarks',
-          localField: '_id',
-          foreignField: 'documentId',
+          let: { docId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$collectionName', 'reel'] },
+                    { $eq: ['$documentId', '$$docId'] },
+                  ],
+                },
+              },
+            },
+          ],
           as: 'bookmarks',
         },
       },

@@ -62,33 +62,38 @@
 }
 
 .category-percentage {
-  color: green;
+  color: gray;
   font-family: appFontMedium;
   margin-top: 0.3rem;
   font-size: 0.95rem;
 }
 
 .category-percentage2 {
+  color: green;
+}
+
+.category-percentage3 {
   color: red;
-  font-family: appFontMedium;
-  margin-top: 0.3rem;
-  font-size: 0.95rem;
 }
 
 .category-icon {
   width: 2.5rem;
   height: 2.5rem;
-  fill: green;
+  fill: gray;
   margin-left: 1rem;
   flex-shrink: 0;
+  opacity: 0.5;
 }
 
 .category-icon2 {
-  width: 2.5rem;
-  height: 2.5rem;
+  fill: green;
+  opacity: 1;
+}
+
+.category-icon3 {
   fill: red;
-  margin-left: 1rem;
-  flex-shrink: 0;
+  transform: rotate(180deg);
+  opacity: 1;
 }
 
 .category-range {
@@ -108,6 +113,40 @@
   margin: 2rem 0;
   padding: 0 1rem;
   overflow: auto;
+}
+
+.graph {
+  width: 100%;
+}
+
+.no-data-text {
+  margin: 5rem auto;
+  color: gray;
+  font-family: appFontMedium;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.error-btn {
+  margin-top: 1rem;
+}
+
+.error-btn button {
+  background: var(--app-theme-color);
+  border: none;
+  outline: none;
+  border-radius: 5px;
+  padding: 0.5rem 1.2rem;
+  font-family: appFontMedium;
+  color: white;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.error-btn button:hover {
+  opacity: 0.8;
 }
 
 /* Media Queries */
