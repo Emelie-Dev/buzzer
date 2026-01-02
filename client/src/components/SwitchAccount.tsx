@@ -44,7 +44,9 @@ const SwitchAccount = ({ setSwitchAccount }: SwitchAccountProps) => {
       const { data } = await apiClient.post(`v1/auth/switch-account/${id}`);
       setUser(data.data.user);
       toast.success('Account switched successfully!');
-      return navigate('/home');
+      setTimeout(() => {
+        window.location.href = '/home';
+      }, 500);
     } catch (err: any) {
       const message = 'Could not switch account.';
 

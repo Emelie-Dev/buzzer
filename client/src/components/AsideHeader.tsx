@@ -4,7 +4,9 @@ import { BiMessageDetail } from 'react-icons/bi';
 import { useNavigate } from 'react-router-dom';
 import { useContext, useEffect, useState } from 'react';
 import SwitchAccount from './SwitchAccount';
-import { StoryContext } from '../Contexts';
+import { AuthContext, StoryContext } from '../Contexts';
+import { getUrl } from '../Utilities';
+import { toast } from 'sonner';
 
 type AsideHeaderProps = {
   activeVideo?: HTMLVideoElement | null;
@@ -12,7 +14,8 @@ type AsideHeaderProps = {
 };
 
 const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
-  const { viewStory, setViewStory } = useContext(StoryContext);
+  const { user } = useContext(AuthContext);
+  const { viewStory, setViewStory, userStory } = useContext(StoryContext);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const navigate = useNavigate();
@@ -23,6 +26,14 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
       else activeVideo.play();
     }
   }, [viewStory]);
+
+  const showStory = () => {
+    if (userStory.length === 0) {
+      return toast.error('No stories available.');
+    }
+
+    setViewStory(true);
+  };
 
   return (
     <>
@@ -59,11 +70,14 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
           </span>
 
           <div className={styles['profile-box2']}>
-            <span className={styles['profile-img-box']}>
-              {' '}
+            <span
+              className={`${styles['profile-img-box']} ${
+                userStory.length > 0 ? styles['profile-img-box2'] : ''
+              }`}
+            >
               <img
                 className={`${styles['profile-img']} ${styles['profile-img2']}`}
-                src="../../assets/images/users/user14.jpeg"
+                src={getUrl(user.photo, 'users')}
               />
             </span>
 
@@ -74,10 +88,7 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
               >
                 View profile
               </li>
-              <li
-                className={styles['view-item']}
-                onClick={() => setViewStory(true)}
-              >
+              <li className={styles['view-item']} onClick={showStory}>
                 View story
               </li>
               <li
@@ -110,10 +121,14 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
           </span>
 
           <div className={styles['profile-box']}>
-            <span className={styles['profile-img-box']}>
+            <span
+              className={`${styles['profile-img-box']} ${
+                userStory.length > 0 ? styles['profile-img-box2'] : ''
+              }`}
+            >
               <img
                 className={styles['profile-img']}
-                src="../../assets/images/users/user14.jpeg"
+                src={getUrl(user.photo, 'users')}
               />
             </span>
 
@@ -124,10 +139,7 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
               >
                 View profile
               </li>
-              <li
-                className={styles['view-item']}
-                onClick={() => setViewStory(true)}
-              >
+              <li className={styles['view-item']} onClick={showStory}>
                 View story
               </li>
               <li

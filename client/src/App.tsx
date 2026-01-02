@@ -28,7 +28,7 @@ const App = () => {
   const [showSearchPage, setShowSearchPage] = useState<boolean>(false);
   const [user, setUser] = useState<any>(null!);
   const [stories, setStories] = useState<any[]>(null!);
-  const [userStory, setUserStory] = useState<any[]>(null!);
+  const [userStory, setUserStory] = useState<any[]>([]);
   const [viewStory, setViewStory] = useState<boolean>(false);
   const [storyIndex, setStoryIndex] = useState<number>(0);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>(null!);
