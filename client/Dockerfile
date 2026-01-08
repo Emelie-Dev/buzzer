@@ -6,9 +6,17 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
-# Build only in production mode
+# Set env vars for Vite build
 ARG NODE_ENV=development
-RUN if [ "$NODE_ENV" = "production" ]; then npm run build; fi
+ARG VITE_VAPID_PUBLIC_KEY
+ARG VITE_BACKEND_URL
+ARG VITE_LOCAL_BACKEND_URL
+
+ 
+# Build only in production mode
+RUN if [ "$NODE_ENV" = "production" ]; then VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY VITE_BACKEND_URL=$VITE_BACKEND_URL VITE_LOCAL_BACKEND_URL=$VITE_LOCAL_BACKEND_URL npm run build; fi
+
+
 
 
 # Stage 3: Development mode with Vite
