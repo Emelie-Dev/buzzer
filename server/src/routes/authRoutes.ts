@@ -26,8 +26,8 @@ router.post('/login', login);
 router.post('/signup', signup);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
-router.post('/:provider', handleOAuth());
-router.get('/:provider/callback', oAuthCallback());
+router.post('/oauth/:provider', handleOAuth());
+router.get('/oauth/:provider/callback', oAuthCallback());
 router.get('/link-oauth/:provider/callback', oAuthCallback(true));
 
 router.use(protectRoute);

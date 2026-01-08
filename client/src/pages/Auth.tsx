@@ -382,7 +382,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
 
       try {
         const { data } = await apiClient.post(
-          `v1/auth/${provider}${type === 'signup' ? '?signup=true' : ''}`
+          `v1/auth/oauth/${provider}${type === 'signup' ? '?signup=true' : ''}`
         );
         return navigate(data.data.url);
       } catch {

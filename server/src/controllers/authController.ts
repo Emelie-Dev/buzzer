@@ -1153,14 +1153,14 @@ export const handleOAuth = (linkProvider: boolean = false) =>
       const redirectUrl =
         process.env.NODE_ENV === 'production'
           ? `https://buzzer-server-py76.onrender.com/api/v1/auth/${
-              linkProvider ? 'link-oauth/' : ''
+              linkProvider ? 'link-oauth/' : 'oauth/'
             }${provider}/callback`
           : `${
               provider === 'facebook'
                 ? 'https://1b449605ef22.ngrok-free.app'
                 : 'http://127.0.0.1:5000'
             }/api/v1/auth/${
-              linkProvider ? 'link-oauth/' : ''
+              linkProvider ? 'link-oauth/' : 'oauth/'
             }${provider}/callback`;
       let userId;
 
@@ -1221,14 +1221,14 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
     const redirectUrl =
       process.env.NODE_ENV === 'production'
         ? `https://buzzer-server-py76.onrender.com/api/v1/auth/${
-            linkProvider ? 'link-oauth/' : ''
+            linkProvider ? 'link-oauth/' : 'oauth/'
           }${provider}/callback`
         : `${
             provider === 'facebook'
               ? 'https://1b449605ef22.ngrok-free.app'
               : 'http://127.0.0.1:5000'
           }/api/v1/auth/${
-            linkProvider ? 'link-oauth/' : ''
+            linkProvider ? 'link-oauth/' : 'oauth/'
           }${provider}/callback`;
 
     const authPage =

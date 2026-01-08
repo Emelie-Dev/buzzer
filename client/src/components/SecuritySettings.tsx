@@ -609,6 +609,8 @@ const LinkedAccounts = () => {
     ) {
       toast.error(`${provider} account linked successfully.`);
     }
+
+    return () => {};
   }, []);
 
   const getTime = (timeString: string) => {
