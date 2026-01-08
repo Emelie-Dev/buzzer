@@ -63,8 +63,6 @@ const SwitchAccount = ({ setSwitchAccount }: SwitchAccountProps) => {
     }
   };
 
-  console.log(accounts);
-
   return (
     <section
       className={styles.section}
