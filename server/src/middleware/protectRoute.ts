@@ -5,7 +5,7 @@ import CustomError from '../utils/CustomError.js';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { AuthRequest } from '../utils/asyncErrorHandler.js';
 import Session from '../models/sessionModel.js';
-import { getDeviceDetails } from '../controllers/authController.js';
+// import { getDeviceDetails } from '../controllers/authController.js';
 
 export default asyncErrorHandler(
   async (req: AuthRequest, _: Response, next: NextFunction) => {
