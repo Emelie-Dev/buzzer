@@ -17,6 +17,12 @@ import { randomUUID } from 'crypto';
 import Notification from '../models/notificationModel.js';
 import LoginAttempt from '../models/loginAttemptModel.js';
 import Session from '../models/sessionModel.js';
+import { OAuth2Client } from 'google-auth-library';
+import axios from 'axios';
+import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2client.js';
+import { customAlphabet } from 'nanoid';
+import sharp from 'sharp';
+import cloudinary from '../utils/cloudinary.js';
 
 type DeviceResult<T extends boolean> = T extends true
   ? string
@@ -70,6 +76,7 @@ const sendEmail = async (
       status: 'success',
       message:
         'A verification email has been sent. Please click the link to complete your signup.',
+      signin: !signup,
     });
   } catch {
     // Removes verification token from user data
@@ -83,6 +90,241 @@ const sendEmail = async (
       : 'An error occurred while sending the verification email. Please try again later.';
 
     return next(new CustomError(message, 500, { emailError: true }));
+  }
+};
+
+const sendOAuthEmail = async (newUser: IUser, signup?: boolean) => {
+  const serverUrl =
+    process.env.NODE_ENV === 'production'
+      ? 'https://buzzer-server-py76.onrender.com'
+      : 'http://127.0.0.1:5000';
+
+  const verificationToken = newUser.generateToken('email');
+  await newUser.save({ validateBeforeSave: false });
+
+  try {
+    const verificationUrl = `${serverUrl}/api/v1/auth/verify-email/${verificationToken}`;
+    await new Email(newUser, verificationUrl).sendEmailVerification();
+
+    throw new CustomError(
+      'A verification email has been sent. Please click the link to complete your signup.',
+      401
+    );
+  } catch {
+    newUser.emailVerificationToken = undefined;
+    newUser.emailVerificationTokenExpires = undefined;
+    await newUser.save({ validateBeforeSave: false });
+
+    throw new CustomError(
+      `An error occurred while sending a verification email. ${
+        signup
+          ? 'Please try logging in with this account.'
+          : 'Please try again later.'
+      }`,
+      500
+    );
+  }
+};
+
+const getProfilePhoto = async (url: string, user: IUser): Promise<string> => {
+  const defaultPhoto =
+    process.env.NODE_ENV === 'production'
+      ? 'https://res.cloudinary.com/dtwsoibt0/image/upload/v1765614386/default.jpg'
+      : 'default.jpg';
+
+  if (!url) return defaultPhoto;
+
+  const fileName = `${user._id}-${Date.now()}-${Math.trunc(
+    Math.random() * 1000000000
+  )}`;
+
+  try {
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+    });
+    const imageBuffer = Buffer.from(response.data, 'binary');
+
+    const sharpInstance = sharp(imageBuffer)
+      .resize(160, 160, {
+        fit: 'cover',
+        withoutEnlargement: true,
+        position: 'attention',
+      })
+      .jpeg({ quality: 90 });
+
+    if (process.env.NODE_ENV === 'production') {
+      const result = await new Promise<any>((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            {
+              folder: 'users',
+              format: 'jpg',
+              public_id: fileName,
+              overwrite: true,
+            },
+            (err, res) => {
+              if (err) reject();
+              else resolve(res);
+            }
+          )
+          .end(sharpInstance.toBuffer());
+      });
+      return result.secure_url;
+    } else {
+      await sharpInstance.toFile(`src/public/users/${fileName}.jpg`);
+      return `${fileName}.jpg`;
+    }
+  } catch {
+    return defaultPhoto;
+  }
+};
+
+const handleOAuthSignup = async (
+  data: any,
+  clientIp: string,
+  type: 'google' | 'facebook'
+) => {
+  const user = await User.findOne({
+    $or: [
+      { email: data.email },
+      { [`oAuthProviders.${type}.authId`]: data.id },
+    ],
+  });
+
+  if (user) {
+    throw new CustomError('This user already exists!', 409);
+  } else {
+    const location = await getUserLocation(clientIp);
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789_';
+    const MAX_ATTEMPTS = 5;
+
+    const newUser = await (async () => {
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        const nanoid = customAlphabet(alphabet, 7);
+
+        try {
+          const user = await User.create({
+            email: data.email,
+            username: `${data.firstName}${nanoid()}`,
+            location,
+            photo: 'default.jpg',
+            name: data.name,
+            oAuthProviders: {
+              [type]: { authId: data.id, createdAt: new Date() },
+            },
+            emailVerified: data.emailVerified,
+          });
+
+          return user;
+        } catch {}
+      }
+
+      return new Error();
+    })();
+
+    if (newUser instanceof Error) {
+      throw new CustomError('Unable to generate username!', 400);
+    }
+
+    newUser.photo = await getProfilePhoto(data.picture, newUser);
+    await newUser.save();
+
+    if (!data.emailVerified) {
+      return sendOAuthEmail(newUser, true);
+    } else {
+      return newUser;
+    }
+  }
+};
+
+const handleOAuthSignin = async (
+  data: any,
+  type: 'google' | 'facebook',
+  linkProvider: boolean,
+  userId: string
+) => {
+  let user: IUser;
+  let linkUser: IUser = null!;
+
+  if (linkProvider) {
+    // Get logged in user id
+    const decodedToken = jwt.verify(
+      userId,
+      process.env.JWT_SECRET as string
+    ) as JwtPayload;
+    const id = decodedToken.userId;
+
+    linkUser = (await User.findById(id))!;
+
+    if (!linkUser) {
+      throw new CustomError('This user does not exist!', 404);
+    }
+  }
+
+  user = (await User.findOne({
+    [`oAuthProviders.${type}.authId`]: data.id,
+    __login: true,
+  }))!;
+
+  if (!user && !linkProvider) {
+    throw new CustomError(
+      'There’s no account linked to this provider login.',
+      404
+    );
+  } else {
+    if (linkProvider) {
+      if (user) {
+        throw new CustomError(
+          'This user already exists!',
+          String(user._id) === String(linkUser._id) ? 409 : 403
+        );
+      } else {
+        user = (await User.findByIdAndUpdate(
+          linkUser?._id,
+          {
+            [`oAuthProviders.${type}`]: {
+              authId: data.id,
+              createdAt: new Date(),
+            },
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        ))!;
+      }
+    } else {
+      if (!user.active) {
+        user = (await User.findOneAndUpdate(
+          { _id: user._id, __login: true },
+          { active: true },
+          {
+            new: true,
+            runValidators: true,
+          }
+        ))!;
+
+        try {
+          await new Email(user, '').sendReactivationEmail();
+        } catch {}
+      }
+
+      if (!user.emailVerified) {
+        if (
+          !user.emailVerificationToken ||
+          Date.parse(String(user.emailVerificationTokenExpires)) < Date.now()
+        ) {
+          return sendOAuthEmail(user);
+        } else {
+          throw new CustomError(
+            'Finish setting up your account by clicking the verification link in the email we sent you!',
+            403
+          );
+        }
+      }
+    }
+
+    return user;
   }
 };
 
@@ -133,7 +375,7 @@ export const manageUserDevices = async (
   method: 'email' | 'google' | 'facebook',
   deviceId: string,
   clientIp: string,
-  switchAccount: Boolean = false
+  signup: Boolean = false
 ) => {
   const session = await Session.findOne({
     user: user._id,
@@ -167,7 +409,7 @@ export const manageUserDevices = async (
       loginMethod: method,
     });
 
-    if (!switchAccount) {
+    if (!signup) {
       // create notification
       await Notification.create({
         user: user._id,
@@ -295,7 +537,7 @@ export const verifyEmail = asyncErrorHandler(
       await user.save({ validateBeforeSave: false });
 
       // Gets device ID
-      const deviceId = randomUUID();
+      const deviceId = req.cookies.deviceId || randomUUID();
 
       // Handles logged in devices
       await manageUserDevices(
@@ -314,19 +556,21 @@ export const verifyEmail = asyncErrorHandler(
         `script-src 'self' 'nonce-${nonce}';`
       );
 
-      res
-        .cookie('jwt', signToken(user._id, deviceId), {
-          maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
-          httpOnly: true,
-          secure: true,
-          sameSite: 'none',
-        })
-        .cookie('deviceId', deviceId, {
+      res.cookie('jwt', signToken(user._id, deviceId), {
+        maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+      });
+
+      if (!req.cookies.deviceId) {
+        res.cookie('deviceId', deviceId, {
           httpOnly: true,
           secure: true,
           sameSite: 'none',
           maxAge: Number(process.env.JWT_DEVICE_EXPIRES),
         });
+      }
 
       const resultPage = verifyResult
         .replace(
@@ -494,7 +738,7 @@ export const login = asyncErrorHandler(
       )
         return await sendEmail(req, res, next, user);
       else {
-        return res.status(200).json({
+        return res.status(400).json({
           status: 'success',
           message:
             'Finish setting up your account by clicking the verification link in the email we sent you!',
@@ -885,6 +1129,280 @@ export const switchAccount = asyncErrorHandler(
     });
 
     const userData = protectData(user, 'user');
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: userData,
+      },
+    });
+  }
+);
+
+export const handleOAuth = (linkProvider: boolean = false) =>
+  asyncErrorHandler(
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
+      const provider = req.params.provider;
+
+      let url;
+
+      if (provider !== 'google' && provider !== 'facebook') {
+        return next(new CustomError('Inavlid OAuth Provider', 400));
+      }
+
+      const redirectUrl =
+        process.env.NODE_ENV === 'production'
+          ? `https://buzzer-server-py76.onrender.com/api/v1/auth/${
+              linkProvider ? 'link-oauth/' : ''
+            }${provider}/callback`
+          : `${
+              provider === 'facebook'
+                ? 'https://1b449605ef22.ngrok-free.app'
+                : 'http://127.0.0.1:5000'
+            }/api/v1/auth/${
+              linkProvider ? 'link-oauth/' : ''
+            }${provider}/callback`;
+      let userId;
+
+      if (linkProvider) {
+        userId = jwt.sign(
+          { userId: req.user?._id },
+          String(process.env.JWT_SECRET),
+          {
+            expiresIn: '5m',
+          }
+        );
+      }
+
+      const state = JSON.stringify({
+        signup: req.query.signup ? true : false,
+        clientIp: req.clientIp,
+        userAgent: req.get('user-agent'),
+        deviceId: req.cookies.deviceId || '',
+        userId,
+      });
+
+      if (provider === 'google') {
+        const auth2Client = new OAuth2Client(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_SECRET,
+          redirectUrl
+        );
+
+        url = auth2Client.generateAuthUrl({
+          access_type: 'offline',
+          scope: ['profile', 'email'],
+          prompt: 'consent',
+          state,
+        });
+
+        res.header('Referrer-policy', 'no-referrer-when-downgrade');
+      } else {
+        url = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${process.env.FB_APP_ID}&redirect_uri=${redirectUrl}&state=${state}&auth_type=rerequest&scope=email,public_profile`;
+      }
+
+      return res.status(200).json({ status: 'success', data: { url } });
+    }
+  );
+
+export const oAuthCallback = (linkProvider: boolean = false) =>
+  asyncErrorHandler(async (req: AuthRequest, res: Response) => {
+    const provider = req.params.provider;
+
+    if (provider !== 'google' && provider !== 'facebook') {
+      throw new CustomError('Inavlid OAuth Provider', 400);
+    }
+
+    const { code, state, error } = req.query;
+    const { signup, clientIp, userAgent, deviceId, userId } = JSON.parse(
+      (state as string) || JSON.stringify({})
+    );
+
+    const redirectUrl =
+      process.env.NODE_ENV === 'production'
+        ? `https://buzzer-server-py76.onrender.com/api/v1/auth/${
+            linkProvider ? 'link-oauth/' : ''
+          }${provider}/callback`
+        : `${
+            provider === 'facebook'
+              ? 'https://1b449605ef22.ngrok-free.app'
+              : 'http://127.0.0.1:5000'
+          }/api/v1/auth/${
+            linkProvider ? 'link-oauth/' : ''
+          }${provider}/callback`;
+
+    const authPage =
+      process.env.NODE_ENV === 'production'
+        ? 'https://buzzer-0z8q.onrender.com'
+        : 'http://localhost:5173';
+
+    try {
+      if (error || !code) {
+        throw new CustomError('Error', 400);
+      }
+
+      let data: any;
+
+      if (provider === 'google') {
+        const auth2Client = new OAuth2Client(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_SECRET,
+          redirectUrl
+        );
+
+        // Get resposnse tokens
+        const response: GetTokenResponse = await auth2Client.getToken(
+          code as string
+        );
+        auth2Client.setCredentials(response.tokens);
+
+        // Get access tokens
+        const { access_token } = auth2Client.credentials;
+
+        // Get user data
+        const { data: result } = await axios(
+          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`
+        );
+
+        data = {
+          ...result,
+          id: result.sub,
+          firstName: result.given_name,
+          emailVerified: result.email_verified,
+        };
+      } else {
+        // Gets user access token
+        const { data: accessObj }: any = await axios(
+          `https://graph.facebook.com/v24.0/oauth/access_token?client_id=${process.env.FB_APP_ID}&redirect_uri=${redirectUrl}&client_secret=${process.env.FB_APP_SECRET}&code=${code}`
+        );
+
+        // Gets app access token
+        const { data: appObj } = await axios(
+          `https://graph.facebook.com/oauth/access_token?client_id=${process.env.FB_APP_ID}&client_secret=${process.env.FB_APP_SECRET}&grant_type=client_credentials`
+        );
+
+        // verify if tokens are valid
+        const { data: result } = await axios(
+          `https://graph.facebook.com/debug_token?input_token=${accessObj.access_token}&access_token=${appObj.access_token}`
+        );
+
+        if (!result.data.is_valid) {
+          throw new CustomError('Error', 400);
+        }
+
+        // Get user data
+        const { data: userData } = await axios(
+          `https://graph.facebook.com/v24.0/me?access_token=${accessObj.access_token}&fields=id,first_name,email,picture,name`
+        );
+
+        if (signup && !userData.email) {
+          throw new CustomError('Error', 406);
+        }
+
+        data = {
+          ...userData,
+          firstName: userData.first_name,
+          picture: userData.picture.data.url,
+          emailVerified: true,
+        };
+      }
+
+      const platformId = deviceId || randomUUID();
+      let user: IUser;
+
+      if (signup && !linkProvider) {
+        user = await handleOAuthSignup(data, clientIp, provider);
+      } else {
+        user = await handleOAuthSignin(data, provider, linkProvider, userId);
+      }
+
+      if (!linkProvider) {
+        await manageUserDevices(
+          user,
+          userAgent,
+          provider,
+          platformId,
+          clientIp,
+          signup
+        );
+
+        res.cookie('jwt', signToken(user._id, platformId), {
+          maxAge: Number(process.env.JWT_LOGIN_EXPIRES),
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none',
+        });
+
+        if (!deviceId) {
+          res.cookie('deviceId', platformId, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: Number(process.env.JWT_DEVICE_EXPIRES),
+          });
+        }
+      }
+
+      if (linkProvider) {
+        res.redirect(
+          `${authPage}/settings?provider=${provider[0].toUpperCase()}${provider.slice(
+            1
+          )}`
+        );
+      } else res.redirect(`${authPage}/home`);
+
+      if (signup && !linkProvider) {
+        try {
+          return await new Email(user, `${authPage}/settings`).sendWelcome();
+        } catch {}
+      }
+    } catch (err: any) {
+      if (linkProvider) {
+        return res.redirect(
+          `${authPage}/settings?error=${provider[0].toUpperCase()}${provider.slice(
+            1
+          )}&code=${err.statusCode || 400}`
+        );
+      } else {
+        return res.redirect(
+          `${authPage}?error=${provider[0].toUpperCase()}${provider.slice(
+            1
+          )}&type=${signup ? 'signup' : 'signin'}&code=${err.statusCode || 400}`
+        );
+      }
+    }
+  });
+
+export const removeOAuthProvider = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const provider = req.params.provider;
+
+    if (provider !== 'google' && provider !== 'facebook') {
+      return next(new CustomError('Inavlid OAuth Provider', 400));
+    }
+
+    const userProviders = Object.entries(req.user?.oAuthProviders || {})
+      .map((field: any) => field[1]?.authId)
+      .filter(Boolean);
+
+    if (userProviders.length < 2 && !req.user?.password) {
+      return next(
+        new CustomError(
+          'This is your only login method. Create a password or link another account before removing it.',
+          400
+        )
+      );
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        [`oAuthProviders.${provider}`]: {},
+      },
+      { new: true }
+    );
+
+    const userData = protectData(user!, 'user');
 
     return res.status(200).json({
       status: 'success',

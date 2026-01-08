@@ -967,3 +967,33 @@
     height: 0.6rem;
   }
 }
+
+@media screen and (min-width: 1400px) {
+  .contents-div {
+    grid-template-columns: repeat(4, 23.5%);
+  }
+}
+
+@media screen and (min-width: 2000px) {
+  .contents-div {
+    grid-template-columns: repeat(5, 18.5%);
+  }
+}
+
+@media screen and (min-width: 2500px) {
+  .contents-div {
+    grid-template-columns: repeat(6, 15.25%);
+  }
+}
+
+@media screen and (min-width: 3000px) {
+  .contents-div {
+    grid-template-columns: repeat(7, 12.85%);
+  }
+}
+
+@media screen and (min-width: 3500px) {
+  .contents-div {
+    grid-template-columns: repeat(8, 11.1%);
+  }
+}

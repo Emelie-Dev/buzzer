@@ -19,7 +19,7 @@ const sharpFromUrl = async (url: string) => {
   });
 
   const imageBuffer = Buffer.from(response.data, 'binary');
-  return sharp(imageBuffer); // Now use this as normal sharp input
+  return sharp(imageBuffer);
 };
 
 const emitEvent = (message: any) => {

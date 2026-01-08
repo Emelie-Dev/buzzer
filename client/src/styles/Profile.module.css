@@ -209,6 +209,7 @@
   width: 100%;
   padding-bottom: 2rem;
   margin-top: 1rem;
+  min-height: 60vh;
 }
 
 .bottom-header {
@@ -294,6 +295,7 @@
   grid-template-columns: repeat(5, 100%);
   overflow: hidden;
   position: relative;
+  padding-bottom: 2rem;
 }
 
 .contents-container {
@@ -1094,5 +1096,35 @@
   .profile-details,
   .img-box {
     padding: 0;
+  }
+}
+
+@media screen and (min-width: 1400px) {
+  .contents-container {
+    grid-template-columns: repeat(4, 23.5%);
+  }
+}
+
+@media screen and (min-width: 2000px) {
+  .contents-container {
+    grid-template-columns: repeat(5, 18.5%);
+  }
+}
+
+@media screen and (min-width: 2500px) {
+  .contents-container {
+    grid-template-columns: repeat(6, 15.25%);
+  }
+}
+
+@media screen and (min-width: 3000px) {
+  .contents-container {
+    grid-template-columns: repeat(7, 12.85%);
+  }
+}
+
+@media screen and (min-width: 3500px) {
+  .contents-container {
+    grid-template-columns: repeat(8, 11.1%);
   }
 }

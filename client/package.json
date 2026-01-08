@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.59.2",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@types/html-to-text": "^9.0.4",
     "axios": "^1.7.7",

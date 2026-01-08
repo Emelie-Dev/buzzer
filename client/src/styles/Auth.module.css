@@ -590,10 +590,6 @@
   .container {
     height: 85vh;
   }
-
-  .btn2 {
-    margin-bottom: 2rem;
-  }
 }
 
 @media screen and (min-height: 800px) {

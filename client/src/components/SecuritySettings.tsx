@@ -2,7 +2,7 @@ import styles from '../styles/SecuritySettings.module.css';
 import { FaLaptop, FaTabletAlt, FaTv } from 'react-icons/fa';
 import { MdDelete } from 'react-icons/md';
 import { MdSmartphone } from 'react-icons/md';
-import { SettingsContext } from '../Contexts';
+import { AuthContext, SettingsContext } from '../Contexts';
 import { useContext, useEffect, useState } from 'react';
 import { IoArrowBack } from 'react-icons/io5';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ import { apiClient, getTime, monthLabels } from '../Utilities';
 import Skeleton from 'react-loading-skeleton';
 import LoadingAnimation from './LoadingAnimation';
 import { HiOutlineDeviceTablet } from 'react-icons/hi';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type SecuritySettingsProps = {
   category: string;
@@ -22,6 +23,8 @@ const SecuritySettings = ({ category }: SecuritySettingsProps) => {
         <SecurityAlerts />
       ) : category === 'devices' ? (
         <ManageDevices />
+      ) : category === 'links' ? (
+        <LinkedAccounts />
       ) : (
         ''
       )}
@@ -381,6 +384,27 @@ const ManageDevices = () => {
     }
   };
 
+  const getTime = (timeString: string) => {
+    const time = new Date(timeString);
+    const hour = time.getHours();
+    const minute = time.getMinutes();
+    const month = time.getMonth();
+    const year = time.getFullYear();
+    const day = time.getDate();
+
+    const suffix = hour < 12 ? 'AM' : 'PM';
+    const hourText =
+      hour === 0
+        ? '12'
+        : hour > 12
+        ? `${String(hour - 12).padStart(2, '0')}`
+        : `${String(hour).padStart(2, '0')}`;
+
+    return `${monthLabels[month]} ${day} ${year}, ${hourText}:${String(
+      minute
+    ).padStart(2, '0')} ${suffix}`;
+  };
+
   const getDeviceIcon = (
     type:
       | 'mobile'
@@ -404,27 +428,6 @@ const ManageDevices = () => {
     } else {
       return <HiOutlineDeviceTablet className={styles['device-icon']} />;
     }
-  };
-
-  const getTime = (timeString: string) => {
-    const time = new Date(timeString);
-    const hour = time.getHours();
-    const minute = time.getMinutes();
-    const month = time.getMonth();
-    const year = time.getFullYear();
-    const day = time.getDate();
-
-    const suffix = hour < 12 ? 'AM' : 'PM';
-    const hourText =
-      hour === 0
-        ? '12'
-        : hour > 12
-        ? `${String(hour - 12).padStart(2, '0')}`
-        : `${String(hour).padStart(2, '0')}`;
-
-    return `${monthLabels[month]} ${day} ${year}, ${hourText}:${String(
-      minute
-    ).padStart(2, '0')} ${suffix}`;
   };
 
   const deleteSession = (id: string) => async () => {
@@ -504,6 +507,8 @@ const ManageDevices = () => {
                       Logged in with{' '}
                       {sessions.active.loginMethod === 'google'
                         ? 'google account'
+                        : sessions.active.loginMethod === 'facebook'
+                        ? 'facebook account'
                         : 'email address'}
                     </span>
                     <time className={styles['login-time']}>
@@ -537,6 +542,8 @@ const ManageDevices = () => {
                           Logged in with{' '}
                           {device.loginMethod === 'google'
                             ? 'google account'
+                            : device.loginMethod === 'facebook'
+                            ? 'facebook account'
                             : 'email address'}
                         </span>
                         <time className={styles['login-time']}>
@@ -563,6 +570,203 @@ const ManageDevices = () => {
               </div>
             )}
           </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const LinkedAccounts = () => {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const error = queryParams.get('error');
+  const errorCode = queryParams.get('code');
+  const provider = queryParams.get('provider');
+
+  const { user, setUser } = useContext(AuthContext);
+  const { setMainCategory } = useContext(SettingsContext);
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (error === 'Google' || error === 'Facebook') {
+      if (errorCode === '403') {
+        toast.error(`This ${error} login is linked to another account.`);
+      } else if (errorCode === '409') {
+        toast.error(`This ${error} login is already linked to your account.`);
+      } else if (errorCode === '404') {
+        toast.error('This user does not exist!');
+      } else {
+        toast.error(`An error occurred while linking your ${error} account.`);
+      }
+    }
+
+    if (
+      !error &&
+      !errorCode &&
+      (provider === 'Google' || provider === 'Facebook')
+    ) {
+      toast.error(`${provider} account linked successfully.`);
+    }
+  }, []);
+
+  const getTime = (timeString: string) => {
+    const time = new Date(timeString);
+    const hour = time.getHours();
+    const minute = time.getMinutes();
+    const month = time.getMonth();
+    const year = time.getFullYear();
+    const day = time.getDate();
+
+    const suffix = hour < 12 ? 'AM' : 'PM';
+    const hourText =
+      hour === 0
+        ? '12'
+        : hour > 12
+        ? `${String(hour - 12).padStart(2, '0')}`
+        : `${String(hour).padStart(2, '0')}`;
+
+    return `${monthLabels[month]} ${day} ${year}, ${hourText}:${String(
+      minute
+    ).padStart(2, '0')} ${suffix}`;
+  };
+
+  const removeLinkedAccount = (type: 'google' | 'facebook') => async () => {
+    if (loading) return;
+
+    setLoading(true);
+
+    try {
+      const { data } = await apiClient.post(`v1/auth/remove-oauth/${type}`);
+      setUser(data.data.user);
+      return toast.error(
+        `${type[0].toUpperCase()}${type.slice(1)} account removed successfully.`
+      );
+    } catch (err: any) {
+      const message = `Could not remove ${type[0].toUpperCase()}${type.slice(
+        1
+      )} account.`;
+      if (err.response) {
+        return toast.error(err.response.data.message || message);
+      } else {
+        return toast.error(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuth = (provider: 'google' | 'facebook') => async () => {
+    setLoading(true);
+    if (loading) return;
+
+    try {
+      const { data } = await apiClient.post(`v1/auth/link-oauth/${provider}`);
+      return navigate(data.data.url);
+    } catch {
+      setLoading(false);
+      return toast.error(
+        `An error occurred while linking your ${provider[0].toUpperCase()}${provider.slice(
+          1
+        )} account.`
+      );
+    }
+  };
+
+  return (
+    <div className={styles.section}>
+      <h1 className={styles['section-head']}>
+        <IoArrowBack
+          className={styles['back-icon']}
+          onClick={() => setMainCategory('')}
+        />
+        Linked Accounts
+      </h1>
+
+      <div className={styles['linked-accounts']}>
+        {Object.keys(user.oAuthProviders || {}).length > 0 ? (
+          <>
+            {user.oAuthProviders.google?.createdAt && (
+              <article className={styles['linked-account']}>
+                <img src="/assets/images/others/google-icon.png" />
+                <div className={styles['linked-account-details']}>
+                  <span className={styles['linked-account-type']}>Google </span>
+                  <span className={styles['linked-account-time']}>
+                    <span>Date Linked:</span>
+                    <time>
+                      {getTime(user.oAuthProviders.google.createdAt)}{' '}
+                    </time>
+                  </span>
+                </div>
+
+                <div
+                  className={`${styles['linked-account-btn']} ${
+                    loading ? styles['disable-btn'] : ''
+                  }`}
+                >
+                  <button onClick={handleOAuth('google')}>Change</button>
+                  <button onClick={removeLinkedAccount('google')}>
+                    Remove
+                  </button>
+                </div>
+              </article>
+            )}
+
+            {user.oAuthProviders.facebook?.createdAt && (
+              <article className={styles['linked-account']}>
+                <img src="/assets/images/others/facebook-icon.webp" />
+                <div className={styles['linked-account-details']}>
+                  <span className={styles['linked-account-type']}>
+                    Facebook{' '}
+                  </span>
+                  <span className={styles['linked-account-time']}>
+                    <span>Date Linked:</span>
+                    <time>
+                      {getTime(user.oAuthProviders.facebook.createdAt)}{' '}
+                    </time>
+                  </span>
+                </div>
+
+                <div
+                  className={`${styles['linked-account-btn']} ${
+                    loading ? styles['disable-btn'] : ''
+                  }`}
+                >
+                  <button onClick={handleOAuth('facebook')}>Change</button>
+                  <button onClick={removeLinkedAccount('facebook')}>
+                    Remove
+                  </button>
+                </div>
+              </article>
+            )}
+          </>
+        ) : (
+          <div className={styles['no-linked-text']}>
+            You have no linked social account.
+          </div>
+        )}
+      </div>
+
+      <div className={styles['link-provider-btns']}>
+        {!user.oAuthProviders?.google?.createdAt && (
+          <button
+            className={`${loading ? styles['disable-btn'] : ''}`}
+            onClick={handleOAuth('google')}
+          >
+            <img src="/assets/images/others/google-icon.png" />
+            Link Google Account
+          </button>
+        )}
+
+        {!user.oAuthProviders?.facebook?.createdAt && (
+          <button
+            className={`${loading ? styles['disable-btn'] : ''}`}
+            onClick={handleOAuth('facebook')}
+          >
+            <img src="/assets/images/others/facebook-icon.webp" /> Link Facebook
+            Account
+          </button>
         )}
       </div>
     </div>

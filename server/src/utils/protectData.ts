@@ -15,6 +15,8 @@ export default (
         'active',
         'passwordChangedAt',
         'settings.security',
+        'oAuthProviders.google.authId',
+        'oAuthProviders.facebook.authId',
       ];
     }
   }
@@ -29,7 +31,7 @@ export default (
     let i = 0;
 
     while (i < keys.length - 1) {
-      if (data[keys[i]] == null) return;
+      if (!data[keys[i]]) return;
       data = data[keys[i]];
       i++;
     }

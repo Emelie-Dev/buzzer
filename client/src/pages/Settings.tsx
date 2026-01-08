@@ -9,7 +9,7 @@ import SupportSettings from '../components/SupportSettings';
 import SwitchAccount from '../components/SwitchAccount';
 import { GeneralContext, SettingsContext } from '../Contexts';
 import { IoArrowBack } from 'react-icons/io5';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { apiClient } from '../Utilities';
 import { toast } from 'sonner';
 
@@ -18,6 +18,11 @@ const initialCategory = window.matchMedia('(max-width: 700px)').matches
   : 'general';
 
 const Settings = () => {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const error = queryParams.get('error');
+  const provider = queryParams.get('provider');
+
   const { settingsCategory, setSettingsCategory, setShowSearchPage } =
     useContext(GeneralContext);
   const [category, setCategory] = useState<string>(
@@ -31,12 +36,17 @@ const Settings = () => {
   const sectionRef = useRef<HTMLDivElement>(null!);
 
   const accountCategories = ['profile', 'password', 'deactivate', 'delete'];
-  const settingCategories = ['alerts', 'devices'];
+  const settingCategories = ['alerts', 'devices', 'links'];
   const contentCategories = ['notifications', 'management'];
   const supportCategories = ['support', 'info'];
 
   useEffect(() => {
     document.title = 'Buzzer - Settings';
+
+    const providers = ['Google', 'Facebook'];
+    if (providers.includes(error!) || providers.includes(provider!)) {
+      setCategory('links');
+    }
 
     return () => {
       setShowSearchPage(false);
@@ -150,7 +160,14 @@ const Settings = () => {
                 >
                   Manage devices
                 </li>
-                {/* <li className={styles['category-item']}>2-step verification</li> */}
+                <li
+                  className={`${styles['category-item']} ${
+                    category === 'links' ? styles['current-category'] : ''
+                  }`}
+                  onClick={() => setCategory('links')}
+                >
+                  Linked Accounts
+                </li>
               </ul>
             </div>
 

@@ -549,10 +549,12 @@ const ChangePassword = () => {
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(0);
   const [token, setToken] = useState<string>('');
+  const [passwordChecked, setPasswordChecked] = useState<Set<number>>(
+    new Set()
+  );
 
   const { setMainCategory } = useContext(SettingsContext);
 
-  const checkBoxRef = useRef<HTMLInputElement[]>([]);
   const timerInterval = useRef<number>(null!);
 
   useEffect(() => {
@@ -562,17 +564,32 @@ const ChangePassword = () => {
   }, []);
 
   useEffect(() => {
-    if (checkBoxRef.current.length > 0) {
-      if (newPassword.match(/[A-z]/) && newPassword.match(/[0-9]/))
-        checkBoxRef.current[0].checked = true;
-      else checkBoxRef.current[0].checked = false;
+    if (newPassword.match(/[A-z]/) && newPassword.match(/[0-9]/))
+      setPasswordChecked((prev) => new Set(prev).add(0));
+    else
+      setPasswordChecked((prev) => {
+        const set = new Set(prev);
+        set.delete(0);
+        return set;
+      });
 
-      if (newPassword.match(/\W/)) checkBoxRef.current[1].checked = true;
-      else checkBoxRef.current[1].checked = false;
+    if (newPassword.match(/\W/))
+      setPasswordChecked((prev) => new Set(prev).add(1));
+    else
+      setPasswordChecked((prev) => {
+        const set = new Set(prev);
+        set.delete(1);
+        return set;
+      });
 
-      if (newPassword.length >= 8) checkBoxRef.current[2].checked = true;
-      else checkBoxRef.current[2].checked = false;
-    }
+    if (newPassword.length >= 8)
+      setPasswordChecked((prev) => new Set(prev).add(2));
+    else
+      setPasswordChecked((prev) => {
+        const set = new Set(prev);
+        set.delete(2);
+        return set;
+      });
   }, [newPassword]);
 
   useEffect(() => {
@@ -586,29 +603,13 @@ const ChangePassword = () => {
     if (timer === 0) clearInterval(timerInterval.current);
   }, [timer]);
 
-  const addToRef =
-    (ref: React.MutableRefObject<HTMLInputElement[]>) =>
-    (el: HTMLInputElement) => {
-      if (el && !ref.current.includes(el)) {
-        ref.current.push(el);
-      }
-    };
-
   const isDisabled = (isCode = false) => {
-    const passwordValid = checkBoxRef.current.find((elem) => !elem.checked);
+    const passwordValid = passwordChecked.size !== 3;
 
     if (isCode) {
-      return (
-        code.sending ||
-        timer > 0 ||
-        !!passwordValid ||
-        loading ||
-        currentPassword === ''
-      );
+      return code.sending || timer > 0 || !!passwordValid || loading;
     }
-    return (
-      !!passwordValid || loading || token.length < 6 || currentPassword === ''
-    );
+    return !!passwordValid || loading || token.length < 6;
   };
 
   const getToken = async () => {
@@ -702,8 +703,8 @@ const ChangePassword = () => {
               <input
                 type="checkbox"
                 className={styles['criteria-checkbox']}
-                onChange={(e) => e.preventDefault()}
-                ref={addToRef(checkBoxRef)}
+                checked={passwordChecked.has(0)}
+                readOnly
               />
               <label className={styles['criteria-label']}>
                 Must contain a letter and a digit.
@@ -714,8 +715,8 @@ const ChangePassword = () => {
               <input
                 type="checkbox"
                 className={styles['criteria-checkbox']}
-                onChange={(e) => e.preventDefault()}
-                ref={addToRef(checkBoxRef)}
+                checked={passwordChecked.has(1)}
+                readOnly
               />
               <label className={styles['criteria-label']}>
                 Must contain a special character.
@@ -725,8 +726,8 @@ const ChangePassword = () => {
               <input
                 type="checkbox"
                 className={styles['criteria-checkbox']}
-                onChange={(e) => e.preventDefault()}
-                ref={addToRef(checkBoxRef)}
+                checked={passwordChecked.has(2)}
+                readOnly
               />
               <label className={styles['criteria-label']}>
                 Must be at least 8 characters or more.

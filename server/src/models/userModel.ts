@@ -54,6 +54,10 @@ export interface IUser extends Document {
   settings: ISettings;
   pushSubscription: Object;
   createdAt: Date;
+  oAuthProviders: {
+    google: { authId: string; createdAt: Date };
+    facebook: { authId: string; createdAt: Date };
+  };
   generateToken: (type: 'email' | 'password') => string;
   comparePasswordInDb: (pswd: string, pswdDb: string) => Promise<boolean>;
   isPasswordChanged: (JWTTimestamp: number) => boolean;
@@ -79,6 +83,7 @@ const UserSchema = new Schema<IUser>({
     type: String,
     trim: true,
     maxLength: [30, 'Username cannot exceed 30 characters.'],
+    default: '',
   },
   email: {
     type: String,
@@ -93,6 +98,7 @@ const UserSchema = new Schema<IUser>({
     type: String,
     trim: true,
     maxLength: [150, 'Bio cannot exceed 150 characters.'],
+    default: '',
   },
   links: {
     type: {
@@ -160,7 +166,7 @@ const UserSchema = new Schema<IUser>({
   },
   password: {
     type: String,
-    required: [true, 'Please provide a value for the password.'],
+    // required: [true, 'Please provide a value for the password.'],
     validate: {
       validator: (value: string) => {
         return (
@@ -200,6 +206,16 @@ const UserSchema = new Schema<IUser>({
   location: {
     type: locationSubschema,
     required: true,
+  },
+  oAuthProviders: {
+    google: {
+      authId: { type: String, unique: true, index: true },
+      createdAt: Date,
+    },
+    facebook: {
+      authId: { type: String, unique: true, index: true },
+      createdAt: Date,
+    },
   },
   createdAt: {
     type: Date,
@@ -299,6 +315,7 @@ UserSchema.methods.comparePasswordInDb = async function (
   pswd: string,
   pswdDb: string
 ) {
+  if (!pswdDb) return Boolean(pswd) === Boolean(pswdDb);
   return await bcrypt.compare(pswd, pswdDb);
 };
 

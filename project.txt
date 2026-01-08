@@ -18,19 +18,17 @@ Pages =>
             - Clear display
             - Go to post
 
- Updates =>
-  - Change appearance icon based on theme
+ Updates => 
   - Add storyborder to fyp profile pictures ✔
   - Pause video when comment section is displayed ✔
   - Fix comment box for reels(clicking of black background) ✔
   - Fix active video when exiting modals from transparent background ✔
-  - Remeber to revoke object urls after file upload.
-  - Pause active video for all modals.
-  - Create analytics page
-  - Show email in proile page
-  - Hide search before any page unmounts
-  - Add time to requests in the frontend
-  - Handle deactivated accounts on aggregation
+  - Remeber to revoke object urls after file upload. ✔
+  - Pause active video for all modals. ✔
+  - Create analytics page  ✔
+  - Show email in proile page  ✔
+  - Hide search before any page unmounts ✔
+  - Add time to requests in the frontend  ✔
   - Update contents display size for larger screens
   
 
@@ -63,6 +61,7 @@ Server =>
     - Audio processing (e.g., normalization or conversion) for videos with sound.
 
   Tips
+  - Handle deactivated accounts on aggregation
   - Enable chat feature
   - Users can have only 1000 friends at max
   - Enable users to view sent friend requests

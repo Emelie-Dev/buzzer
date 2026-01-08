@@ -188,9 +188,10 @@ const ContentAnalytics = ({ sectionRef }: ContentAnalyticsProps) => {
     const minute = Math.trunc((timeValue - hour * 3600) / 60);
     const seconds = timeValue - hour * 3600 - minute * 60;
 
-    return `${hour}h:${String(minute).padStart(2, '0')}m:${String(
-      seconds
-    ).padStart(2, '0')}s`;
+    return `${String(hour).padStart(2, '0')}h:${String(minute).padStart(
+      2,
+      '0'
+    )}m:${String(seconds).padStart(2, '0')}s`;
   };
 
   return (

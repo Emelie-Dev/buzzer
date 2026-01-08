@@ -70,6 +70,9 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const addAccount = queryParams.get('add') === 'true';
+  const error = queryParams.get('error');
+  const errorType = queryParams.get('type');
+  const errorCode = queryParams.get('code');
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [signupData, setSignupData] = useState<SignupType>({
     username: '',
@@ -121,6 +124,30 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
     };
 
     if (!addAccount) checkUserAuth();
+
+    if (error === 'Google' || error === 'Facebook') {
+      if (errorType === 'signin' || errorType === 'signup') {
+        if (errorCode === '409') {
+          toast.error('This user already exists!');
+        } else if (errorCode === '404') {
+          toast.error(
+            `There’s no account linked to this ${error} login. You can link it in your settings.`
+          );
+        } else if (errorCode === '403') {
+          toast.error(
+            'Finish setting up your account by clicking the verification link in the email we sent you!'
+          );
+        } else if (errorCode === '406') {
+          toast.error(`There’s no email linked to this ${error} login.`);
+        } else {
+          toast.error(
+            `An error occurred while signing ${
+              errorType === 'signup' ? 'up' : 'in'
+            } with ${error}.`
+          );
+        }
+      }
+    }
 
     return () => {
       setShowSearchPage(false);
@@ -267,7 +294,8 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
           });
         }
 
-        if (type === 'signup') toast.success(response.data.message);
+        if (type === 'signup' || response.data.signin)
+          toast.success(response.data.message);
         else navigate('/home');
       } catch (err: any) {
         if (!err.response) {
@@ -348,6 +376,25 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
       }
     };
 
+  const handleOAuth =
+    (type: typeof authMode, provider: 'google' | 'facebook') => async () => {
+      setLoading((prevValue) => ({ ...prevValue, [type]: true }));
+
+      try {
+        const { data } = await apiClient.post(
+          `v1/auth/${provider}${type === 'signup' ? '?signup=true' : ''}`
+        );
+        return navigate(data.data.url);
+      } catch {
+        setLoading((prevValue) => ({ ...prevValue, [type]: false }));
+        return toast.error(
+          `An error occurred while signing ${
+            type === 'signup' ? 'up' : 'in'
+          } with ${provider[0].toUpperCase()}${provider.slice(1)}.`
+        );
+      }
+    };
+
   return (
     <section className={styles.body}>
       <div
@@ -371,10 +418,16 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
             <div className={styles['form-div']}>
               <h1 className={styles.head}>Create Account</h1>
               <div className={styles['social-container']}>
-                <span className={`${styles['social']}`}>
+                <span
+                  className={`${styles['social']}`}
+                  onClick={handleOAuth('signup', 'google')}
+                >
                   <FcGoogle className={styles.google} />
                 </span>
-                <span className={`${styles['social']}`}>
+                <span
+                  className={`${styles['social']}`}
+                  onClick={handleOAuth('signup', 'facebook')}
+                >
                   <FaFacebookSquare className={styles.facebook} />
                 </span>
               </div>
@@ -599,10 +652,16 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
               <div className={styles['form-div']}>
                 <h1 className={styles.head}>Sign in</h1>
                 <div className={styles['social-container']}>
-                  <span className={`${styles['social']}`}>
+                  <span
+                    className={`${styles['social']}`}
+                    onClick={handleOAuth('signin', 'google')}
+                  >
                     <FcGoogle className={styles.google} />
                   </span>
-                  <span className={`${styles['social']}`}>
+                  <span
+                    className={`${styles['social']}`}
+                    onClick={handleOAuth('signin', 'facebook')}
+                  >
                     <FaFacebookSquare className={styles.facebook} />
                   </span>
                 </div>
@@ -673,8 +732,6 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                 <span className={styles['loader-box']}>
                   <button
                     className={`${styles.button} ${styles['btn']} ${
-                      styles['btn2']
-                    }  ${
                       !authValid.signin || loading.signin || loading.signup
                         ? styles['disable-btn']
                         : ''
@@ -733,8 +790,6 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                 <span className={styles['loader-box']}>
                   <button
                     className={`${styles.button} ${styles['btn']} ${
-                      styles['btn2']
-                    }  ${
                       !authValid.forgot || loading.forgot || loading.signup
                         ? styles['disable-btn']
                         : ''
@@ -815,8 +870,6 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                 <span className={styles['loader-box']}>
                   <button
                     className={`${styles.button} ${styles['btn']} ${
-                      styles['btn2']
-                    }  ${
                       !authValid.reset || loading.reset || loading.signup
                         ? styles['disable-btn']
                         : ''

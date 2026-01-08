@@ -15,7 +15,8 @@ type AsideHeaderProps = {
 
 const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
   const { user } = useContext(AuthContext);
-  const { viewStory, setViewStory, userStory } = useContext(StoryContext);
+  const { viewStory, setViewStory, userStory, stories } =
+    useContext(StoryContext);
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
 
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const AsideHeader = ({ activeVideo, second }: AsideHeaderProps) => {
   }, [viewStory]);
 
   const showStory = () => {
-    if (userStory.length === 0) {
+    if (userStory.length === 0 && stories.length === 0) {
       return toast.error('No stories available.');
     }
 

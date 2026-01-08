@@ -5,8 +5,11 @@ import {
   forgotPassword,
   getDeviceAccounts,
   getSessions,
+  handleOAuth,
   login,
   logout,
+  oAuthCallback,
+  removeOAuthProvider,
   removeSession,
   resetPassword,
   signup,
@@ -23,6 +26,9 @@ router.post('/login', login);
 router.post('/signup', signup);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
+router.post('/:provider', handleOAuth());
+router.get('/:provider/callback', oAuthCallback());
+router.get('/link-oauth/:provider/callback', oAuthCallback(true));
 
 router.use(protectRoute);
 
@@ -32,5 +38,7 @@ router.get('/sessions', getSessions);
 router.delete('/sessions/:id', removeSession);
 router.get('/accounts', getDeviceAccounts);
 router.post('/switch-account/:id', switchAccount);
+router.post('/link-oauth/:provider', handleOAuth(true));
+router.post('/remove-oauth/:provider', removeOAuthProvider);
 
 export default router;

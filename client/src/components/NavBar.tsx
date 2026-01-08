@@ -1331,7 +1331,7 @@ const NavBar = ({
                   />
 
                   <Link
-                    to={`/search?${searchText}`}
+                    to={`/search?q=${searchText}`}
                     className={`${styles['run-search-icon']} ${
                       searchText.trim().length < 1 ? styles['hide-search'] : ''
                     }`}

@@ -61,15 +61,15 @@ export default asyncErrorHandler(
     });
     if (!session) return next(new CustomError('This session is invalid.', 401));
 
-    const deviceName = await getDeviceDetails(
-      req.get('user-agent')!,
-      req.clientIp!,
-      true
-    );
+    // const deviceName = await getDeviceDetails(
+    //   req.get('user-agent')!,
+    //   req.clientIp!,
+    //   true
+    // );
 
-    if (session.deviceName !== deviceName) {
-      return next(new CustomError('This session is invalid.', 401));
-    }
+    // if (session.deviceName !== deviceName) {
+    //   return next(new CustomError('This session is invalid.', 401));
+    // }
 
     session.lastUsedAt = new Date();
     await session.save();

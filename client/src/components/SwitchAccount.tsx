@@ -131,7 +131,11 @@ const SwitchAccount = ({ setSwitchAccount }: SwitchAccountProps) => {
         </div>
 
         {loading === false && (
-          <div className={styles['add-account-box']}>
+          <div
+            className={`${styles['add-account-box']} ${
+              switching ? styles['disable-switching'] : ''
+            }`}
+          >
             <span className={styles['add-icon-box']}>
               <FaPlus className={styles['add-icon']} />
             </span>
