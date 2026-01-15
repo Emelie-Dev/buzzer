@@ -603,6 +603,7 @@ const Notifications = () => {
               notificationsCategory={category}
               setNotificationsCategory={setCategory}
               setShowProfileViews={setShowProfileViews}
+              notificationsCategories={notificationsCategories}
             />
 
             <header className={styles.header}>

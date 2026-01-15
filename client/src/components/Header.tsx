@@ -32,6 +32,14 @@ type HeaderProps = {
   >;
   setShowProfileViews?: React.Dispatch<React.SetStateAction<boolean>>;
   requestsCount?: number;
+  notificationsCategories?: {
+    all: any[];
+    posts: any[];
+    mentions: any[];
+    followers: any[];
+    requests: any[];
+    system: any[];
+  };
 };
 
 const Header = ({
@@ -43,6 +51,7 @@ const Header = ({
   setNotificationsCategory,
   setShowProfileViews,
   requestsCount,
+  notificationsCategories,
 }: HeaderProps) => {
   const { setScrollingUp, setShowSearchPage, scrollingUp } =
     useContext(GeneralContext);
@@ -257,7 +266,11 @@ const Header = ({
                   }
                 >
                   View All
-                  <span className={styles['category-count']}>15</span>
+                  <span className={styles['category-count']}>
+                    {notificationsCategories
+                      ? notificationsCategories.all.length
+                      : 0}
+                  </span>
                 </li>
 
                 <li
@@ -272,7 +285,11 @@ const Header = ({
                   }
                 >
                   Posts
-                  <span className={styles['category-count']}>5</span>
+                  <span className={styles['category-count']}>
+                    {notificationsCategories
+                      ? notificationsCategories.posts.length
+                      : 0}
+                  </span>
                 </li>
 
                 <li
@@ -287,7 +304,11 @@ const Header = ({
                   }
                 >
                   Mentions
-                  <span className={styles['category-count']}>3</span>
+                  <span className={styles['category-count']}>
+                    {notificationsCategories
+                      ? notificationsCategories.mentions.length
+                      : 0}
+                  </span>
                 </li>
 
                 <li
@@ -302,7 +323,11 @@ const Header = ({
                   }
                 >
                   Followers
-                  <span className={styles['category-count']}>2</span>
+                  <span className={styles['category-count']}>
+                    {notificationsCategories
+                      ? notificationsCategories.followers.length
+                      : 0}
+                  </span>
                 </li>
 
                 <li
@@ -317,7 +342,11 @@ const Header = ({
                   }
                 >
                   Requests
-                  <span className={styles['category-count']}>4</span>
+                  <span className={styles['category-count']}>
+                    {notificationsCategories
+                      ? notificationsCategories.requests.length
+                      : 0}
+                  </span>
                 </li>
 
                 <li
@@ -332,7 +361,11 @@ const Header = ({
                   }
                 >
                   System
-                  <span className={styles['category-count']}>1</span>
+                  <span className={styles['category-count']}>
+                    {notificationsCategories
+                      ? notificationsCategories.system.length
+                      : 0}
+                  </span>
                 </li>
               </ul>
 

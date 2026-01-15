@@ -456,7 +456,6 @@ const Profile = () => {
     }
   };
 
-  
   return (
     <>
       <NavBar page="profile" />
@@ -466,7 +465,6 @@ const Profile = () => {
         onScroll={handlePostsScroll}
         ref={mainRef}
       >
-        
         <section className={styles['top-section']}>
           <header className={styles['mobile-header']}>
             <span
@@ -621,10 +619,7 @@ const Profile = () => {
           </div>
         </section>
 
-       
-
         <section className={styles['bottom-section']}>
-           
           <header className={styles['bottom-header']}>
             <ul className={styles['category-list']}>
               <li
