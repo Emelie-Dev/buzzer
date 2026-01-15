@@ -13,14 +13,11 @@
   width: 100%;
   border-right: 1px solid rgb(128, 128, 128, 0.3);
   height: 100vh;
-  overflow: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
-
   scroll-snap-type: y mandatory;
-  overflow-y: scroll;
-  /* background: green; */
+  overflow: auto;
 }
 
 .reels-container {

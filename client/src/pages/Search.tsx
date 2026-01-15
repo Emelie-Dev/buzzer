@@ -25,7 +25,7 @@ const Search = () => {
   const [isMediumSize, setIsMediumSize] = useState<boolean>(mediumSize);
   const [category, setCategory] = useState<'all' | 'users' | 'contents'>('all');
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
-  const [searchText, setSearchText] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>(searchQuery || '');
   const [overlaySearch, setOverlaySearch] = useState<boolean>(false);
   const [result, setResult] = useState<{
     users: any[];
@@ -136,7 +136,7 @@ const Search = () => {
       list: new Set(),
     });
     setCategory('all');
-    setSearchText('');
+    setSearchText(searchQuery || '');
     containerRef.current.children[0].scrollIntoView();
     setLoading(true);
   }, [location.search]);
@@ -294,6 +294,7 @@ const Search = () => {
                 onChange={(e) => setSearchText(e.target.value)}
                 ref={searchInputRef}
                 onClick={() => setOverlaySearch(true)}
+                onFocus={() => setOverlaySearch(true)}
               />
 
               <IoClose

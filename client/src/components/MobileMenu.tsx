@@ -1,17 +1,39 @@
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import styles from '../styles/MobileMenu.module.css';
+import { LikeContext } from '../Contexts';
 
 type MobileMenuProps = {
   showMobileMenu: boolean;
   setShowMobileMenu: React.Dispatch<React.SetStateAction<boolean>>;
   reels?: boolean;
+  isFollowing: any;
+  handleUserFollow: () => Promise<void>;
+  collaboratorsList: {
+    value: any[];
+    loading: boolean;
+    isCollaborator: boolean;
+  };
+  leaveCollaboration: () => Promise<void>;
+  excludeContent: () => Promise<void>;
+  reportAccount: () => void;
+  clearDisplay: () => void;
+  muteReel: () => void;
 };
 
 const MobileMenu = ({
   showMobileMenu,
   setShowMobileMenu,
   reels,
+  isFollowing,
+  handleUserFollow,
+  collaboratorsList,
+  leaveCollaboration,
+  excludeContent,
+  reportAccount,
+  clearDisplay,
+  muteReel,
 }: MobileMenuProps) => {
+  const { isReelPinned, handlePinnedReels, muted } = useContext(LikeContext);
   const listRef = useRef<HTMLUListElement>(null!);
 
   useEffect(() => {
@@ -51,34 +73,43 @@ const MobileMenu = ({
           className={`${styles['menu-item']} ${styles['menu-red']} ${
             reels ? styles['reels-menu-item'] : ''
           }`}
+          onClick={handleUserFollow}
         >
-          Follow
+          {isFollowing ? 'Unfollow' : 'Follow'}
         </li>
         <li
           className={`${styles['menu-item']} ${styles['menu-red']} ${
             reels ? styles['reels-menu-item'] : ''
           }`}
+          onClick={reportAccount}
         >
           Report
         </li>
-        <li
-          className={`${styles['menu-item']} ${
-            reels ? styles['reels-menu-item'] : ''
-          }`}
-        >
-          Leave Collaboration
-        </li>
+        {collaboratorsList.isCollaborator && (
+          <li
+            className={`${styles['menu-item']} ${
+              reels ? styles['reels-menu-item'] : ''
+            }`}
+            onClick={leaveCollaboration}
+          >
+            Leave Collaboration
+          </li>
+        )}
         {reels && (
           <>
             <li
               className={`${styles['menu-item']} ${styles['reels-menu-item']}`}
+              onClick={muteReel}
             >
-              Mute
+              {muted ? 'Unmute' : 'Mute'}
             </li>
             <li
               className={`${styles['menu-item']} ${styles['reels-menu-item']}`}
+              onClick={() =>
+                handlePinnedReels(isReelPinned() ? 'delete' : 'add')
+              }
             >
-              Pin
+              {isReelPinned() ? 'Unpin' : 'Pin'}
             </li>
           </>
         )}
@@ -86,27 +117,15 @@ const MobileMenu = ({
           className={`${styles['menu-item']} ${
             reels ? styles['reels-menu-item'] : ''
           }`}
+          onClick={excludeContent}
         >
           Not interested
         </li>
-        {/* <li
-          className={`${styles['menu-item']} ${
-            reels ? styles['reels-menu-item'] : ''
-          }`}
-        >
-          Add to story
-        </li> */}
         <li
           className={`${styles['menu-item']} ${
             reels ? styles['reels-menu-item'] : ''
           }`}
-        >
-          Go to post
-        </li>
-        <li
-          className={`${styles['menu-item']} ${
-            reels ? styles['reels-menu-item'] : ''
-          }`}
+          onClick={clearDisplay}
         >
           Clear display
         </li>

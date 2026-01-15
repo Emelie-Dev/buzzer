@@ -311,7 +311,7 @@ const CarouselItem = ({
     const value = parseFloat(e.target.value);
     setIsProgressChanging(true);
     setHideData(true);
-    setProgress(value);
+    setProgress(value || 0);
 
     handleMediaTime('current', value)();
   };
@@ -322,7 +322,7 @@ const CarouselItem = ({
     const currentTime = target.currentTime;
     const duration = target.duration;
 
-    if (!isProgressChanging) setProgress((currentTime / duration) * 100);
+    if (!isProgressChanging) setProgress((currentTime / duration) * 100 || 0);
   };
 
   const seekMedia = () => {

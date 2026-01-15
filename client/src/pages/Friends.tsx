@@ -8,7 +8,6 @@ import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import MobileMenu from '../components/MobileMenu';
 import { IoPeopleSharp } from 'react-icons/io5';
 import FriendRequests from '../components/FriendRequests';
 import Skeleton from 'react-loading-skeleton';
@@ -20,7 +19,6 @@ import { Link } from 'react-router-dom';
 
 const Friends = () => {
   const [category, setCategory] = useState<'users' | 'contents' | null>(null);
-  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null!);
   const mainRef = useRef<HTMLDivElement>(null!);
@@ -260,16 +258,13 @@ const Friends = () => {
       <NavBar page="friends" />
 
       <section className={styles.main}>
-        <section
-          className={styles['main-container']}
-          ref={mainRef}
-          onScroll={scrollHandler}
-        >
+        <section className={styles['main-container']} ref={mainRef}>
           <Header
             page="friends"
             friendsCategory={category}
             setFriendsCategory={setCategory}
             setShowFriendRequests={setShowFriendRequests}
+            requestsCount={requests.received.value.length}
           />
 
           <div className={styles.header}>
@@ -412,7 +407,10 @@ const Friends = () => {
             <ContentContext.Provider
               value={{ contentRef, activeVideo, setActiveVideo }}
             >
-              <div className={styles['content-container']}>
+              <div
+                className={styles['content-container']}
+                onScroll={scrollHandler}
+              >
                 {contents === null ? (
                   Array.from({ length: 2 }).map((_, index) => (
                     <div key={index} className={styles['content-skeleton-div']}>
@@ -458,7 +456,6 @@ const Friends = () => {
                       data={data}
                       contentType="home"
                       setContents={setContents}
-                      setShowMobileMenu={setShowMobileMenu}
                     />
                   ))
                 )}
@@ -635,13 +632,6 @@ const Friends = () => {
           </div>
         </section>
       </section>
-
-      {showMobileMenu && (
-        <MobileMenu
-          showMobileMenu={showMobileMenu}
-          setShowMobileMenu={setShowMobileMenu}
-        />
-      )}
 
       {showFriendRequests && (
         <FriendRequests

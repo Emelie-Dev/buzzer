@@ -7,7 +7,6 @@ import express from 'express';
 import { config } from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
-// import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import sanitizeHtml from 'sanitize-html';
 import sanitize from 'express-mongo-sanitize';
@@ -38,6 +37,7 @@ import reelRouter from './routes/reelRoutes.js';
 import notificationRouter from './routes/notificationRoutes.js';
 import analyticsRouter from './routes/analyticsRoutes.js';
 import shareRouter from './routes/shareRoutes.js';
+import { publicLimiter } from './utils/limiters.js';
 
 const app = express();
 
@@ -87,12 +87,20 @@ const corsOptions = {
 };
 
 // ✅ Trust proxy so IPs are real behind Render
-app.set('trust proxy', true);
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
 
 // ✅ Use request-ip middleware
 app.use(requestIp.mw());
 
 app.use(cors(corsOptions));
+
+// Implements rate limiting
+app.use((req, res, next) => { 
+  if (!req.path.startsWith('/api')) {
+    return publicLimiter(req, res, next);
+  }
+  return next();
+});
 
 // Render static files
 app.use(
@@ -101,16 +109,6 @@ app.use(
 
 // Adds security headers
 app.use(helmet());
-
-// Implements rate limiting
-// const limiter = rateLimit({
-//   max: 1000,
-//   windowMs: 60 * 60 * 1000,
-//   message:
-//     'We have received too many request from this IP address. Please try after one hour.',
-// });
-
-// app.use('/api', limiter);
 
 // Parses request body
 app.use(express.json({ limit: '10kb' }));
@@ -147,11 +145,7 @@ app.use((req, _, next) => {
 });
 
 // Prevents parameter pollution
-app.use(
-  hpp({
-    whitelist: [],
-  })
-);
+app.use(hpp());
 
 // Compresses response
 app.use((req, _, next) => {

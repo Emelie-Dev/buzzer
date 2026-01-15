@@ -14,6 +14,7 @@ const useScrollHandler = (
   const [postData, setPostData] = useState({
     loading: false,
     end: false,
+    batch: 1,
   });
 
   const { setScrollingUp } = useContext(GeneralContext);
@@ -33,10 +34,11 @@ const useScrollHandler = (
         );
 
       setPosts([...dataArray, ...result]);
-      setPostData({
+      setPostData((prev) => ({
+        ...prev,
         loading: false,
         end: result.length < 10,
-      });
+      }));
     } catch {
       setPosts(dataArray);
       setPostData({
@@ -123,7 +125,11 @@ const useScrollHandler = (
           target.scrollTop + target.clientHeight >= target.scrollHeight - 200;
 
         if (isBottom && !postData.end) {
-          setPostData((prev) => ({ ...prev, loading: true }));
+          setPostData((prev) => ({
+            ...prev,
+            batch: prev.batch + 1,
+            loading: true,
+          }));
           getPosts();
         }
       }

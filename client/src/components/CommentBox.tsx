@@ -644,31 +644,33 @@ const CommentBox = ({
           if (window.matchMedia('(max-width: 800px)').matches) handleClick(e);
         }}
       >
-        <div className={styles['carousel-container']}>
-          {type === 'carousel' ? (
-            <Carousel
-              data={media}
-              aspectRatio={aspectRatio}
-              type="comment"
-              hideData={hideData}
-              setHideData={setHideData}
-              viewObj={{ viewed, setViewed, handleView }}
-            />
-          ) : (
-            <CarouselItem
-              item={{ src: media, type }}
-              aspectRatio={aspectRatio}
-              hideData={hideData}
-              setHideData={setHideData}
-              contentIndex={0}
-              itemIndex={0}
-              viewType="comment"
-              contentType={reels ? 'reels' : 'single'}
-              description={description}
-              viewsData={{ seenSlides, setSeenSlides }}
-            />
-          )}
-        </div>
+        {window.matchMedia('(min-width: 801px)').matches && (
+          <div className={styles['carousel-container']}>
+            {type === 'carousel' ? (
+              <Carousel
+                data={media}
+                aspectRatio={aspectRatio}
+                type="comment"
+                hideData={hideData}
+                setHideData={setHideData}
+                viewObj={{ viewed, setViewed, handleView }}
+              />
+            ) : (
+              <CarouselItem
+                item={{ src: media, type }}
+                aspectRatio={aspectRatio}
+                hideData={hideData}
+                setHideData={setHideData}
+                contentIndex={0}
+                itemIndex={0}
+                viewType="comment"
+                contentType={reels ? 'reels' : 'single'}
+                description={description}
+                viewsData={{ seenSlides, setSeenSlides }}
+              />
+            )}
+          </div>
+        )}
 
         <div
           className={styles['comment-container']}

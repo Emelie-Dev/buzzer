@@ -7,10 +7,12 @@ import {
   getPosts,
   getPostStats,
 } from '../controllers/analyticsController.js';
+import { apiLimiter } from '../utils/limiters.js';
 
 const router = express.Router();
 
 router.use(protectRoute);
+router.use(apiLimiter);
 
 router.get('/engagements', getMonthlyEngagementStats);
 

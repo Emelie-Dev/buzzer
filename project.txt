@@ -29,7 +29,7 @@ Pages =>
   - Show email in proile page  ✔
   - Hide search before any page unmounts ✔
   - Add time to requests in the frontend  ✔
-  - Update contents display size for larger screens
+  - Update contents display size for larger screens ✔
   
 
 
@@ -63,9 +63,9 @@ Server =>
   Tips
   - Handle deactivated accounts on aggregation
   - Enable chat feature
-  - Users can have only 1000 friends at max
-  - Enable users to view sent friend requests
-  - Handle duplicate documents in pagination
-  - Delete failed processed files from cloudinary
+  - Users can have only 1000 friends at max ✔
+  - Enable users to view sent friend requests ✔
+  - Handle duplicate documents in pagination ✔
+  - Delete failed processed files from cloudinary ✔
   - add private user functionality to user queries.
  

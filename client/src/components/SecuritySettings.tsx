@@ -610,7 +610,9 @@ const LinkedAccounts = () => {
       toast.error(`${provider} account linked successfully.`);
     }
 
-    return () => {};
+    return () => {
+      navigate(location.pathname, { replace: true });
+    };
   }, []);
 
   const getTime = (timeString: string) => {

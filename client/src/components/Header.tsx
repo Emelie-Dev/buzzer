@@ -31,6 +31,7 @@ type HeaderProps = {
     >
   >;
   setShowProfileViews?: React.Dispatch<React.SetStateAction<boolean>>;
+  requestsCount?: number;
 };
 
 const Header = ({
@@ -41,6 +42,7 @@ const Header = ({
   notificationsCategory,
   setNotificationsCategory,
   setShowProfileViews,
+  requestsCount,
 }: HeaderProps) => {
   const { setScrollingUp, setShowSearchPage, scrollingUp } =
     useContext(GeneralContext);
@@ -61,40 +63,43 @@ const Header = ({
   }, []);
 
   useEffect(() => {
-    if (scrollingUp) {
-      headerRef.current.style.position = 'sticky';
-      headerRef.current.animate(
-        {
-          transform: ['translateY(-15px)', 'translateY(0)'],
-        },
-        {
-          fill: 'both',
-          duration: 150,
-        }
-      );
-    } else if (scrollingUp === null) {
-      headerRef.current.style.position = 'static';
-      headerRef.current.animate(
-        {
-          transform: ['translateY(-15px)', 'translateY(0)'],
-        },
-        {
-          fill: 'both',
-          duration: 0,
-        }
-      );
-    } else {
-      const animation = headerRef.current.animate(
-        {
-          transform: ['translateY(0)', 'translateY(-75px)'],
-        },
-        {
-          fill: 'both',
-          duration: 150,
-        }
-      );
+    if (page !== 'friends') {
+      if (scrollingUp) {
+        headerRef.current.style.position = 'sticky';
+        headerRef.current.animate(
+          {
+            transform: ['translateY(-15px)', 'translateY(0)'],
+          },
+          {
+            fill: 'both',
+            duration: 150,
+          }
+        );
+      } else if (scrollingUp === null) {
+        headerRef.current.style.position = 'static';
+        headerRef.current.animate(
+          {
+            transform: ['translateY(-15px)', 'translateY(0)'],
+          },
+          {
+            fill: 'both',
+            duration: 0,
+          }
+        );
+      } else {
+        const animation = headerRef.current.animate(
+          {
+            transform: ['translateY(0)', 'translateY(-75px)'],
+          },
+          {
+            fill: 'both',
+            duration: 150,
+          }
+        );
 
-      animation.onfinish = () => (headerRef.current.style.position = 'static');
+        animation.onfinish = () =>
+          (headerRef.current.style.position = 'static');
+      }
     }
   }, [scrollingUp]);
 
@@ -116,7 +121,7 @@ const Header = ({
                 />
               ) : (
                 <img
-                  src="../../assets/logo.png"
+                  src="/assets/logo.png"
                   alt="Buzzer Logo"
                   className={styles.logo}
                 />
@@ -170,7 +175,9 @@ const Header = ({
                 }
               >
                 <IoPeopleSharp className={styles['friends-icon']} />
-                <span className={styles['request-length']}>10</span>
+                <span className={styles['request-length']}>
+                  {requestsCount || 0}
+                </span>
               </span>
             ) : page === 'notifications' ? (
               <img

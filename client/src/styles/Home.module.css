@@ -109,7 +109,7 @@
   cursor: pointer;
 }
 
-.user>a {
+.user > a {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -124,18 +124,22 @@
   justify-content: center;
   padding: 0.17rem;
   border-radius: 50%;
-  background: linear-gradient(to bottom left,
-      #dc143c,
-      var(--app-theme-color) 60%);
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
 }
 
 .add-story {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(to bottom left,
-      #dc143c,
-      var(--app-theme-color) 60%);
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
   padding: 0.17rem;
   border-radius: 50%;
 }
@@ -240,6 +244,7 @@
   display: flex;
   flex-direction: column;
   margin-bottom: 2rem;
+  z-index: -1;
 }
 
 .top-content-skeleton {
@@ -310,7 +315,7 @@
   border-radius: 5px;
 }
 
-.suggested-user>a {
+.suggested-user > a {
   display: flex;
   align-items: center;
   padding: 0.5rem;
@@ -341,9 +346,11 @@
 }
 
 .suggested-img-box3 {
-  background: linear-gradient(to bottom left,
-      #dc143c,
-      var(--app-theme-color) 60%);
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
 }
 
 .suggested-user-names {
@@ -464,7 +471,6 @@
   height: 8rem;
 }
 
-
 .pinned-video-box {
   display: flex;
   flex-direction: column;
@@ -541,9 +547,11 @@
 }
 
 .profile-img-span3 {
-  background: linear-gradient(to bottom left,
-      #dc143c,
-      var(--app-theme-color) 60%);
+  background: linear-gradient(
+    to bottom left,
+    #dc143c,
+    var(--app-theme-color) 60%
+  );
 }
 
 .no-story-img {
@@ -584,7 +592,6 @@
   border-radius: 5px;
   cursor: pointer;
 }
-
 
 .friend-btn-box {
   display: flex;
@@ -632,7 +639,6 @@
   pointer-events: none;
   opacity: 0.5 !important;
 }
-
 
 /* Media Queries */
 

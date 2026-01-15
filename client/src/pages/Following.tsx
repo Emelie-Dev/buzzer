@@ -8,7 +8,6 @@ import useScrollHandler from '../hooks/useScrollHandler';
 import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import MobileMenu from '../components/MobileMenu';
 import Skeleton from 'react-loading-skeleton';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { apiClient, getUrl } from '../Utilities';
@@ -41,7 +40,6 @@ type MediaData = {
 export type DataItem = CarouselData | MediaData;
 
 const Following = () => {
-  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const {
     activeVideo,
     setActiveVideo,
@@ -151,7 +149,6 @@ const Following = () => {
                     data={data}
                     contentType="following"
                     setContents={setContents}
-                    setShowMobileMenu={setShowMobileMenu}
                   />
                 ))
               )}
@@ -275,13 +272,6 @@ const Following = () => {
           </div>
         </section>
       </section>
-
-      {showMobileMenu && (
-        <MobileMenu
-          showMobileMenu={showMobileMenu}
-          setShowMobileMenu={setShowMobileMenu}
-        />
-      )}
 
       {engagementModal && (
         <Engagements value={engagementModal} setValue={setEngagementModal} />

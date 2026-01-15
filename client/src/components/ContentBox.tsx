@@ -19,14 +19,21 @@ import { apiClient, getTime, getUrl, getEngagementValue } from '../Utilities';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { toast } from 'sonner';
 import { IoMdHeart } from 'react-icons/io';
+import MobileMenu from './MobileMenu';
 
 type ContentBoxProps = {
   data: any;
   contentType: 'following' | 'home' | 'reels';
   setContents: React.Dispatch<React.SetStateAction<any[]>>;
-  setShowMobileMenu?: React.Dispatch<React.SetStateAction<boolean>>;
   pinnedReels?: any[] | 'error';
   setPinnedReels?: React.Dispatch<React.SetStateAction<any[] | 'error'>>;
+  setPostData?: React.Dispatch<
+    React.SetStateAction<{
+      loading: boolean;
+      end: boolean;
+      batch: number;
+    }>
+  >;
 };
 
 export type CommentData =
@@ -49,9 +56,9 @@ const ContentBox = ({
   data,
   contentType,
   setContents,
-  setShowMobileMenu,
   pinnedReels,
   setPinnedReels,
+  setPostData,
 }: ContentBoxProps) => {
   const {
     _id: contentId,
@@ -125,6 +132,7 @@ const ContentBox = ({
     loading: false,
     value: collaborators,
   });
+  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
 
   const descriptionRef = useRef<HTMLDivElement>(null!);
   const contentRef = useRef<HTMLDivElement>(null!);
@@ -394,6 +402,7 @@ const ContentBox = ({
   const handleUserFollow = async () => {
     setShowMenu(false);
     setFollow(!follow);
+    setShowMobileMenu(false);
 
     if (Boolean(isFollowing) !== follow) return;
 
@@ -427,6 +436,9 @@ const ContentBox = ({
 
   const excludeContent = async () => {
     setShowMenu(false);
+    setShowMobileMenu(false);
+    if (setPostData)
+      setPostData((prev) => ({ ...prev, batch: prev.batch + 1 }));
     if (excludeValue) return;
 
     setExcludeValue(true);
@@ -527,6 +539,7 @@ const ContentBox = ({
   };
 
   const muteReel = () => {
+    setShowMobileMenu(false);
     if (contentRef.current) {
       const video = contentRef.current.querySelector('video');
       if (video) setMuted(!muted);
@@ -534,6 +547,7 @@ const ContentBox = ({
   };
 
   const handlePinnedReels = (action: 'add' | 'delete') => {
+    setShowMobileMenu(false);
     if (!Array.isArray(pinnedReels)) {
       return toast.error('Please reload your pinned reels and try again.');
     }
@@ -613,6 +627,7 @@ const ContentBox = ({
 
   const leaveCollaboration = async () => {
     setShowMenu(false);
+    setShowMobileMenu(false);
 
     if (collaboratorsList.loading) return;
     setCollaboratorsList((prev) => ({ ...prev, loading: true }));
@@ -639,6 +654,20 @@ const ContentBox = ({
     }
   };
 
+  const reportAccount = () => {
+    setShowMenu(false);
+    setShowMobileMenu(false);
+    toast.success(
+      'Thanks for reporting. We’ll review and take action if necessary.'
+    );
+  };
+
+  const clearDisplay = () => {
+    setHideData(true);
+    setShowMenu(false);
+    setShowMobileMenu(false);
+  };
+
   return (
     <LikeContext.Provider
       value={{
@@ -660,6 +689,22 @@ const ContentBox = ({
         getFollowText,
       }}
     >
+      {showMobileMenu && (
+        <MobileMenu
+          reels={contentType === 'reels'}
+          muteReel={muteReel}
+          showMobileMenu={showMobileMenu}
+          isFollowing={isFollowing}
+          setShowMobileMenu={setShowMobileMenu}
+          handleUserFollow={handleUserFollow}
+          collaboratorsList={collaboratorsList}
+          leaveCollaboration={leaveCollaboration}
+          excludeContent={excludeContent}
+          reportAccount={reportAccount}
+          clearDisplay={clearDisplay}
+        />
+      )}
+
       {shareMedia && (
         <ShareMedia
           setShareMedia={setShareMedia}
@@ -758,7 +803,7 @@ const ContentBox = ({
                 className={`${styles['content-menu2']} ${
                   showMenu ? styles['active-menu'] : ''
                 }`}
-                onClick={() => setShowMobileMenu && setShowMobileMenu(true)}
+                onClick={() => setShowMobileMenu(true)}
               />
 
               {!hideMenu && (
@@ -771,12 +816,7 @@ const ContentBox = ({
                   </li>
                   <li
                     className={`${styles['menu-item']} ${styles['menu-red']}`}
-                    onClick={() => {
-                      setShowMenu(false);
-                      toast.success(
-                        'Thanks for reporting. We’ll review and take action if necessary.'
-                      );
-                    }}
+                    onClick={reportAccount}
                   >
                     Report
                   </li>
@@ -791,14 +831,7 @@ const ContentBox = ({
                   <li className={styles['menu-item']} onClick={excludeContent}>
                     Not interested
                   </li>
-                  {/* <li className={styles['menu-item']}>Add to story</li> */}
-                  <li
-                    className={styles['menu-item']}
-                    onClick={() => {
-                      setHideData(true);
-                      setShowMenu(false);
-                    }}
-                  >
+                  <li className={styles['menu-item']} onClick={clearDisplay}>
                     Clear display
                   </li>
                 </ul>
@@ -1034,25 +1067,36 @@ const ContentBox = ({
               </span>
             </div>
 
-            <HiOutlineDotsHorizontal
-              className={`${styles['reel-content-menu']} ${
-                showMenu ? styles['active-menu'] : ''
-              }`}
-              onClick={() => setShowMobileMenu && setShowMobileMenu(true)}
-            />
+            {contentType === 'reels' && (
+              <HiOutlineDotsHorizontal
+                className={`${styles['reel-content-menu']} ${
+                  showMenu ? styles['active-menu'] : ''
+                }`}
+                onClick={() => setShowMobileMenu && setShowMobileMenu(true)}
+              />
+            )}
           </div>
 
           {contentType !== 'reels' && (
             <div className={styles['small-menu-container']}>
-              <span className={styles['small-details-box']}>
+              <span
+                className={`${styles['small-details-box']} ${
+                  loading.like ? styles['menu-icon-box2'] : ''
+                }`}
+                onClick={handleLike}
+              >
                 <IoMdHeart
                   className={`${styles['small-details-icon']} ${
-                    like ? styles['red-icon'] : ''
+                    styles['like-icon2']
+                  } ${like.value ? styles['red-icon'] : ''} ${
+                    loading.like ? styles['like-skeleton'] : ''
                   }`}
                   title="Like"
                 />
 
-                <span className={styles['small-details-value']}>21K</span>
+                <span className={styles['small-details-value']}>
+                  {getEngagementValue(like.count)}
+                </span>
               </span>
 
               <span
@@ -1065,20 +1109,27 @@ const ContentBox = ({
               >
                 <FaCommentDots className={styles['small-details-icon']} />
 
-                <span className={styles['small-details-value']}>2345</span>
+                <span className={styles['small-details-value']}>
+                  {getEngagementValue(comments.totalCount)}
+                </span>
               </span>
 
               <span
-                className={styles['small-details-box']}
+                className={`${styles['small-details-box']} ${
+                  loading.save ? styles['menu-icon-box2'] : ''
+                }`}
+                title="Save"
                 onClick={handleSave}
               >
                 <IoBookmark
                   className={`${styles['small-details-icon']} ${
                     save.value ? styles['saved-icon'] : ''
-                  }`}
+                  } ${loading.save ? styles['save-skeleton'] : ''}`}
                 />
 
-                <span className={styles['small-details-value']}>954</span>
+                <span className={styles['small-details-value']}>
+                  {getEngagementValue(save.count)}
+                </span>
               </span>
 
               <span
@@ -1090,7 +1141,9 @@ const ContentBox = ({
               >
                 <FaShare className={styles['small-details-icon']} />
 
-                <span className={styles['small-details-value']}>217</span>
+                <span className={styles['small-details-value']}>
+                  {getEngagementValue(shares)}
+                </span>
               </span>
             </div>
           )}

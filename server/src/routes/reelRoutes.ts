@@ -13,10 +13,12 @@ import {
   getPinnedReels,
 } from '../controllers/reelController.js';
 import updatePost from '../utils/updatePost.js';
+import { apiLimiter } from '../utils/limiters.js';
 
 const router = express.Router();
 
 router.use(protectRoute);
+router.use(apiLimiter);
 
 router
   .route('/')

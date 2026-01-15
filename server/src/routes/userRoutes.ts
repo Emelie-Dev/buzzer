@@ -19,10 +19,12 @@ import {
 } from '../controllers/userController.js';
 import protectRoute from '../middleware/protectRoute.js';
 import { cancelRequest } from '../utils/handleNotifications.js';
+import { apiLimiter } from '../utils/limiters.js';
 
 const router = express.Router();
 
 router.use(protectRoute);
+router.use(apiLimiter);
 
 router.get('/suggested', getSuggestedUsers);
 router.patch('/suggested/:id', removeSuggestedUser);

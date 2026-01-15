@@ -11,7 +11,6 @@ import { IoIosArrowDown } from 'react-icons/io';
 import AsideHeader from '../components/AsideHeader';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import MobileMenu from '../components/MobileMenu';
 import PinnedReels from '../components/PinnedReels';
 import Skeleton from 'react-loading-skeleton';
 import LoadingAnimation from '../components/LoadingAnimation';
@@ -35,7 +34,6 @@ const Reels = () => {
   const [scrollType, setScrollType] = useState<'up' | 'down' | null>(null);
   const [prevTop, setPrevTop] = useState<number>(0);
   const { setScrollingUp, setShowSearchPage } = useContext(GeneralContext);
-  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const [showPinnedVideos, setShowPinnedVideos] = useState<boolean>(false);
   const [pinnedReels, setPinnedReels] = useState<any[] | 'error'>(null!);
   const [reelOptions, setReelOptions] = useState<{
@@ -44,9 +42,10 @@ const Reels = () => {
   }>({ autoScroll: false, playBackSpeed: 1 });
 
   const mainRef = useRef<HTMLDivElement>(null!);
-  const timeout = useRef<number>();
   const reelsRef = useRef<HTMLDivElement>(null!);
   const reelOptionsRef = useRef<HTMLDivElement>(null!);
+  const timeout = useRef<number>(null!);
+  const headerTopRef = useRef<boolean>(false);
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -66,6 +65,22 @@ const Reels = () => {
 
   useEffect(() => {
     document.title = 'Buzzer - Reels';
+
+    getPinnedReels();
+
+    return () => {
+      setShowSearchPage(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.forEach((video) => observer.observe(video));
+    }
+
+    if (contents && postData.batch === 1) {
+      if (mainRef.current) mainRef.current.scrollTop = 0;
+    }
 
     const resizeHandler = () => {
       if (reelsRef.current && reelOptionsRef.current) {
@@ -88,21 +103,27 @@ const Reels = () => {
     };
 
     resizeHandler();
-    getPinnedReels();
-
     window.addEventListener('resize', resizeHandler);
 
     return () => {
-      setShowSearchPage(false);
       window.removeEventListener('resize', resizeHandler);
     };
-  }, []);
-
-  useEffect(() => {
-    if (contentRef.current) {
-      contentRef.current.forEach((video) => observer.observe(video));
-    }
   }, [contents]);
+
+  // useEffect(() => {
+  //   if (contents && contents.length > 0) {
+  //     contentRef.current.forEach((target, index) => {
+  //       const video = target.querySelector('video') as HTMLVideoElement;
+  //       if (activeIndex === index) {
+  //         video.play();
+  //         setActiveVideo(video);
+  //       } else {
+  //         video.pause();
+  //         video.currentTime = 0;
+  //       }
+  //     });
+  //   }
+  // }, [activeIndex]);
 
   useEffect(() => {
     if (activeVideo) {
@@ -163,8 +184,22 @@ const Reels = () => {
       }
     }
 
+    if (activeIndex === 0) {
+      if (target.scrollTop - prevTop < 0) {
+        if (Math.abs(target.scrollTop - prevTop) > 20) {
+          headerTopRef.current = true;
+        } else {
+          headerTopRef.current = false;
+        }
+      }
+    } else {
+      headerTopRef.current = false;
+    }
+
     setScrollingUp(
       target.scrollTop - prevTop < 0
+        ? true
+        : headerTopRef.current === true
         ? true
         : target.scrollTop < 208
         ? null
@@ -172,6 +207,60 @@ const Reels = () => {
     );
     setPrevTop(target.scrollTop);
   };
+
+  // const handleWheelEvent = (e: React.WheelEvent<HTMLElement>) => {
+  //   // e.preventDefault();
+  //   if (scrollLocked.current) return;
+
+  //   const target = reelsRef.current as HTMLDivElement;
+  //   const deltaY =
+  //     e.deltaMode === 1
+  //       ? e.deltaY * 16
+  //       : e.deltaMode === 2
+  //       ? e.deltaY * window.innerHeight
+  //       : e.deltaY;
+
+  //   const delta = Math.max(-30, Math.min(30, deltaY));
+
+  //   const index = Math.round(
+  //     Math.abs(previewY.current) / mainRef.current.clientHeight
+  //   );
+
+  //   if (Object.is(-0, delta)) {
+  //     console.log(0);
+  //     scrollLocked.current = true;
+  //     previewY.current = index * mainRef.current.clientHeight;
+  //     target.style.transform = `translateY(${previewY.current}px)`;
+
+  //     target.ontransitionend = () => {
+  //       scrollLocked.current = false;
+  //     };
+
+  //     return;
+  //   }
+
+  //   if (delta >= 0) {
+  //     if (
+  //       !(
+  //         mainRef.current.clientHeight + Math.abs(previewY.current) >=
+  //         reelsRef.current.clientHeight
+  //       )
+  //     ) {
+  //       previewY.current += -1 * delta;
+  //       target.style.transform = `translateY(${previewY.current}px)`;
+  //     }
+  //   } else {
+  //     if (
+  //       !(
+  //         mainRef.current.clientHeight + -1 * previewY.current <=
+  //         mainRef.current.clientHeight
+  //       )
+  //     ) {
+  //       previewY.current += -1 * delta;
+  //       target.style.transform = `translateY(${previewY.current}px)`;
+  //     }
+  //   }
+  // };
 
   const handleKeyPress =
     (type: 'up' | 'down') => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -291,9 +380,9 @@ const Reels = () => {
                       data={data}
                       contentType="reels"
                       setContents={setContents}
-                      setShowMobileMenu={setShowMobileMenu}
                       pinnedReels={pinnedReels}
                       setPinnedReels={setPinnedReels}
+                      setPostData={setPostData}
                     />
                   ))
                 )}
@@ -605,14 +694,6 @@ const Reels = () => {
           </div>
         </section>
       </section>
-
-      {showMobileMenu && (
-        <MobileMenu
-          showMobileMenu={showMobileMenu}
-          setShowMobileMenu={setShowMobileMenu}
-          reels
-        />
-      )}
 
       {showPinnedVideos && (
         <PinnedReels

@@ -251,6 +251,8 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
   }, [searchData]);
 
   useEffect(() => {
+    if (category === 'suggested') return;
+
     const container = categoryContainerRef.current[category!];
 
     const categoryText = category as
@@ -279,6 +281,8 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
   }, [searchResult]);
 
   useEffect(() => {
+    if (category === 'suggested') return;
+
     const categoryText = category as
       | 'private'
       | 'followers'

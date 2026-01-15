@@ -5,10 +5,12 @@ import {
   getUserLikedPosts,
 } from '../controllers/likeController.js';
 import protectRoute from '../middleware/protectRoute.js';
+import { apiLimiter } from '../utils/limiters.js';
 
 const router = express.Router();
 
 router.use(protectRoute);
+router.use(apiLimiter);
 
 router.route('/').get(getUserLikedPosts).post(likeItem);
 

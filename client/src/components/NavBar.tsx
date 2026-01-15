@@ -17,7 +17,7 @@ import { FiLogOut } from 'react-icons/fi';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { AiFillClockCircle } from 'react-icons/ai';
 import { HiTrendingUp } from 'react-icons/hi';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaRegSquarePlus } from 'react-icons/fa6';
 import { BsPlusSquareFill } from 'react-icons/bs';
 import { IoNotificationsOutline } from 'react-icons/io5';
@@ -61,6 +61,8 @@ const NavBar = ({
   overlaySearch,
   setOverlaySearch,
 }: NavBarProps) => {
+  const location = useLocation();
+  const searchQuery = new URLSearchParams(location.search).get('q');
   const [isMediumSize, setIsMediumSize] = useState<boolean>(mediumSize);
 
   const pageType =
@@ -71,7 +73,7 @@ const NavBar = ({
   const [showMore, setShowMore] = useState<boolean>(false);
   const [showMore2, setShowMore2] = useState<boolean>(false);
   const [showSearch, setShowSearch] = useState<boolean>(false);
-  const [searchText, setSearchText] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>(searchQuery || '');
   const [moreResults, setMoreResults] = useState({
     trend: false,
     recent: false,
@@ -234,6 +236,10 @@ const NavBar = ({
   useEffect(() => {
     if (setOverlaySearch) setShowSearchPage(overlaySearch as boolean);
   }, [overlaySearch]);
+
+  useEffect(() => {
+    setSearchText(searchQuery || '');
+  }, [location.search]);
 
   useEffect(() => {
     const getResults = async () => {
@@ -1472,6 +1478,7 @@ const NavBar = ({
                                   title="Remove"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    e.preventDefault();
                                     deleteSearch(data._id);
                                   }}
                                 />
@@ -1541,6 +1548,7 @@ const NavBar = ({
                                             title="Remove"
                                             onClick={(e) => {
                                               e.stopPropagation();
+                                              e.preventDefault();
                                               deleteSearch(data._id);
                                             }}
                                           />

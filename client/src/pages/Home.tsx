@@ -15,7 +15,6 @@ import { GoPlus } from 'react-icons/go';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import MobileMenu from '../components/MobileMenu';
 import Skeleton from 'react-loading-skeleton';
 import { apiClient, getTime, getUrl } from '../Utilities';
 import Engagements from '../components/Engagements';
@@ -38,7 +37,6 @@ const Home = () => {
     left: false,
     right: true,
   });
-  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
 
   const {
     activeVideo,
@@ -433,7 +431,6 @@ const Home = () => {
                     data={data}
                     contentType="home"
                     setContents={setContents}
-                    setShowMobileMenu={setShowMobileMenu}
                   />
                 ))
               )}
@@ -679,13 +676,6 @@ const Home = () => {
           </div>
         </section>
       </section>
-
-      {showMobileMenu && (
-        <MobileMenu
-          showMobileMenu={showMobileMenu}
-          setShowMobileMenu={setShowMobileMenu}
-        />
-      )}
 
       {engagementModal && (
         <Engagements value={engagementModal} setValue={setEngagementModal} />

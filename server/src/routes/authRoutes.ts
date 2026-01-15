@@ -17,8 +17,11 @@ import {
   verifyEmail,
 } from '../controllers/authController.js';
 import protectRoute from '../middleware/protectRoute.js';
+import { apiLimiter } from '../utils/limiters.js';
 
 const router = express.Router();
+
+router.use(apiLimiter);
 
 router.get('/verify-email/:token', verifyEmail);
 router.get('/check-data/:field/:value', checkIfDataExist);

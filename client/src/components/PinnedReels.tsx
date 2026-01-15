@@ -3,7 +3,7 @@ import { IoClose } from 'react-icons/io5';
 import { RiUnpinFill } from 'react-icons/ri';
 import Skeleton from 'react-loading-skeleton';
 import { getTime, getUrl } from '../Utilities';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 type PinnedReelsProps = {
   setShowPinnedVideos: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,6 +21,8 @@ const PinnedReels = ({
   getPinnedReels,
   unPinReel,
 }: PinnedReelsProps) => {
+  const navigate = useNavigate();
+
   return (
     <section
       className={styles.section}
@@ -61,7 +63,7 @@ const PinnedReels = ({
           ) : (
             pinnedReels.map((reel, index) => (
               <article key={index} className={styles['pinned-video-box']}>
-                <Link to={'/'}>
+                <Link to={'#'}>
                   <video className={styles['pinned-video']}>
                     <source src={getUrl(reel.src, 'reels')} type="video/mp4" />
                     Your browser does not support playing video.
@@ -74,9 +76,9 @@ const PinnedReels = ({
                       onClick={(e) => unPinReel(e, reel._id)}
                     />
 
-                    <Link
-                      to={`/@${reel.username}`}
+                    <span
                       className={styles['pinned-video-data']}
+                      onClick={() => navigate(`/@${reel.username}`)}
                     >
                       <span
                         className={`${styles['profile-img-span']} ${
@@ -98,7 +100,7 @@ const PinnedReels = ({
                       <span className={styles['pinned-video-username']}>
                         {reel.username}
                       </span>
-                    </Link>
+                    </span>
 
                     <span className={styles['pinned-video-duration']}>
                       {getTime(reel.time)}

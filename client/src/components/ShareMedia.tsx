@@ -29,14 +29,12 @@ type ShareMediaProps = {
   setShares: React.Dispatch<React.SetStateAction<number>>;
 };
 
-const users: number[] = [1, 2, 3, 4, 5];
-
 const getUsers = async (...args: any[]) => {
-  const [query, page, cursor] = args;
+  const [query, cursor] = args;
 
   try {
     const { data } = await apiClient(
-      `v1/search/users?query=${query}&page=${page}&cursor=${cursor}`
+      `v1/search/users?query=${query}&cursor=${cursor}&page=1`
     );
 
     return data.data.result;
@@ -63,7 +61,6 @@ const ShareMedia = ({
   const [selected, setSelected] = useState<string[]>([]);
   const [searchResult, setSearchResult] = useState<any[]>([]);
   const [searchData, setSearchData] = useState({
-    page: 1,
     cursor: null,
     end: false,
   });
@@ -71,6 +68,7 @@ const ShareMedia = ({
     query: string;
     value: boolean | 'error';
   }>({ value: false, query: '' });
+  const [suggestions, setSuggestions] = useState<any[] | 'error'>(null!);
 
   const { setActiveVideo } = useContext(ContentContext);
 
@@ -80,13 +78,22 @@ const ShareMedia = ({
 
   const target = document.getElementById('share-portal') || document.body;
 
+  useEffect(() => {
+    if (suggestions === null) getSuggestions();
+  }, [suggestions]);
+
+  const getSuggestions = async () => {
+    try {
+      const { data } = await apiClient(`v1/search/users?&page=1`);
+      setSuggestions(data.data.result);
+    } catch {
+      setSuggestions('error');
+    }
+  };
+
   const handleSearch = async () => {
-    if (loading.value === true) {
-      const result = await debouncedQuery(
-        loading.query,
-        searchData.page,
-        searchData.cursor
-      );
+    if (loading.value === true && loading.query) {
+      const result = await debouncedQuery(loading.query, searchData.cursor);
 
       if (result === 'error') {
         setLoading({ ...loading, value: 'error' });
@@ -129,7 +136,6 @@ const ShareMedia = ({
     if (!searching) {
       setSearchResult([]);
       setSearchData({
-        page: 1,
         cursor: null,
         end: false,
       });
@@ -159,12 +165,14 @@ const ShareMedia = ({
   };
 
   const updateUsers = (id: string) => () => {
-    const set = new Set(selected);
+    setSelected((prev) => {
+      const set = new Set(prev);
 
-    if (set.has(id)) set.delete(id);
-    else set.add(id);
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
 
-    setSelected([...set]);
+      return [...set];
+    });
   };
 
   const handleUsersScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -173,19 +181,17 @@ const ShareMedia = ({
     const isBottom =
       target.scrollTop + target.clientHeight >= target.scrollHeight - 50;
 
-    if (isBottom && !searchData.end) {
-      if (loading.query === '') {
+    if (isBottom && !searchData.end && loading.value !== true) {
+      if (loading.value === 'error') {
         setSearchData({
           ...searchData,
-          cursor: searchResult[searchResult.length - 1].createdAt,
         });
       } else {
         setSearchData({
           ...searchData,
-          page: searchData.page + 1,
+          cursor: searchResult[searchResult.length - 1].createdAt,
         });
       }
-
       setLoading({ ...loading, value: true });
     }
   };
@@ -322,16 +328,10 @@ const ShareMedia = ({
                 setSearching(true);
                 setLoading({ value: true, query: e.target.value });
                 setSearchData({
-                  page: 1,
                   cursor: null,
                   end: false,
                 });
                 setSearchResult([]);
-              }}
-              onFocus={(e) => {
-                setSearching(true);
-                if (!searching)
-                  setLoading({ value: true, query: e.target.value });
               }}
             />
 
@@ -356,34 +356,62 @@ const ShareMedia = ({
         </div>
 
         {!searching && (
-          <div className={styles['friends-container']}>
-            {users.map((user, index) => (
-              <article key={index} className={styles.user}>
-                <span className={styles['img-box']}>
-                  <img
-                    src="../../assets/images/users/user1.jpeg"
-                    className={styles.img}
-                  />
+          <div className={styles['suggestions-container']}>
+            {suggestions === null ? (
+              <div className={styles['error-text']}>
+                <LoadingAnimation
+                  style={{
+                    width: '4rem',
+                    height: '4rem',
+                    transform: 'scale(2.5)',
+                  }}
+                />
+              </div>
+            ) : suggestions === 'error' ? (
+              <div className={styles['error-text']}>
+                Couldn’t load users. Please try again.
+                <button
+                  className={styles['error-btn']}
+                  onClick={() => setSuggestions(null!)}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : suggestions.length === 0 ? (
+              <div className={styles['error-text']}>
+                No suggestions available.
+              </div>
+            ) : (
+              <div className={styles['friends-container']}>
+                {suggestions.map((user) => (
+                  <article
+                    key={user._id}
+                    className={styles.user}
+                    onClick={updateUsers(user._id)}
+                  >
+                    <span className={styles['img-box']}>
+                      <img
+                        src={getUrl(user.photo, 'users')}
+                        className={styles.img}
+                      />
 
-                  {selected.includes(String(user)) && (
-                    <span className={styles['check-box']}>
-                      <FaCheck className={styles['check-icon']} />
+                      {selected.includes(user._id) && (
+                        <span className={styles['check-box']}>
+                          <FaCheck className={styles['check-icon']} />
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
 
-                <span className={styles.username}>
-                  Godfather 👑👑mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-                </span>
-              </article>
-            ))}
+                    <span className={styles.username}>{user.username}</span>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {searching ? (
-          loading.value === true &&
-          searchData.cursor === null &&
-          searchData.page === 1 ? (
+          loading.value === true && searchData.cursor === null ? (
             <div className={styles['search-result-container']}>
               <div className={styles['error-text']}>
                 <LoadingAnimation
@@ -395,13 +423,24 @@ const ShareMedia = ({
                 />
               </div>
             </div>
-          ) : loading.value === 'error' &&
-            searchData.cursor === null &&
-            searchData.page === 1 ? (
+          ) : loading.value === 'error' && searchData.cursor === null ? (
             <div className={styles['search-result-container']}>
               <div className={styles['error-text']}>
                 Couldn’t load users. Please try again.
-                <button className={styles['error-btn']}>Try again</button>
+                <button
+                  className={styles['error-btn']}
+                  onClick={() => {
+                    setSearching(true);
+                    setLoading((prev) => ({ ...prev, value: true }));
+                    setSearchData({
+                      cursor: null,
+                      end: false,
+                    });
+                    setSearchResult([]);
+                  }}
+                >
+                  Try again
+                </button>
               </div>
             </div>
           ) : searchResult.length === 0 ? (
@@ -452,18 +491,17 @@ const ShareMedia = ({
                 </article>
               ))}
 
-              {loading.value === true &&
-                (searchData.page !== 1 || searchData.cursor !== null) && (
-                  <div className={styles['loader-box']}>
-                    <LoadingAnimation
-                      style={{
-                        width: '2rem',
-                        height: '2rem',
-                        transform: 'scale(2.5)',
-                      }}
-                    />
-                  </div>
-                )}
+              {loading.value === true && searchData.cursor !== null && (
+                <div className={styles['loader-box']}>
+                  <LoadingAnimation
+                    style={{
+                      width: '2rem',
+                      height: '2rem',
+                      transform: 'scale(2.5)',
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )
         ) : (

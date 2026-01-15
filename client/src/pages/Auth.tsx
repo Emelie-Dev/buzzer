@@ -151,6 +151,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
 
     return () => {
       setShowSearchPage(false);
+      navigate(location.pathname, { replace: true });
     };
   }, []);
 

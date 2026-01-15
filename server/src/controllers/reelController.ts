@@ -23,6 +23,7 @@ import { ContentAccessibility } from '../models/storyModel.js';
 import { Types } from 'mongoose';
 import ffmpeg from 'fluent-ffmpeg';
 import crypto from 'crypto';
+import { convert } from 'html-to-text';
 
 const upload = multerConfig('reels');
 
@@ -615,7 +616,10 @@ export const saveReel = asyncErrorHandler(
         description: req.body.description,
         keywords: (() => {
           if (req.body.description) {
-            const doc = nlp(req.body.description);
+            const value = convert(req.body.description.trim(), {
+              wordwrap: null,
+            });
+            const doc = nlp(value);
             const nounPhrases = doc.nouns().out('array');
             const unique = [
               ...new Set(nounPhrases.map((s: String) => s.toLowerCase())),
