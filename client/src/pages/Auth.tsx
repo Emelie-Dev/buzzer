@@ -127,15 +127,17 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
 
     if (error === 'Google' || error === 'Facebook') {
       if (errorType === 'signin' || errorType === 'signup') {
+        navigate(location.pathname, { replace: true });
+
         if (errorCode === '409') {
           toast.error('This user already exists!');
         } else if (errorCode === '404') {
           toast.error(
-            `There’s no account linked to this ${error} login. You can link it in your settings.`
+            `There’s no account linked to this ${error} login. You can link it in your settings.`,
           );
         } else if (errorCode === '403') {
           toast.error(
-            'Finish setting up your account by clicking the verification link in the email we sent you!'
+            'Finish setting up your account by clicking the verification link in the email we sent you!',
           );
         } else if (errorCode === '406') {
           toast.error(`There’s no email linked to this ${error} login.`);
@@ -143,7 +145,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
           toast.error(
             `An error occurred while signing ${
               errorType === 'signup' ? 'up' : 'in'
-            } with ${error}.`
+            } with ${error}.`,
           );
         }
       }
@@ -151,7 +153,6 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
 
     return () => {
       setShowSearchPage(false);
-      navigate(location.pathname, { replace: true });
     };
   }, []);
 
@@ -191,7 +192,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
 
   const validateData = async (
     type: 'username' | 'email' | 'password',
-    signupData: SignupType
+    signupData: SignupType,
   ) => {
     const { username, email, password } = signupData;
     let newData: statusType = { ...dataStatus };
@@ -206,7 +207,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
           'username',
           signupData.username,
           dataStatus,
-          setDataStatus
+          setDataStatus,
         )) as statusType;
       }
     } else if (type === 'email') {
@@ -219,14 +220,14 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
           'email',
           signupData.email,
           dataStatus,
-          setDataStatus
+          setDataStatus,
         )) as statusType;
       }
     } else {
       if (password.length === 0) {
         newData = { ...newData, password: 'empty' };
         checkBoxRef.current.forEach(
-          (el: HTMLInputElement) => (el.checked = false)
+          (el: HTMLInputElement) => (el.checked = false),
         );
       } else {
         if (password.match(/[A-z]/) && password.match(/[0-9]/))
@@ -240,7 +241,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
         else checkBoxRef.current[2].checked = false;
 
         const isValid = checkBoxRef.current.every(
-          (el: HTMLInputElement) => el.checked
+          (el: HTMLInputElement) => el.checked,
         );
 
         if (isValid) newData = { ...newData, password: 'valid' };
@@ -274,7 +275,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
             email,
             password,
             addAccount,
-          }
+          },
         );
 
         if (type === 'signup') {
@@ -303,7 +304,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
           toast.error(
             `Could not ${
               type === 'signup' ? 'create account' : 'sign in'
-            }. Please Try again.`
+            }. Please Try again.`,
           );
         } else {
           toast.error(err.response.data.message);
@@ -333,7 +334,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
             });
 
             checkBoxRef.current.forEach(
-              (el: HTMLInputElement) => (el.checked = false)
+              (el: HTMLInputElement) => (el.checked = false),
             );
           }
         }
@@ -383,7 +384,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
 
       try {
         const { data } = await apiClient.post(
-          `v1/auth/oauth/${provider}${type === 'signup' ? '?signup=true' : ''}`
+          `v1/auth/oauth/${provider}${type === 'signup' ? '?signup=true' : ''}`,
         );
         return navigate(data.data.url);
       } catch {
@@ -391,7 +392,7 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
         return toast.error(
           `An error occurred while signing ${
             type === 'signup' ? 'up' : 'in'
-          } with ${provider[0].toUpperCase()}${provider.slice(1)}.`
+          } with ${provider[0].toUpperCase()}${provider.slice(1)}.`,
         );
       }
     };
@@ -458,23 +459,23 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                     dataStatus.username === 'error'
                       ? styles['invalid-text']
                       : dataStatus.username === 'loading'
-                      ? styles['loading-text']
-                      : dataStatus.username === 'valid'
-                      ? styles['valid-text']
-                      : ''
+                        ? styles['loading-text']
+                        : dataStatus.username === 'valid'
+                          ? styles['valid-text']
+                          : ''
                   } `}
                 >
                   {dataStatus.username === 'exist'
                     ? 'This username already exists.'
                     : dataStatus.username === 'error'
-                    ? 'Could not verify username. Try again.'
-                    : dataStatus.username === 'invalid'
-                    ? 'This username is invalid.'
-                    : dataStatus.username === 'loading'
-                    ? 'Checking username....'
-                    : dataStatus.username === 'valid'
-                    ? 'This username is available.'
-                    : ''}
+                      ? 'Could not verify username. Try again.'
+                      : dataStatus.username === 'invalid'
+                        ? 'This username is invalid.'
+                        : dataStatus.username === 'loading'
+                          ? 'Checking username....'
+                          : dataStatus.username === 'valid'
+                            ? 'This username is available.'
+                            : ''}
                 </span>
               </span>
 
@@ -501,23 +502,23 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                     dataStatus.email === 'error'
                       ? styles['invalid-text']
                       : dataStatus.email === 'loading'
-                      ? styles['loading-text']
-                      : dataStatus.email === 'valid'
-                      ? styles['valid-text']
-                      : ''
+                        ? styles['loading-text']
+                        : dataStatus.email === 'valid'
+                          ? styles['valid-text']
+                          : ''
                   } `}
                 >
                   {dataStatus.email === 'exist'
                     ? 'This email already exists.'
                     : dataStatus.email === 'error'
-                    ? 'Could not verify email. Try again.'
-                    : dataStatus.email === 'invalid'
-                    ? 'This email is invalid.'
-                    : dataStatus.email === 'loading'
-                    ? 'Checking email....'
-                    : dataStatus.email === 'valid'
-                    ? 'This email is available.'
-                    : ''}
+                      ? 'Could not verify email. Try again.'
+                      : dataStatus.email === 'invalid'
+                        ? 'This email is invalid.'
+                        : dataStatus.email === 'loading'
+                          ? 'Checking email....'
+                          : dataStatus.email === 'valid'
+                            ? 'This email is available.'
+                            : ''}
                 </span>
               </span>
 
@@ -904,15 +905,15 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                 {leftStatus === 'forgot'
                   ? 'Need a New Password?'
                   : leftStatus === 'reset'
-                  ? 'Pick a New Password'
-                  : 'Welcome Back!'}
+                    ? 'Pick a New Password'
+                    : 'Welcome Back!'}
               </h1>
               <p className={styles.paragraph}>
                 {leftStatus === 'forgot'
                   ? `No worries — just enter your email and we’ll send you a link to reset your password and get you back in.`
                   : leftStatus === 'reset'
-                  ? `Set a new password and jump right back into the buzz with your friends.`
-                  : `Sign in to reconnect and catch up on all the latest buzz with
+                    ? `Set a new password and jump right back into the buzz with your friends.`
+                    : `Sign in to reconnect and catch up on all the latest buzz with
                 friends and community.`}
               </p>
               <button
@@ -922,8 +923,8 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
                 {leftStatus === 'forgot'
                   ? 'Forgot Password'
                   : leftStatus === 'reset'
-                  ? 'Reset Password'
-                  : 'Sign In'}
+                    ? 'Reset Password'
+                    : 'Sign In'}
               </button>
             </div>
 
@@ -944,6 +945,10 @@ const Auth = ({ leftStatus = 'signin' }: AuthProps) => {
           </div>
         </div>
       </div>
+
+      <footer className={styles.footer}>
+        &#169; 2025 Buzzer. All rights reserved.
+      </footer>
     </section>
   );
 };

@@ -7,7 +7,7 @@ import { FaPlay } from 'react-icons/fa6';
 import SwitchAccount from '../components/SwitchAccount';
 import AsideHeader from '../components/AsideHeader';
 import { IoClose, IoSearchSharp, IoArrowBack } from 'react-icons/io5';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { AuthContext, GeneralContext } from '../Contexts';
 import { MdOutlineHourglassEmpty, MdOutlineWifiOff } from 'react-icons/md';
 import LoadingAnimation from '../components/LoadingAnimation';
@@ -496,9 +496,9 @@ const Search = () => {
                     <div className={styles['users-div']}>
                       {result.topUsers.slice(0, 3).map((user: any) => (
                         <article key={user._id} className={styles.user}>
-                          <a
+                          <Link
                             className={styles['user-content']}
-                            href={`/@${user.username}`}
+                            to={`/@${user.username}`}
                           >
                             <span className={styles['user-img-box']}>
                               <img
@@ -540,7 +540,7 @@ const Search = () => {
                                 {followersCount(user) !== 1 && 's'}
                               </span>
                             </div>
-                          </a>
+                          </Link>
 
                           <div
                             className={`${
@@ -695,9 +695,9 @@ const Search = () => {
                     <div className={styles['contents-div']}>
                       {result.posts.map((post) => (
                         <article key={post._id} className={styles.content}>
-                          <a
+                          <Link
                             className={styles['content-name']}
-                            href={`/@${post.owner.username}`}
+                            to={`/@${post.owner.username}`}
                           >
                             <img
                               className={styles['content-img']}
@@ -707,7 +707,7 @@ const Search = () => {
                             <span className={styles['content-handle']}>
                               {post.owner.username}
                             </span>
-                          </a>
+                          </Link>
 
                           <div className={styles['content-item-box']}>
                             {post.type === 'content' ? (
@@ -865,10 +865,10 @@ const Search = () => {
             ) : (
               <>
                 {result.users.map((user) => (
-                  <a
+                  <Link
                     key={user._id}
                     className={styles['user-category-item']}
-                    href={`/@${user.username}`}
+                    to={`/@${user.username}`}
                   >
                     <img
                       className={styles['user-img']}
@@ -907,7 +907,7 @@ const Search = () => {
                         </button>
                       )}
                     </span>
-                  </a>
+                  </Link>
                 ))}
 
                 {resultData.page > 1 && loading === true && (
@@ -1028,9 +1028,9 @@ const Search = () => {
               ) : (
                 result.posts.map((post) => (
                   <article key={post._id} className={styles.content}>
-                    <a
+                    <Link
                       className={styles['content-name']}
-                      href={`/@${post.owner.username}`}
+                      to={`/@${post.owner.username}`}
                     >
                       <img
                         className={styles['content-img']}
@@ -1040,7 +1040,7 @@ const Search = () => {
                       <span className={styles['content-handle']}>
                         {post.owner.username}
                       </span>
-                    </a>
+                    </Link>
 
                     <div className={styles['content-item-box']}>
                       {post.type === 'content' ? (

@@ -103,7 +103,7 @@ const Friends = () => {
   const getRequests = async () => {
     try {
       const { data } = await apiClient(
-        `v1/friends/requests?type=${requestsData.type}`
+        `v1/friends/requests?type=${requestsData.type}`,
       );
 
       setRequestsData((prev) => ({
@@ -146,7 +146,7 @@ const Friends = () => {
       try {
         const { data } = await apiClient.post(
           `v1/friends/request/respond/${id}`,
-          { action }
+          { action },
         );
 
         setRequests((prev) => ({
@@ -182,7 +182,7 @@ const Friends = () => {
         await apiClient.delete(`v1/friends/request/${id}`);
 
         const request = [...suggestionsData.list].find(
-          (item) => item[1] === id
+          (item) => item[1] === id,
         );
 
         if (request) {
@@ -351,8 +351,8 @@ const Friends = () => {
                             user.hasStory && user.hasUnviewedStory
                               ? styles['user-img-box3']
                               : user.hasStory
-                              ? styles['user-img-box2']
-                              : ''
+                                ? styles['user-img-box2']
+                                : ''
                           }`}
                         >
                           <img
@@ -380,7 +380,7 @@ const Friends = () => {
                                 : ''
                             } `}
                             onClick={cancelRequest(
-                              suggestionsData.list.get(user._id)
+                              suggestionsData.list.get(user._id),
                             )}
                           >
                             Cancel Request
@@ -446,8 +446,8 @@ const Friends = () => {
                   ))
                 ) : contents.length === 0 ? (
                   <div className={styles['no-data-text']}>
-                    Something went wrong while loading contents. Please refresh
-                    the page or check your connection.
+                    Your feed is empty for now. Add new friends or check back
+                    later to see new posts.
                   </div>
                 ) : (
                   contents.map((data) => (
@@ -616,7 +616,7 @@ const Friends = () => {
                         </div>
                       </Link>
                     </article>
-                  )
+                  ),
                 )
               )}
             </div>

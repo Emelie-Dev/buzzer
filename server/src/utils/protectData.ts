@@ -6,6 +6,8 @@ export default (
   fields: string[] = [],
   plain: boolean = false
 ) => {
+  fields = fields.filter(Boolean);
+
   if (type === 'user') {
     if (fields.length === 0) {
       fields = [

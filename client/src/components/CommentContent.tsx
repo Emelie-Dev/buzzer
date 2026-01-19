@@ -12,6 +12,7 @@ import { IoMdHeart } from 'react-icons/io';
 import LoadingAnimation from './LoadingAnimation';
 import CommentReply from './CommentReply';
 import ShowMoreText from './ShowMoreText';
+import { Link } from 'react-router-dom';
 
 type CommentContentProps = {
   data: any;
@@ -171,7 +172,7 @@ const CommentContent = ({
       }}
       onMouseOut={() => setShowMenu(false)}
     >
-      <a href={`/@${user.username}`}>
+      <Link to={`/@${user.username}`}>
         <span
           className={`${styles['comment-img-box']} ${
             hasStory && (hasUnviewedStory || user._id === viewer._id)
@@ -186,11 +187,11 @@ const CommentContent = ({
             src={getUrl(user.photo, 'users')}
           />
         </span>
-      </a>
+      </Link>
 
       <div className={styles['comment-details']}>
         <span className={styles['comment-owner']}>
-          <a href={`/@${user.username}`}>{user.name || <>&nbsp;</>}</a>
+          <Link to={`/@${user.username}`}>{user.name || <>&nbsp;</>}</Link>
           {user._id === creator.user._id ? (
             <span className={styles['creator-tag']}>
               <BsDot /> Creator

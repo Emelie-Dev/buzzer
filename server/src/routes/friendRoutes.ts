@@ -27,7 +27,7 @@ router.get('/requests', getRequests);
 
 router.get('/suggestions', getFriendsSugestions);
 
-router.get('/', getFriends);
+router.get('/:username?', getFriends);
 
 router.delete('/:id', removeFriend);
 

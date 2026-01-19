@@ -6,9 +6,9 @@ import LoadingAnimation from './LoadingAnimation';
 import styles from '../styles/ProtectedRoute.module.css';
 import StoryModal from '../components/StoryModal';
 
-type ProtectedRouteProps = {
+type ProtectedRouteProps<T = any> = {
   element: React.ComponentType;
-};
+} & T;
 
 const ProtectedRoute = ({
   element: Component,
@@ -114,7 +114,11 @@ const ProtectedRoute = ({
           />
         </div>
       ) : authCheck === 'success' ? (
-        <Component {...props} />
+        'componentKey' in props ? (
+          <Component key={props.componentKey} {...props} />
+        ) : (
+          <Component {...props} />
+        )
       ) : (
         <Navigate to={'/auth'} />
       )}

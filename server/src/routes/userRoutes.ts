@@ -16,6 +16,7 @@ import {
   leaveCollaboration,
   getPrivateAudience,
   removeSuggestedUser,
+  getUserData,
 } from '../controllers/userController.js';
 import protectRoute from '../middleware/protectRoute.js';
 import { cancelRequest } from '../utils/handleNotifications.js';
@@ -30,8 +31,9 @@ router.get('/suggested', getSuggestedUsers);
 router.patch('/suggested/:id', removeSuggestedUser);
 
 router.get('/profile', getProfileData);
+router.get('/profile/:username', getUserData);
 
-router.get('/posts/:type', getUserPosts);
+router.get('/posts/:type/:username?', getUserPosts);
 
 router
   .route('/private-audience')

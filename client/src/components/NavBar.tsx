@@ -108,6 +108,7 @@ const NavBar = ({
   const boxRef2 = useRef<HTMLDivElement>(null!);
   const searchSectionRef = useRef<HTMLDivElement>(null!);
   const searchRef = useRef<HTMLLIElement>(null!);
+  const searchRef2 = useRef<HTMLSpanElement>(null!);
   const navRef = useRef<HTMLDivElement>(null!);
   const searchInputRef = useRef<HTMLInputElement>(null!);
   const searchContainerRef = useRef<HTMLDivElement>(null!);
@@ -127,7 +128,10 @@ const NavBar = ({
           ? window.matchMedia('(max-width: 1200px)').matches
           : page === 'search' || page === 'analytics'
           ? window.matchMedia('(max-width: 1100px)').matches
-          : page === 'settings' || page === 'history' || page === 'profile'
+          : page === 'settings' ||
+            page === 'history' ||
+            page === 'profile' ||
+            page === 'user'
           ? window.matchMedia('(max-width: 900px)').matches
           : false;
       const secondSize =
@@ -169,8 +173,6 @@ const NavBar = ({
       }
     };
 
-    window.removeEventListener('click', clickHandler);
-
     window.addEventListener('click', clickHandler);
 
     return () => {
@@ -200,6 +202,7 @@ const NavBar = ({
         if (
           showSearch &&
           !searchRef.current.contains(e.target as Node) &&
+          !searchRef2.current.contains(e.target as Node) &&
           !searchSectionRef.current.contains(e.target as Node) &&
           !showConfirmModal
         ) {
@@ -223,8 +226,6 @@ const NavBar = ({
         }
       }
     };
-
-    window.removeEventListener('click', clickHandler);
 
     window.addEventListener('click', clickHandler);
 
@@ -690,6 +691,7 @@ const NavBar = ({
               )}
 
               {(page === 'profile' ||
+                page === 'user' ||
                 page === 'settings' ||
                 mediaQueries.first) && (
                 <>
@@ -881,6 +883,7 @@ const NavBar = ({
                     ? styles['active-search-box']
                     : ''
                 }`}
+                ref={searchRef2}
                 onClick={() => setShowSearch(true)}
               >
                 {' '}
@@ -1197,10 +1200,20 @@ const NavBar = ({
                     </Link>
                   </span>
 
-                  <span className={`${styles['search-section-box']} `}>
+                  <span
+                    className={`${styles['search-section-box']} ${
+                      page === 'profile' && !showSearch
+                        ? styles['active-search-box']
+                        : ''
+                    }`}
+                  >
                     <Link to="/profile">
                       <FaRegCircleUser
-                        className={`${styles['search-section-icon']} `}
+                        className={`${styles['search-section-icon']} ${
+                          page === 'profile' && !showSearch
+                            ? styles['active-search-icon']
+                            : ''
+                        }`}
                       />
                     </Link>
                   </span>

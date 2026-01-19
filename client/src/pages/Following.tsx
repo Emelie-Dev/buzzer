@@ -77,7 +77,7 @@ const Following = () => {
       await apiClient.post(`v1/follow/${id}`);
 
       setSuggestedUsers((prevValue) =>
-        prevValue.filter((user) => user._id !== id)
+        prevValue.filter((user) => user._id !== id),
       );
     } catch (err: any) {
       if (!err.response) {
@@ -139,8 +139,8 @@ const Following = () => {
               ) : contents.length === 0 ? (
                 <div className={styles['no-data-text']}>
                   <br /> <br />
-                  Something went wrong while loading contents. Please refresh
-                  the page or check your connection.
+                  Your feed is empty for now. Follow more people or check back
+                  later to see new posts.
                 </div>
               ) : (
                 contents.map((data) => (
@@ -199,8 +199,8 @@ const Following = () => {
                           user.hasStory && user.hasUnviewedStory
                             ? styles['suggested-img-box3']
                             : user.hasStory
-                            ? styles['suggested-img-box2']
-                            : ''
+                              ? styles['suggested-img-box2']
+                              : ''
                         }`}
                       >
                         <img

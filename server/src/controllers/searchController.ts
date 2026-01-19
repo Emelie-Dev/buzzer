@@ -749,8 +749,10 @@ export const searchForUsers = asyncErrorHandler(
 
     let result: any[] = [];
     let resultLength = 0;
+    let userId;
 
     const viewerId = req.user?._id;
+    const { username } = req.params;
     const privateAudience: string[] =
       req.user?.settings.general.privacy.users || [];
 
@@ -760,6 +762,16 @@ export const searchForUsers = asyncErrorHandler(
       }
     }
 
+    if (username) {
+      const user = await User.findOne({ username });
+
+      if (!user) {
+        return next(new CustomError('This user does not exist!', 404));
+      }
+
+      userId = user._id;
+    }
+
     if (query) {
       const users =
         (await queryFromTypesense(
@@ -767,7 +779,7 @@ export const searchForUsers = asyncErrorHandler(
           {
             q: String(query),
             query_by: 'username,name',
-            filter_by: `id:!=${String(viewerId)}`,
+            filter_by: `id:!=${String(username ? userId : viewerId)}`,
             page: Number(page),
             per_page: 30,
           },
@@ -871,7 +883,12 @@ export const searchForUsers = asyncErrorHandler(
                         $match: {
                           $expr: {
                             $and: [
-                              { $eq: ['$following', viewerId] },
+                              {
+                                $eq: [
+                                  '$following',
+                                  username ? userId : viewerId,
+                                ],
+                              },
                               {
                                 $eq: ['$follower', '$$user'],
                               },
@@ -892,13 +909,48 @@ export const searchForUsers = asyncErrorHandler(
                 }
               );
             } else {
-              pipeline.splice(2, 0, {
-                $match: {
-                  $expr: {
-                    $gt: [{ $size: '$followInfo' }, 0],
+              if (username) {
+                pipeline.splice(
+                  1,
+                  0,
+                  {
+                    $lookup: {
+                      from: 'follows',
+                      let: { user: '$_id' },
+                      pipeline: [
+                        {
+                          $match: {
+                            $expr: {
+                              $and: [
+                                { $eq: ['$following', '$$user'] },
+                                {
+                                  $eq: ['$follower', userId],
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      ],
+                      as: 'userFollowerInfo',
+                    },
                   },
-                },
-              });
+                  {
+                    $match: {
+                      $expr: {
+                        $gt: [{ $size: '$userFollowerInfo' }, 0],
+                      },
+                    },
+                  }
+                );
+              } else {
+                pipeline.splice(2, 0, {
+                  $match: {
+                    $expr: {
+                      $gt: [{ $size: '$followInfo' }, 0],
+                    },
+                  },
+                });
+              }
             }
           }
 
@@ -960,9 +1012,11 @@ export const searchForUsers = asyncErrorHandler(
                     },
                   },
                 },
-                private: {
-                  $in: ['$_id', privateAudience],
-                },
+                private: username
+                  ? null
+                  : {
+                      $in: ['$_id', privateAudience],
+                    },
               },
             }
           );

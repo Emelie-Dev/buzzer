@@ -329,20 +329,185 @@ export const getProfileData = asyncErrorHandler(
   }
 );
 
+export const getUserData = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const username = req.params.username;
+    const viewerId = req.user?._id;
+    let isPrivate = false;
+
+    const user = await User.findOne({ username }).select({
+      name: 1,
+      username: 1,
+      photo: 1,
+      bio: 1,
+      links: 1,
+      email: 1,
+      'settings.account': 1,
+      'settings.general': 1,
+    });
+
+    if (!user) {
+      return next(new CustomError('This user does not exist', 404));
+    }
+
+    if (user.settings.general.privacy.value) {
+      const users = user.settings.general.privacy.users.map((id) => String(id));
+      if (!users.includes(String(viewerId))) {
+        isPrivate = true;
+      }
+    }
+
+    const followers = await Follow.aggregate([
+      {
+        $facet: {
+          count: [{ $match: { following: user._id } }, { $count: 'value' }],
+          followDoc: [
+            {
+              $match: {
+                following: user._id,
+                follower: viewerId,
+              },
+            },
+            { $limit: 1 },
+          ],
+        },
+      },
+      {
+        $project: {
+          count: {
+            $ifNull: [{ $arrayElemAt: ['$count.value', 0] }, 0],
+          },
+          follow: { $arrayElemAt: ['$followDoc', 0] },
+        },
+      },
+    ]);
+
+    const following = await Follow.countDocuments({
+      follower: user?._id,
+    });
+
+    const friends = await Friend.aggregate([
+      {
+        $facet: {
+          count: [
+            {
+              $match: {
+                $or: [
+                  {
+                    requester: user?._id,
+                  },
+                  {
+                    recipient: user?._id,
+                  },
+                ],
+              },
+            },
+            { $count: 'value' },
+          ],
+          friend: [
+            {
+              $match: {
+                $or: [
+                  {
+                    requester: viewerId,
+                    recipient: user._id,
+                  },
+                  { requester: user._id, recipient: viewerId },
+                ],
+              },
+            },
+            { $limit: 1 },
+          ],
+        },
+      },
+      {
+        $project: {
+          count: {
+            $ifNull: [{ $arrayElemAt: ['$count.value', 0] }, 0],
+          },
+          isFriend: { $gt: [{ $size: '$friend' }, 0] },
+        },
+      },
+    ]);
+
+    const posts = await (async () => {
+      const [contents, reels] = await Promise.all(
+        [Content, Reel].map((model) => {
+          if (isPrivate) return 0;
+
+          return model.countDocuments({
+            user: user?._id,
+            'settings.accessibility': friends[0].isFriend ? { $in: [0, 1] } : 0,
+          });
+        })
+      );
+
+      return contents + reels;
+    })();
+
+    const likes = await Like.countDocuments({
+      creator: user?._id,
+      collectionName: { $in: ['content', 'reel'] },
+    });
+
+    const userData = protectData(user!, 'user', [
+      'settings',
+      user.settings.account.emailVisibility ? '' : 'email',
+    ]);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: userData,
+        profileData: {
+          followers: followers[0].count,
+          following,
+          friends: friends[0].count,
+          posts,
+          likes,
+        },
+        follow: followers[0].follow,
+        isAuthUser: String(user._id) === String(viewerId),
+        isPrivate: String(user._id) === String(viewerId) ? false : isPrivate,
+      },
+    });
+  }
+);
+
 export const getUserPosts = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const allowedTypes = ['all', 'reels', 'private', 'bookmarks', 'liked'];
     const {
       type,
+      username,
     }: {
       type?: 'all' | 'reels' | 'private' | 'bookmarks' | 'liked';
+      username?: string;
     } = req.params;
+    let user;
 
     if (!allowedTypes.includes(type!.toLowerCase())) {
       return next(new CustomError('Inavlid request!', 400));
     }
 
-    const posts = await handleProfileDocuments(req.user?._id, type!, req.query);
+    if (username && type !== 'all' && type !== 'reels') {
+      return next(new CustomError('You cannot access this data.', 403));
+    }
+
+    if (username) {
+      user = await User.findOne({ username });
+
+      if (!user) {
+        return next(new CustomError('This user does not exist!', 404));
+      }
+    }
+
+    const posts = await handleProfileDocuments(
+      req.user?._id,
+      type!,
+      req.query,
+      user
+    );
 
     return res.status(200).json({
       status: 'success',

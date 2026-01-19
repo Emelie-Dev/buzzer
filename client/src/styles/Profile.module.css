@@ -6,6 +6,10 @@
   height: 100vh;
 }
 
+.main2 {
+  height: 100vh !important;
+}
+
 .top-section {
   display: grid;
   grid-template-columns: calc(40% - 1rem) calc(60% - 1rem);
@@ -21,6 +25,7 @@
   flex-direction: column;
   width: 100%;
   margin: 0;
+  z-index: -1;
 }
 
 .img {
@@ -60,6 +65,7 @@
   background: white;
   display: none;
   padding: 0.5rem 0 0.7rem;
+  column-gap: 1rem;
 }
 
 .user-handle2 {
@@ -70,6 +76,10 @@
   text-overflow: ellipsis;
   margin: auto;
   cursor: pointer;
+}
+
+.user-handle3 {
+  cursor: default;
 }
 
 .down-arrow {
@@ -89,7 +99,7 @@
 .edit-btn {
   outline: none;
   border: none;
-  background: red;
+  background: grey;
   color: white;
   border-radius: 6px;
   font-family: appFont;
@@ -113,8 +123,27 @@
   transition: opacity 0.2s;
 }
 
+.share-icon-btn {
+  outline: none;
+  border: none;
+  background: white;
+  border: 2px solid var(--app-theme-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-theme-color);
+  border-radius: 6px;
+  font-family: appFont;
+  font-size: 0.95rem;
+  padding: 0.5rem 0.8rem;
+  margin-left: 1rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
 .edit-btn:hover,
-.share-btn:hover {
+.share-btn:hover,
+.share-icon-btn:hover {
   opacity: 0.8;
 }
 
@@ -156,6 +185,13 @@
   width: 100%;
   word-wrap: break-word;
   font-size: 0.92rem;
+}
+
+.description-skeleton {
+  margin-top: 1rem;
+  display: flex;
+  width: 100%;
+  z-index: -1;
 }
 
 .links {
@@ -208,7 +244,6 @@
 .bottom-section {
   width: 100%;
   padding-bottom: 2rem;
-  margin-top: 1rem;
   min-height: 60vh;
 }
 
@@ -232,6 +267,12 @@
   padding: 0;
 }
 
+.category-list2 {
+  width: 100%;
+  column-gap: 5rem;
+  justify-content: center;
+}
+
 .category-item {
   font-family: appFontMedium;
   display: flex;
@@ -248,6 +289,10 @@
   width: 1.1rem;
   height: 1.1rem;
   margin-right: 0.5rem;
+}
+
+.category-item2 {
+  padding: 1rem 2rem !important;
 }
 
 .path {
@@ -274,6 +319,10 @@
 .sort-div {
   display: flex;
   align-items: center;
+}
+
+.sort-div3 {
+  white-space: nowrap;
 }
 
 .sort-div-txt {
@@ -648,6 +697,10 @@
   right: 0;
 }
 
+.sort-div4 {
+  top: -20%;
+}
+
 .sort-container:hover .sort-div2 {
   display: block;
 }
@@ -713,6 +766,14 @@
   grid-column: 1 / -1;
 }
 
+.user-error-box {
+  margin-top: 1rem;
+  color: gray;
+  font-family: appFontMedium;
+  display: flex;
+  flex-direction: column;
+}
+
 .loader-box {
   display: flex;
   justify-content: center;
@@ -739,6 +800,56 @@
 
 .error-btn button:hover {
   opacity: 0.8;
+}
+
+.back-icon {
+  width: 1.7rem;
+  height: 1.7rem;
+  cursor: pointer;
+  display: none;
+}
+
+.share-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  cursor: pointer;
+  display: none;
+}
+
+.back-icon:hover,
+.share-icon:hover {
+  color: var(--app-theme-color);
+}
+
+.loading-btn {
+  opacity: 0.5 !important;
+  pointer-events: none;
+}
+
+.disable-sort {
+  opacity: 0.4 !important;
+  pointer-events: none;
+}
+
+.no-user-box {
+  margin: 10rem 5rem 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 1rem;
+}
+
+.no-user-icon {
+  width: 7rem;
+  height: 7rem;
+  color: gray;
+  stroke-width: 1px;
+}
+
+.no-user-text {
+  color: gray;
+  font-size: 1.2rem;
+  font-family: appFontMedium;
 }
 
 /* Animations */
@@ -782,6 +893,10 @@
   .category-list {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .category-list2 {
+    justify-content: center;
   }
 
   .edit-section {
@@ -958,6 +1073,16 @@
   .edit-section {
     grid-template-columns: 85%;
   }
+
+  .description-skeleton {
+    justify-content: center;
+  }
+
+  .user-error-box {
+    text-align: center;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
 }
 
 @media screen and (max-width: 600px) {
@@ -980,7 +1105,7 @@
   }
 
   .mobile-header {
-    padding: 0.5rem 1rem 0.7rem;
+    padding: 0.5rem 0 0.7rem;
   }
 
   .profile-details,
@@ -988,7 +1113,9 @@
     padding: 0 2rem;
   }
 
-  .category-text {
+  .category-text,
+  .share-icon-btn,
+  .loading-share-btn {
     display: none;
   }
 
@@ -1018,6 +1145,10 @@
     bottom: calc(5% + 4rem);
   }
 
+  .sort-container2 {
+    bottom: 4%;
+  }
+
   .menu-section {
     display: grid;
   }
@@ -1029,6 +1160,19 @@
   .sort-icon {
     width: 1.2rem;
     height: 1.2rem;
+  }
+
+  .back-icon,
+  .share-icon {
+    display: block;
+  }
+
+  .category-list2 {
+    column-gap: 0;
+  }
+
+  .user-error-box {
+    margin-bottom: 0;
   }
 }
 
@@ -1069,6 +1213,19 @@
 
   .menu-section {
     grid-template-columns: 90%;
+  }
+
+  .no-user-box {
+    margin: 10rem 1rem 5rem;
+  }
+
+  .no-user-icon {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .no-user-text {
+    font-size: 1.1rem;
   }
 }
 

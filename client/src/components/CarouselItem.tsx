@@ -11,6 +11,7 @@ import { RiPushpinFill, RiUnpinFill } from 'react-icons/ri';
 import { getTime, getUrl } from '../Utilities';
 import { GiMeepleCircle } from 'react-icons/gi';
 import LoadingAnimation from '../components/LoadingAnimation';
+import { Link } from 'react-router-dom';
 
 export interface Content {
   type: 'image' | 'video';
@@ -651,9 +652,9 @@ const CarouselItem = ({
                           key={user._id}
                           className={styles['collaborators-item']}
                         >
-                          <a
+                          <Link
                             className={styles['collaborators-link']}
-                            href={`/@${user.username}`}
+                            to={`/@${user.username}`}
                           >
                             <img
                               className={styles['collaborators-img']}
@@ -713,7 +714,7 @@ const CarouselItem = ({
                                 )}
                               </span>
                             )}
-                          </a>
+                          </Link>
                         </li>
                       ))}
                     </ul>

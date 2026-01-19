@@ -60,7 +60,7 @@ const Reels = () => {
         }
       });
     },
-    { threshold: 0.7 }
+    { threshold: 0.7 },
   );
 
   useEffect(() => {
@@ -91,7 +91,7 @@ const Reels = () => {
 
         const videoWidth =
           (reelsRef.current.children[0] as HTMLDivElement).querySelector(
-            'video'
+            'video',
           )?.offsetWidth || 0;
 
         if (smallDevice)
@@ -200,10 +200,10 @@ const Reels = () => {
       target.scrollTop - prevTop < 0
         ? true
         : headerTopRef.current === true
-        ? true
-        : target.scrollTop < 208
-        ? null
-        : false
+          ? true
+          : target.scrollTop < 208
+            ? null
+            : false,
     );
     setPrevTop(target.scrollTop);
   };
@@ -277,7 +277,7 @@ const Reels = () => {
 
   const unPinReel = async (
     e: React.MouseEvent<SVGElement, MouseEvent>,
-    id: string
+    id: string,
   ) => {
     e.preventDefault();
 
@@ -374,17 +374,21 @@ const Reels = () => {
                     page or check your connection.
                   </div>
                 ) : (
-                  contents.map((data) => (
-                    <ContentBox
-                      key={data._id}
-                      data={data}
-                      contentType="reels"
-                      setContents={setContents}
-                      pinnedReels={pinnedReels}
-                      setPinnedReels={setPinnedReels}
-                      setPostData={setPostData}
-                    />
-                  ))
+                  <>
+                    {contents.map((data) => (
+                      <ContentBox
+                        key={data._id}
+                        data={data}
+                        contentType="reels"
+                        setContents={setContents}
+                        pinnedReels={pinnedReels}
+                        setPinnedReels={setPinnedReels}
+                        setPostData={setPostData}
+                      />
+                    ))}
+
+                    <div className={styles.filler}>&nbsp;</div>
+                  </>
                 )}
 
                 {postData.loading && (
@@ -665,8 +669,8 @@ const Reels = () => {
                               reel.hasStory && reel.hasUnviewedStory
                                 ? styles['profile-img-span3']
                                 : reel.hasStory
-                                ? styles['profile-img-span2']
-                                : ''
+                                  ? styles['profile-img-span2']
+                                  : ''
                             }`}
                           >
                             <img

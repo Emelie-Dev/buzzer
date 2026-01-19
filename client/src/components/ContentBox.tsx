@@ -20,6 +20,7 @@ import LoadingAnimation from '../components/LoadingAnimation';
 import { toast } from 'sonner';
 import { IoMdHeart } from 'react-icons/io';
 import MobileMenu from './MobileMenu';
+import { Link } from 'react-router-dom';
 
 type ContentBoxProps = {
   data: any;
@@ -302,18 +303,18 @@ const ContentBox = ({
       return (
         <>
           <span className={styles.collaborators}>
-            <a className={styles['user-link']} href={`/@${user.username}`}>
+            <Link className={styles['user-link']} to={`/@${user.username}`}>
               {user.username}
-            </a>
+            </Link>
           </span>{' '}
           &nbsp;and &nbsp;
           <span className={styles.collaborators}>
-            <a
+            <Link
               className={styles['user-link']}
-              href={`/@${secondUser.username}`}
+              to={`/@${secondUser.username}`}
             >
               {secondUser.username}
-            </a>
+            </Link>
           </span>
         </>
       );
@@ -321,9 +322,9 @@ const ContentBox = ({
       return (
         <>
           <span className={styles.collaborators}>
-            <a className={styles['user-link']} href={`/@${user.username}`}>
+            <Link className={styles['user-link']} to={`/@${user.username}`}>
               {user.username}
-            </a>
+            </Link>
           </span>{' '}
           &nbsp;and &nbsp;
           <div className={styles.collaborators}>
@@ -331,9 +332,9 @@ const ContentBox = ({
             <ul className={styles['collaborators-list']}>
               {collaboratorsList.value.map((user: any) => (
                 <li key={user._id} className={styles['collaborators-item']}>
-                  <a
+                  <Link
                     className={styles['collaborators-link']}
-                    href={`/@${user.username}`}
+                    to={`/@${user.username}`}
                   >
                     <img
                       className={styles['collaborators-img']}
@@ -389,7 +390,7 @@ const ContentBox = ({
                         )}
                       </span>
                     )}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -765,9 +766,9 @@ const ContentBox = ({
             <span className={styles['content-head-box']}>
               {collaboratorsList.value.length === 0 ? (
                 <span className={styles['content-name-box']}>
-                  <a
+                  <Link
                     className={styles['user-link']}
-                    href={`/@${user.username}`}
+                    to={`/@${user.username}`}
                   >
                     <span className={styles['content-nickname']}>
                       {user.name}
@@ -775,7 +776,7 @@ const ContentBox = ({
                     <span className={styles['content-username']}>
                       @{user.username}
                     </span>
-                  </a>
+                  </Link>
                 </span>
               ) : (
                 <span className={styles['content-name-box2']}>

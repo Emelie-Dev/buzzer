@@ -1,0 +1,145 @@
+.body {
+  min-height: 100vh;
+  width: 100vw;
+  background:
+    -webkit-linear-gradient(
+      to bottom right,
+      rgb(20, 20, 32, 0.8),
+      rgb(168, 85, 247, 0.8) 80%
+    ),
+    url('/assets/images/people.avif');
+  background:
+    linear-gradient(
+      to bottom right,
+      rgb(20, 20, 32, 0.8),
+      rgb(168, 85, 247, 0.8) 80%
+    ),
+    url('/assets/images/people.avif');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.head {
+  color: white;
+  font-family: logoFont;
+  font-size: 3rem;
+  letter-spacing: 0.3rem;
+  margin-bottom: 0;
+}
+
+.code-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 1.5rem;
+}
+
+.code-container span {
+  font-family: appFontBold;
+  color: white;
+  font-size: 10rem;
+}
+
+.code-container span:nth-child(2) {
+  color: #dc143c;
+}
+
+.code-container span:first-child {
+  transform: rotate(-15deg);
+}
+
+.code-container span:last-child {
+  transform: rotate(15deg);
+}
+
+.message {
+  color: white;
+  font-family: appFont;
+  text-align: center;
+  max-width: 50%;
+}
+
+.message2 {
+  margin: 3rem 0 0;
+}
+
+.btn-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 3rem 0;
+}
+
+.btn {
+  border: none;
+  outline: none;
+  font-family: appFont;
+  font-size: 1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+  background: #dc143c;
+  transition: all 0.25s;
+  cursor: pointer;
+}
+
+.btn:hover {
+  transform: scale(1.02);
+}
+
+.footer {
+  position: absolute;
+  bottom: 4%;
+  left: 2%;
+  color: white;
+  font-family: appFont;
+}
+
+/* Media Queries */
+
+@media screen and (max-width: 1000px) {
+  .message {
+    max-width: 70%;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .message {
+    max-width: 80%;
+  }
+
+  .code-container span {
+    font-size: 8rem;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .message {
+    max-width: 100%;
+  }
+
+  .code-container {
+    margin-top: 1rem;
+  }
+
+  .code-container span {
+    font-size: 6rem;
+  }
+
+  .body {
+    padding: 1rem;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .code-container span {
+    font-size: 5rem;
+  }
+}

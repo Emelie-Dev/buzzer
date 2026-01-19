@@ -41,7 +41,7 @@ import LoadingAnimation from '../components/LoadingAnimation';
 
 const Profile = () => {
   const { user } = useContext(AuthContext);
-  const profileLink = `${serverUrl}@${user.username}`;
+  const profileLink = `${window.location.origin}/@${user.username}`;
   const [category, setcategory] = useState<
     'all' | 'reels' | 'private' | 'bookmarks' | 'liked'
   >('all');
@@ -144,8 +144,6 @@ const Profile = () => {
     profileData,
     setProfileData,
   } = useContext(GeneralContext);
-  const like = useState<boolean>(false)[0];
-  const setHideLike = useState<boolean>(true)[1];
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
   const [mobileMenu, setMobileMenu] = useState<boolean>(false);
   const [showSort, setShowSort] = useState<boolean>(false);
@@ -205,14 +203,6 @@ const Profile = () => {
       window.removeEventListener('click', clickHandler);
     };
   }, []);
-
-  useEffect(() => {
-    if (like) {
-      setTimeout(() => {
-        setHideLike(true);
-      }, 400);
-    }
-  }, [like]);
 
   useEffect(() => {
     if (mobileMenu) {

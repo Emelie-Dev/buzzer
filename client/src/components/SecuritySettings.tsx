@@ -591,6 +591,8 @@ const LinkedAccounts = () => {
 
   useEffect(() => {
     if (error === 'Google' || error === 'Facebook') {
+      navigate(location.pathname, { replace: true });
+
       if (errorCode === '403') {
         toast.error(`This ${error} login is linked to another account.`);
       } else if (errorCode === '409') {
@@ -609,10 +611,6 @@ const LinkedAccounts = () => {
     ) {
       toast.error(`${provider} account linked successfully.`);
     }
-
-    return () => {
-      navigate(location.pathname, { replace: true });
-    };
   }, []);
 
   const getTime = (timeString: string) => {

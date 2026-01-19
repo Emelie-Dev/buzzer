@@ -16,14 +16,25 @@ type EngagementsProps = {
       'followers' | 'following' | 'friends' | 'suggested' | 'private' | null
     >
   >;
+  username?: string;
+  userProfileData?: {
+    followers: number;
+    following: number;
+    friends: number;
+    posts: number;
+    likes: number;
+  };
+  isAuthUser?: boolean;
 };
 
 const getUsers = async (...args: any[]) => {
-  const [query, page, category] = args;
+  const [query, page, category, username, isAuthUser] = args;
 
   try {
     const { data } = await apiClient(
-      `v1/search/users?query=${query}&page=${page}&engagement=true${
+      `v1/search/users${
+        username && !isAuthUser ? '/' + username : ''
+      }?query=${query}&page=${page}&engagement=true${
         category === 'followers' || category === 'following'
           ? `&type=${category}`
           : ''
@@ -38,12 +49,30 @@ const getUsers = async (...args: any[]) => {
 
 const debouncedQuery = debounce(getUsers, 300);
 
-const Engagements = ({ value, setValue }: EngagementsProps) => {
+const Engagements = ({
+  value,
+  setValue,
+  username,
+  userProfileData,
+  isAuthUser,
+}: EngagementsProps) => {
   const [category, setCategory] = useState<
     'followers' | 'following' | 'friends' | 'private' | 'suggested' | null
   >(value);
-  const { profileData, suggestedUsers, setSuggestedUsers, setProfileData } =
-    useContext(GeneralContext);
+  const {
+    profileData: authProfileData,
+    suggestedUsers,
+    setSuggestedUsers,
+    setProfileData,
+  } = useContext(GeneralContext);
+  const profileData: {
+    followers: number;
+    following: number;
+    friends: number;
+    posts: number;
+    likes: number;
+  } = username ? userProfileData! : authProfileData;
+
   const { user: authUser, setUser } = useContext(AuthContext);
   const [users, setUsers] = useState<{
     private: any[];
@@ -337,15 +366,21 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
         break;
 
       case 'friends':
-        url = `v1/friends?cursor=${usersData[categoryText].cursor}`;
+        url = `v1/friends${
+          username && !isAuthUser ? '/' + username : ''
+        }?cursor=${usersData[categoryText].cursor}`;
         break;
 
       case 'followers':
-        url = `v1/follow/followers?cursor=${usersData[categoryText].cursor}`;
+        url = `v1/follow/followers${
+          username && !isAuthUser ? '/' + username : ''
+        }?cursor=${usersData[categoryText].cursor}`;
         break;
 
       case 'following':
-        url = `v1/follow/following?cursor=${usersData[categoryText].cursor}`;
+        url = `v1/follow/following${
+          username && !isAuthUser ? '/' + username : ''
+        }?cursor=${usersData[categoryText].cursor}`;
         break;
     }
 
@@ -368,7 +403,11 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
       setFollowData((prev) => {
         const map = new Map(prev.list);
         const followArr = data.data.users
-          .map((user: any) => (category === 'following' ? user : user.follow))
+          .map((user: any) =>
+            category === 'following' && (!username || isAuthUser)
+              ? user
+              : user.follow
+          )
           .filter(Boolean);
 
         followArr.forEach((obj: any) => {
@@ -426,30 +465,34 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
             list.set(user._id, data.data.follow._id);
             return { ...prev, list };
           });
-          setProfileData((prev) => ({
-            ...prev,
-            following: prev.following + 1,
-          }));
-          setUsers((prev) => {
-            const following = prev.following;
-            if (!following) {
+
+          if (!username) {
+            setProfileData((prev) => ({
+              ...prev,
+              following: prev.following + 1,
+            }));
+
+            setUsers((prev) => {
+              const following = prev.following;
+              if (!following) {
+                return {
+                  ...prev,
+                  following,
+                };
+              }
               return {
                 ...prev,
-                following,
+                following: [
+                  {
+                    ...data.data.follow,
+                    user,
+                    ...storyData,
+                  },
+                  ...following,
+                ],
               };
-            }
-            return {
-              ...prev,
-              following: [
-                {
-                  ...data.data.follow,
-                  user,
-                  ...storyData,
-                },
-                ...following,
-              ],
-            };
-          });
+            });
+          }
 
           setSuggestedUsers((prev) => prev.filter((user) => user._id !== id));
         } else {
@@ -459,20 +502,23 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
             list.delete(user._id);
             return { ...prev, list };
           });
-          setProfileData((prev) => ({
-            ...prev,
-            following: prev.following - 1,
-          }));
-          setUsers((prev) => {
-            const following = [...(prev.following || [])].filter(
-              (obj) => obj.user._id !== user._id
-            );
 
-            return {
+          if (!username) {
+            setProfileData((prev) => ({
               ...prev,
-              following: prev.following === null ? null! : following,
-            };
-          });
+              following: prev.following - 1,
+            }));
+            setUsers((prev) => {
+              const following = [...(prev.following || [])].filter(
+                (obj) => obj.user._id !== user._id
+              );
+
+              return {
+                ...prev,
+                following: prev.following === null ? null! : following,
+              };
+            });
+          }
         }
       } catch (err: any) {
         const message = `Could not ${action} user. Please Try again.`;
@@ -698,7 +744,9 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
       const result: any = await debouncedQuery(
         searchQuery[categoryText],
         searchData[categoryText].page,
-        categoryText
+        categoryText,
+        username,
+        isAuthUser
       );
 
       if (result === 'error') {
@@ -806,7 +854,7 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
     >
       <div className={styles.container}>
         <header className={styles.header}>
-          <h1 className={styles.head}>{authUser.username}</h1>
+          <h1 className={styles.head}>{username || authUser.username}</h1>
 
           <span
             className={styles['close-icon-box']}
@@ -856,18 +904,20 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
               {getEngagementValue(profileData.friends)}
             </span>
           </li>
-          <li
-            className={`${styles['category-item']} ${
-              category === 'private' ? styles['current-category'] : ''
-            }`}
-            onClick={() => setCategory('private')}
-            ref={addToRef(itemRef, 'private')}
-          >
-            Private audience
-            <span className={styles['category-value']}>
-              {authUser.settings.general.privacy.users.length}
-            </span>
-          </li>
+          {(!username || isAuthUser) && (
+            <li
+              className={`${styles['category-item']} ${
+                category === 'private' ? styles['current-category'] : ''
+              }`}
+              onClick={() => setCategory('private')}
+              ref={addToRef(itemRef, 'private')}
+            >
+              Private audience
+              <span className={styles['category-value']}>
+                {authUser.settings.general.privacy.users.length}
+              </span>
+            </li>
+          )}
           <li
             className={`${styles['category-item']} ${
               category === 'suggested' ? styles['current-category'] : ''
@@ -879,46 +929,47 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
           </li>
         </ul>
 
-        {category !== 'suggested' && (
-          <div className={styles['search-box']}>
-            <IoSearchSharp className={styles['search-icon']} />
+        {(category === 'friends' && username && !isAuthUser) ||
+          (category !== 'suggested' && (
+            <div className={styles['search-box']}>
+              <IoSearchSharp className={styles['search-icon']} />
 
-            <input
-              className={styles['search-value']}
-              value={searchQuery[category!]}
-              onChange={(e) => {
-                setSearchQuery((prev) => ({
-                  ...prev,
-                  [category!]: e.target.value,
-                }));
-                setSearchData((prev) => ({
-                  ...prev,
-                  [category!]: {
-                    loading: true,
-                    page: 1,
-                    end: false,
-                  },
-                }));
-                setSearchResult((prev) => ({ ...prev, [category!]: [] }));
-              }}
-              ref={searchRef}
-              placeholder="Search...."
-            />
-
-            {searchQuery[category!].length > 0 && (
-              <IoClose
-                className={styles['clear-search']}
-                onClick={() => {
+              <input
+                className={styles['search-value']}
+                value={searchQuery[category!]}
+                onChange={(e) => {
                   setSearchQuery((prev) => ({
                     ...prev,
-                    [category!]: '',
+                    [category!]: e.target.value,
                   }));
-                  searchRef.current.focus();
+                  setSearchData((prev) => ({
+                    ...prev,
+                    [category!]: {
+                      loading: true,
+                      page: 1,
+                      end: false,
+                    },
+                  }));
+                  setSearchResult((prev) => ({ ...prev, [category!]: [] }));
                 }}
+                ref={searchRef}
+                placeholder="Search...."
               />
-            )}
-          </div>
-        )}
+
+              {searchQuery[category!].length > 0 && (
+                <IoClose
+                  className={styles['clear-search']}
+                  onClick={() => {
+                    setSearchQuery((prev) => ({
+                      ...prev,
+                      [category!]: '',
+                    }));
+                    searchRef.current.focus();
+                  }}
+                />
+              )}
+            </div>
+          ))}
 
         <div className={styles['users-section']} ref={containerRef}>
           {/* Followers */}
@@ -1026,18 +1077,30 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
                             </button>
                           )}
 
-                          <button
-                            className={`${styles['engage-btn']} ${
-                              styles['engage-btn2']
-                            } ${
-                              userQueue.followers.has(obj._id)
-                                ? styles['disable-btn']
-                                : ''
-                            }`}
-                            onClick={removeFollower(obj._id)}
-                          >
-                            Remove
-                          </button>
+                          {username && !isAuthUser ? (
+                            <button
+                              className={`${styles['engage-btn']} ${styles['engage-btn2']}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate('/inbox');
+                              }}
+                            >
+                              Message
+                            </button>
+                          ) : (
+                            <button
+                              className={`${styles['engage-btn']} ${
+                                styles['engage-btn2']
+                              } ${
+                                userQueue.followers.has(obj._id)
+                                  ? styles['disable-btn']
+                                  : ''
+                              }`}
+                              onClick={removeFollower(obj._id)}
+                            >
+                              Remove
+                            </button>
+                          )}
                         </div>
                       </Link>
                     </article>
@@ -1088,7 +1151,9 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
               ))
             ) : users.followers.length === 0 ? (
               <div className={styles['no-data-text']}>
-                You don’t have any followers yet.
+                {username && !isAuthUser
+                  ? 'This user has no followers yet.'
+                  : 'You don’t have any followers yet.'}
               </div>
             ) : (
               <>
@@ -1161,18 +1226,31 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
                             Follow
                           </button>
                         )}
-                        <button
-                          className={`${styles['engage-btn']} ${
-                            styles['engage-btn2']
-                          } ${
-                            userQueue.followers.has(obj._id)
-                              ? styles['disable-btn']
-                              : ''
-                          }`}
-                          onClick={removeFollower(obj._id)}
-                        >
-                          Remove
-                        </button>
+
+                        {username && !isAuthUser ? (
+                          <button
+                            className={`${styles['engage-btn']} ${styles['engage-btn2']}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate('/inbox');
+                            }}
+                          >
+                            Message
+                          </button>
+                        ) : (
+                          <button
+                            className={`${styles['engage-btn']} ${
+                              styles['engage-btn2']
+                            } ${
+                              userQueue.followers.has(obj._id)
+                                ? styles['disable-btn']
+                                : ''
+                            }`}
+                            onClick={removeFollower(obj._id)}
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
                     </Link>
                   </article>
@@ -1264,36 +1342,92 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
                         </div>
 
                         <div className={styles['btn-div']}>
-                          <button
-                            className={`${styles['engage-btn']} ${
-                              followData.queue.has(obj._id)
-                                ? styles['disable-btn']
-                                : ''
-                            }`}
-                            onClick={handleFollow(
-                              'unfollow',
-                              obj,
-                              obj.followObj._id,
-                              {
-                                hasStory: obj.hasStory,
-                                hasUnviewedStory: obj.hasUnviewedStory,
-                              }
-                            )}
-                          >
-                            Unfollow
-                          </button>
-                          <button
-                            className={`${styles['engage-btn']} ${
-                              styles['engage-btn2']
-                            } ${
-                              userQueue.following.has(obj._id)
-                                ? styles['disable-btn']
-                                : ''
-                            }`}
-                            onClick={sendFriendRequest(obj._id)}
-                          >
-                            Add Friend
-                          </button>
+                          {username && !isAuthUser ? (
+                            <>
+                              {obj.followObj ? (
+                                <button
+                                  className={`${styles['engage-btn']} ${
+                                    followData.queue.has(obj._id)
+                                      ? styles['disable-btn']
+                                      : ''
+                                  }`}
+                                  onClick={handleFollow(
+                                    'unfollow',
+                                    obj,
+                                    obj.followObj._id,
+                                    {
+                                      hasStory: obj.hasStory,
+                                      hasUnviewedStory: obj.hasUnviewedStory,
+                                    }
+                                  )}
+                                >
+                                  Unfollow
+                                </button>
+                              ) : (
+                                <button
+                                  className={`${styles['engage-btn']} ${
+                                    followData.queue.has(obj._id)
+                                      ? styles['disable-btn']
+                                      : ''
+                                  }`}
+                                  onClick={handleFollow(
+                                    'follow',
+                                    obj,
+                                    obj._id,
+                                    {
+                                      hasStory: obj.hasStory,
+                                      hasUnviewedStory: obj.hasUnviewedStory,
+                                    }
+                                  )}
+                                >
+                                  Follow
+                                </button>
+                              )}
+
+                              <button
+                                className={`${styles['engage-btn']} ${styles['engage-btn2']}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  navigate('/inbox');
+                                }}
+                              >
+                                Message
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                className={`${styles['engage-btn']} ${
+                                  followData.queue.has(obj._id)
+                                    ? styles['disable-btn']
+                                    : ''
+                                }`}
+                                onClick={handleFollow(
+                                  'unfollow',
+                                  obj,
+                                  obj.followObj._id,
+                                  {
+                                    hasStory: obj.hasStory,
+                                    hasUnviewedStory: obj.hasUnviewedStory,
+                                  }
+                                )}
+                              >
+                                Unfollow
+                              </button>
+                              <button
+                                className={`${styles['engage-btn']} ${
+                                  styles['engage-btn2']
+                                } ${
+                                  userQueue.following.has(obj._id)
+                                    ? styles['disable-btn']
+                                    : ''
+                                }`}
+                                onClick={sendFriendRequest(obj._id)}
+                              >
+                                Add Friend
+                              </button>
+                            </>
+                          )}
                         </div>
                       </Link>
                     </article>
@@ -1344,7 +1478,9 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
               ))
             ) : users.following.length === 0 ? (
               <div className={styles['no-data-text']}>
-                You haven’t followed anyone yet.
+                {username && !isAuthUser
+                  ? 'This user has not followed anyone yet.'
+                  : 'You haven’t followed anyone yet.'}
               </div>
             ) : (
               <>
@@ -1378,36 +1514,92 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
                       </div>
 
                       <div className={styles['btn-div']}>
-                        <button
-                          className={`${styles['engage-btn']} ${
-                            followData.queue.has(obj.user._id)
-                              ? styles['disable-btn']
-                              : ''
-                          }`}
-                          onClick={handleFollow(
-                            'unfollow',
-                            obj.user,
-                            followData.list.get(obj.user._id)!,
-                            {
-                              hasStory: obj.hasStory,
-                              hasUnviewedStory: obj.hasUnviewedStory,
-                            }
-                          )}
-                        >
-                          Unfollow
-                        </button>
-                        <button
-                          className={`${styles['engage-btn']} ${
-                            styles['engage-btn2']
-                          } ${
-                            userQueue.following.has(obj.user._id)
-                              ? styles['disable-btn']
-                              : ''
-                          }`}
-                          onClick={sendFriendRequest(obj.user._id)}
-                        >
-                          Add Friend
-                        </button>
+                        {username && !isAuthUser ? (
+                          <>
+                            {followData.list.has(obj.user._id) ? (
+                              <button
+                                className={`${styles['engage-btn']} ${
+                                  followData.queue.has(obj.user._id)
+                                    ? styles['disable-btn']
+                                    : ''
+                                }`}
+                                onClick={handleFollow(
+                                  'unfollow',
+                                  obj.user,
+                                  followData.list.get(obj.user._id)!,
+                                  {
+                                    hasStory: obj.hasStory,
+                                    hasUnviewedStory: obj.hasUnviewedStory,
+                                  }
+                                )}
+                              >
+                                Unfollow
+                              </button>
+                            ) : (
+                              <button
+                                className={`${styles['engage-btn']} ${
+                                  followData.queue.has(obj.user._id)
+                                    ? styles['disable-btn']
+                                    : ''
+                                }`}
+                                onClick={handleFollow(
+                                  'follow',
+                                  obj.user,
+                                  obj.user._id,
+                                  {
+                                    hasStory: obj.hasStory,
+                                    hasUnviewedStory: obj.hasUnviewedStory,
+                                  }
+                                )}
+                              >
+                                Follow
+                              </button>
+                            )}
+                            <button
+                              className={`${styles['engage-btn']} ${styles['engage-btn2']}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate('/inbox');
+                              }}
+                            >
+                              Message
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className={`${styles['engage-btn']} ${
+                                followData.queue.has(obj.user._id)
+                                  ? styles['disable-btn']
+                                  : ''
+                              }`}
+                              onClick={handleFollow(
+                                'unfollow',
+                                obj.user,
+                                followData.list.get(obj.user._id)!,
+                                {
+                                  hasStory: obj.hasStory,
+                                  hasUnviewedStory: obj.hasUnviewedStory,
+                                }
+                              )}
+                            >
+                              Unfollow
+                            </button>
+
+                            <button
+                              className={`${styles['engage-btn']} ${
+                                styles['engage-btn2']
+                              } ${
+                                userQueue.following.has(obj.user._id)
+                                  ? styles['disable-btn']
+                                  : ''
+                              }`}
+                              onClick={sendFriendRequest(obj.user._id)}
+                            >
+                              Add Friend
+                            </button>
+                          </>
+                        )}
                       </div>
                     </Link>
                   </article>
@@ -1585,8 +1777,9 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
               ))
             ) : users.friends.length === 0 ? (
               <div className={styles['no-data-text']}>
-                No friends yet. Use the search bar above to find and add
-                friends.
+                {username && !isAuthUser
+                  ? 'This user has no friends yet.'
+                  : 'No friends yet. Use the search bar above to find and add friends.'}
               </div>
             ) : (
               <>
@@ -1620,27 +1813,82 @@ const Engagements = ({ value, setValue }: EngagementsProps) => {
                       </div>
 
                       <div className={styles['btn-div']}>
-                        <button
-                          className={styles['engage-btn']}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate('/inbox');
-                          }}
-                        >
-                          Message
-                        </button>
-                        <button
-                          className={`${styles['engage-btn']} ${
-                            styles['engage-btn2']
-                          } ${
-                            userQueue.friends.has(obj._id)
-                              ? styles['disable-btn']
-                              : ''
-                          }`}
-                          onClick={removeFriend(obj._id)}
-                        >
-                          Remove
-                        </button>
+                        {username && !isAuthUser ? (
+                          <>
+                            {followData.list.has(obj.user._id) ? (
+                              <button
+                                className={`${styles['engage-btn']} ${
+                                  followData.queue.has(obj.user._id)
+                                    ? styles['disable-btn']
+                                    : ''
+                                }`}
+                                onClick={handleFollow(
+                                  'unfollow',
+                                  obj.user,
+                                  followData.list.get(obj.user._id)!,
+                                  {
+                                    hasStory: obj.hasStory,
+                                    hasUnviewedStory: obj.hasUnviewedStory,
+                                  }
+                                )}
+                              >
+                                Unfollow
+                              </button>
+                            ) : (
+                              <button
+                                className={`${styles['engage-btn']} ${
+                                  followData.queue.has(obj.user._id)
+                                    ? styles['disable-btn']
+                                    : ''
+                                }`}
+                                onClick={handleFollow(
+                                  'follow',
+                                  obj.user,
+                                  obj.user._id,
+                                  {
+                                    hasStory: obj.hasStory,
+                                    hasUnviewedStory: obj.hasUnviewedStory,
+                                  }
+                                )}
+                              >
+                                Follow
+                              </button>
+                            )}
+                            <button
+                              className={`${styles['engage-btn']} ${styles['engage-btn2']}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate('/inbox');
+                              }}
+                            >
+                              Message
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className={styles['engage-btn']}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate('/inbox');
+                              }}
+                            >
+                              Message
+                            </button>
+                            <button
+                              className={`${styles['engage-btn']} ${
+                                styles['engage-btn2']
+                              } ${
+                                userQueue.friends.has(obj._id)
+                                  ? styles['disable-btn']
+                                  : ''
+                              }`}
+                              onClick={removeFriend(obj._id)}
+                            >
+                              Remove
+                            </button>
+                          </>
+                        )}
                       </div>
                     </Link>
                   </article>

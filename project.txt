@@ -68,4 +68,10 @@ Server =>
   - Handle duplicate documents in pagination ✔
   - Delete failed processed files from cloudinary ✔
   - add private user functionality to user queries.
+  - Create user page ✔
+  - Add error boundary ✔
+  - Add space to reels page ✔
+  - Fallback 404 page ✔
+  - Handle virtualization
+  - Handle hide engagement for posts
  

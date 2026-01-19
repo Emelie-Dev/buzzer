@@ -8,57 +8,57 @@ import { IUser } from '../models/userModel.js';
 const baseEmail = fs.readFileSync(
   join(
     dirname(fileURLToPath(import.meta.url)),
-    '../templates/emails/baseEmail.html'
+    '../templates/emails/baseEmail.html',
   ),
-  'utf-8'
+  'utf-8',
 );
 
 const verifyEmail = fs.readFileSync(
   join(
     dirname(fileURLToPath(import.meta.url)),
-    '../templates/emails/verifyEmail.html'
+    '../templates/emails/verifyEmail.html',
   ),
-  'utf-8'
+  'utf-8',
 );
 
 const welcomeEmail = fs.readFileSync(
   join(
     dirname(fileURLToPath(import.meta.url)),
-    '../templates/emails/welcomeEmail.html'
+    '../templates/emails/welcomeEmail.html',
   ),
-  'utf-8'
+  'utf-8',
 );
 
 const resetPassword = fs.readFileSync(
   join(
     dirname(fileURLToPath(import.meta.url)),
-    '../templates/emails/resetPassword.html'
+    '../templates/emails/resetPassword.html',
   ),
-  'utf-8'
+  'utf-8',
 );
 
 const securityToken = fs.readFileSync(
   join(
     dirname(fileURLToPath(import.meta.url)),
-    '../templates/emails/securityToken.html'
+    '../templates/emails/securityToken.html',
   ),
-  'utf-8'
+  'utf-8',
 );
 
 const reactivationEmail = fs.readFileSync(
   join(
     dirname(fileURLToPath(import.meta.url)),
-    '../templates/emails/reactivationEmail.html'
+    '../templates/emails/reactivationEmail.html',
   ),
-  'utf-8'
+  'utf-8',
 );
 
 const securityEmail = fs.readFileSync(
   join(
     dirname(fileURLToPath(import.meta.url)),
-    '../templates/emails/securityEmail.html'
+    '../templates/emails/securityEmail.html',
   ),
-  'utf-8'
+  'utf-8',
 );
 
 class Email {
@@ -69,7 +69,10 @@ class Email {
       ? process.env.SENDGRID_FROM
       : process.env.MAILTRAP_FROM) || '';
 
-  constructor(user: IUser, private url: string) {
+  constructor(
+    user: IUser,
+    private url: string,
+  ) {
     this.to = user.email;
     this.username = user.username;
   }
@@ -142,15 +145,15 @@ class Email {
       type === 'password'
         ? 'Change your Password'
         : type === 'delete'
-        ? 'Delete your account'
-        : 'Deactivate your account';
+          ? 'Delete your account'
+          : 'Deactivate your account';
 
     const text1 =
       type === 'password'
         ? 'change your password'
         : type === 'delete'
-        ? 'delete your account'
-        : 'deactivate your account';
+          ? 'delete your account'
+          : 'deactivate your account';
 
     const template = securityToken
       .replace('{{TEXT1}}', text1)
@@ -158,7 +161,7 @@ class Email {
         '{{TEXT2}}',
         type === 'password'
           ? 'ignore this email'
-          : 'review your account security or change your password'
+          : 'review your account security or change your password',
       );
 
     await this.send(template, subject);
@@ -175,8 +178,8 @@ class Email {
       type === 'new'
         ? 'New Log-in'
         : type === 'multiple'
-        ? 'Multiple Devices'
-        : 'Failed Login';
+          ? 'Multiple Devices'
+          : 'Failed Login';
 
     const template =
       type === 'new'
@@ -187,32 +190,32 @@ class Email {
     <pre>
     Device: ${data.device}
     Location: ${data.location} 
-    Time: ${data.time.toUTCString()}</pre>`
+    Time: ${data.time.toUTCString()}</pre>`,
             )
             .replace(
               '{{TEXT2}}',
-              `If this was you, no further action is needed.`
+              `If this was you, no further action is needed.`,
             )
         : type === 'multiple'
-        ? securityEmail
-            .replace(
-              '{{TEXT1}}',
-              `We noticed that your account is currently active on multiple (${data.deviceLength}) devices.`
-            )
-            .replace(
-              '{{TEXT2}}',
-              `If this was you, no further action is needed.`
-            )
-        : securityEmail
-            .replace(
-              '{{TEXT1}}',
-              'We detected multiple unsuccessful login attempts on your account from a device.'
-            )
-            .replace(
-              '{{TEXT2}}',
-              `If this was you and you've forgotten your password, you can reset it here:
-<a href=${data.url} target=" _blank">Reset Password</a>.<br />`
-            );
+          ? securityEmail
+              .replace(
+                '{{TEXT1}}',
+                `We noticed that your account is currently active on multiple (${data.deviceLength}) devices.`,
+              )
+              .replace(
+                '{{TEXT2}}',
+                `If this was you, no further action is needed.`,
+              )
+          : securityEmail
+              .replace(
+                '{{TEXT1}}',
+                'We detected multiple unsuccessful login attempts on your account from a device.',
+              )
+              .replace(
+                '{{TEXT2}}',
+                `If this was you and you've forgotten your password, you can reset it here:
+<a href=${data.url} target=" _blank">Reset Password</a>.<br />`,
+              );
 
     await this.send(template, subject);
   }

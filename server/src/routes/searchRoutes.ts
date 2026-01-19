@@ -20,7 +20,7 @@ router.get('/trending', getTrendingSearches);
 
 router.get('/suggestions', getSearchSuggestions);
 
-router.get('/users', searchForUsers);
+router.get('/users/:username?', searchForUsers);
 
 router.delete('/:id', deleteUserSearch);
 

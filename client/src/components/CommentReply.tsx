@@ -9,6 +9,7 @@ import { AuthContext } from '../Contexts';
 import LoadingAnimation from './LoadingAnimation';
 import { toast } from 'sonner';
 import { IoMdHeart, IoMdArrowDropright } from 'react-icons/io';
+import { Link } from 'react-router-dom';
 
 type CommentReply = {
   data: any;
@@ -124,7 +125,7 @@ const CommentReply = ({
 
   return (
     <article className={styles['sub-comment-box']}>
-      <a href={`/@${user.username}`}>
+      <Link to={`/@${user.username}`}>
         <span
           className={`${styles['comment-img-box']} ${
             hasStory && (hasUnviewedStory || user._id === viewer._id)
@@ -139,17 +140,17 @@ const CommentReply = ({
             src={getUrl(user.photo, 'users')}
           />
         </span>
-      </a>
+      </Link>
 
       <div className={styles['sub-comment-details']}>
         <span className={styles['comment-owner']}>
-          <a href={`/@${user.username}`}>{user.name || <>&nbsp;</>}</a>
+          <Link to={`/@${user.username}`}>{user.name || <>&nbsp;</>}</Link>
           {receiver && (
             <>
               <IoMdArrowDropright className={styles['arrow-icon']} />
-              <a href={`/@${receiver.username}`}>
+              <Link to={`/@${receiver.username}`}>
                 {receiver.name || <>&nbsp;</>}
-              </a>
+              </Link>
             </>
           )}
         </span>

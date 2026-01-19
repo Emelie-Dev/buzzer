@@ -7,6 +7,7 @@
   width: 100%;
   font-family: var(--general-font-family);
   background: linear-gradient(135deg, var(--app-theme-color) 50%, white 50%);
+  position: relative;
 }
 
 .head {
@@ -185,14 +186,16 @@
 
 .container {
   border-radius: 10px;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2), 0 10px 10px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.2),
+    0 10px 10px rgba(0, 0, 0, 0.2);
   position: relative;
   overflow: hidden;
   width: 75vw;
   max-width: 100%;
   height: 90vh;
   min-height: 480px;
-  margin: 3rem 0;
+  margin: 3rem 0 5rem;
   background: white;
 }
 
@@ -246,13 +249,15 @@
 
 .overlay {
   background: #a855f7;
-  background: -webkit-linear-gradient(
+  background:
+    -webkit-linear-gradient(
       to bottom right,
       rgb(20, 20, 32, 0.8),
       rgb(168, 85, 247, 0.8) 80%
     ),
     url('../../assets/images/people.avif');
-  background: linear-gradient(
+  background:
+    linear-gradient(
       to bottom right,
       rgb(20, 20, 32, 0.8),
       rgb(168, 85, 247, 0.8) 80%
@@ -431,6 +436,14 @@
   opacity: 0.7;
 }
 
+.footer {
+  position: absolute;
+  bottom: 2%;
+  left: 2%;
+  color: black;
+  font-family: appFont;
+}
+
 /* Animations */
 
 @keyframes show {
@@ -487,13 +500,15 @@
 
 @media screen and (max-width: 700px) {
   .body {
-    background: -webkit-linear-gradient(
+    background:
+      -webkit-linear-gradient(
         to bottom right,
         rgb(20, 20, 32, 0.8),
         rgb(168, 85, 247, 0.8) 80%
       ),
       url('../../assets/images/people.avif');
-    background: linear-gradient(
+    background:
+      linear-gradient(
         to bottom right,
         rgb(20, 20, 32, 0.8),
         rgb(168, 85, 247, 0.8) 80%
@@ -533,6 +548,10 @@
 
   .alt-auth {
     display: flex;
+  }
+
+  .footer {
+    color: white;
   }
 }
 
@@ -595,6 +614,7 @@
 @media screen and (min-height: 800px) {
   .container {
     height: 74vh;
+    margin-bottom: 3rem;
   }
 }
 

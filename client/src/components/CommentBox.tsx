@@ -16,6 +16,7 @@ import { IoMdHeart } from 'react-icons/io';
 import LoadingAnimation from './LoadingAnimation';
 import { CommentData } from './ContentBox';
 import { BsDot } from 'react-icons/bs';
+import { Link } from 'react-router-dom';
 
 type CommentBoxProps = {
   data: CommentData;
@@ -679,7 +680,7 @@ const CommentBox = ({
         >
           <div className={styles['comment-header']}>
             <div className={styles['comment-header-details']}>
-              <a className={styles['user-link']} href={`/@${username}`}>
+              <Link className={styles['user-link']} to={`/@${username}`}>
                 <span
                   className={`${styles['profile-img-box']} ${
                     hasStory && hasUnviewedStory
@@ -699,7 +700,7 @@ const CommentBox = ({
                   <span className={styles['name']}>{name}</span>
                   <span className={styles['username']}>@{username}</span>
                 </span>
-              </a>
+              </Link>
             </div>
 
             <div className={styles['menu-div']} ref={menuRef}>

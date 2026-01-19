@@ -18,6 +18,9 @@ import { useEffect, useState } from 'react';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from 'sonner';
 import { apiClient } from './Utilities';
+import UserResolver from './components/UserResolver';
+import { ErrorBoundary } from 'react-error-boundary';
+import ErrorPage from './pages/Error';
 
 const App = () => {
   const [settingsCategory, setSettingsCategory] = useState('');
@@ -115,63 +118,69 @@ const App = () => {
               setStories,
             }}
           >
-            <Routes>
-              <Route path="/" element={<Auth />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route
-                path="/forgot-password"
-                element={<Auth leftStatus="forgot" />}
-              />
-              <Route
-                path="/reset-password"
-                element={<Auth leftStatus="reset" />}
-              />
-              <Route path="/home" element={<ProtectedRoute element={Home} />} />
-              <Route
-                path="/search"
-                element={<ProtectedRoute element={Search} />}
-              />
-              <Route
-                path="/following"
-                element={<ProtectedRoute element={Following} />}
-              />
-              <Route
-                path="/friends"
-                element={<ProtectedRoute element={Friends} />}
-              />
-              <Route
-                path="/reels"
-                element={<ProtectedRoute element={Reels} />}
-              />
-              <Route
-                path="/notifications"
-                element={<ProtectedRoute element={Notifications} />}
-              />
-              <Route
-                path="/inbox"
-                element={<ProtectedRoute element={Inbox} />}
-              />
-              <Route
-                path="/create"
-                element={<ProtectedRoute element={Create} />}
-              />
-              <Route
-                path="/profile"
-                element={<ProtectedRoute element={Profile} />}
-              />
-              <Route
-                path="/settings"
-                element={<ProtectedRoute element={Settings} />}
-              />
-              <Route
-                path="/analytics"
-                element={<ProtectedRoute element={Analytics} />}
-              />
-              <Route
-                path="/history"
-                element={<ProtectedRoute element={History} />}
-              />
-            </Routes>
+            <ErrorBoundary fallback={<ErrorPage />}>
+              <Routes>
+                <Route index element={<Auth />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route
+                  path="/forgot-password"
+                  element={<Auth leftStatus="forgot" />}
+                />
+                <Route
+                  path="/reset-password"
+                  element={<Auth leftStatus="reset" />}
+                />
+                <Route
+                  path="/home"
+                  element={<ProtectedRoute element={Home} />}
+                />
+                <Route
+                  path="/search"
+                  element={<ProtectedRoute element={Search} />}
+                />
+                <Route
+                  path="/following"
+                  element={<ProtectedRoute element={Following} />}
+                />
+                <Route
+                  path="/friends"
+                  element={<ProtectedRoute element={Friends} />}
+                />
+                <Route
+                  path="/reels"
+                  element={<ProtectedRoute element={Reels} />}
+                />
+                <Route
+                  path="/notifications"
+                  element={<ProtectedRoute element={Notifications} />}
+                />
+                <Route
+                  path="/inbox"
+                  element={<ProtectedRoute element={Inbox} />}
+                />
+                <Route
+                  path="/create"
+                  element={<ProtectedRoute element={Create} />}
+                />
+                <Route
+                  path="/profile"
+                  element={<ProtectedRoute element={Profile} />}
+                />
+                <Route
+                  path="/settings"
+                  element={<ProtectedRoute element={Settings} />}
+                />
+                <Route
+                  path="/analytics"
+                  element={<ProtectedRoute element={Analytics} />}
+                />
+                <Route
+                  path="/history"
+                  element={<ProtectedRoute element={History} />}
+                />
+                <Route path="*" element={<UserResolver />} />
+              </Routes>
+            </ErrorBoundary>
           </StoryContext.Provider>
         </GeneralContext.Provider>
       </AuthContext.Provider>

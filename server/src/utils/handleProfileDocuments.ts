@@ -5,11 +5,13 @@ import Bookmark from '../models/bookmarkModel.js';
 import Like from '../models/likeModel.js';
 import { isValidDateString } from '../controllers/commentController.js';
 import { PipelineStage } from 'mongoose';
+import Friend from '../models/friendModel.js';
 
 export default async (
   userId: string,
   category: 'all' | 'reels' | 'private' | 'bookmarks' | 'liked',
-  query: Record<string, any>
+  query: Record<string, any>,
+  user?: any
 ) => {
   const limit = 20;
   let { sort, cursor, views } = query;
@@ -53,60 +55,57 @@ export default async (
       : { [timestamp]: { $lt: cursorDate } }
     : {};
 
+  const isFriend = !user
+    ? null
+    : await Friend.exists({
+        $or: [
+          {
+            requester: userId,
+            recipient: user?._id,
+          },
+          { requester: user?._id, recipient: userId },
+        ],
+      });
+
+  const friendObj = isFriend
+    ? {
+        'settings.accessibility': { $in: [0, 1] },
+      }
+    : { 'settings.accessibility': 0 };
+  const userMatchObj = { user: user?._id, ...friendObj };
+
   const initialStages = (index: number): PipelineStage[] => {
-    const stages: PipelineStage[] = [
-      {
-        $match: {
-          user: userId,
-        },
-      },
-      {
-        $match: {
-          post: { $ne: [] },
-        },
-      },
-      { $unwind: '$post' },
-    ];
     const collection = index === 0 ? 'content' : 'reel';
+    let stages: PipelineStage[] = [];
 
     if (category === 'bookmarks' || category === 'liked') {
-      stages.splice(
-        1,
-        0,
-        category === 'bookmarks'
-          ? {
-              $lookup: {
-                from: `${collection}s`,
-                localField: 'documentId',
-                foreignField: '_id',
-                as: 'post',
-              },
-            }
-          : {
-              $lookup: {
-                from: `${collection}s`,
-                as: 'post',
-                let: { documentId: '$documentId', collection },
-                pipeline: [
-                  {
-                    $match: {
-                      $expr: {
-                        $and: [
-                          { $eq: ['$collectionName', '$$collection'] },
-                          { $eq: ['$_id', '$$documentId'] },
-                        ],
-                      },
-                    },
-                  },
-                ],
-              },
-            }
-      );
-
-      return stages;
+      stages = [
+        {
+          $match: {
+            user: userId,
+            collectionName: collection,
+          },
+        },
+        {
+          $lookup: {
+            from: `${collection}s`,
+            localField: 'documentId',
+            foreignField: '_id',
+            as: 'post',
+          },
+        },
+        {
+          $match: {
+            post: { $ne: [] },
+          },
+        },
+        { $unwind: '$post' },
+      ];
     } else {
-      return [];
+      stages = [];
     }
+
+    return stages;
   };
 
   const mainStages = (index: number): PipelineStage[] => {
@@ -115,7 +114,11 @@ export default async (
     return [
       {
         $match:
-          category === 'bookmarks' || category === 'liked' ? {} : matchObj,
+          category === 'bookmarks' || category === 'liked'
+            ? {}
+            : user
+            ? userMatchObj
+            : matchObj,
       },
       {
         $lookup: {
@@ -256,6 +259,16 @@ export default async (
 
   let [contents, reels] = await Promise.all(
     collections.map(async (collection, index) => {
+      if (user) {
+        if (user.settings.general.privacy.value) {
+          const users = user.settings.general.privacy.users.map((id: any) =>
+            String(id)
+          );
+
+          if (!users.includes(String(userId))) return [];
+        }
+      }
+
       const pipeline = [
         ...initialStages(index),
         ...mainStages(index),

@@ -664,13 +664,26 @@ export const getFriendsSugestions = asyncErrorHandler(
 );
 
 export const getFriends = asyncErrorHandler(
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { username } = req.params;
+    const viewerId = req.user?._id;
+    let userId;
+
+    if (username) {
+      const user = await User.findOne({ username });
+
+      if (!user) {
+        return next(new CustomError('This user does not exist!', 404));
+      }
+
+      userId = user._id;
+    }
+
     const { cursor } = req.query;
     const cursorDate = isValidDateString(String(cursor))
       ? new Date(String(cursor))
       : new Date();
 
-    const viewerId = req.user?._id;
     const limit = 20;
 
     const friends = await Friend.aggregate([
@@ -678,10 +691,10 @@ export const getFriends = asyncErrorHandler(
         $match: {
           $or: [
             {
-              requester: viewerId,
+              requester: username ? userId : viewerId,
             },
             {
-              recipient: viewerId,
+              recipient: username ? userId : viewerId,
             },
           ],
           createdAt: { $lt: cursorDate },
@@ -693,7 +706,7 @@ export const getFriends = asyncErrorHandler(
         $addFields: {
           user: {
             $cond: [
-              { $eq: ['$requester', viewerId] },
+              { $eq: ['$requester', username ? userId : viewerId] },
               '$recipient',
               '$requester',
             ],

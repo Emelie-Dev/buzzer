@@ -15,8 +15,8 @@ router.use(apiLimiter);
 
 router.route('/:id').post(followUser).delete(unfollowUser);
 
-router.get('/followers', getConnections('followers'));
-router.get('/following', getConnections('following'));
+router.get('/followers/:username?', getConnections('followers'));
+router.get('/following/:username?', getConnections('following'));
 
 router.delete('/remove/:id', removeFollower);
 
