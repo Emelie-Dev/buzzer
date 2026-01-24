@@ -1,5 +1,5 @@
-import parse from 'html-react-parser';
 import { useEffect, useRef, useState } from 'react';
+import { parseHTML } from '../Utilities';
 
 type ShowMoreTextProps = {
   text: string;
@@ -68,7 +68,7 @@ const ShowMoreText = ({
         }
         ref={contentRef}
       >
-        {parse(text)}
+        {parseHTML(text)}
       </div>
 
       {truncated && (

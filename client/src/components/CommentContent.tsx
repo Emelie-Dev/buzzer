@@ -93,16 +93,16 @@ const CommentContent = ({
         setLike({ value: data.data.like, count: like.count + 1 });
       } else {
         await apiClient.delete(
-          `v1/likes/content/${commentId}?id=${like.value._id}`
+          `v1/likes/content/${commentId}?id=${like.value._id}`,
         );
         setLike({ value: null, count: like.count - 1 });
       }
-    } catch (err: any) {
-      if (!err.response) {
-        toast.error(`Could not like comment. Please Try again.`);
-      } else {
-        toast.error(err.response.data.message);
-      }
+    } catch {
+      toast.error(
+        `Could not ${
+          like.value ? 'remove like' : 'like comment'
+        }. Please Try again.`,
+      );
     } finally {
       setLoading({ ...loading, like: false });
     }
@@ -178,8 +178,8 @@ const CommentContent = ({
             hasStory && (hasUnviewedStory || user._id === viewer._id)
               ? styles['comment-img-box3']
               : hasStory
-              ? styles['comment-img-box2']
-              : ''
+                ? styles['comment-img-box2']
+                : ''
           }`}
         >
           <img

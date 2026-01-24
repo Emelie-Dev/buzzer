@@ -36,8 +36,8 @@ export const addComment = asyncErrorHandler(
       collection === 'content'
         ? Content.findById(documentId)
         : collection === 'reel'
-        ? Reel.findById(documentId)
-        : null;
+          ? Reel.findById(documentId)
+          : null;
 
     const data = (await query!.populate('user')) as Record<string, any>;
 
@@ -58,7 +58,7 @@ export const addComment = asyncErrorHandler(
 
     if (textContent.length > 2000) {
       return next(
-        new CustomError('Comment can’t exceed 2000 characters.', 400)
+        new CustomError('Comment can’t exceed 2000 characters.', 400),
       );
     }
 
@@ -68,7 +68,7 @@ export const addComment = asyncErrorHandler(
     const disableComments = data.settings.disableComments;
     if (disableComments) {
       return next(
-        new CustomError(`Commenting is disabled for this ${collection}.`, 403)
+        new CustomError(`Commenting is disabled for this ${collection}.`, 403),
       );
     }
 
@@ -109,7 +109,7 @@ export const addComment = asyncErrorHandler(
             value: data.user.settings.content.notifications.push,
             subscription: data.user.pushSubscription,
           },
-          { text: truncatedText, commentId: comment._id, postId: data._id }
+          { text: truncatedText, commentId: comment._id, postId: data._id },
         );
       } else {
         await handleCreateNotifications(
@@ -121,7 +121,7 @@ export const addComment = asyncErrorHandler(
             value: data.user.settings.content.notifications.push,
             subscription: data.user.pushSubscription,
           },
-          { text: truncatedText, commentId: comment._id }
+          { text: truncatedText, commentId: comment._id },
         );
       }
     }
@@ -134,7 +134,7 @@ export const addComment = asyncErrorHandler(
       viewerId,
       comment._id,
       ContentAccessibility.EVERYONE,
-      { text: truncatedText, collection, postId: documentId }
+      { text: truncatedText, collection, postId: documentId },
     );
 
     const commentData = await Comment.aggregate([
@@ -158,16 +158,23 @@ export const addComment = asyncErrorHandler(
           localField: 'user',
           foreignField: '_id',
           as: 'users',
-          pipeline: [{ $project: { name: 1, photo: 1, username: 1 } }],
+          pipeline: [
+            { $match: { active: true } },
+            { $project: { name: 1, photo: 1, username: 1 } },
+          ],
         },
       },
+      { $match: { 'users.0': { $exists: true } } },
       {
         $lookup: {
           from: 'users',
           localField: 'reply.receiver',
           foreignField: '_id',
           as: 'receiver',
-          pipeline: [{ $project: { name: 1, photo: 1, username: 1 } }],
+          pipeline: [
+            { $match: { active: true } },
+            { $project: { name: 1, photo: 1, username: 1 } },
+          ],
         },
       },
       {
@@ -212,7 +219,7 @@ export const addComment = asyncErrorHandler(
       status: 'success',
       data: { message: 'Comment added!', comment: commentData[0] },
     });
-  }
+  },
 );
 
 export const deleteComment = asyncErrorHandler(
@@ -239,7 +246,7 @@ export const deleteComment = asyncErrorHandler(
       req.user?._id,
       comment.reply ? reply.commentId : documentId,
       collection,
-      { commentId: comment._id }
+      { commentId: comment._id },
     );
 
     // delete mention notifications
@@ -250,14 +257,14 @@ export const deleteComment = asyncErrorHandler(
       req.user?._id,
       comment._id,
       null,
-      null
+      null,
     );
 
     return res.status(204).json({
       status: 'success',
       message: null,
     });
-  }
+  },
 );
 
 export const getComments = asyncErrorHandler(
@@ -276,19 +283,20 @@ export const getComments = asyncErrorHandler(
       collection === 'content'
         ? await Content.findById(documentId)
         : collection === 'reel'
-        ? await Reel.findById(documentId)
-        : null;
+          ? await Reel.findById(documentId)
+          : null;
 
     const replyValue = String(reply) === 'true' ? true : false;
 
     const viewerId = req.user?._id;
     const ownerId = query?.user;
     const collaborators = query?.collaborators;
+    const hideEngagements = query?.settings.hideEngagements;
 
     let comments, totalCount;
 
     excludeArray = excludeArray.map(
-      (id: string) => new Types.ObjectId(String(id))
+      (id: string) => new Types.ObjectId(String(id)),
     );
 
     if (replyValue) {
@@ -298,6 +306,12 @@ export const getComments = asyncErrorHandler(
           'reply.commentId': new Types.ObjectId(String(commentId)),
           collectionName: collection,
           documentId: new Types.ObjectId(String(documentId)),
+          $expr: {
+            $or: [
+              { $eq: [hideEngagements, false] },
+              { $eq: ['$user', viewerId] },
+            ],
+          },
         },
       };
 
@@ -306,6 +320,12 @@ export const getComments = asyncErrorHandler(
         'reply.commentId': commentId,
         collectionName: collection,
         documentId,
+        $expr: {
+          $or: [
+            { $eq: [hideEngagements, false] },
+            { $eq: ['$user', viewerId] },
+          ],
+        },
       };
 
       if (isValidDateString(String(cursor))) {
@@ -320,11 +340,24 @@ export const getComments = asyncErrorHandler(
       comments = await Comment.aggregate([
         firstStage,
         { $sort: { createdAt: 1 } },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'users',
+            pipeline: [
+              { $match: { active: true } },
+              { $project: { name: 1, photo: 1, username: 1, settings: 1 } },
+            ],
+          },
+        },
+        { $match: { 'users.0': { $exists: true } } },
         { $limit: 5 },
         {
           $lookup: {
-            from: 'likes',
-            let: { commentId: '$_id' },
+            from: 'friends',
+            let: { commentOwner: '$user' },
             pipeline: [
               {
                 $match: {
@@ -332,14 +365,18 @@ export const getComments = asyncErrorHandler(
                     $or: [
                       {
                         $and: [
-                          { $eq: ['$documentId', '$$commentId'] },
-                          { $eq: ['$user', viewerId] },
+                          { $eq: ['$requester', '$$commentOwner'] },
+                          {
+                            $eq: ['$recipient', viewerId],
+                          },
                         ],
                       },
                       {
                         $and: [
-                          { $eq: ['$documentId', '$$commentId'] },
-                          { $eq: ['$user', ownerId] },
+                          {
+                            $eq: ['$requester', viewerId],
+                          },
+                          { $eq: ['$recipient', '$$commentOwner'] },
                         ],
                       },
                     ],
@@ -347,26 +384,81 @@ export const getComments = asyncErrorHandler(
                 },
               },
             ],
-            as: 'likeStatus',
+            as: 'isFriend',
           },
         },
         {
-          $lookup: {
-            from: 'likes',
-            localField: '_id',
-            foreignField: 'documentId',
-            as: 'likes',
+          $addFields: {
+            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+            isAllowed: {
+              $or: [
+                { $eq: [{ $first: '$users._id' }, viewerId] },
+                {
+                  $eq: [
+                    { $first: '$users.settings.general.privacy.value' },
+                    false,
+                  ],
+                },
+                {
+                  $and: [
+                    {
+                      $eq: [
+                        { $first: '$users.settings.general.privacy.value' },
+                        true,
+                      ],
+                    },
+                    {
+                      $in: [
+                        viewerId,
+                        { $first: '$users.settings.general.privacy.users' },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
           },
         },
         {
           $lookup: {
             from: 'stories',
-            let: { commentOwner: '$user' },
+            let: {
+              commentOwner: '$user',
+              isAllowed: '$isAllowed',
+              isFriend: '$isFriend',
+            },
             pipeline: [
               {
                 $match: {
                   expired: false,
-                  $expr: { $eq: ['$user', '$$commentOwner'] },
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$commentOwner'] },
+                      { $eq: ['$$isAllowed', true] },
+                      {
+                        $or: [
+                          { $eq: ['$user', viewerId] },
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.EVERYONE,
+                            ],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.FRIENDS,
+                                ],
+                              },
+                              { $eq: ['$$isFriend', true] },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
                 },
               },
               {
@@ -397,11 +489,52 @@ export const getComments = asyncErrorHandler(
         },
         {
           $lookup: {
-            from: 'users',
-            localField: 'user',
-            foreignField: '_id',
-            as: 'users',
-            pipeline: [{ $project: { name: 1, photo: 1, username: 1 } }],
+            from: 'likes',
+            let: { commentId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          { $eq: ['$documentId', '$$commentId'] },
+                          { $eq: ['$user', viewerId] },
+                          { $eq: ['$collectionName', 'comment'] },
+                        ],
+                      },
+                      {
+                        $and: [
+                          { $eq: ['$documentId', '$$commentId'] },
+                          { $eq: ['$user', ownerId] },
+                          { $eq: ['$collectionName', 'comment'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'likeStatus',
+          },
+        },
+        {
+          $lookup: {
+            from: 'likes',
+            as: 'likes',
+            let: { docId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$collectionName', 'comment'] },
+                      { $eq: ['$documentId', '$$docId'] },
+                    ],
+                  },
+                },
+              },
+            ],
           },
         },
         {
@@ -410,7 +543,10 @@ export const getComments = asyncErrorHandler(
             localField: 'reply.receiver',
             foreignField: '_id',
             as: 'receiver',
-            pipeline: [{ $project: { name: 1, photo: 1, username: 1 } }],
+            pipeline: [
+              { $match: { active: true } },
+              { $project: { name: 1, photo: 1, username: 1 } },
+            ],
           },
         },
         {
@@ -511,6 +647,9 @@ export const getComments = asyncErrorHandler(
             mentions: 1,
           },
         },
+        {
+          $unset: 'user.settings',
+        },
       ]);
 
       totalCount = await Comment.countDocuments(match);
@@ -528,56 +667,29 @@ export const getComments = asyncErrorHandler(
             documentId: new Types.ObjectId(String(documentId)),
             reply: { $exists: false },
             createdAt: { $lt: cursorDate },
+            $expr: {
+              $or: [
+                { $eq: [hideEngagements, false] },
+                { $eq: ['$user', viewerId] },
+              ],
+            },
           },
         },
         { $sort: { createdAt: -1 } },
-        { $limit: 20 },
         {
           $lookup: {
-            from: 'likes',
-            let: { commentId: '$_id' },
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'users',
             pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $or: [
-                      {
-                        $and: [
-                          { $eq: ['$documentId', '$$commentId'] },
-                          { $eq: ['$user', viewerId] },
-                        ],
-                      },
-                      {
-                        $and: [
-                          { $eq: ['$documentId', '$$commentId'] },
-                          { $eq: ['$user', ownerId] },
-                        ],
-                      },
-                    ],
-                  },
-                },
-              },
+              { $match: { active: true } },
+              { $project: { name: 1, photo: 1, username: 1, settings: 1 } },
             ],
-            as: 'likeStatus',
           },
         },
-        {
-          $lookup: {
-            from: 'likes',
-            localField: '_id',
-            foreignField: 'documentId',
-            as: 'likes',
-          },
-        },
-        {
-          $lookup: {
-            from: 'comments',
-            localField: '_id',
-            foreignField: 'reply.commentId',
-            as: 'replies',
-            pipeline: [{ $sort: { createdAt: 1 } }],
-          },
-        },
+        { $match: { 'users.0': { $exists: true } } },
+        { $limit: 20 },
         {
           $lookup: {
             from: 'friends',
@@ -609,6 +721,165 @@ export const getComments = asyncErrorHandler(
               },
             ],
             as: 'isFriend',
+          },
+        },
+        {
+          $addFields: {
+            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+            isAllowed: {
+              $or: [
+                { $eq: [{ $first: '$users._id' }, viewerId] },
+                {
+                  $eq: [
+                    { $first: '$users.settings.general.privacy.value' },
+                    false,
+                  ],
+                },
+                {
+                  $and: [
+                    {
+                      $eq: [
+                        { $first: '$users.settings.general.privacy.value' },
+                        true,
+                      ],
+                    },
+                    {
+                      $in: [
+                        viewerId,
+                        { $first: '$users.settings.general.privacy.users' },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'stories',
+            let: {
+              commentOwner: '$user',
+              isAllowed: '$isAllowed',
+              isFriend: '$isFriend',
+            },
+            pipeline: [
+              {
+                $match: {
+                  expired: false,
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$commentOwner'] },
+                      { $eq: ['$$isAllowed', true] },
+                      {
+                        $or: [
+                          { $eq: ['$user', viewerId] },
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.EVERYONE,
+                            ],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.FRIENDS,
+                                ],
+                              },
+                              { $eq: ['$$isFriend', true] },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'views',
+                  let: { storyId: '$_id' },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$collectionName', 'story'] },
+                            { $eq: ['$documentId', '$$storyId'] },
+                            { $eq: ['$user', viewerId] },
+                          ],
+                        },
+                      },
+                    },
+                    { $project: { _id: 1 } },
+                  ],
+                  as: 'storyView',
+                },
+              },
+              { $project: { _id: 1, storyView: 1 } },
+            ],
+            as: 'stories',
+          },
+        },
+        {
+          $lookup: {
+            from: 'likes',
+            let: { commentId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          { $eq: ['$documentId', '$$commentId'] },
+                          { $eq: ['$user', viewerId] },
+                          { $eq: ['$collectionName', 'comment'] },
+                        ],
+                      },
+                      {
+                        $and: [
+                          { $eq: ['$documentId', '$$commentId'] },
+                          { $eq: ['$user', ownerId] },
+                          { $eq: ['$collectionName', 'comment'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'likeStatus',
+          },
+        },
+        {
+          $lookup: {
+            from: 'likes',
+            as: 'likes',
+            let: { docId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$collectionName', 'comment'] },
+                      { $eq: ['$documentId', '$$docId'] },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: 'comments',
+            localField: '_id',
+            foreignField: 'reply.commentId',
+            as: 'replies',
+            pipeline: [{ $sort: { createdAt: 1 } }],
           },
         },
         {
@@ -666,52 +937,6 @@ export const getComments = asyncErrorHandler(
           },
         },
         {
-          $lookup: {
-            from: 'stories',
-            let: { commentOwner: '$user' },
-            pipeline: [
-              {
-                $match: {
-                  expired: false,
-                  $expr: { $eq: ['$user', '$$commentOwner'] },
-                },
-              },
-              {
-                $lookup: {
-                  from: 'views',
-                  let: { storyId: '$_id' },
-                  pipeline: [
-                    {
-                      $match: {
-                        $expr: {
-                          $and: [
-                            { $eq: ['$collectionName', 'story'] },
-                            { $eq: ['$documentId', '$$storyId'] },
-                            { $eq: ['$user', viewerId] },
-                          ],
-                        },
-                      },
-                    },
-                    { $project: { _id: 1 } },
-                  ],
-                  as: 'storyView',
-                },
-              },
-              { $project: { _id: 1, storyView: 1 } },
-            ],
-            as: 'stories',
-          },
-        },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'user',
-            foreignField: '_id',
-            as: 'users',
-            pipeline: [{ $project: { name: 1, photo: 1, username: 1 } }],
-          },
-        },
-        {
           $addFields: {
             ownerReply: {
               $first: {
@@ -732,9 +957,20 @@ export const getComments = asyncErrorHandler(
         {
           $lookup: {
             from: 'likes',
-            localField: 'ownerReply._id',
-            foreignField: 'documentId',
             as: 'ownerReplyLikes',
+            let: { docId: '$ownerReply._id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$collectionName', 'comment'] },
+                      { $eq: ['$documentId', '$$docId'] },
+                    ],
+                  },
+                },
+              },
+            ],
           },
         },
         {
@@ -752,12 +988,14 @@ export const getComments = asyncErrorHandler(
                         $and: [
                           { $eq: ['$documentId', '$$commentId'] },
                           { $eq: ['$user', viewerId] },
+                          { $eq: ['$collectionName', 'comment'] },
                         ],
                       },
                       {
                         $and: [
                           { $eq: ['$documentId', '$$commentId'] },
                           { $eq: ['$user', ownerId] },
+                          { $eq: ['$collectionName', 'comment'] },
                         ],
                       },
                     ],
@@ -801,7 +1039,6 @@ export const getComments = asyncErrorHandler(
               },
             },
             repliesCount: { $size: '$replies' },
-            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
             isFollowing: {
               $cond: [
                 { $gt: [{ $size: '$followStatus' }, 0] },
@@ -889,11 +1126,20 @@ export const getComments = asyncErrorHandler(
             mentions: 1,
           },
         },
+        {
+          $unset: 'user.settings',
+        },
       ]);
 
       totalCount = await Comment.countDocuments({
         collectionName: collection,
         documentId,
+        $expr: {
+          $or: [
+            { $eq: [hideEngagements, false] },
+            { $eq: ['$user', viewerId] },
+          ],
+        },
       });
     }
 
@@ -911,5 +1157,5 @@ export const getComments = asyncErrorHandler(
     return res
       .status(200)
       .json({ status: 'success', data: { comments, totalCount, nextCursor } });
-  }
+  },
 );

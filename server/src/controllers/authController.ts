@@ -48,9 +48,9 @@ type DeviceResult<T extends boolean> = T extends true
 const verifyResult = fs.readFileSync(
   join(
     dirname(fileURLToPath(import.meta.url)),
-    '../templates/verifyResult.html'
+    '../templates/verifyResult.html',
   ),
-  'utf-8'
+  'utf-8',
 );
 
 const sendEmail = async (
@@ -58,7 +58,7 @@ const sendEmail = async (
   res: Response,
   next: NextFunction,
   user: IUser,
-  signup?: boolean
+  signup?: boolean,
 ) => {
   // Generate email verification token
   const verificationToken = user.generateToken('email');
@@ -67,7 +67,7 @@ const sendEmail = async (
   try {
     // Creates email verification url
     const verificationUrl = `${req.protocol}://${req.get(
-      'host'
+      'host',
     )}/api/v1/auth/verify-email/${verificationToken}`;
 
     await new Email(user, verificationUrl).sendEmailVerification();
@@ -108,7 +108,7 @@ const sendOAuthEmail = async (newUser: IUser, signup?: boolean) => {
 
     throw new CustomError(
       'A verification email has been sent. Please click the link to complete your signup.',
-      401
+      401,
     );
   } catch {
     newUser.emailVerificationToken = undefined;
@@ -121,7 +121,7 @@ const sendOAuthEmail = async (newUser: IUser, signup?: boolean) => {
           ? 'Please try logging in with this account.'
           : 'Please try again later.'
       }`,
-      500
+      500,
     );
   }
 };
@@ -135,7 +135,7 @@ const getProfilePhoto = async (url: string, user: IUser): Promise<string> => {
   if (!url) return defaultPhoto;
 
   const fileName = `${user._id}-${Date.now()}-${Math.trunc(
-    Math.random() * 1000000000
+    Math.random() * 1000000000,
   )}`;
 
   try {
@@ -165,7 +165,7 @@ const getProfilePhoto = async (url: string, user: IUser): Promise<string> => {
             (err, res) => {
               if (err) reject();
               else resolve(res);
-            }
+            },
           )
           .end(sharpInstance.toBuffer());
       });
@@ -182,9 +182,10 @@ const getProfilePhoto = async (url: string, user: IUser): Promise<string> => {
 const handleOAuthSignup = async (
   data: any,
   clientIp: string,
-  type: 'google' | 'facebook'
+  type: 'google' | 'facebook',
 ) => {
   const user = await User.findOne({
+    __login: true,
     $or: [
       { email: data.email },
       { [`oAuthProviders.${type}.authId`]: data.id },
@@ -241,7 +242,7 @@ const handleOAuthSignin = async (
   data: any,
   type: 'google' | 'facebook',
   linkProvider: boolean,
-  userId: string
+  userId: string,
 ) => {
   let user: IUser;
   let linkUser: IUser = null!;
@@ -250,7 +251,7 @@ const handleOAuthSignin = async (
     // Get logged in user id
     const decodedToken = jwt.verify(
       userId,
-      process.env.JWT_SECRET as string
+      process.env.JWT_SECRET as string,
     ) as JwtPayload;
     const id = decodedToken.userId;
 
@@ -269,14 +270,14 @@ const handleOAuthSignin = async (
   if (!user && !linkProvider) {
     throw new CustomError(
       'There’s no account linked to this provider login.',
-      404
+      404,
     );
   } else {
     if (linkProvider) {
       if (user) {
         throw new CustomError(
           'This user already exists!',
-          String(user._id) === String(linkUser._id) ? 409 : 403
+          String(user._id) === String(linkUser._id) ? 409 : 403,
         );
       } else {
         user = (await User.findByIdAndUpdate(
@@ -290,7 +291,7 @@ const handleOAuthSignin = async (
           {
             new: true,
             runValidators: true,
-          }
+          },
         ))!;
       }
     } else {
@@ -301,7 +302,7 @@ const handleOAuthSignin = async (
           {
             new: true,
             runValidators: true,
-          }
+          },
         ))!;
 
         try {
@@ -318,7 +319,7 @@ const handleOAuthSignin = async (
         } else {
           throw new CustomError(
             'Finish setting up your account by clicking the verification link in the email we sent you!',
-            403
+            403,
           );
         }
       }
@@ -331,7 +332,7 @@ const handleOAuthSignin = async (
 export const getDeviceDetails = async <T extends boolean>(
   userAgent: string,
   clientIp: string,
-  onlyName: T
+  onlyName: T,
 ): Promise<DeviceResult<T>> => {
   const result = new UAParser(userAgent).getResult();
 
@@ -342,8 +343,8 @@ export const getDeviceDetails = async <T extends boolean>(
     model && vendor
       ? `${vendor} ${model}`
       : name && version
-      ? `${name} ${version}`
-      : result.ua.slice(0, result.ua.indexOf('/'));
+        ? `${name} ${version}`
+        : result.ua.slice(0, result.ua.indexOf('/'));
 
   if (onlyName) {
     return deviceName as DeviceResult<T>;
@@ -375,7 +376,7 @@ export const manageUserDevices = async (
   method: 'email' | 'google' | 'facebook',
   deviceId: string,
   clientIp: string,
-  signup: Boolean = false
+  signup: Boolean = false,
 ) => {
   const session = await Session.findOne({
     user: user._id,
@@ -398,7 +399,7 @@ export const manageUserDevices = async (
     const { data, name, version, type } = await getDeviceDetails(
       userAgent,
       clientIp,
-      false
+      false,
     );
 
     await Session.create({
@@ -478,7 +479,7 @@ export const checkIfDataExist = asyncErrorHandler(
         message: `This ${field} is available.`,
       });
     }
-  }
+  },
 );
 
 export const signup = asyncErrorHandler(
@@ -497,7 +498,7 @@ export const signup = asyncErrorHandler(
     });
 
     return await sendEmail(req, res, next, user, true);
-  }
+  },
 );
 
 export const verifyEmail = asyncErrorHandler(
@@ -524,7 +525,7 @@ export const verifyEmail = asyncErrorHandler(
           '{{CONTENT}}',
           `<div class="body body-fail">Oops! Looks like the verification link is invalid or has expired. No worries—just log in to your account to get a new one!
     <div class="btn-div"><a href="${homePage}/auth"><button class='btn'>Login</button></a></div>
-    </div>`
+    </div>`,
         )
         .replace('{{CONTENT2}}', '');
 
@@ -546,14 +547,14 @@ export const verifyEmail = asyncErrorHandler(
         'email',
         deviceId,
         req.clientIp!,
-        true
+        true,
       );
 
       const nonce = crypto.randomBytes(16).toString('base64');
 
       res.setHeader(
         'Content-Security-Policy',
-        `script-src 'self' 'nonce-${nonce}';`
+        `script-src 'self' 'nonce-${nonce}';`,
       );
 
       res.cookie('jwt', signToken(user._id, deviceId), {
@@ -576,7 +577,7 @@ export const verifyEmail = asyncErrorHandler(
         .replace(
           '{{CONTENT}}',
           `<div class="body body-success">Your email verification was successful!
-    </div>`
+    </div>`,
         )
         .replace(
           '{{CONTENT2}}',
@@ -586,7 +587,7 @@ export const verifyEmail = asyncErrorHandler(
     window.location.href = '${homePage}/home'
     }, 3000)
       })();
-   </script>`
+   </script>`,
         );
 
       res.status(200).send(resultPage);
@@ -597,7 +598,7 @@ export const verifyEmail = asyncErrorHandler(
         return await new Email(user, url).sendWelcome();
       } catch {}
     }
-  }
+  },
 );
 
 export const login = asyncErrorHandler(
@@ -614,8 +615,8 @@ export const login = asyncErrorHandler(
       return next(
         new CustomError(
           'Please provide your email and password for logging in!',
-          400
-        )
+          400,
+        ),
       );
     }
 
@@ -641,7 +642,7 @@ export const login = asyncErrorHandler(
           },
           {
             runValidators: true,
-          }
+          },
         );
 
         if (user) {
@@ -650,7 +651,7 @@ export const login = asyncErrorHandler(
           const { data } = await getDeviceDetails(
             req.get('user-agent')!,
             req.clientIp!,
-            false
+            false,
           );
 
           await Notification.create({
@@ -683,8 +684,8 @@ export const login = asyncErrorHandler(
       return next(
         new CustomError(
           `Too many failed login attempts. Please try again in ${time}.`,
-          401
-        )
+          401,
+        ),
       );
     }
 
@@ -723,7 +724,7 @@ export const login = asyncErrorHandler(
         {
           new: true,
           runValidators: true,
-        }
+        },
       )) as IUser;
 
       try {
@@ -752,7 +753,7 @@ export const login = asyncErrorHandler(
         // verify the token
         const decodedToken = jwt.verify(
           jwtToken,
-          process.env.JWT_SECRET as string
+          process.env.JWT_SECRET as string,
         ) as JwtPayload;
 
         const session = await Session.findOne({
@@ -795,7 +796,7 @@ export const login = asyncErrorHandler(
       req.get('user-agent')!,
       'email',
       deviceId,
-      req.clientIp!
+      req.clientIp!,
     );
 
     res.cookie('jwt', signToken(user._id, deviceId), {
@@ -823,7 +824,7 @@ export const login = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const logout = asyncErrorHandler(
@@ -847,7 +848,7 @@ export const logout = asyncErrorHandler(
     });
 
     return res.status(200).json({ status: 'success', message: null });
-  }
+  },
 );
 
 export const authConfirmed = asyncErrorHandler(
@@ -860,13 +861,13 @@ export const authConfirmed = asyncErrorHandler(
         user,
       },
     });
-  }
+  },
 );
 
 export const forgotPassword = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     // Get user from email
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ email: req.body.email, __login: true });
 
     if (!user) return next(new CustomError(`This user does not exist!`, 404));
 
@@ -898,11 +899,11 @@ export const forgotPassword = asyncErrorHandler(
       return next(
         new CustomError(
           'We encountered an error while sending the password reset email. Please try again later.',
-          500
-        )
+          500,
+        ),
       );
     }
-  }
+  },
 );
 
 export const resetPassword = asyncErrorHandler(
@@ -915,6 +916,7 @@ export const resetPassword = asyncErrorHandler(
 
     // Finds user with genereated token
     const user = await User.findOne({
+      __login: true,
       passwordResetToken,
       passwordResetTokenExpires: { $gt: Date.now() },
     });
@@ -922,14 +924,14 @@ export const resetPassword = asyncErrorHandler(
     // If user does not exist
     if (!user) {
       return next(
-        new CustomError('This reset link is invalid or has expired.', 404)
+        new CustomError('This reset link is invalid or has expired.', 404),
       );
     }
 
     // If request body is not good
     if (!req.body.password)
       return next(
-        new CustomError('Please provide a value for the password field.', 400)
+        new CustomError('Please provide a value for the password field.', 400),
       );
 
     user.password = req.body.password;
@@ -943,14 +945,14 @@ export const resetPassword = asyncErrorHandler(
       { user: user._id, revokedAt: null },
       {
         revokedAt: new Date(),
-      }
+      },
     );
 
     return res.status(200).json({
       status: 'success',
       message: 'Your password has been reset successfully.',
     });
-  }
+  },
 );
 
 export const getSessions = asyncErrorHandler(
@@ -988,7 +990,7 @@ export const getSessions = asyncErrorHandler(
         sessions,
       },
     });
-  }
+  },
 );
 
 export const removeSession = asyncErrorHandler(
@@ -1009,7 +1011,7 @@ export const removeSession = asyncErrorHandler(
       status: 'success',
       message: null,
     });
-  }
+  },
 );
 
 export const getDeviceAccounts = asyncErrorHandler(
@@ -1027,8 +1029,10 @@ export const getDeviceAccounts = asyncErrorHandler(
           foreignField: '_id',
           localField: 'user',
           as: 'users',
+          pipeline: [{ $match: { active: true } }],
         },
       },
+      { $match: { 'users.0': { $exists: true } } },
       {
         $addFields: {
           active: { $eq: ['$user', req.user?._id] },
@@ -1054,7 +1058,7 @@ export const getDeviceAccounts = asyncErrorHandler(
         sessions,
       },
     });
-  }
+  },
 );
 
 export const switchAccount = asyncErrorHandler(
@@ -1065,8 +1069,8 @@ export const switchAccount = asyncErrorHandler(
       return next(
         new CustomError(
           'This session does not exist! Please log in again.',
-          400
-        )
+          400,
+        ),
       );
     }
 
@@ -1074,14 +1078,14 @@ export const switchAccount = asyncErrorHandler(
       return next(
         new CustomError(
           'This session does not exist! Please log in again.',
-          400
-        )
+          400,
+        ),
       );
     }
 
     if (String(session._id) === String(req.activeSession)) {
       return next(
-        new CustomError('You are already logged in with this account.', 401)
+        new CustomError('You are already logged in with this account.', 401),
       );
     }
 
@@ -1098,22 +1102,22 @@ export const switchAccount = asyncErrorHandler(
         return next(
           new CustomError(
             'The password has changed since your last login. Please log in again.',
-            400
-          )
+            400,
+          ),
         );
       }
     }
 
     if (session.revokedAt) {
       return next(
-        new CustomError('This session has expired! Please log in again.', 400)
+        new CustomError('This session has expired! Please log in again.', 400),
       );
     }
 
     lastUsedAt.setDate(lastUsedAt.getDate() + 30);
     if (lastUsedAt < new Date()) {
       return next(
-        new CustomError('This session has expired! Please log in again.', 400)
+        new CustomError('This session has expired! Please log in again.', 400),
       );
     }
 
@@ -1136,7 +1140,7 @@ export const switchAccount = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const handleOAuth = (linkProvider: boolean = false) =>
@@ -1170,7 +1174,7 @@ export const handleOAuth = (linkProvider: boolean = false) =>
           String(process.env.JWT_SECRET),
           {
             expiresIn: '5m',
-          }
+          },
         );
       }
 
@@ -1186,7 +1190,7 @@ export const handleOAuth = (linkProvider: boolean = false) =>
         const auth2Client = new OAuth2Client(
           process.env.GOOGLE_CLIENT_ID,
           process.env.GOOGLE_CLIENT_SECRET,
-          redirectUrl
+          redirectUrl,
         );
 
         url = auth2Client.generateAuthUrl({
@@ -1202,7 +1206,7 @@ export const handleOAuth = (linkProvider: boolean = false) =>
       }
 
       return res.status(200).json({ status: 'success', data: { url } });
-    }
+    },
   );
 
 export const oAuthCallback = (linkProvider: boolean = false) =>
@@ -1215,7 +1219,7 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
 
     const { code, state, error } = req.query;
     const { signup, clientIp, userAgent, deviceId, userId } = JSON.parse(
-      (state as string) || JSON.stringify({})
+      (state as string) || JSON.stringify({}),
     );
 
     const redirectUrl =
@@ -1247,12 +1251,12 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
         const auth2Client = new OAuth2Client(
           process.env.GOOGLE_CLIENT_ID,
           process.env.GOOGLE_CLIENT_SECRET,
-          redirectUrl
+          redirectUrl,
         );
 
         // Get resposnse tokens
         const response: GetTokenResponse = await auth2Client.getToken(
-          code as string
+          code as string,
         );
         auth2Client.setCredentials(response.tokens);
 
@@ -1261,7 +1265,7 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
 
         // Get user data
         const { data: result } = await axios(
-          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`
+          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`,
         );
 
         data = {
@@ -1273,17 +1277,17 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
       } else {
         // Gets user access token
         const { data: accessObj }: any = await axios(
-          `https://graph.facebook.com/v24.0/oauth/access_token?client_id=${process.env.FB_APP_ID}&redirect_uri=${redirectUrl}&client_secret=${process.env.FB_APP_SECRET}&code=${code}`
+          `https://graph.facebook.com/v24.0/oauth/access_token?client_id=${process.env.FB_APP_ID}&redirect_uri=${redirectUrl}&client_secret=${process.env.FB_APP_SECRET}&code=${code}`,
         );
 
         // Gets app access token
         const { data: appObj } = await axios(
-          `https://graph.facebook.com/oauth/access_token?client_id=${process.env.FB_APP_ID}&client_secret=${process.env.FB_APP_SECRET}&grant_type=client_credentials`
+          `https://graph.facebook.com/oauth/access_token?client_id=${process.env.FB_APP_ID}&client_secret=${process.env.FB_APP_SECRET}&grant_type=client_credentials`,
         );
 
         // verify if tokens are valid
         const { data: result } = await axios(
-          `https://graph.facebook.com/debug_token?input_token=${accessObj.access_token}&access_token=${appObj.access_token}`
+          `https://graph.facebook.com/debug_token?input_token=${accessObj.access_token}&access_token=${appObj.access_token}`,
         );
 
         if (!result.data.is_valid) {
@@ -1292,7 +1296,7 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
 
         // Get user data
         const { data: userData } = await axios(
-          `https://graph.facebook.com/v24.0/me?access_token=${accessObj.access_token}&fields=id,first_name,email,picture,name`
+          `https://graph.facebook.com/v24.0/me?access_token=${accessObj.access_token}&fields=id,first_name,email,picture,name`,
         );
 
         if (signup && !userData.email) {
@@ -1323,7 +1327,7 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
           provider,
           platformId,
           clientIp,
-          signup
+          signup,
         );
 
         res.cookie('jwt', signToken(user._id, platformId), {
@@ -1346,8 +1350,8 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
       if (linkProvider) {
         res.redirect(
           `${authPage}/settings?provider=${provider[0].toUpperCase()}${provider.slice(
-            1
-          )}`
+            1,
+          )}`,
         );
       } else res.redirect(`${authPage}/home`);
 
@@ -1360,14 +1364,14 @@ export const oAuthCallback = (linkProvider: boolean = false) =>
       if (linkProvider) {
         return res.redirect(
           `${authPage}/settings?error=${provider[0].toUpperCase()}${provider.slice(
-            1
-          )}&code=${err.statusCode || 400}`
+            1,
+          )}&code=${err.statusCode || 400}`,
         );
       } else {
         return res.redirect(
           `${authPage}?error=${provider[0].toUpperCase()}${provider.slice(
-            1
-          )}&type=${signup ? 'signup' : 'signin'}&code=${err.statusCode || 400}`
+            1,
+          )}&type=${signup ? 'signup' : 'signin'}&code=${err.statusCode || 400}`,
         );
       }
     }
@@ -1389,8 +1393,8 @@ export const removeOAuthProvider = asyncErrorHandler(
       return next(
         new CustomError(
           'This is your only login method. Create a password or link another account before removing it.',
-          400
-        )
+          400,
+        ),
       );
     }
 
@@ -1399,7 +1403,7 @@ export const removeOAuthProvider = asyncErrorHandler(
       {
         [`oAuthProviders.${provider}`]: {},
       },
-      { new: true }
+      { new: true },
     );
 
     const userData = protectData(user!, 'user');
@@ -1410,5 +1414,5 @@ export const removeOAuthProvider = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );

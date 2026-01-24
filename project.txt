@@ -61,17 +61,20 @@ Server =>
     - Audio processing (e.g., normalization or conversion) for videos with sound.
 
   Tips
-  - Handle deactivated accounts on aggregation
-  - Enable chat feature
+  - Handle deactivated accounts on aggregation ✔
+  - Handle querying deactivated accounts(deletion) ✔
   - Users can have only 1000 friends at max ✔
   - Enable users to view sent friend requests ✔
   - Handle duplicate documents in pagination ✔
   - Delete failed processed files from cloudinary ✔
-  - add private user functionality to user queries.
+  - add private user functionality to user queries. ✔
   - Create user page ✔
   - Add error boundary ✔
   - Add space to reels page ✔
   - Fallback 404 page ✔
   - Handle virtualization
-  - Handle hide engagement for posts
+  - Handle hide engagement for posts ✔
+  - Handle screen time features
+  - Handle all story issues
+  - Add indexes for specific queries
  

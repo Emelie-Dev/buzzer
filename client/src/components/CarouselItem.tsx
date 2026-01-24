@@ -8,7 +8,7 @@ import { BsDot } from 'react-icons/bs';
 import { MdLibraryMusic } from 'react-icons/md';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { RiPushpinFill, RiUnpinFill } from 'react-icons/ri';
-import { getTime, getUrl } from '../Utilities';
+import { getTime, getUrl, parseHTML } from '../Utilities';
 import { GiMeepleCircle } from 'react-icons/gi';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { Link } from 'react-router-dom';
@@ -284,7 +284,7 @@ const CarouselItem = ({
         {
           fill: 'both',
           duration: 300,
-        }
+        },
       );
 
       descriptionRef.current.style.overflow = 'hidden';
@@ -296,7 +296,7 @@ const CarouselItem = ({
         {
           fill: 'both',
           duration: 300,
-        }
+        },
       );
       descriptionRef.current.style.overflow = 'auto';
     }
@@ -350,7 +350,7 @@ const CarouselItem = ({
           const rem = duration - trunc * 60;
 
           setDuration(
-            `${String(trunc).padStart(2, '0')}:${String(rem).padStart(2, '0')}`
+            `${String(trunc).padStart(2, '0')}:${String(rem).padStart(2, '0')}`,
           );
         }
       } else {
@@ -361,7 +361,7 @@ const CarouselItem = ({
           const rem = time - trunc * 60;
 
           setElapsedTime(
-            `${String(trunc).padStart(2, '0')}:${String(rem).padStart(2, '0')}`
+            `${String(trunc).padStart(2, '0')}:${String(rem).padStart(2, '0')}`,
           );
         }
       }
@@ -388,7 +388,7 @@ const CarouselItem = ({
   };
 
   const handleMediaLoad = (
-    e: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement, Event>
+    e: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement, Event>,
   ) => {
     setLoading(false);
     setReloading(false);
@@ -417,7 +417,7 @@ const CarouselItem = ({
           }
         });
       },
-      { threshold: [0, 0.4] }
+      { threshold: [0, 0.4] },
     );
 
     observer.observe(elem);
@@ -539,7 +539,7 @@ const CarouselItem = ({
               <source
                 src={getUrl(
                   src,
-                  contentType === 'reels' ? 'reels' : 'contents'
+                  contentType === 'reels' ? 'reels' : 'contents',
                 )}
               />
               Your browser does not support playing video.
@@ -742,8 +742,9 @@ const CarouselItem = ({
                   showMore ? styles['show-desc'] : ''
                 }  ${webkit ? styles['webkit-style'] : ''}`}
                 ref={descriptionRef}
-                dangerouslySetInnerHTML={{ __html: description || '' }}
-              ></span>
+              >
+                {parseHTML(description || '')}
+              </span>
 
               {descriptionHeight > 50 && (
                 <span

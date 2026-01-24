@@ -14,7 +14,7 @@ import multerConfig from '../utils/multerConfig.js';
 import fs from 'fs';
 import path from 'path';
 import Email from '../utils/Email.js';
-import Story from '../models/storyModel.js';
+import Story, { ContentAccessibility } from '../models/storyModel.js';
 import Comment from '../models/commentModel.js';
 import Bookmark from '../models/bookmarkModel.js';
 import Notification from '../models/notificationModel.js';
@@ -28,7 +28,7 @@ const upload = multerConfig('users');
 
 const updateProfileDetails = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
     const uploader = upload.single('photo');
@@ -43,12 +43,12 @@ const updateProfileDetails = async (
           let message = error.isOperational
             ? error.message
             : error.code === 'LIMIT_FILE_SIZE'
-            ? 'File must not exceed 1GB.'
-            : 'File upload failed.';
+              ? 'File must not exceed 1GB.'
+              : 'File upload failed.';
 
           throw new CustomError(
             message,
-            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500
+            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500,
           );
         }
 
@@ -70,7 +70,7 @@ const updateProfileDetails = async (
                 await handleCloudinary(
                   'delete',
                   `users/${path.basename(photo)}`,
-                  'image'
+                  'image',
                 );
               } else {
                 await fs.promises.unlink(`src/public/users/${photo}`);
@@ -93,10 +93,10 @@ const updateProfileDetails = async (
             ? 'https://res.cloudinary.com/dtwsoibt0/image/upload/v1765614386/default.jpg'
             : 'default.jpg'
           : file
-          ? process.env.NODE_ENV === 'production'
-            ? file.path
-            : path.basename(file.path)
-          : photo;
+            ? process.env.NODE_ENV === 'production'
+              ? file.path
+              : path.basename(file.path)
+            : photo;
 
         const user = await User.findByIdAndUpdate(
           req.user?._id,
@@ -111,13 +111,13 @@ const updateProfileDetails = async (
               emailVisibility === 'true'
                 ? true
                 : emailVisibility === 'false'
-                ? false
-                : req.user?.settings.account.emailVisibility,
+                  ? false
+                  : req.user?.settings.account.emailVisibility,
           },
           {
             runValidators: true,
             new: true,
-          }
+          },
         );
 
         resolve(user);
@@ -141,11 +141,17 @@ export const getSuggestedUsers = asyncErrorHandler(
       req.user?.settings.content.notInterested.content || [];
     const suggestionBlacklist =
       req.user?.settings.general.suggestionBlacklist || [];
+    const viewerId = req.user?._id;
 
     const excludedUsers = [...notInterested, ...suggestionBlacklist];
 
     const users = await User.aggregate([
-      { $match: { _id: { $nin: [req.user?._id, ...excludedUsers] } } },
+      {
+        $match: {
+          _id: { $nin: [req.user?._id, ...excludedUsers] },
+          active: true,
+        },
+      },
       {
         $lookup: {
           from: 'follows',
@@ -167,17 +173,105 @@ export const getSuggestedUsers = asyncErrorHandler(
       },
       {
         $match: {
-          follows: [],
+          'follows.0': { $exists: false },
         },
       },
       { $sample: { size: 50 } },
       {
         $lookup: {
-          from: 'stories',
+          from: 'friends',
           let: { userId: '$_id' },
           pipeline: [
             {
-              $match: { expired: false, $expr: { $eq: ['$user', '$$userId'] } },
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$requester', '$$userId'] },
+                        {
+                          $eq: ['$recipient', viewerId],
+                        },
+                      ],
+                    },
+                    {
+                      $and: [
+                        {
+                          $eq: ['$requester', viewerId],
+                        },
+                        { $eq: ['$recipient', '$$userId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'isFriend',
+        },
+      },
+      {
+        $addFields: {
+          isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+          isAllowed: {
+            $or: [
+              {
+                $eq: ['$settings.general.privacy.value', false],
+              },
+              {
+                $and: [
+                  {
+                    $eq: ['$settings.general.privacy.value', true],
+                  },
+                  {
+                    $in: [viewerId, '$settings.general.privacy.users'],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'stories',
+          let: {
+            userId: '$_id',
+            isAllowed: '$isAllowed',
+            isFriend: '$isFriend',
+          },
+          pipeline: [
+            {
+              $match: {
+                expired: false,
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', '$$userId'] },
+                    { $eq: ['$$isAllowed', true] },
+                    {
+                      $or: [
+                        {
+                          $eq: [
+                            '$accessibility',
+                            ContentAccessibility.EVERYONE,
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                '$accessibility',
+                                ContentAccessibility.FRIENDS,
+                              ],
+                            },
+                            { $eq: ['$$isFriend', true] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
             },
             {
               $lookup: {
@@ -234,7 +328,7 @@ export const getSuggestedUsers = asyncErrorHandler(
         users: usersData,
       },
     });
-  }
+  },
 );
 
 export const removeSuggestedUser = asyncErrorHandler(
@@ -242,7 +336,7 @@ export const removeSuggestedUser = asyncErrorHandler(
     let id = req.params.id;
     id = String(id).trim();
 
-    const user = await User.findById(id);
+    const user = await User.findOne({ _id: id, __login: true });
 
     if (!user) return next(new CustomError('This user does not exist!', 404));
 
@@ -268,7 +362,7 @@ export const removeSuggestedUser = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     const userData = protectData(updatedUser!, 'user');
@@ -279,7 +373,7 @@ export const removeSuggestedUser = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const getProfileData = asyncErrorHandler(
@@ -326,7 +420,7 @@ export const getProfileData = asyncErrorHandler(
         likes,
       },
     });
-  }
+  },
 );
 
 export const getUserData = asyncErrorHandler(
@@ -439,16 +533,139 @@ export const getUserData = asyncErrorHandler(
             user: user?._id,
             'settings.accessibility': friends[0].isFriend ? { $in: [0, 1] } : 0,
           });
-        })
+        }),
       );
 
       return contents + reels;
     })();
 
-    const likes = await Like.countDocuments({
-      creator: user?._id,
-      collectionName: { $in: ['content', 'reel'] },
-    });
+    const likes = await Like.aggregate([
+      {
+        $match: {
+          creator: user?._id,
+          collectionName: { $in: ['content', 'reel'] },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            documentId: '$documentId',
+            collectionName: '$collectionName',
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: 'likes',
+          let: { collection: '$_id.collectionName', docId: '$_id.documentId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$documentId', '$$docId'] },
+                    { $eq: ['$collectionName', '$$collection'] },
+                    { $eq: ['$user', viewerId] },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
+          ],
+          as: 'viewerLike',
+        },
+      },
+      {
+        $addFields: {
+          hasLiked: { $gt: [{ $size: '$viewerLike' }, 0] },
+        },
+      },
+      {
+        $lookup: {
+          from: 'contents',
+          as: 'contents',
+          let: {
+            collection: '$_id.collectionName',
+            docId: '$_id.documentId',
+          },
+          pipeline: [
+            {
+              $match: {
+                'settings.accessibility': friends[0].isFriend
+                  ? { $in: [0, 1] }
+                  : 0,
+                $expr: {
+                  $and: [
+                    { $eq: ['$$collection', 'content'] },
+                    { $eq: ['$$docId', '$_id'] },
+                    { $eq: ['$settings.hideEngagements', false] },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'reels',
+          as: 'reels',
+          let: {
+            collection: '$_id.collectionName',
+            docId: '$_id.documentId',
+          },
+          pipeline: [
+            {
+              $match: {
+                'settings.accessibility': friends[0].isFriend
+                  ? { $in: [0, 1] }
+                  : 0,
+                $expr: {
+                  $and: [
+                    { $eq: ['$$collection', 'reel'] },
+                    { $eq: ['$$docId', '$_id'] },
+                    { $eq: ['$settings.hideEngagements', false] },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          post: {
+            $cond: [
+              { $eq: ['$_id.collectionName', 'reel'] },
+              { $first: '$reels' },
+              { $first: '$contents' },
+            ],
+          },
+        },
+      },
+      {
+        $match: {
+          $or: [{ post: { $exists: true, $ne: null } }, { hasLiked: true }],
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          count: {
+            $sum: {
+              $cond: [
+                { $ne: ['$post', null] },
+                '$count',
+                {
+                  $cond: ['$hasLiked', 1, 0],
+                },
+              ],
+            },
+          },
+        },
+      },
+    ]);
 
     const userData = protectData(user!, 'user', [
       'settings',
@@ -464,14 +681,14 @@ export const getUserData = asyncErrorHandler(
           following,
           friends: friends[0].count,
           posts,
-          likes,
+          likes: likes[0].count,
         },
         follow: followers[0].follow,
         isAuthUser: String(user._id) === String(viewerId),
         isPrivate: String(user._id) === String(viewerId) ? false : isPrivate,
       },
     });
-  }
+  },
 );
 
 export const getUserPosts = asyncErrorHandler(
@@ -506,7 +723,7 @@ export const getUserPosts = asyncErrorHandler(
       req.user?._id,
       type!,
       req.query,
-      user
+      user,
     );
 
     return res.status(200).json({
@@ -515,11 +732,13 @@ export const getUserPosts = asyncErrorHandler(
         posts,
       },
     });
-  }
+  },
 );
 
 export const getPrivateAudience = asyncErrorHandler(
   async (req: AuthRequest, res: Response) => {
+    const viewerId = req.user?._id;
+
     let page: any = req.query.page;
     page = page ? Number(page) : 1;
 
@@ -533,6 +752,7 @@ export const getPrivateAudience = asyncErrorHandler(
       {
         $match: {
           _id: { $in: userIds },
+          active: true,
         },
       },
       {
@@ -556,11 +776,99 @@ export const getPrivateAudience = asyncErrorHandler(
       },
       {
         $lookup: {
-          from: 'stories',
+          from: 'friends',
           let: { userId: '$_id' },
           pipeline: [
             {
-              $match: { expired: false, $expr: { $eq: ['$user', '$$userId'] } },
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$requester', '$$userId'] },
+                        {
+                          $eq: ['$recipient', viewerId],
+                        },
+                      ],
+                    },
+                    {
+                      $and: [
+                        {
+                          $eq: ['$requester', viewerId],
+                        },
+                        { $eq: ['$recipient', '$$userId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'isFriend',
+        },
+      },
+      {
+        $addFields: {
+          isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+          isAllowed: {
+            $or: [
+              {
+                $eq: ['$settings.general.privacy.value', false],
+              },
+              {
+                $and: [
+                  {
+                    $eq: ['$settings.general.privacy.value', true],
+                  },
+                  {
+                    $in: [viewerId, '$settings.general.privacy.users'],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'stories',
+          let: {
+            userId: '$_id',
+            isAllowed: '$isAllowed',
+            isFriend: '$isFriend',
+          },
+          pipeline: [
+            {
+              $match: {
+                expired: false,
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', '$$userId'] },
+                    { $eq: ['$$isAllowed', true] },
+                    {
+                      $or: [
+                        {
+                          $eq: [
+                            '$accessibility',
+                            ContentAccessibility.EVERYONE,
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                '$accessibility',
+                                ContentAccessibility.FRIENDS,
+                              ],
+                            },
+                            { $eq: ['$$isFriend', true] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
             },
             {
               $lookup: {
@@ -614,12 +922,12 @@ export const getPrivateAudience = asyncErrorHandler(
     const existingUserIds = new Set(users.map((user) => String(user._id)));
 
     const deletedInBatch = userIds.filter(
-      (id) => !existingUserIds.has(String(id))
+      (id) => !existingUserIds.has(String(id)),
     );
 
     if (deletedInBatch.length) {
       privateAudience = privateAudience.filter(
-        (id) => !deletedInBatch.includes(String(id))
+        (id) => !deletedInBatch.includes(String(id)),
       );
     }
 
@@ -631,7 +939,7 @@ export const getPrivateAudience = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     const userData = protectData(updatedUser!, 'user');
@@ -643,7 +951,7 @@ export const getPrivateAudience = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const updatePrivateAudience = asyncErrorHandler(
@@ -651,7 +959,9 @@ export const updatePrivateAudience = asyncErrorHandler(
     let { id, action } = req.body;
     id = String(id).trim();
 
-    const user = await User.findById(id);
+    const matchObj = action === 'remove' ? { __login: true } : {};
+
+    const user = await User.findOne({ _id: id, ...matchObj });
 
     if (!user) return next(new CustomError('This user does not exist!', 404));
 
@@ -673,7 +983,7 @@ export const updatePrivateAudience = asyncErrorHandler(
     let privateAudience = new Set(users);
     if (action === 'add' && privateAudience.has(id)) {
       return next(
-        new CustomError('This user is already in your private audience.', 409)
+        new CustomError('This user is already in your private audience.', 409),
       );
     }
 
@@ -684,8 +994,8 @@ export const updatePrivateAudience = asyncErrorHandler(
         return next(
           new CustomError(
             'You’ve reached the maximum number of private audience. Remove someone to add another.',
-            400
-          )
+            400,
+          ),
         );
       }
     } else {
@@ -700,7 +1010,7 @@ export const updatePrivateAudience = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     const userData = protectData(updatedUser!, 'user');
@@ -711,7 +1021,7 @@ export const updatePrivateAudience = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const updateSettings = asyncErrorHandler(
@@ -747,7 +1057,7 @@ export const updateSettings = asyncErrorHandler(
           {
             new: true,
             runValidators: true,
-          }
+          },
         );
         break;
 
@@ -781,7 +1091,7 @@ export const updateSettings = asyncErrorHandler(
           {
             new: true,
             runValidators: true,
-          }
+          },
         );
         break;
 
@@ -802,7 +1112,7 @@ export const updateSettings = asyncErrorHandler(
           {
             new: true,
             runValidators: true,
-          }
+          },
         );
         break;
     }
@@ -819,7 +1129,7 @@ export const updateSettings = asyncErrorHandler(
         },
       });
     }
-  }
+  },
 );
 
 export const getPasswordToken = asyncErrorHandler(
@@ -827,7 +1137,7 @@ export const getPasswordToken = asyncErrorHandler(
     // Generate verification token
     const verificationToken = String(Math.floor(Math.random() * 1e14)).slice(
       0,
-      6
+      6,
     );
     const user = req.user!;
 
@@ -837,7 +1147,7 @@ export const getPasswordToken = asyncErrorHandler(
       await user.save();
 
       await new Email(user as IUser, verificationToken).sendSecurityToken(
-        'password'
+        'password',
       );
 
       return res.status(200).json({
@@ -852,11 +1162,11 @@ export const getPasswordToken = asyncErrorHandler(
       return next(
         new CustomError(
           'An error occured while sending verification code.',
-          500
-        )
+          500,
+        ),
       );
     }
-  }
+  },
 );
 
 export const changePassword = asyncErrorHandler(
@@ -870,7 +1180,10 @@ export const changePassword = asyncErrorHandler(
 
     if (!user) {
       return next(
-        new CustomError('The verification code is invalid or has expired.', 400)
+        new CustomError(
+          'The verification code is invalid or has expired.',
+          400,
+        ),
       );
     }
 
@@ -890,7 +1203,7 @@ export const changePassword = asyncErrorHandler(
       { user: user._id, revokedAt: null },
       {
         revokedAt: new Date(),
-      }
+      },
     );
 
     // create notification
@@ -903,7 +1216,7 @@ export const changePassword = asyncErrorHandler(
       status: 'success',
       message: 'Password changed successfully.',
     });
-  }
+  },
 );
 
 export const getAccountToken = (type: 'delete' | 'deactivate') =>
@@ -924,7 +1237,7 @@ export const getAccountToken = (type: 'delete' | 'deactivate') =>
 
       const verificationToken = String(Math.floor(Math.random() * 1e14)).slice(
         0,
-        6
+        6,
       );
 
       try {
@@ -939,7 +1252,7 @@ export const getAccountToken = (type: 'delete' | 'deactivate') =>
         await user.save();
 
         await new Email(user as IUser, verificationToken).sendSecurityToken(
-          type
+          type,
         );
 
         return res.status(200).json({
@@ -960,11 +1273,11 @@ export const getAccountToken = (type: 'delete' | 'deactivate') =>
         return next(
           new CustomError(
             'An error occured while sending verification code.',
-            500
-          )
+            500,
+          ),
         );
       }
-    }
+    },
   );
 
 export const deactivateAccount = asyncErrorHandler(
@@ -985,7 +1298,10 @@ export const deactivateAccount = asyncErrorHandler(
 
     if (!user) {
       return next(
-        new CustomError('The verification code is invalid or has expired.', 400)
+        new CustomError(
+          'The verification code is invalid or has expired.',
+          400,
+        ),
       );
     }
 
@@ -998,14 +1314,14 @@ export const deactivateAccount = asyncErrorHandler(
       { user: user._id, revokedAt: null },
       {
         revokedAt: new Date(),
-      }
+      },
     );
 
     return res.status(200).json({
       status: 'success',
       message: null,
     });
-  }
+  },
 );
 
 export const deleteAccount = asyncErrorHandler(
@@ -1026,7 +1342,10 @@ export const deleteAccount = asyncErrorHandler(
 
     if (!user) {
       return next(
-        new CustomError('The verification code is invalid or has expired.', 400)
+        new CustomError(
+          'The verification code is invalid or has expired.',
+          400,
+        ),
       );
     }
 
@@ -1051,7 +1370,7 @@ export const deleteAccount = asyncErrorHandler(
           await handleCloudinary(
             'delete',
             `users/${path.basename(user.photo)}`,
-            'image'
+            'image',
           );
         } else {
           await fs.promises.unlink(`src/public/users/${user.photo}`);
@@ -1066,12 +1385,12 @@ export const deleteAccount = asyncErrorHandler(
             return handleCloudinary(
               'delete',
               `reels/${path.basename(sound.src)}`,
-              'raw'
+              'raw',
             );
           } else {
             return fs.promises.unlink(`src/public/reels/${sound.src}`);
           }
-        })
+        }),
       );
     }
 
@@ -1089,14 +1408,14 @@ export const deleteAccount = asyncErrorHandler(
                 return handleCloudinary(
                   'delete',
                   `contents/${path.basename(src)}`,
-                  type
+                  type,
                 );
               } else {
                 return fs.promises.unlink(`src/public/contents/${src}`);
               }
-            })
+            }),
           );
-        })
+        }),
       );
     }
 
@@ -1107,12 +1426,12 @@ export const deleteAccount = asyncErrorHandler(
             return handleCloudinary(
               'delete',
               `reels/${path.basename(String(src))}`,
-              'video'
+              'video',
             );
           } else {
             return fs.promises.unlink(`src/public/reels/${src}`);
           }
-        })
+        }),
       );
     }
 
@@ -1123,12 +1442,12 @@ export const deleteAccount = asyncErrorHandler(
             return handleCloudinary(
               'delete',
               `stories/${path.basename(String(media.src))}`,
-              media.mediaType
+              media.mediaType,
             );
           } else {
             return fs.promises.unlink(`src/public/stories/${media.src}`);
           }
-        })
+        }),
       );
     }
 
@@ -1139,12 +1458,12 @@ export const deleteAccount = asyncErrorHandler(
             return handleCloudinary(
               'delete',
               `stories/${path.basename(String(src))}`,
-              'raw'
+              'raw',
             );
           } else {
             return fs.promises.unlink(`src/public/stories/${src}`);
           }
-        })
+        }),
       );
     }
 
@@ -1173,7 +1492,7 @@ export const deleteAccount = asyncErrorHandler(
       status: 'success',
       message: null,
     });
-  }
+  },
 );
 
 export const updateScreenTime = asyncErrorHandler(
@@ -1206,7 +1525,7 @@ export const updateScreenTime = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     const userData = protectData(user!, 'user');
@@ -1217,7 +1536,7 @@ export const updateScreenTime = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const replyCollaborationRequest = asyncErrorHandler(
@@ -1244,15 +1563,15 @@ export const replyCollaborationRequest = asyncErrorHandler(
 
     if (action === 'accept') {
       const collaborators = new Set(
-        post.collaborators.map((id) => String(id))
+        post.collaborators.map((id) => String(id)),
       ).add(String(req.user?._id));
 
       if (collaborators.size > 3) {
         return next(
           new CustomError(
             'This post already has the maximum number of collaborators.',
-            400
-          )
+            400,
+          ),
         );
       }
 
@@ -1284,11 +1603,12 @@ export const replyCollaborationRequest = asyncErrorHandler(
           ? 'Collaboration request accepted.'
           : 'Collaboration request declined.',
     });
-  }
+  },
 );
 
 export const getCollaborationRequests = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const viewerId = req.user?._id;
     const limit = 20;
     let { type, cursor } = req.query;
 
@@ -1318,18 +1638,107 @@ export const getCollaborationRequests = asyncErrorHandler(
             foreignField: '_id',
             localField: 'secondUser',
             as: 'requester',
+            pipeline: [{ $match: { active: true } }],
           },
         },
-        { $unwind: '$requester' },
+        { $unwind: { path: '$requester', preserveNullAndEmptyArrays: false } },
+        {
+          $lookup: {
+            from: 'friends',
+            let: { userId: '$requester._id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          { $eq: ['$requester', '$$userId'] },
+                          {
+                            $eq: ['$recipient', viewerId],
+                          },
+                        ],
+                      },
+                      {
+                        $and: [
+                          {
+                            $eq: ['$requester', viewerId],
+                          },
+                          { $eq: ['$recipient', '$$userId'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'isFriend',
+          },
+        },
+        {
+          $addFields: {
+            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+            isAllowed: {
+              $or: [
+                {
+                  $eq: ['$requester.settings.general.privacy.value', false],
+                },
+                {
+                  $and: [
+                    {
+                      $eq: ['$requester.settings.general.privacy.value', true],
+                    },
+                    {
+                      $in: [
+                        viewerId,
+                        '$requester.settings.general.privacy.users',
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
         {
           $lookup: {
             from: 'stories',
-            let: { userId: '$requester' },
+            let: {
+              userId: '$requester',
+              isAllowed: '$isAllowed',
+              isFriend: '$isFriend',
+            },
             pipeline: [
               {
                 $match: {
                   expired: false,
-                  $expr: { $eq: ['$user', '$$userId._id'] },
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$userId._id'] },
+                      { $eq: ['$$isAllowed', true] },
+                      {
+                        $or: [
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.EVERYONE,
+                            ],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.FRIENDS,
+                                ],
+                              },
+                              { $eq: ['$$isFriend', true] },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
                 },
               },
               {
@@ -1406,18 +1815,107 @@ export const getCollaborationRequests = asyncErrorHandler(
             foreignField: '_id',
             localField: 'user',
             as: 'recipient',
+            pipeline: [{ $match: { active: true } }],
           },
         },
-        { $unwind: '$recipient' },
+        { $unwind: { path: '$recipient', preserveNullAndEmptyArrays: false } },
+        {
+          $lookup: {
+            from: 'friends',
+            let: { userId: '$recipient._id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          { $eq: ['$requester', '$$userId'] },
+                          {
+                            $eq: ['$recipient', viewerId],
+                          },
+                        ],
+                      },
+                      {
+                        $and: [
+                          {
+                            $eq: ['$requester', viewerId],
+                          },
+                          { $eq: ['$recipient', '$$userId'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'isFriend',
+          },
+        },
+        {
+          $addFields: {
+            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+            isAllowed: {
+              $or: [
+                {
+                  $eq: ['$recipient.settings.general.privacy.value', false],
+                },
+                {
+                  $and: [
+                    {
+                      $eq: ['$recipient.settings.general.privacy.value', true],
+                    },
+                    {
+                      $in: [
+                        viewerId,
+                        '$recipient.settings.general.privacy.users',
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
         {
           $lookup: {
             from: 'stories',
-            let: { userId: '$recipient' },
+            let: {
+              userId: '$recipient',
+              isAllowed: '$isAllowed',
+              isFriend: '$isFriend',
+            },
             pipeline: [
               {
                 $match: {
                   expired: false,
-                  $expr: { $eq: ['$user', '$$userId._id'] },
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$userId._id'] },
+                      { $eq: ['$$isAllowed', true] },
+                      {
+                        $or: [
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.EVERYONE,
+                            ],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.FRIENDS,
+                                ],
+                              },
+                              { $eq: ['$$isFriend', true] },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
                 },
               },
               {
@@ -1486,8 +1984,8 @@ export const getCollaborationRequests = asyncErrorHandler(
           collection === 'reel'
             ? Reel.findById(obj.documentId)
             : collection === 'content'
-            ? Content.findById(obj.documentId)
-            : null;
+              ? Content.findById(obj.documentId)
+              : null;
 
         if (query) {
           const data = (await query) as any;
@@ -1517,7 +2015,7 @@ export const getCollaborationRequests = asyncErrorHandler(
         requests,
       },
     });
-  }
+  },
 );
 
 export const leaveCollaboration = asyncErrorHandler(
@@ -1532,8 +2030,8 @@ export const leaveCollaboration = asyncErrorHandler(
       type === 'reel'
         ? Reel.findById(id)
         : type === 'content'
-        ? Content.findById(id)
-        : null;
+          ? Content.findById(id)
+          : null;
 
     if (!query) return next(new CustomError('Invalid request.', 400));
 
@@ -1546,7 +2044,7 @@ export const leaveCollaboration = asyncErrorHandler(
 
     if (!collaborators.has(viewerId)) {
       return next(
-        new CustomError(`You’re not a collaborator on this ${type}.`, 400)
+        new CustomError(`You’re not a collaborator on this ${type}.`, 400),
       );
     }
     collaborators.delete(viewerId);
@@ -1554,5 +2052,5 @@ export const leaveCollaboration = asyncErrorHandler(
     await post.updateOne({ collaborators: [...collaborators] });
 
     return res.status(204).json({ status: 'success', message: null });
-  }
+  },
 );

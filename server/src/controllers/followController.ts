@@ -7,6 +7,7 @@ import Follow from '../models/followModel.js';
 import Notification from '../models/notificationModel.js';
 import { isValidDateString } from './commentController.js';
 import { PipelineStage } from 'mongoose';
+import { ContentAccessibility } from '../models/storyModel.js';
 
 export const followUser = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -84,7 +85,7 @@ export const followUser = asyncErrorHandler(
           },
           {
             runValidators: true,
-          }
+          },
         );
       } else {
         await Notification.create({
@@ -101,7 +102,7 @@ export const followUser = asyncErrorHandler(
         follow,
       },
     });
-  }
+  },
 );
 
 export const unfollowUser = asyncErrorHandler(
@@ -135,7 +136,7 @@ export const unfollowUser = asyncErrorHandler(
         },
         {
           runValidators: true,
-        }
+        },
       );
     }
 
@@ -143,7 +144,7 @@ export const unfollowUser = asyncErrorHandler(
       status: 'success',
       message: null,
     });
-  }
+  },
 );
 
 export const getConnections = (type: 'followers' | 'following') =>
@@ -180,24 +181,27 @@ export const getConnections = (type: 'followers' | 'following') =>
             },
           },
           { $sort: { followedAt: -1 } },
-          { $limit: limit },
           {
             $lookup: {
               from: 'users',
               localField: 'follower',
               foreignField: '_id',
               pipeline: [
+                { $match: { active: true } },
                 {
                   $project: {
                     name: 1,
                     username: 1,
                     photo: 1,
+                    settings: 1,
                   },
                 },
               ],
               as: 'users',
             },
           },
+          { $match: { 'users.0': { $exists: true } } },
+          { $limit: limit },
           {
             $addFields: {
               user: {
@@ -207,14 +211,70 @@ export const getConnections = (type: 'followers' | 'following') =>
           },
           {
             $lookup: {
+              from: 'friends',
+              let: { userId: '$follower' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $or: [
+                        {
+                          $and: [
+                            { $eq: ['$requester', '$$userId'] },
+                            {
+                              $eq: ['$recipient', viewerId],
+                            },
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: ['$requester', viewerId],
+                            },
+                            { $eq: ['$recipient', '$$userId'] },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'isFriend',
+            },
+          },
+          {
+            $addFields: {
+              isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+              isAllowed: {
+                $or: [
+                  { $eq: ['$user._id', viewerId] },
+                  {
+                    $eq: ['$user.settings.general.privacy.value', false],
+                  },
+                  {
+                    $and: [
+                      {
+                        $eq: ['$user.settings.general.privacy.value', true],
+                      },
+                      {
+                        $in: [viewerId, '$user.settings.general.privacy.users'],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $lookup: {
               from: 'follows',
-              let: { viewerId: req.user?._id, userId: '$follower' },
+              let: { userId: '$follower' },
               pipeline: [
                 {
                   $match: {
                     $expr: {
                       $and: [
-                        { $eq: ['$follower', '$$viewerId'] },
+                        { $eq: ['$follower', viewerId] },
                         { $eq: ['$following', '$$userId'] },
                       ],
                     },
@@ -227,12 +287,43 @@ export const getConnections = (type: 'followers' | 'following') =>
           {
             $lookup: {
               from: 'stories',
-              let: { userId: '$follower' },
+              let: {
+                userId: '$follower',
+                isAllowed: '$isAllowed',
+                isFriend: '$isFriend',
+              },
               pipeline: [
                 {
                   $match: {
                     expired: false,
-                    $expr: { $eq: ['$user', '$$userId'] },
+                    $expr: {
+                      $and: [
+                        { $eq: ['$user', '$$userId'] },
+                        { $eq: ['$$isAllowed', true] },
+                        {
+                          $or: [
+                            { $eq: ['$user', viewerId] },
+                            {
+                              $eq: [
+                                '$accessibility',
+                                ContentAccessibility.EVERYONE,
+                              ],
+                            },
+                            {
+                              $and: [
+                                {
+                                  $eq: [
+                                    '$accessibility',
+                                    ContentAccessibility.FRIENDS,
+                                  ],
+                                },
+                                { $eq: ['$$isFriend', true] },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
                   },
                 },
                 {
@@ -282,7 +373,12 @@ export const getConnections = (type: 'followers' | 'following') =>
             $project: {
               stories: 0,
               users: 0,
+              isFriend: 0,
+              isAllowed: 0,
             },
+          },
+          {
+            $unset: 'user.settings',
           },
         ];
       } else {
@@ -294,24 +390,27 @@ export const getConnections = (type: 'followers' | 'following') =>
             },
           },
           { $sort: { followedAt: -1 } },
-          { $limit: limit },
           {
             $lookup: {
               from: 'users',
               localField: 'following',
               foreignField: '_id',
               pipeline: [
+                { $match: { active: true } },
                 {
                   $project: {
                     name: 1,
                     username: 1,
                     photo: 1,
+                    settings: 1,
                   },
                 },
               ],
               as: 'users',
             },
           },
+          { $match: { 'users.0': { $exists: true } } },
+          { $limit: limit },
           {
             $addFields: {
               user: {
@@ -321,13 +420,100 @@ export const getConnections = (type: 'followers' | 'following') =>
           },
           {
             $lookup: {
-              from: 'stories',
+              from: 'friends',
               let: { userId: '$following' },
               pipeline: [
                 {
                   $match: {
+                    $expr: {
+                      $or: [
+                        {
+                          $and: [
+                            { $eq: ['$requester', '$$userId'] },
+                            {
+                              $eq: ['$recipient', viewerId],
+                            },
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: ['$requester', viewerId],
+                            },
+                            { $eq: ['$recipient', '$$userId'] },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'isFriend',
+            },
+          },
+          {
+            $addFields: {
+              isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+              isAllowed: {
+                $or: [
+                  { $eq: ['$user._id', viewerId] },
+                  {
+                    $eq: ['$user.settings.general.privacy.value', false],
+                  },
+                  {
+                    $and: [
+                      {
+                        $eq: ['$user.settings.general.privacy.value', true],
+                      },
+                      {
+                        $in: [viewerId, '$user.settings.general.privacy.users'],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: 'stories',
+              let: {
+                userId: '$following',
+                isAllowed: '$isAllowed',
+                isFriend: '$isFriend',
+              },
+              pipeline: [
+                {
+                  $match: {
                     expired: false,
-                    $expr: { $eq: ['$user', '$$userId'] },
+                    $expr: {
+                      $and: [
+                        { $eq: ['$user', '$$userId'] },
+                        { $eq: ['$$isAllowed', true] },
+                        {
+                          $or: [
+                            { $eq: ['$user', viewerId] },
+                            {
+                              $eq: [
+                                '$accessibility',
+                                ContentAccessibility.EVERYONE,
+                              ],
+                            },
+                            {
+                              $and: [
+                                {
+                                  $eq: [
+                                    '$accessibility',
+                                    ContentAccessibility.FRIENDS,
+                                  ],
+                                },
+                                { $eq: ['$$isFriend', true] },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
                   },
                 },
                 {
@@ -377,12 +563,17 @@ export const getConnections = (type: 'followers' | 'following') =>
             $project: {
               stories: 0,
               users: 0,
+              isFriend: 0,
+              isAllowed: 0,
             },
+          },
+          {
+            $unset: 'user.settings',
           },
         ];
 
         if (username) {
-          pipeline.splice(5, 0, {
+          pipeline.splice(6, 0, {
             $lookup: {
               from: 'follows',
               let: { viewerId: req.user?._id, userId: '$following' },
@@ -410,7 +601,7 @@ export const getConnections = (type: 'followers' | 'following') =>
         status: 'success',
         data: { users },
       });
-    }
+    },
   );
 
 export const removeFollower = asyncErrorHandler(
@@ -444,7 +635,7 @@ export const removeFollower = asyncErrorHandler(
         },
         {
           runValidators: true,
-        }
+        },
       );
     }
 
@@ -452,5 +643,5 @@ export const removeFollower = asyncErrorHandler(
       status: 'success',
       message: null,
     });
-  }
+  },
 );

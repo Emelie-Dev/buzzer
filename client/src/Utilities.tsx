@@ -1,6 +1,8 @@
 import axios from 'axios';
 import DOMPurify from 'dompurify';
 import React from 'react';
+import parse from 'html-react-parser';
+import { Link } from 'react-router-dom';
 
 type FileData = {
   filter: string;
@@ -41,7 +43,7 @@ const sanitizeHTML = (dirtyHtml: string, allowedClasses: string[]) => {
     if (data.attrName === 'class') {
       const classes = (data.attrValue || '').split(/\s+/);
       const filtered = classes.filter((cls: any) =>
-        allowedClasses.includes(cls)
+        allowedClasses.includes(cls),
       );
 
       if (filtered.length > 0) {
@@ -166,7 +168,7 @@ const getAdjustmentsValue = (currentFileData: FileData) => {
 
 export const getFilterValue = (currentFileData: FileData, request = false) => {
   const filter = filters.find(
-    (filter) => filter.name === currentFileData.filter
+    (filter) => filter.name === currentFileData.filter,
   )?.filter;
 
   if (filter) {
@@ -186,12 +188,12 @@ export const getFilterValue = (currentFileData: FileData, request = false) => {
       (accumulator, filter) => {
         const name = filter.slice(0, filter.indexOf('('));
         const value = parseFloat(
-          filter.slice(filter.indexOf('(') + 1, filter.indexOf(')'))
+          filter.slice(filter.indexOf('(') + 1, filter.indexOf(')')),
         );
         accumulator[name] = value;
         return accumulator;
       },
-      {}
+      {},
     );
 
     const adjustments: Record<string, number> =
@@ -276,7 +278,7 @@ export const registerPush = async () => {
 
 export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
-  delay: number
+  delay: number,
 ) => {
   let timeout: ReturnType<typeof setTimeout>;
 
@@ -308,7 +310,7 @@ export const getTime = (time: string, comment = false) => {
     value = comment
       ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
           2,
-          '0'
+          '0',
         )}-${String(date.getDate()).padStart(2, '0')}`
       : `${
           monthLabels[date.getMonth()]
@@ -316,7 +318,7 @@ export const getTime = (time: string, comment = false) => {
   } else if (diff > 2_592_000_000) {
     value = comment
       ? `${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-          date.getDate()
+          date.getDate(),
         ).padStart(2, '0')}`
       : `${monthLabels[date.getMonth()]} ${date.getDate()}`;
   } else if (diff > 604_800_000) {
@@ -370,7 +372,7 @@ export const saveSelection = (
       selection: Selection;
     }>
   >,
-  setState: boolean = true
+  setState: boolean = true,
 ) => {
   if (document.activeElement !== container) container.focus();
 
@@ -388,7 +390,7 @@ export const saveSelection = (
 
 export const moveRangeOutOfInlineParents = (
   range: Range,
-  container: HTMLElement
+  container: HTMLElement,
 ) => {
   let node = range.startContainer;
 
@@ -416,7 +418,7 @@ export const moveRangeOutOfInlineParents = (
 export const streamResponse = async (
   url: string,
   body: FormData,
-  updatePostStage: (data: any) => void
+  updatePostStage: (data: any) => void,
 ) => {
   const request = new Request(url, {
     method: 'POST',
@@ -485,4 +487,22 @@ export const streamResponse = async (
       // eslint-disable-next-line no-empty
     } catch {}
   }
+};
+
+export const parseHTML = (text: string) => {
+  if (!text) return '';
+
+  const content = parse(text, {
+    replace: (domNode: any) => {
+      if (domNode.name === 'a' && domNode.attribs?.href?.startsWith('/')) {
+        return (
+          <Link to={domNode.attribs.href} className={domNode.attribs.class}>
+            {domNode.children[0]?.data}
+          </Link>
+        );
+      }
+    },
+  });
+
+  return content;
 };

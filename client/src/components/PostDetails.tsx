@@ -78,7 +78,7 @@ const getUsers = async (...args: any[]) => {
 
   try {
     const { data } = await apiClient(
-      `v1/search/users?query=${query}&page=${page}&cursor=${cursor}`
+      `v1/search/users?query=${query}&page=${page}&cursor=${cursor}`,
     );
 
     return data.data.result;
@@ -182,8 +182,8 @@ const PostDetails = ({
   useEffect(() => {
     const filteredMentionList = [...mentions].filter((user) =>
       descriptionRef.current.querySelector(
-        `.app-user-tags[data-tag-index="${user}"]`
-      )
+        `.app-user-tags[data-tag-index="${user}"]`,
+      ),
     );
 
     // Removes hidden formatting
@@ -232,15 +232,15 @@ const PostDetails = ({
       if (data === ' ') {
         e.preventDefault();
         const tags = Array.from(
-          descriptionRef.current.querySelectorAll('.app-hashtags')
+          descriptionRef.current.querySelectorAll('.app-hashtags'),
         );
         tags.forEach(
-          (elem) => elem && ((elem as HTMLElement).contentEditable = 'false')
+          (elem) => elem && ((elem as HTMLElement).contentEditable = 'false'),
         );
 
         const { sel: selection, range } = saveSelection(
           descriptionRef.current,
-          setSavedRange
+          setSavedRange,
         )!;
 
         selection.removeAllRanges();
@@ -319,7 +319,7 @@ const PostDetails = ({
   const handleHashTag = () => {
     const { sel: selection, range } = saveSelection(
       descriptionRef.current,
-      setSavedRange
+      setSavedRange,
     )!;
 
     selection.removeAllRanges();
@@ -378,14 +378,14 @@ const PostDetails = ({
       const result = await debouncedQuery(
         loading.query,
         searchData.page,
-        searchData.cursor
+        searchData.cursor,
       );
 
       if (result === 'error') {
         setLoading({ ...loading, value: 'error' });
       } else {
         const filteredResults = (result as []).filter(
-          (obj: any) => !searchResult.find((data) => data._id === obj._id)
+          (obj: any) => !searchResult.find((data) => data._id === obj._id),
         );
 
         setSearchResult([...searchResult, ...filteredResults]);
@@ -436,10 +436,10 @@ const PostDetails = ({
 
   const handleMentionClick = () => {
     const tags = Array.from(
-      descriptionRef.current.querySelectorAll('.app-hashtags')
+      descriptionRef.current.querySelectorAll('.app-hashtags'),
     );
     tags.forEach(
-      (elem) => elem && ((elem as HTMLElement).contentEditable = 'false')
+      (elem) => elem && ((elem as HTMLElement).contentEditable = 'false'),
     );
     setAddTag(false);
     setShowMentionModal(true);
@@ -482,11 +482,11 @@ const PostDetails = ({
         selection.addRange(range);
 
         const users = Array.from(
-          descriptionRef.current.querySelectorAll('.app-user-tags')
+          descriptionRef.current.querySelectorAll('.app-user-tags'),
         );
 
         const user = users.find(
-          (elem) => elem && elem.getAttribute('data-tag-index') === id
+          (elem) => elem && elem.getAttribute('data-tag-index') === id,
         );
 
         if (user) descriptionRef.current.removeChild(user);
@@ -525,7 +525,7 @@ const PostDetails = ({
                     className={styles['file-description']}
                     value={
                       fileDescriptions!.get(
-                        editedFiles![currentFileIndex].key
+                        editedFiles![currentFileIndex].key,
                       ) || ''
                     }
                     onChange={handleFileDescription}
@@ -586,8 +586,8 @@ const PostDetails = ({
                       {fileDescriptions!.has(editedFiles![currentFileIndex].key)
                         ? String(
                             fileDescriptions!.get(
-                              editedFiles![currentFileIndex].key
-                            )
+                              editedFiles![currentFileIndex].key,
+                            ),
                           ).trim().length
                         : 0}
                       /{maxFileDescriptionLength}
@@ -640,7 +640,7 @@ const PostDetails = ({
               <span className={styles['description-length']}>
                 {Math.min(
                   descriptionRef.current?.textContent?.trim().length || 0,
-                  maxGeneralDescriptionLength
+                  maxGeneralDescriptionLength,
                 )}
                 /{maxGeneralDescriptionLength}
               </span>
@@ -849,7 +849,7 @@ const PostDetails = ({
               />
 
               <label className={styles['settings-box-label']} htmlFor="views">
-                Hide the like and view counts for this post
+                Hide the number of likes and comments on this post
               </label>
             </div>
 
@@ -956,14 +956,14 @@ const MentionModal = ({
       const result = await debouncedQuery(
         loading.query,
         searchData.page,
-        searchData.cursor
+        searchData.cursor,
       );
 
       if (result === 'error') {
         setLoading({ ...loading, value: 'error' });
       } else {
         const filteredResults = (result as []).filter(
-          (obj: any) => !searchResult.find((data) => data._id === obj._id)
+          (obj: any) => !searchResult.find((data) => data._id === obj._id),
         );
 
         setSearchResult([...searchResult, ...filteredResults]);
@@ -1090,7 +1090,7 @@ const MentionModal = ({
                   onClick={updateMentionList(
                     user._id,
                     user.username,
-                    user.name
+                    user.name,
                   )}
                 >
                   <img
@@ -1140,7 +1140,7 @@ const MentionModal = ({
         </div>
       </div>
     </section>,
-    target
+    target,
   );
 };
 

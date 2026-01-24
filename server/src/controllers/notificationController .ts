@@ -22,7 +22,7 @@ export const subscribeToPushNotifications = asyncErrorHandler(
       status: 'success',
       message: 'Push subscription registered.',
     });
-  }
+  },
 );
 
 export const getNotifications = asyncErrorHandler(
@@ -106,7 +106,12 @@ export const getNotifications = asyncErrorHandler(
           pipeline: [
             {
               $match: {
-                $expr: { $eq: ['$_id', '$$userId'] },
+                $expr: {
+                  $and: [
+                    { $eq: ['$_id', '$$userId'] },
+                    { $eq: ['$active', true] },
+                  ],
+                },
               },
             },
             {
@@ -117,14 +122,23 @@ export const getNotifications = asyncErrorHandler(
               },
             },
           ],
-          as: 'secondUser',
+          as: 'secondUsers',
         },
       },
-
+      {
+        $match: {
+          $expr: {
+            $or: [
+              { $eq: [{ $ifNull: ['$secondUser', null] }, null] },
+              { $gt: [{ $size: '$secondUsers' }, 0] },
+            ],
+          },
+        },
+      },
       {
         $addFields: {
           isFollowing: { $first: '$isFollowing' },
-          secondUser: { $first: '$secondUser' },
+          secondUser: { $first: '$secondUsers' },
         },
       },
     ]);
@@ -174,8 +188,8 @@ export const getNotifications = asyncErrorHandler(
           collection === 'reel'
             ? Reel.findById(documentId)
             : collection === 'content'
-            ? Content.findById(documentId)
-            : null;
+              ? Content.findById(documentId)
+              : null;
 
         if (query) {
           const data = (await query) as any;
@@ -207,7 +221,7 @@ export const getNotifications = asyncErrorHandler(
         collaborationRequest,
       },
     });
-  }
+  },
 );
 
 export const deleteNotifications = asyncErrorHandler(
@@ -229,7 +243,7 @@ export const deleteNotifications = asyncErrorHandler(
     });
 
     return res.status(204).send({ status: 'success', message: null });
-  }
+  },
 );
 
 export const getSecurityAlerts = asyncErrorHandler(
@@ -262,5 +276,5 @@ export const getSecurityAlerts = asyncErrorHandler(
         notifications,
       },
     });
-  }
+  },
 );

@@ -31,23 +31,26 @@ const shuffleArray = (array: any[]) => {
 const deleteStoryFiles = async (files: {
   [fieldname: string]: Express.Multer.File[];
 }) => {
-  const paths = Object.entries(files).reduce((accumulator, field) => {
-    accumulator.push(
-      ...field[1].map((data) => {
-        if (process.env.NODE_ENV === 'production')
-          return {
-            path: data.filename,
-            type: data.mimetype.startsWith('video')
-              ? 'video'
-              : data.mimetype.startsWith('image')
-              ? 'image'
-              : 'raw',
-          };
-        else return { path: data.path };
-      })
-    );
-    return accumulator;
-  }, [] as { path: string; type?: string }[]);
+  const paths = Object.entries(files).reduce(
+    (accumulator, field) => {
+      accumulator.push(
+        ...field[1].map((data) => {
+          if (process.env.NODE_ENV === 'production')
+            return {
+              path: data.filename,
+              type: data.mimetype.startsWith('video')
+                ? 'video'
+                : data.mimetype.startsWith('image')
+                  ? 'image'
+                  : 'raw',
+            };
+          else return { path: data.path };
+        }),
+      );
+      return accumulator;
+    },
+    [] as { path: string; type?: string }[],
+  );
 
   await Promise.allSettled(
     paths.map(({ path, type }): Promise<void> => {
@@ -63,7 +66,7 @@ const deleteStoryFiles = async (files: {
           });
         }
       });
-    })
+    }),
   );
 };
 
@@ -74,6 +77,7 @@ export const getStories = asyncErrorHandler(
     // Check if users are in the client hidden stories
     const hiddenStories = req.user?.settings.general.hiddenStories || [];
     const { feedExpires, feed } = req.user?.storyFeed;
+    const viewerId = req.user?._id;
     let stories,
       user = req.user as Document<unknown, any, any> | null;
 
@@ -82,82 +86,116 @@ export const getStories = asyncErrorHandler(
         {
           $match: {
             $and: [
-              { follower: req.user?._id },
+              { follower: viewerId },
               { following: { $nin: hiddenStories } },
             ],
           },
         },
         {
           $lookup: {
-            from: 'stories',
-            let: { followingId: '$following' },
+            from: 'users',
+            let: { userId: '$following' },
             pipeline: [
               {
                 $match: {
-                  expired: false,
+                  active: true,
                   $expr: {
                     $and: [
-                      { $eq: ['$user', '$$followingId'] },
-                      { $ne: ['$accessibility', ContentAccessibility.YOU] },
+                      { $eq: ['$_id', '$$userId'] },
+                      {
+                        $or: [
+                          {
+                            $eq: ['$settings.general.privacy.value', false],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: ['$settings.general.privacy.value', true],
+                              },
+                              {
+                                $in: [
+                                  viewerId,
+                                  '$settings.general.privacy.users',
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
                     ],
                   },
                 },
               },
-              {
-                $lookup: {
-                  from: 'friends',
-                  let: {
-                    viewerId: req.user?._id,
-                    storyOwnerId: '$user',
-                    access: '$accessibility',
-                  },
-                  pipeline: [
-                    {
-                      $match: {
-                        $expr: {
-                          $and: [
-                            { $eq: ['$$access', ContentAccessibility.FRIENDS] },
-                            {
-                              $or: [
-                                {
-                                  $and: [
-                                    { $eq: ['$requester', '$$storyOwnerId'] },
-                                    { $eq: ['$recipient', '$$viewerId'] },
-                                  ],
-                                },
-                                {
-                                  $and: [
-                                    { $eq: ['$requester', '$$viewerId'] },
-                                    { $eq: ['$recipient', '$$storyOwnerId'] },
-                                  ],
-                                },
-                              ],
-                            },
-                          ],
-                        },
-                      },
-                    },
-                  ],
-                  as: 'isFriend',
-                },
-              },
+            ],
+            as: 'user',
+          },
+        },
+        { $match: { 'user.0': { $exists: true } } },
+        {
+          $lookup: {
+            from: 'friends',
+            let: { userId: '$following' },
+            pipeline: [
               {
                 $match: {
                   $expr: {
                     $or: [
                       {
                         $and: [
-                          {
-                            $eq: [
-                              '$accessibility',
-                              ContentAccessibility.FRIENDS,
-                            ],
-                          },
-                          { $gt: [{ $size: '$isFriend' }, 0] },
+                          { $eq: ['$requester', '$$userId'] },
+                          { $eq: ['$recipient', viewerId] },
                         ],
                       },
                       {
-                        $eq: ['$accessibility', ContentAccessibility.EVERYONE],
+                        $and: [
+                          { $eq: ['$requester', viewerId] },
+                          { $eq: ['$recipient', '$$userId'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'isFriend',
+          },
+        },
+        {
+          $addFields: {
+            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+          },
+        },
+        {
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$following', isFriend: '$isFriend' },
+            pipeline: [
+              {
+                $match: {
+                  expired: false,
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$userId'] },
+                      {
+                        $or: [
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.EVERYONE,
+                            ],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.FRIENDS,
+                                ],
+                              },
+                              { $eq: ['$$isFriend', true] },
+                            ],
+                          },
+                        ],
                       },
                     ],
                   },
@@ -166,14 +204,15 @@ export const getStories = asyncErrorHandler(
               {
                 $lookup: {
                   from: 'likes',
-                  let: { viewerId: req.user?._id, storyId: '$_id' },
+                  let: { storyId: '$_id' },
                   pipeline: [
                     {
                       $match: {
                         $expr: {
                           $and: [
                             { $eq: ['$$storyId', '$documentId'] },
-                            { $eq: ['$$viewerId', '$user'] },
+                            { $eq: ['$user', viewerId] },
+                            { $eq: ['$collectionName', 'story'] },
                           ],
                         },
                       },
@@ -189,7 +228,6 @@ export const getStories = asyncErrorHandler(
               },
               {
                 $project: {
-                  isFriend: 0,
                   user: 0,
                   __v: 0,
                 },
@@ -199,47 +237,8 @@ export const getStories = asyncErrorHandler(
           },
         },
         {
-          $match: { stories: { $ne: [] } },
+          $match: { 'stories.0': { $exists: true } },
         },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'following',
-            foreignField: '_id',
-            let: { followingId: '$following', viewerId: req.user?._id },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ['$_id', '$$followingId'] },
-                      {
-                        $cond: [
-                          { $eq: ['$settings.general.privacy.value', true] },
-                          {
-                            $cond: [
-                              {
-                                $in: [
-                                  '$$viewerId',
-                                  '$settings.general.privacy.users',
-                                ],
-                              },
-                              true,
-                              false,
-                            ],
-                          },
-                          true,
-                        ],
-                      },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: 'user',
-          },
-        },
-        { $match: { user: { $ne: [] } } },
         { $sample: { size: 10 } },
         {
           $addFields: {
@@ -268,82 +267,116 @@ export const getStories = asyncErrorHandler(
         {
           $match: {
             $and: [
-              { following: req.user?._id },
+              { following: viewerId },
               { follower: { $nin: [...followingIds, ...hiddenStories] } },
             ],
           },
         },
         {
           $lookup: {
-            from: 'stories',
-            let: { followerId: '$follower' },
+            from: 'users',
+            let: { userId: '$follower' },
             pipeline: [
               {
                 $match: {
-                  expired: false,
+                  active: true,
                   $expr: {
                     $and: [
-                      { $eq: ['$user', '$$followerId'] },
-                      { $ne: ['$accessibility', ContentAccessibility.YOU] },
+                      { $eq: ['$_id', '$$userId'] },
+                      {
+                        $or: [
+                          {
+                            $eq: ['$settings.general.privacy.value', false],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: ['$settings.general.privacy.value', true],
+                              },
+                              {
+                                $in: [
+                                  viewerId,
+                                  '$settings.general.privacy.users',
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
                     ],
                   },
                 },
               },
-              {
-                $lookup: {
-                  from: 'friends',
-                  let: {
-                    viewerId: req.user?._id,
-                    storyOwnerId: '$user',
-                    access: '$accessibility',
-                  },
-                  pipeline: [
-                    {
-                      $match: {
-                        $expr: {
-                          $and: [
-                            { $eq: ['$$access', ContentAccessibility.FRIENDS] },
-                            {
-                              $or: [
-                                {
-                                  $and: [
-                                    { $eq: ['$requester', '$$storyOwnerId'] },
-                                    { $eq: ['$recipient', '$$viewerId'] },
-                                  ],
-                                },
-                                {
-                                  $and: [
-                                    { $eq: ['$requester', '$$viewerId'] },
-                                    { $eq: ['$recipient', '$$storyOwnerId'] },
-                                  ],
-                                },
-                              ],
-                            },
-                          ],
-                        },
-                      },
-                    },
-                  ],
-                  as: 'isFriend',
-                },
-              },
+            ],
+            as: 'user',
+          },
+        },
+        { $match: { 'user.0': { $exists: true } } },
+        {
+          $lookup: {
+            from: 'friends',
+            let: { userId: '$follower' },
+            pipeline: [
               {
                 $match: {
                   $expr: {
                     $or: [
                       {
                         $and: [
-                          {
-                            $eq: [
-                              '$accessibility',
-                              ContentAccessibility.FRIENDS,
-                            ],
-                          },
-                          { $gt: [{ $size: '$isFriend' }, 0] },
+                          { $eq: ['$requester', '$$userId'] },
+                          { $eq: ['$recipient', viewerId] },
                         ],
                       },
                       {
-                        $eq: ['$accessibility', ContentAccessibility.EVERYONE],
+                        $and: [
+                          { $eq: ['$requester', viewerId] },
+                          { $eq: ['$recipient', '$$userId'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'isFriend',
+          },
+        },
+        {
+          $addFields: {
+            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+          },
+        },
+        {
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$follower', isFriend: '$isFriend' },
+            pipeline: [
+              {
+                $match: {
+                  expired: false,
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$userId'] },
+                      {
+                        $or: [
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.EVERYONE,
+                            ],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.FRIENDS,
+                                ],
+                              },
+                              { $eq: ['$$isFriend', true] },
+                            ],
+                          },
+                        ],
                       },
                     ],
                   },
@@ -352,14 +385,15 @@ export const getStories = asyncErrorHandler(
               {
                 $lookup: {
                   from: 'likes',
-                  let: { viewerId: req.user?._id, storyId: '$_id' },
+                  let: { storyId: '$_id' },
                   pipeline: [
                     {
                       $match: {
                         $expr: {
                           $and: [
                             { $eq: ['$$storyId', '$documentId'] },
-                            { $eq: ['$$viewerId', '$user'] },
+                            { $eq: ['$user', viewerId] },
+                            { $eq: ['$collectionName', 'story'] },
                           ],
                         },
                       },
@@ -375,7 +409,6 @@ export const getStories = asyncErrorHandler(
               },
               {
                 $project: {
-                  isFriend: 0,
                   user: 0,
                   __v: 0,
                 },
@@ -385,45 +418,8 @@ export const getStories = asyncErrorHandler(
           },
         },
         {
-          $match: { stories: { $ne: [] } },
+          $match: { 'stories.0': { $exists: true } },
         },
-        {
-          $lookup: {
-            from: 'users',
-            let: { followerId: '$follower', viewerId: req.user?._id },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ['$_id', '$$followerId'] },
-                      {
-                        $cond: [
-                          { $eq: ['$settings.general.privacy.value', true] },
-                          {
-                            $cond: [
-                              {
-                                $in: [
-                                  '$$viewerId',
-                                  '$settings.general.privacy.users',
-                                ],
-                              },
-                              true,
-                              false,
-                            ],
-                          },
-                          true,
-                        ],
-                      },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: 'user',
-          },
-        },
-        { $match: { user: { $ne: [] } } },
         { $sample: { size: 5 + (10 - followingStories.length) } },
         {
           $addFields: {
@@ -450,35 +446,68 @@ export const getStories = asyncErrorHandler(
       const otherStories = await User.aggregate([
         {
           $match: {
-            $and: [
-              { _id: { $ne: req.user?._id } },
-              { _id: { $nin: [...followerIds, ...hiddenStories] } },
-            ],
-          },
-        },
-        {
-          $match: {
+            active: true,
+            _id: {
+              $ne: req.user?._id,
+              $nin: [...followerIds, ...hiddenStories],
+            },
             $expr: {
-              $cond: [
-                { $eq: ['$settings.general.privacy.value', true] },
+              $or: [
                 {
-                  $cond: [
+                  $eq: ['$settings.general.privacy.value', false],
+                },
+                {
+                  $and: [
                     {
-                      $in: [req.user?._id, '$settings.general.privacy.users'],
+                      $eq: ['$settings.general.privacy.value', true],
                     },
-                    true,
-                    false,
+                    {
+                      $in: [viewerId, '$settings.general.privacy.users'],
+                    },
                   ],
                 },
-                true,
               ],
             },
           },
         },
         {
           $lookup: {
-            from: 'stories',
+            from: 'friends',
             let: { userId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          { $eq: ['$requester', '$$userId'] },
+                          { $eq: ['$recipient', viewerId] },
+                        ],
+                      },
+                      {
+                        $and: [
+                          { $eq: ['$requester', viewerId] },
+                          { $eq: ['$recipient', '$$userId'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'isFriend',
+          },
+        },
+        {
+          $addFields: {
+            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+          },
+        },
+        {
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$_id', isFriend: '$isFriend' },
             pipeline: [
               {
                 $match: {
@@ -486,66 +515,26 @@ export const getStories = asyncErrorHandler(
                   $expr: {
                     $and: [
                       { $eq: ['$user', '$$userId'] },
-                      { $ne: ['$accessibility', ContentAccessibility.YOU] },
-                    ],
-                  },
-                },
-              },
-              {
-                $lookup: {
-                  from: 'friends',
-                  let: {
-                    viewerId: req.user?._id,
-                    storyOwnerId: '$user',
-                    access: '$accessibility',
-                  },
-                  pipeline: [
-                    {
-                      $match: {
-                        $expr: {
-                          $and: [
-                            { $eq: ['$$access', ContentAccessibility.FRIENDS] },
-                            {
-                              $or: [
-                                {
-                                  $and: [
-                                    { $eq: ['$requester', '$$storyOwnerId'] },
-                                    { $eq: ['$recipient', '$$viewerId'] },
-                                  ],
-                                },
-                                {
-                                  $and: [
-                                    { $eq: ['$requester', '$$viewerId'] },
-                                    { $eq: ['$recipient', '$$storyOwnerId'] },
-                                  ],
-                                },
-                              ],
-                            },
-                          ],
-                        },
-                      },
-                    },
-                  ],
-                  as: 'isFriend',
-                },
-              },
-              {
-                $match: {
-                  $expr: {
-                    $or: [
                       {
-                        $and: [
+                        $or: [
                           {
                             $eq: [
                               '$accessibility',
-                              ContentAccessibility.FRIENDS,
+                              ContentAccessibility.EVERYONE,
                             ],
                           },
-                          { $gt: [{ $size: '$isFriend' }, 0] },
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.FRIENDS,
+                                ],
+                              },
+                              { $eq: ['$$isFriend', true] },
+                            ],
+                          },
                         ],
-                      },
-                      {
-                        $eq: ['$accessibility', ContentAccessibility.EVERYONE],
                       },
                     ],
                   },
@@ -554,14 +543,15 @@ export const getStories = asyncErrorHandler(
               {
                 $lookup: {
                   from: 'likes',
-                  let: { viewerId: req.user?._id, storyId: '$_id' },
+                  let: { storyId: '$_id' },
                   pipeline: [
                     {
                       $match: {
                         $expr: {
                           $and: [
                             { $eq: ['$$storyId', '$documentId'] },
-                            { $eq: ['$$viewerId', '$user'] },
+                            { $eq: ['$user', viewerId] },
+                            { $eq: ['$collectionName', 'story'] },
                           ],
                         },
                       },
@@ -577,7 +567,6 @@ export const getStories = asyncErrorHandler(
               },
               {
                 $project: {
-                  isFriend: 0,
                   user: 0,
                   __v: 0,
                 },
@@ -587,7 +576,7 @@ export const getStories = asyncErrorHandler(
           },
         },
         {
-          $match: { stories: { $ne: [] } },
+          $match: { 'stories.0': { $exists: true } },
         },
         { $sample: { size: 5 + (15 - usersArr1.length) } },
         {
@@ -619,137 +608,54 @@ export const getStories = asyncErrorHandler(
         {
           new: true,
           runValidators: true,
-        }
+        },
       );
     } else {
       const userFeed = feed.map((user: string) => user);
 
-      const usersStories = await Story.aggregate([
+      const usersStories = await User.aggregate([
         {
           $match: {
-            expired: false,
-            user: { $in: userFeed },
-            accessibility: { $ne: ContentAccessibility.YOU },
-          },
-        },
-        {
-          $lookup: {
-            from: 'friends',
-            let: {
-              viewerId: req.user?._id,
-              storyOwnerId: '$user',
-              access: '$accessibility',
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ['$$access', ContentAccessibility.FRIENDS] },
-                      {
-                        $or: [
-                          {
-                            $and: [
-                              { $eq: ['$requester', '$$storyOwnerId'] },
-                              { $eq: ['$recipient', '$$viewerId'] },
-                            ],
-                          },
-                          {
-                            $and: [
-                              { $eq: ['$requester', '$$viewerId'] },
-                              { $eq: ['$recipient', '$$storyOwnerId'] },
-                            ],
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: 'friends',
-          },
-        },
-        {
-          $match: {
+            _id: { $in: userFeed },
+            active: true,
             $expr: {
               $or: [
                 {
-                  $and: [
-                    {
-                      $eq: ['$accessibility', ContentAccessibility.FRIENDS],
-                    },
-                    { $gt: [{ $size: '$friends' }, 0] },
-                  ],
+                  $eq: ['$settings.general.privacy.value', false],
                 },
                 {
-                  $eq: ['$accessibility', ContentAccessibility.EVERYONE],
+                  $and: [
+                    {
+                      $eq: ['$settings.general.privacy.value', true],
+                    },
+                    {
+                      $in: [viewerId, '$settings.general.privacy.users'],
+                    },
+                  ],
                 },
               ],
             },
           },
         },
         {
-          $project: {
-            friends: 0,
-          },
-        },
-        {
           $lookup: {
-            from: 'likes',
-            let: { viewerId: req.user?._id, storyId: '$_id' },
+            from: 'friends',
+            let: { userId: '$_id' },
             pipeline: [
               {
                 $match: {
                   $expr: {
-                    $and: [
-                      { $eq: ['$$storyId', '$documentId'] },
-                      { $eq: ['$$viewerId', '$user'] },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: 'like',
-          },
-        },
-        {
-          $addFields: {
-            like: { $first: '$like' },
-          },
-        },
-        {
-          $group: {
-            _id: '$user',
-            stories: { $push: '$$ROOT' },
-          },
-        },
-        {
-          $lookup: {
-            from: 'users',
-            let: { userId: '$_id', viewerId: req.user?._id },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ['$_id', '$$userId'] },
+                    $or: [
                       {
-                        $cond: [
-                          { $eq: ['$settings.general.privacy.value', true] },
-                          {
-                            $cond: [
-                              {
-                                $in: [
-                                  '$$viewerId',
-                                  '$settings.general.privacy.users',
-                                ],
-                              },
-                              true,
-                              false,
-                            ],
-                          },
-                          true,
+                        $and: [
+                          { $eq: ['$requester', '$$userId'] },
+                          { $eq: ['$recipient', viewerId] },
+                        ],
+                      },
+                      {
+                        $and: [
+                          { $eq: ['$requester', viewerId] },
+                          { $eq: ['$recipient', '$$userId'] },
                         ],
                       },
                     ],
@@ -757,27 +663,96 @@ export const getStories = asyncErrorHandler(
                 },
               },
             ],
-            as: 'users',
+            as: 'isFriend',
           },
         },
-        { $match: { users: { $ne: [] } } },
         {
           $addFields: {
-            user: { $first: '$users' },
+            isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
           },
         },
         {
-          $project: {
-            users: 0,
-            _id: 0,
+          $lookup: {
+            from: 'stories',
+            let: { userId: '$_id', isFriend: '$isFriend' },
+            pipeline: [
+              {
+                $match: {
+                  expired: false,
+                  $expr: {
+                    $and: [
+                      { $eq: ['$user', '$$userId'] },
+                      {
+                        $or: [
+                          {
+                            $eq: [
+                              '$accessibility',
+                              ContentAccessibility.EVERYONE,
+                            ],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.FRIENDS,
+                                ],
+                              },
+                              { $eq: ['$$isFriend', true] },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'likes',
+                  let: { storyId: '$_id' },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $and: [
+                            { $eq: ['$$storyId', '$documentId'] },
+                            { $eq: ['$user', viewerId] },
+                            { $eq: ['$collectionName', 'story'] },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                  as: 'like',
+                },
+              },
+              {
+                $addFields: {
+                  like: { $first: '$like' },
+                },
+              },
+              {
+                $project: {
+                  user: 0,
+                  __v: 0,
+                },
+              },
+            ],
+            as: 'stories',
           },
         },
         {
+          $match: { 'stories.0': { $exists: true } },
+        },
+        {
           $project: {
-            'user._id': 1,
-            'user.name': 1,
-            'user.username': 1,
-            'user.photo': 1,
+            user: {
+              _id: '$_id',
+              name: '$name',
+              username: '$username',
+              photo: '$photo',
+            },
             stories: 1,
           },
         },
@@ -785,14 +760,16 @@ export const getStories = asyncErrorHandler(
 
       stories = feed
         .map((user: string) =>
-          usersStories.find((obj: any) => String(obj.user._id) === String(user))
+          usersStories.find(
+            (obj: any) => String(obj.user._id) === String(user),
+          ),
         )
-        .filter((user: any) => user);
+        .filter(Boolean);
     }
 
     const userData = protectData(user!, 'user');
     const userStories = await Story.find({ user: req.user?._id }).select(
-      '-__v -user -accessibility'
+      '-__v -user -accessibility',
     );
 
     return res.status(200).json({
@@ -803,15 +780,16 @@ export const getStories = asyncErrorHandler(
         users: stories,
       },
     });
-  }
+  },
 );
 
 export const getStory = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const id = req.params.id;
+    const viewerId = req.user?._id;
     let story;
 
-    if (String(req.user?._id) === id) {
+    if (String(viewerId) === id) {
       story = await Story.find({
         user: id,
         expired: false,
@@ -823,12 +801,65 @@ export const getStory = asyncErrorHandler(
         return next(new CustomError('This user does not exist.', 404));
       }
 
-      // Check if user is friends
-      story = await Story.find({
-        user: req.params.id,
-        expired: false,
-        accessibility: ContentAccessibility.EVERYONE,
-      }).select('-__v -user -accessibility');
+      story = await Story.aggregate([
+        {
+          $match: {
+            user: req.params.id,
+            expired: false,
+            accessibility: {
+              $in: [
+                ContentAccessibility.EVERYONE,
+                ContentAccessibility.FRIENDS,
+              ],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'friends',
+            let: { userId: '$user' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      {
+                        $and: [
+                          { $eq: ['$requester', '$$userId'] },
+                          { $eq: ['$recipient', viewerId] },
+                        ],
+                      },
+                      {
+                        $and: [
+                          { $eq: ['$requester', viewerId] },
+                          { $eq: ['$recipient', '$$userId'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'isFriend',
+          },
+        },
+        { $addFields: { isFriend: { $gt: [{ $size: '$isFriend' }, 0] } } },
+        {
+          $match: {
+            $or: [
+              { accessibility: ContentAccessibility.EVERYONE },
+              { isFriend: true },
+            ],
+          },
+        },
+        {
+          $project: {
+            __v: 0,
+            user: 0,
+            accessibility: 0,
+          },
+        },
+      ]);
     }
 
     return res.status(200).json({
@@ -837,7 +868,7 @@ export const getStory = asyncErrorHandler(
         story,
       },
     });
-  }
+  },
 );
 
 export const validateStoryFiles = asyncErrorHandler(
@@ -855,7 +886,7 @@ export const validateStoryFiles = asyncErrorHandler(
     uploader(req, res, async (error: any) => {
       res.setHeader('Content-Type', 'text/plain');
       res.write(
-        JSON.stringify({ status: 'success', message: 'validating' }) + '\n'
+        JSON.stringify({ status: 'success', message: 'validating' }) + '\n',
       );
 
       let files =
@@ -869,11 +900,11 @@ export const validateStoryFiles = asyncErrorHandler(
           let message = error.isOperational
             ? error.message
             : error.code === 'LIMIT_FILE_SIZE'
-            ? 'Each file must not exceed 1GB.'
-            : 'File upload failed.';
+              ? 'Each file must not exceed 1GB.'
+              : 'File upload failed.';
           throw new CustomError(
             message,
-            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500
+            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500,
           );
         }
 
@@ -882,20 +913,20 @@ export const validateStoryFiles = asyncErrorHandler(
             `You can only upload ${
               maxCount === 1 ? '1 file' : `${maxCount} files`
             }.`,
-            400
+            400,
           );
 
         const storyFiles = files.story;
         if (storyFiles.length === 0) {
           throw new CustomError(
             'You must upload at least one story file.',
-            400
+            400,
           );
         }
 
         // Gets video and image files
         const videoFiles = storyFiles.filter((file) =>
-          file.mimetype.startsWith('video')
+          file.mimetype.startsWith('video'),
         );
 
         // Checks if video files duration is valid
@@ -912,17 +943,17 @@ export const validateStoryFiles = asyncErrorHandler(
               : `Error occured while validating file${
                   files.story.length === 1 ? '' : 's'
                 }. Please try again.`,
-          }) + '\n'
+          }) + '\n',
         );
       }
     });
-  }
+  },
 );
 
 export const processStoryFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     res.write(
-      JSON.stringify({ status: 'success', message: 'processing' }) + '\n'
+      JSON.stringify({ status: 'success', message: 'processing' }) + '\n',
     );
 
     const files = req.files as {
@@ -944,7 +975,7 @@ export const processStoryFiles = asyncErrorHandler(
           on: function (event) {
             res.write(JSON.stringify(event) + '\n');
           },
-        }
+        },
       );
 
       next();
@@ -955,10 +986,10 @@ export const processStoryFiles = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to process files.',
-        }) + '\n'
+        }) + '\n',
       );
     }
-  }
+  },
 );
 
 export const saveStory = asyncErrorHandler(
@@ -969,7 +1000,7 @@ export const saveStory = asyncErrorHandler(
 
     try {
       const { disableComments, accessibility, volume } = JSON.parse(
-        req.body.settings
+        req.body.settings,
       );
 
       const filters = JSON.parse(req.body.filters).value;
@@ -984,8 +1015,8 @@ export const saveStory = asyncErrorHandler(
           mediaType: file.mimetype.startsWith('video')
             ? 'video'
             : file.mimetype.startsWith('image')
-            ? 'image'
-            : '',
+              ? 'image'
+              : '',
           filter: filters[index],
         },
         disableComments,
@@ -1004,7 +1035,7 @@ export const saveStory = asyncErrorHandler(
       await Story.insertMany(newStory);
 
       const story = await Story.find({ user: req.user?._id }).select(
-        '-__v -user -accessibility'
+        '-__v -user -accessibility',
       );
 
       return res.status(201).end(
@@ -1012,7 +1043,7 @@ export const saveStory = asyncErrorHandler(
           status: 'success',
           message: 'finish',
           data: { story },
-        }) + '\n'
+        }) + '\n',
       );
     } catch {
       await deleteStoryFiles(files);
@@ -1021,10 +1052,10 @@ export const saveStory = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to create story!',
-        }) + '\n'
+        }) + '\n',
       );
     }
-  }
+  },
 );
 
 export const deleteStory = asyncErrorHandler(
@@ -1051,8 +1082,8 @@ export const deleteStory = asyncErrorHandler(
           handleCloudinary(
             'delete',
             `stories/${path.basename(String(story.media.src))}`,
-            story.media.mediaType
-          )
+            story.media.mediaType,
+          ),
         );
 
         if (story.sound) {
@@ -1061,20 +1092,20 @@ export const deleteStory = asyncErrorHandler(
               handleCloudinary(
                 'delete',
                 `stories/${path.basename(String(story.sound))}`,
-                'raw'
-              )
+                'raw',
+              ),
             );
           }
         }
       } else {
         deleteArray.push(
-          fs.promises.unlink(`src/public/stories/${story.media.src}`)
+          fs.promises.unlink(`src/public/stories/${story.media.src}`),
         );
 
         if (story.sound) {
           if (!(await Story.findOne({ sound: story.sound }))) {
             deleteArray.push(
-              fs.promises.unlink(`src/public/stories/${story.sound}`)
+              fs.promises.unlink(`src/public/stories/${story.sound}`),
             );
           }
         }
@@ -1086,7 +1117,7 @@ export const deleteStory = asyncErrorHandler(
       status: 'success',
       message: null,
     });
-  }
+  },
 );
 
 export const updatetory = asyncErrorHandler(
@@ -1108,7 +1139,7 @@ export const updatetory = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     )) as StoryItem;
 
     return res.status(200).json({
@@ -1117,13 +1148,13 @@ export const updatetory = asyncErrorHandler(
         story,
       },
     });
-  }
+  },
 );
 
 export const hideStory = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const id = req.params.id;
-    const user = await User.findById(id);
+    const user = await User.findOne({ _id: id, __login: true });
 
     if (!user) return next(new CustomError('This user does not exist!', 404));
 
@@ -1148,7 +1179,7 @@ export const hideStory = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     const userData = protectData(updatedUser!, 'user');
@@ -1159,5 +1190,5 @@ export const hideStory = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );

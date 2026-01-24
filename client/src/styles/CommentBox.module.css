@@ -712,7 +712,7 @@
   .close-icon-box {
     right: 0.5%;
     top: 3%;
-    z-index: 1;
+    z-index: 3;
   }
 
   .close-icon {

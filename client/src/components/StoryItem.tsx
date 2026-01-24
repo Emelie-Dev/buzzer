@@ -40,7 +40,7 @@ type StoryItemProps = {
     storyItemIndex: number | null,
     contentLength: number | null,
     setContentIndex: React.Dispatch<React.SetStateAction<number>> | null,
-    type: 'initial' | 'next' | 'prev' | 'jump'
+    type: 'initial' | 'next' | 'prev' | 'jump',
   ) => () => void;
   setStoryItems: React.Dispatch<React.SetStateAction<any[]>>;
   setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
@@ -87,9 +87,9 @@ const StoryItem = ({
               if (story.like) return story._id;
               return null;
             })
-            .filter((story: any) => story)
+            .filter((story: any) => story),
         )
-      : new Set()
+      : new Set(),
   );
   const [updateData, setUpdateData] = useState({
     accessibility: stories ? stories[contentIndex].accessibility : 0,
@@ -125,6 +125,7 @@ const StoryItem = ({
       if (e.target) {
         if (showMenu && !menuRef.current.contains(e.target as Node)) {
           setShowMenu(false);
+          setPause(false);
         }
       }
     };
@@ -141,9 +142,11 @@ const StoryItem = ({
           {
             fill: 'both',
             duration: 150,
-          }
+          },
         );
+        setPause(true);
       } else {
+        setPause(false);
         animation = listRef.current.animate(
           {
             height: [`${listRef.current.scrollHeight}px`, '0px'],
@@ -151,7 +154,7 @@ const StoryItem = ({
           {
             fill: 'both',
             duration: 150,
-          }
+          },
         );
         animation.onfinish = () => setHideMenu(true);
       }
@@ -253,7 +256,7 @@ const StoryItem = ({
               usersStories.map((item, index) => {
                 if (index >= start && index < end) return item;
                 else return null;
-              })
+              }),
             );
             setCurrentIndex(1);
             moveToStory(0, null, null, null, 'jump')();
@@ -321,10 +324,10 @@ const StoryItem = ({
       type === 's'
         ? 'second'
         : type === 'h'
-        ? 'hour'
-        : type === 'm'
-        ? 'minute'
-        : 'day';
+          ? 'hour'
+          : type === 'm'
+            ? 'minute'
+            : 'day';
 
     const result = full
       ? `${
@@ -387,7 +390,7 @@ const StoryItem = ({
           contentIndex,
           stories.length - 1,
           setContentIndex,
-          'next'
+          'next',
         )();
       } else {
         moveToStory(
@@ -395,7 +398,7 @@ const StoryItem = ({
           contentIndex,
           stories.length - 1,
           setContentIndex,
-          'prev'
+          'prev',
         )();
       }
     }
@@ -511,7 +514,7 @@ const StoryItem = ({
         likeObj = data.data.like;
       } else {
         await apiClient.delete(
-          `v1/likes/story/${id}?id=${stories[contentIndex].like._id}`
+          `v1/likes/story/${id}?id=${stories[contentIndex].like._id}`,
         );
       }
 
@@ -553,7 +556,7 @@ const StoryItem = ({
           `Could not ${like ? 'remove like' : 'like story'}. Please Try again.`,
           {
             duration: 2000,
-          }
+          },
         );
       } else {
         toast.error(err.response.data.message, {
@@ -587,7 +590,7 @@ const StoryItem = ({
                 contentIndex,
                 stories.length - 1,
                 setContentIndex,
-                'prev'
+                'prev',
               )}
             >
               <MdKeyboardArrowLeft className={styles['left-arrow']} />
@@ -617,7 +620,7 @@ const StoryItem = ({
                       contentIndex,
                       stories.length - 1,
                       setContentIndex,
-                      'next'
+                      'next',
                     )}
                   >
                     &nbsp;
@@ -629,7 +632,10 @@ const StoryItem = ({
               <div className={styles['story-details']}>
                 <span
                   className={styles['name-box']}
-                  onClick={() => navigate(`/@${user.username}`)}
+                  onClick={() => {
+                    setViewStory(false);
+                    navigate(`/@${user.username}`);
+                  }}
                 >
                   <img
                     className={styles['user-pic']}
@@ -915,7 +921,7 @@ const StoryItem = ({
                 contentIndex,
                 stories.length - 1,
                 setContentIndex,
-                'next'
+                'next',
               )}
             >
               <MdKeyboardArrowRight className={styles['right-arrow']} />

@@ -102,7 +102,7 @@ const Home = () => {
   const getCollaborationRequests = async () => {
     try {
       const { data } = await apiClient(
-        `v1/users/collaborate?type=${requestsData.type}`
+        `v1/users/collaborate?type=${requestsData.type}`,
       );
 
       setRequestsData((prev) => ({
@@ -157,7 +157,7 @@ const Home = () => {
       try {
         const { data } = await apiClient.post(
           `v1/users/collaborate/respond/${id}`,
-          { action }
+          { action },
         );
 
         setRequests((prev) => ({
@@ -347,7 +347,7 @@ const Home = () => {
 
                   {stories.map(({ user }, index) => (
                     <article
-                      key={index}
+                      key={user._id}
                       className={styles.userStory}
                       onClick={() => {
                         setStoryIndex(userStory.length > 0 ? index + 1 : index);
@@ -515,7 +515,7 @@ const Home = () => {
                             <source
                               src={getUrl(
                                 request.post.src,
-                                `${request.type[1]}s`
+                                `${request.type[1]}s`,
                               )}
                               type="video/mp4"
                             />
@@ -526,7 +526,7 @@ const Home = () => {
                             className={styles['pinned-video']}
                             src={getUrl(
                               request.post.src,
-                              `${request.type[1]}s`
+                              `${request.type[1]}s`,
                             )}
                           />
                         )}
@@ -538,8 +538,8 @@ const Home = () => {
                                 request.hasStory && request.hasUnviewedStory
                                   ? styles['profile-img-span3']
                                   : request.hasStory
-                                  ? styles['profile-img-span2']
-                                  : ''
+                                    ? styles['profile-img-span2']
+                                    : ''
                               }`}
                             >
                               <img
@@ -597,7 +597,7 @@ const Home = () => {
                             <source
                               src={getUrl(
                                 request.post.src,
-                                `${request.type[1]}s`
+                                `${request.type[1]}s`,
                               )}
                               type="video/mp4"
                             />
@@ -608,7 +608,7 @@ const Home = () => {
                             className={styles['pinned-video']}
                             src={getUrl(
                               request.post.src,
-                              `${request.type[1]}s`
+                              `${request.type[1]}s`,
                             )}
                           />
                         )}
@@ -620,8 +620,8 @@ const Home = () => {
                                 request.hasStory && request.hasUnviewedStory
                                   ? styles['profile-img-span3']
                                   : request.hasStory
-                                  ? styles['profile-img-span2']
-                                  : ''
+                                    ? styles['profile-img-span2']
+                                    : ''
                               }`}
                             >
                               <img
@@ -658,7 +658,7 @@ const Home = () => {
                         </button>
                       </div>
                     </article>
-                  )
+                  ),
                 )
               )}
             </div>

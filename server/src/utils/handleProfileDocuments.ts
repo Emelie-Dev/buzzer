@@ -11,7 +11,7 @@ export default async (
   userId: string,
   category: 'all' | 'reels' | 'private' | 'bookmarks' | 'liked',
   query: Record<string, any>,
-  user?: any
+  user?: any,
 ) => {
   const limit = 20;
   let { sort, cursor, views } = query;
@@ -22,8 +22,8 @@ export default async (
     category === 'bookmarks'
       ? 'savedAt'
       : category === 'liked'
-      ? 'likedAt'
-      : 'createdAt';
+        ? 'likedAt'
+        : 'createdAt';
 
   const matchObj =
     category === 'private'
@@ -39,20 +39,20 @@ export default async (
     sort === 'oldest'
       ? { [timestamp]: 1 }
       : sort === 'popular'
-      ? { views: -1, [timestamp]: -1 }
-      : { [timestamp]: -1 };
+        ? { views: -1, [timestamp]: -1 }
+        : { [timestamp]: -1 };
 
   const cursorObj = isValidDateString(cursor)
     ? sort === 'oldest'
       ? { [timestamp]: { $gt: cursorDate } }
       : sort === 'popular'
-      ? {
-          $or: [
-            { views: { $lt: +views } },
-            { views: +views, [timestamp]: { $lt: cursorDate } },
-          ],
-        }
-      : { [timestamp]: { $lt: cursorDate } }
+        ? {
+            $or: [
+              { views: { $lt: +views } },
+              { views: +views, [timestamp]: { $lt: cursorDate } },
+            ],
+          }
+        : { [timestamp]: { $lt: cursorDate } }
     : {};
 
   const isFriend = !user
@@ -94,12 +94,7 @@ export default async (
             as: 'post',
           },
         },
-        {
-          $match: {
-            post: { $ne: [] },
-          },
-        },
-        { $unwind: '$post' },
+        { $unwind: { path: '$post', preserveNullAndEmptyArrays: false } },
       ];
     } else {
       stages = [];
@@ -117,8 +112,8 @@ export default async (
           category === 'bookmarks' || category === 'liked'
             ? {}
             : user
-            ? userMatchObj
-            : matchObj,
+              ? userMatchObj
+              : matchObj,
       },
       {
         $lookup: {
@@ -128,8 +123,8 @@ export default async (
               category === 'bookmarks' || category === 'liked'
                 ? '$collectionName'
                 : category === 'reels'
-                ? 'reel'
-                : collection,
+                  ? 'reel'
+                  : collection,
             docId:
               category === 'bookmarks' || category === 'liked'
                 ? '$post._id'
@@ -166,18 +161,28 @@ export default async (
               category === 'bookmarks' || category === 'liked'
                 ? '$collectionName'
                 : category === 'reels'
-                ? 'reel'
-                : collection,
+                  ? 'reel'
+                  : collection,
             docId:
               category === 'bookmarks' || category === 'liked'
                 ? '$post._id'
                 : '$_id',
+            hide:
+              category === 'bookmarks' || category === 'liked'
+                ? '$post.settings.hideEngagements'
+                : '$settings.hideEngagements',
           },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
+                    {
+                      $or: [
+                        { $eq: ['$$hide', false] },
+                        { $eq: ['$user', userId] },
+                      ],
+                    },
                     { $eq: ['$collectionName', '$$collection'] },
                     { $eq: ['$documentId', '$$docId'] },
                   ],
@@ -197,18 +202,28 @@ export default async (
               category === 'bookmarks' || category === 'liked'
                 ? '$collectionName'
                 : category === 'reels'
-                ? 'reel'
-                : collection,
+                  ? 'reel'
+                  : collection,
             docId:
               category === 'bookmarks' || category === 'liked'
                 ? '$post._id'
                 : '$_id',
+            hide:
+              category === 'bookmarks' || category === 'liked'
+                ? '$post.settings.hideEngagements'
+                : '$settings.hideEngagements',
           },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
+                    {
+                      $or: [
+                        { $eq: ['$$hide', false] },
+                        { $eq: ['$user', userId] },
+                      ],
+                    },
                     { $eq: ['$collectionName', '$$collection'] },
                     { $eq: ['$documentId', '$$docId'] },
                   ],
@@ -254,15 +269,15 @@ export default async (
     category === 'bookmarks'
       ? [Bookmark, Bookmark]
       : category === 'liked'
-      ? [Like, Like]
-      : [Content, Reel];
+        ? [Like, Like]
+        : [Content, Reel];
 
   let [contents, reels] = await Promise.all(
     collections.map(async (collection, index) => {
       if (user) {
         if (user.settings.general.privacy.value) {
           const users = user.settings.general.privacy.users.map((id: any) =>
-            String(id)
+            String(id),
           );
 
           if (!users.includes(String(userId))) return [];
@@ -282,7 +297,7 @@ export default async (
       if (category === 'reels' && index === 0) return [];
 
       return await collection.aggregate(pipeline);
-    })
+    }),
   );
 
   const posts =

@@ -6,7 +6,6 @@ import {
   validateContentFiles,
   excludeContent,
   getContents,
-  getContent,
 } from '../controllers/contentController.js';
 import protectRoute from '../middleware/protectRoute.js';
 import updatePost from '../utils/updatePost.js';
@@ -22,11 +21,7 @@ router
   .get(getContents)
   .post(validateContentFiles, processContentFiles, saveContent);
 
-router
-  .route('/:id')
-  .get(getContent)
-  .patch(updatePost('content'))
-  .delete(deleteContent);
+router.route('/:id').patch(updatePost('content')).delete(deleteContent);
 
 router.patch('/not-interested/:id', excludeContent);
 

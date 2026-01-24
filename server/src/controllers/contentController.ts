@@ -30,8 +30,8 @@ const deleteContentFiles = async (files: Express.Multer.File[]) => {
         type: file.mimetype.startsWith('video')
           ? 'video'
           : file.mimetype.startsWith('image')
-          ? 'image'
-          : 'raw',
+            ? 'image'
+            : 'raw',
       };
     else return { path: file.path };
   });
@@ -50,7 +50,7 @@ const deleteContentFiles = async (files: Express.Multer.File[]) => {
           });
         }
       });
-    })
+    }),
   );
 };
 
@@ -66,7 +66,7 @@ export const validateContentFiles = asyncErrorHandler(
         if (collaborators.length > 3) {
           throw new CustomError(
             'You can only have up to 3 collaborators per post.',
-            400
+            400,
           );
         }
 
@@ -74,11 +74,11 @@ export const validateContentFiles = asyncErrorHandler(
           let message = error.isOperational
             ? error.message
             : error.code === 'LIMIT_FILE_SIZE'
-            ? 'Each file must not exceed 1GB.'
-            : 'File upload failed.';
+              ? 'Each file must not exceed 1GB.'
+              : 'File upload failed.';
           throw new CustomError(
             message,
-            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500
+            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500,
           );
         }
 
@@ -90,7 +90,7 @@ export const validateContentFiles = asyncErrorHandler(
 
         // Gets video and image files
         const videoFiles = files.filter((file) =>
-          file.mimetype.startsWith('video')
+          file.mimetype.startsWith('video'),
         );
 
         // Checks if video files duration is valid
@@ -102,14 +102,14 @@ export const validateContentFiles = asyncErrorHandler(
         next(err);
       }
     });
-  }
+  },
 );
 
 export const processContentFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     res.setHeader('Content-Type', 'text/plain');
     res.write(
-      JSON.stringify({ status: 'success', message: 'processing' }) + '\n'
+      JSON.stringify({ status: 'success', message: 'processing' }) + '\n',
     );
 
     const files = req.files as Express.Multer.File[];
@@ -127,7 +127,7 @@ export const processContentFiles = asyncErrorHandler(
           on: function (event) {
             res.write(JSON.stringify(event) + '\n');
           },
-        }
+        },
       );
 
       next();
@@ -138,10 +138,10 @@ export const processContentFiles = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to process files.',
-        }) + '\n'
+        }) + '\n',
       );
     }
-  }
+  },
 );
 
 export const saveContent = asyncErrorHandler(
@@ -164,8 +164,8 @@ export const saveContent = asyncErrorHandler(
         mediaType: file.mimetype.startsWith('video')
           ? 'video'
           : file.mimetype.startsWith('image')
-          ? 'image'
-          : '',
+            ? 'image'
+            : '',
         description: fileDescriptions[index],
         filter: filters[index],
       }));
@@ -190,7 +190,7 @@ export const saveContent = asyncErrorHandler(
         req.user?._id,
         content._id,
         settings.accessibility,
-        { text: req.body.description }
+        { text: req.body.description },
       );
 
       // send collaboration notifications
@@ -198,7 +198,7 @@ export const saveContent = asyncErrorHandler(
         collaborators,
         req.user?._id,
         'content',
-        content._id
+        content._id,
       );
 
       return res.status(201).end(
@@ -206,7 +206,7 @@ export const saveContent = asyncErrorHandler(
           status: 'success',
           message: 'finish',
           data: { content },
-        }) + '\n'
+        }) + '\n',
       );
     } catch {
       await deleteContentFiles(files);
@@ -215,10 +215,10 @@ export const saveContent = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to create content.',
-        }) + '\n'
+        }) + '\n',
       );
     }
-  }
+  },
 );
 
 export const deleteContent = asyncErrorHandler(
@@ -241,7 +241,7 @@ export const deleteContent = asyncErrorHandler(
       req.user?._id,
       content._id,
       null,
-      null
+      null,
     );
 
     // Deletes content files
@@ -257,15 +257,15 @@ export const deleteContent = asyncErrorHandler(
             handleCloudinary(
               'delete',
               `contents/${path.basename(String(src))}`,
-              type
-            )
-          )
+              type,
+            ),
+          ),
         );
       } else {
         await Promise.allSettled(
           paths.map(({ src }) =>
-            fs.promises.unlink(`src/public/contents/${src}`)
-          )
+            fs.promises.unlink(`src/public/contents/${src}`),
+          ),
         );
       }
     } catch {}
@@ -274,12 +274,12 @@ export const deleteContent = asyncErrorHandler(
       status: 'success',
       message: null,
     });
-  }
+  },
 );
 
 export const excludeContent = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ _id: req.params.id, __login: true });
 
     if (!user) {
       return next(new CustomError('This user does not exist!', 404));
@@ -307,7 +307,7 @@ export const excludeContent = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     const userData = protectData(updatedUser!, 'user');
@@ -318,7 +318,7 @@ export const excludeContent = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const getContents = asyncErrorHandler(
@@ -368,45 +368,7 @@ export const getContents = asyncErrorHandler(
           as: 'viewed',
         },
       },
-      { $match: { viewed: [] } },
-      {
-        $lookup: {
-          from: 'friends',
-          let: { ownerId: '$user' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $or: [
-                    {
-                      $and: [
-                        { $eq: ['$requester', '$$ownerId'] },
-                        { $eq: ['$recipient', viewerId] },
-                      ],
-                    },
-                    {
-                      $and: [
-                        { $eq: ['$requester', viewerId] },
-                        { $eq: ['$recipient', '$$ownerId'] },
-                      ],
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'isFriend',
-        },
-      },
-      {
-        $match: {
-          $or: [
-            { 'settings.accessibility': ContentAccessibility.EVERYONE },
-            { isFriend: { $ne: [] } },
-          ],
-        },
-      },
-      { $sample: { size: 10 } },
+      { $match: { 'viewed.0': { $exists: false } } },
       {
         $lookup: {
           from: 'users',
@@ -416,7 +378,30 @@ export const getContents = asyncErrorHandler(
             {
               $match: {
                 $expr: {
-                  $eq: ['$_id', '$$userId'],
+                  $and: [
+                    { $eq: ['$_id', '$$userId'] },
+                    { $eq: ['$active', true] },
+                    {
+                      $or: [
+                        {
+                          $eq: ['$settings.general.privacy.value', false],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: ['$settings.general.privacy.value', true],
+                            },
+                            {
+                              $in: [
+                                viewerId,
+                                '$settings.general.privacy.users',
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
                 },
               },
             },
@@ -452,6 +437,45 @@ export const getContents = asyncErrorHandler(
           ],
         },
       },
+      { $match: { 'user.0': { $exists: true } } },
+      {
+        $lookup: {
+          from: 'friends',
+          let: { ownerId: { $first: '$user' } },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$requester', '$$ownerId._id'] },
+                        { $eq: ['$recipient', viewerId] },
+                      ],
+                    },
+                    {
+                      $and: [
+                        { $eq: ['$requester', viewerId] },
+                        { $eq: ['$recipient', '$$ownerId._id'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'isFriend',
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { 'settings.accessibility': ContentAccessibility.EVERYONE },
+            { 'isFriend.0': { $exists: true } },
+          ],
+        },
+      },
+      { $sample: { size: 10 } },
       {
         $lookup: {
           from: 'users',
@@ -461,7 +485,10 @@ export const getContents = asyncErrorHandler(
             {
               $match: {
                 $expr: {
-                  $in: ['$_id', '$$collaborators'],
+                  $and: [
+                    { $in: ['$_id', '$$collaborators'] },
+                    { $eq: ['$active', true] },
+                  ],
                 },
               },
             },
@@ -500,12 +527,37 @@ export const getContents = asyncErrorHandler(
       {
         $lookup: {
           from: 'stories',
-          let: { userId: '$user' },
+          let: { userId: '$user', isFriend: '$isFriend' },
           pipeline: [
             {
               $match: {
                 expired: false,
-                $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', { $first: '$$userId._id' }] },
+                    {
+                      $or: [
+                        {
+                          $eq: [
+                            '$accessibility',
+                            ContentAccessibility.EVERYONE,
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                '$accessibility',
+                                ContentAccessibility.FRIENDS,
+                              ],
+                            },
+                            { $gt: [{ $size: '$$isFriend' }, 0] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
               },
             },
             {
@@ -538,12 +590,18 @@ export const getContents = asyncErrorHandler(
         $lookup: {
           from: 'comments',
           as: 'comments',
-          let: { docId: '$_id' },
+          let: { docId: '$_id', hide: '$settings.hideEngagements' },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
+                    {
+                      $or: [
+                        { $eq: ['$$hide', false] },
+                        { $eq: ['$user', viewerId] },
+                      ],
+                    },
                     { $eq: ['$collectionName', 'content'] },
                     { $eq: ['$documentId', '$$docId'] },
                   ],
@@ -576,12 +634,18 @@ export const getContents = asyncErrorHandler(
         $lookup: {
           from: 'likes',
           as: 'likes',
-          let: { docId: '$_id' },
+          let: { docId: '$_id', hide: '$settings.hideEngagements' },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
+                    {
+                      $or: [
+                        { $eq: ['$$hide', false] },
+                        { $eq: ['$user', viewerId] },
+                      ],
+                    },
                     { $eq: ['$collectionName', 'content'] },
                     { $eq: ['$documentId', '$$docId'] },
                   ],
@@ -677,38 +741,17 @@ export const getContents = asyncErrorHandler(
         break;
 
       case 'following':
-        pipeline.splice(
-          5,
-          0,
-          {
-            $lookup: {
-              from: 'follows',
-              let: { userId: '$user' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$following', '$$userId'] },
-                        { $eq: ['$follower', req.user?._id] },
-                      ],
-                    },
-                  },
-                },
-              ],
-              as: 'following',
-            },
-          },
-          { $match: { following: { $ne: [] } } }
-        );
+        pipeline.splice(5, 0, {
+          $match: { 'user.isFollowing': { $exists: true, $ne: null } },
+        });
 
         contents = await Content.aggregate(pipeline);
         break;
 
       case 'friends':
-        pipeline.splice(4, 1, {
+        pipeline.splice(6, 1, {
           $match: {
-            isFriend: { $ne: [] },
+            'isFriend.0': { $exists: true },
           },
         });
         contents = await Content.aggregate(pipeline);
@@ -721,26 +764,5 @@ export const getContents = asyncErrorHandler(
         posts: contents,
       },
     });
-  }
-);
-
-export const getContent = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const content = await Content.findById(req.params.id).select(
-      '-__v -settings -location'
-    );
-
-    // Check content accessibility settings
-
-    if (!content) {
-      return next(new CustomError('This content does not exist!', 404));
-    }
-
-    return res.status(200).json({
-      status: 'success',
-      data: {
-        content,
-      },
-    });
-  }
+  },
 );

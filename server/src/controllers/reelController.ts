@@ -33,26 +33,29 @@ const deleteReelFiles = async (
   files: {
     [fieldname: string]: Express.Multer.File[];
   },
-  excluded?: string[]
+  excluded?: string[],
 ) => {
-  const paths = Object.entries(files).reduce((accumulator, field) => {
-    if (!excluded?.includes(field[0]))
-      accumulator.push(
-        ...field[1].map((data) => {
-          if (process.env.NODE_ENV === 'production')
-            return {
-              path: data.filename,
-              type: data.mimetype.startsWith('video')
-                ? 'video'
-                : data.mimetype.startsWith('image')
-                ? 'image'
-                : 'raw',
-            };
-          else return { path: data.path };
-        })
-      );
-    return accumulator;
-  }, [] as { path: string; type?: string }[]);
+  const paths = Object.entries(files).reduce(
+    (accumulator, field) => {
+      if (!excluded?.includes(field[0]))
+        accumulator.push(
+          ...field[1].map((data) => {
+            if (process.env.NODE_ENV === 'production')
+              return {
+                path: data.filename,
+                type: data.mimetype.startsWith('video')
+                  ? 'video'
+                  : data.mimetype.startsWith('image')
+                    ? 'image'
+                    : 'raw',
+              };
+            else return { path: data.path };
+          }),
+        );
+      return accumulator;
+    },
+    [] as { path: string; type?: string }[],
+  );
 
   await Promise.allSettled(
     paths.map(({ path, type }) => {
@@ -60,12 +63,12 @@ const deleteReelFiles = async (
         return handleCloudinary(
           'delete',
           String(path),
-          (type as 'image' | 'video' | 'raw')!
+          (type as 'image' | 'video' | 'raw')!,
         );
       } else {
         return fs.promises.unlink(path as fs.PathLike);
       }
-    })
+    }),
   );
 };
 
@@ -106,7 +109,76 @@ export const getReels = asyncErrorHandler(
           as: 'viewed',
         },
       },
-      { $match: { viewed: [] } },
+      { $match: { 'viewed.0': { $exists: false } } },
+      {
+        $lookup: {
+          from: 'users',
+          let: { userId: '$user' },
+          as: 'user',
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$_id', '$$userId'] },
+                    { $eq: ['$active', true] },
+                    {
+                      $or: [
+                        {
+                          $eq: ['$settings.general.privacy.value', false],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: ['$settings.general.privacy.value', true],
+                            },
+                            {
+                              $in: [
+                                viewerId,
+                                '$settings.general.privacy.users',
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: 'follows',
+                let: { userId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: ['$following', '$$userId'] },
+                          {
+                            $eq: ['$follower', viewerId],
+                          },
+                        ],
+                      },
+                    },
+                  },
+                ],
+                as: 'isFollowing',
+              },
+            },
+            {
+              $addFields: {
+                isFollowing: { $first: '$isFollowing' },
+              },
+            },
+            {
+              $project: { username: 1, name: 1, photo: 1, isFollowing: 1 },
+            },
+          ],
+        },
+      },
+      { $match: { 'user.0': { $exists: true } } },
       {
         $lookup: {
           from: 'friends',
@@ -140,7 +212,7 @@ export const getReels = asyncErrorHandler(
         $match: {
           $or: [
             { 'settings.accessibility': ContentAccessibility.EVERYONE },
-            { isFriend: { $ne: [] } },
+            { 'isFriend.0': { $exists: true } },
           ],
         },
       },
@@ -177,58 +249,16 @@ export const getReels = asyncErrorHandler(
       {
         $lookup: {
           from: 'users',
-          let: { userId: '$user' },
-          as: 'user',
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: ['$_id', '$$userId'],
-                },
-              },
-            },
-            {
-              $lookup: {
-                from: 'follows',
-                let: { userId: '$_id' },
-                pipeline: [
-                  {
-                    $match: {
-                      $expr: {
-                        $and: [
-                          { $eq: ['$following', '$$userId'] },
-                          {
-                            $eq: ['$follower', viewerId],
-                          },
-                        ],
-                      },
-                    },
-                  },
-                ],
-                as: 'isFollowing',
-              },
-            },
-            {
-              $addFields: {
-                isFollowing: { $first: '$isFollowing' },
-              },
-            },
-            {
-              $project: { username: 1, name: 1, photo: 1, isFollowing: 1 },
-            },
-          ],
-        },
-      },
-      {
-        $lookup: {
-          from: 'users',
           let: { collaborators: '$collaborators' },
           as: 'collaborators',
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $in: ['$_id', '$$collaborators'],
+                  $and: [
+                    { $in: ['$_id', '$$collaborators'] },
+                    { $eq: ['$active', true] },
+                  ],
                 },
               },
             },
@@ -267,12 +297,37 @@ export const getReels = asyncErrorHandler(
       {
         $lookup: {
           from: 'stories',
-          let: { userId: '$user' },
+          let: { userId: '$user', isFriend: '$isFriend' },
           pipeline: [
             {
               $match: {
                 expired: false,
-                $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', { $first: '$$userId._id' }] },
+                    {
+                      $or: [
+                        {
+                          $eq: [
+                            '$accessibility',
+                            ContentAccessibility.EVERYONE,
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                '$accessibility',
+                                ContentAccessibility.FRIENDS,
+                              ],
+                            },
+                            { $gt: [{ $size: '$$isFriend' }, 0] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
               },
             },
             {
@@ -304,12 +359,18 @@ export const getReels = asyncErrorHandler(
       {
         $lookup: {
           from: 'comments',
-          let: { docId: '$_id' },
+          let: { docId: '$_id', hide: '$settings.hideEngagements' },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
+                    {
+                      $or: [
+                        { $eq: ['$$hide', false] },
+                        { $eq: ['$user', viewerId] },
+                      ],
+                    },
                     { $eq: ['$collectionName', 'reel'] },
                     { $eq: ['$documentId', '$$docId'] },
                   ],
@@ -343,12 +404,18 @@ export const getReels = asyncErrorHandler(
         $lookup: {
           from: 'likes',
           as: 'likes',
-          let: { docId: '$_id' },
+          let: { docId: '$_id', hide: '$settings.hideEngagements' },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
+                    {
+                      $or: [
+                        { $eq: ['$$hide', false] },
+                        { $eq: ['$user', viewerId] },
+                      ],
+                    },
                     { $eq: ['$collectionName', 'reel'] },
                     { $eq: ['$documentId', '$$docId'] },
                   ],
@@ -445,7 +512,7 @@ export const getReels = asyncErrorHandler(
         posts: reels,
       },
     });
-  }
+  },
 );
 
 export const validateReelFiles = asyncErrorHandler(
@@ -459,7 +526,7 @@ export const validateReelFiles = asyncErrorHandler(
     uploader(req, res, async (error: any) => {
       res.setHeader('Content-Type', 'text/plain');
       res.write(
-        JSON.stringify({ status: 'success', message: 'validating' }) + '\n'
+        JSON.stringify({ status: 'success', message: 'validating' }) + '\n',
       );
 
       const collaborators = JSON.parse(req.body.collaborators) || [];
@@ -477,7 +544,7 @@ export const validateReelFiles = asyncErrorHandler(
         if (collaborators.length > 3) {
           throw new CustomError(
             'You can only have up to 3 collaborators per post.',
-            400
+            400,
           );
         }
 
@@ -485,11 +552,11 @@ export const validateReelFiles = asyncErrorHandler(
           let message = error.isOperational
             ? error.message
             : error.code === 'LIMIT_FILE_SIZE'
-            ? 'Each file must not exceed 1GB.'
-            : 'File upload failed.';
+              ? 'Each file must not exceed 1GB.'
+              : 'File upload failed.';
           throw new CustomError(
             message,
-            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500
+            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500,
           );
         }
 
@@ -513,17 +580,17 @@ export const validateReelFiles = asyncErrorHandler(
             message: err.isOperational
               ? err.message
               : 'Error occured while validating file. Please try again.',
-          }) + '\n'
+          }) + '\n',
         );
       }
     });
-  }
+  },
 );
 
 export const processReelFiles = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     res.write(
-      JSON.stringify({ status: 'success', message: 'processing' }) + '\n'
+      JSON.stringify({ status: 'success', message: 'processing' }) + '\n',
     );
 
     let files =
@@ -564,7 +631,7 @@ export const processReelFiles = asyncErrorHandler(
           on: function (event) {
             res.write(JSON.stringify(event) + '\n');
           },
-        }
+        },
       );
 
       // Delete unneccessary files (sound, cover)
@@ -578,10 +645,10 @@ export const processReelFiles = asyncErrorHandler(
           message: savedSoundError
             ? 'This saved sound does not exist!'
             : 'Unable to process files.',
-        }) + '\n'
+        }) + '\n',
       );
     }
-  }
+  },
 );
 
 export const saveReel = asyncErrorHandler(
@@ -643,7 +710,7 @@ export const saveReel = asyncErrorHandler(
         req.user?._id,
         reel._id,
         settings.accessibility,
-        { text: req.body.description }
+        { text: req.body.description },
       );
 
       // send collaboration notifications
@@ -651,7 +718,7 @@ export const saveReel = asyncErrorHandler(
         collaborators,
         req.user?._id,
         'reel',
-        reel._id
+        reel._id,
       );
 
       return res.status(201).end(
@@ -661,7 +728,7 @@ export const saveReel = asyncErrorHandler(
           data: {
             reel,
           },
-        }) + '\n'
+        }) + '\n',
       );
     } catch {
       await deleteReelFiles(files);
@@ -669,10 +736,10 @@ export const saveReel = asyncErrorHandler(
         JSON.stringify({
           status: 'fail',
           message: 'Unable to create reel.',
-        }) + '\n'
+        }) + '\n',
       );
     }
-  }
+  },
 );
 
 export const saveReelSound = asyncErrorHandler(
@@ -687,11 +754,11 @@ export const saveReelSound = asyncErrorHandler(
           const message = error.isOperational
             ? error.message
             : error.code === 'LIMIT_FILE_SIZE'
-            ? 'File size must not exceed 1GB.'
-            : 'File upload failed.';
+              ? 'File size must not exceed 1GB.'
+              : 'File upload failed.';
           throw new CustomError(
             message,
-            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500
+            error.isOperational || error.code === 'LIMIT_FILE_SIZE' ? 400 : 500,
           );
         }
 
@@ -706,7 +773,7 @@ export const saveReelSound = asyncErrorHandler(
         if (reelSounds.length >= 10)
           throw new CustomError(
             'You’ve reached your limit of 10 saved sounds. Please remove one to add a new sound.',
-            400
+            400,
           );
 
         const duration = await new Promise<number>((resolve, reject) => {
@@ -756,7 +823,7 @@ export const saveReelSound = asyncErrorHandler(
           {
             new: true,
             runValidators: true,
-          }
+          },
         );
         const userData = protectData(user!, 'user');
 
@@ -778,7 +845,7 @@ export const saveReelSound = asyncErrorHandler(
         return next(err);
       }
     });
-  }
+  },
 );
 
 export const deleteReelSound = asyncErrorHandler(
@@ -795,16 +862,16 @@ export const deleteReelSound = asyncErrorHandler(
         await handleCloudinary(
           'delete',
           `reels/${path.basename(String(sound.src))}`,
-          'raw'
+          'raw',
         );
       } else {
         await fs.promises.unlink(
-          `src/public/reels/${sound.src as fs.PathLike}`
+          `src/public/reels/${sound.src as fs.PathLike}`,
         );
       }
     } catch {
       return next(
-        new CustomError('An error occured while deleting sound.', 500)
+        new CustomError('An error occured while deleting sound.', 500),
       );
     }
 
@@ -818,7 +885,7 @@ export const deleteReelSound = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
     const userData = protectData(user!, 'user');
 
@@ -828,7 +895,7 @@ export const deleteReelSound = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const excludeReelType = asyncErrorHandler(
@@ -866,7 +933,7 @@ export const excludeReelType = asyncErrorHandler(
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
     const userData = protectData(updatedUser!, 'user');
 
@@ -876,7 +943,7 @@ export const excludeReelType = asyncErrorHandler(
         user: userData,
       },
     });
-  }
+  },
 );
 
 export const deleteReel = asyncErrorHandler(
@@ -898,7 +965,7 @@ export const deleteReel = asyncErrorHandler(
       req.user?._id,
       reel._id,
       null,
-      null
+      null,
     );
 
     // Deletes reel files
@@ -907,7 +974,7 @@ export const deleteReel = asyncErrorHandler(
         await handleCloudinary(
           'delete',
           `reels/${path.basename(String(reel.src))}`,
-          'video'
+          'video',
         );
       } else {
         await fs.promises.unlink(`src/public/reels/${reel.src as fs.PathLike}`);
@@ -918,30 +985,12 @@ export const deleteReel = asyncErrorHandler(
       status: 'success',
       message: null,
     });
-  }
-);
-
-export const getReel = asyncErrorHandler(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const reel = await Reel.findById(req.params.id).select(
-      '-__v -settings -location -keywords'
-    );
-
-    // Check reel accessibility settings
-
-    if (!reel) return next(new CustomError('This reel does not exist!', 404));
-
-    return res.status(200).json({
-      status: 'success',
-      data: {
-        reel,
-      },
-    });
-  }
+  },
 );
 
 export const getPinnedReels = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const viewerId = req.user?._id;
     let reels = req.body.reels;
 
     if (!reels) return next(new CustomError('No reels provided.', 400));
@@ -965,20 +1014,108 @@ export const getPinnedReels = asyncErrorHandler(
       {
         $lookup: {
           from: 'users',
-          foreignField: '_id',
-          localField: 'user',
+          let: { userId: '$user' },
           as: 'user',
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$_id', '$$userId'] },
+                    { $eq: ['$active', true] },
+                    {
+                      $or: [
+                        { $eq: ['$_id', viewerId] },
+                        {
+                          $eq: ['$settings.general.privacy.value', false],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: ['$settings.general.privacy.value', true],
+                            },
+                            {
+                              $in: [
+                                viewerId,
+                                '$settings.general.privacy.users',
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      { $match: { 'user.0': { $exists: true } } },
+      {
+        $lookup: {
+          from: 'friends',
+          let: { ownerId: '$user' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$requester', '$$ownerId'] },
+                        { $eq: ['$recipient', viewerId] },
+                      ],
+                    },
+                    {
+                      $and: [
+                        { $eq: ['$requester', viewerId] },
+                        { $eq: ['$recipient', '$$ownerId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'isFriend',
         },
       },
       {
         $lookup: {
           from: 'stories',
-          let: { userId: '$user' },
+          let: { userId: '$user', isFriend: '$isFriend' },
           pipeline: [
             {
               $match: {
                 expired: false,
-                $expr: { $eq: ['$user', { $first: '$$userId._id' }] },
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', { $first: '$$userId._id' }] },
+                    {
+                      $or: [
+                        { $eq: ['$user', viewerId] },
+                        {
+                          $eq: [
+                            '$accessibility',
+                            ContentAccessibility.EVERYONE,
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                '$accessibility',
+                                ContentAccessibility.FRIENDS,
+                              ],
+                            },
+                            { $gt: [{ $size: '$$isFriend' }, 0] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
               },
             },
             {
@@ -1034,5 +1171,5 @@ export const getPinnedReels = asyncErrorHandler(
         reels: reelsData,
       },
     });
-  }
+  },
 );

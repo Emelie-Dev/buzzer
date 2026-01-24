@@ -3,7 +3,13 @@ import styles from '../styles/ContentAnalytics.module.css';
 import { PeriodComponent } from './PeriodComponent';
 import { IoClose } from 'react-icons/io5';
 import { FaSortAmountUp, FaSortAmountDown } from 'react-icons/fa';
-import { apiClient, getDate, getEngagementValue, getUrl } from '../Utilities';
+import {
+  apiClient,
+  getDate,
+  getEngagementValue,
+  getUrl,
+  parseHTML,
+} from '../Utilities';
 import { toast } from 'sonner';
 import LoadingAnimation from './LoadingAnimation';
 
@@ -29,7 +35,7 @@ const ContentAnalytics = ({ sectionRef }: ContentAnalyticsProps) => {
     done: true,
   });
   const [sort, setSort] = useState<'likes' | 'views' | 'createdAt'>(
-    'createdAt'
+    'createdAt',
   );
   const [order, setOrder] = useState<'up' | 'down'>('down');
   const [posts, setPosts] = useState<{ value: any[]; count: number }>({
@@ -122,7 +128,7 @@ const ContentAnalytics = ({ sectionRef }: ContentAnalyticsProps) => {
 
       setPosts((prev) => {
         const arr = result.filter(
-          (obj) => !prev.value.find((data) => data._id === obj._id)
+          (obj) => !prev.value.find((data) => data._id === obj._id),
         );
 
         return { value: [...prev.value, ...arr], count };
@@ -171,7 +177,7 @@ const ContentAnalytics = ({ sectionRef }: ContentAnalyticsProps) => {
   const getPostInfo = async () => {
     try {
       const { data } = await apiClient(
-        `v1/analytics/posts/${postInfo.id}?type=${postInfo.type}`
+        `v1/analytics/posts/${postInfo.id}?type=${postInfo.type}`,
       );
 
       setPostInfo((prev) => ({ ...prev, value: data.data.stats }));
@@ -190,7 +196,7 @@ const ContentAnalytics = ({ sectionRef }: ContentAnalyticsProps) => {
 
     return `${String(hour).padStart(2, '0')}h:${String(minute).padStart(
       2,
-      '0'
+      '0',
     )}m:${String(seconds).padStart(2, '0')}s`;
   };
 
@@ -429,17 +435,14 @@ const ContentAnalytics = ({ sectionRef }: ContentAnalyticsProps) => {
                             )}
                           </div>
 
-                          <span
-                            className={styles['content-description']}
-                            dangerouslySetInnerHTML={{
-                              __html: post.description,
-                            }}
-                          ></span>
+                          <span className={styles['content-description']}>
+                            {parseHTML(post.description || '')}
+                          </span>
                         </div>
                       </td>
                       <td className={styles['content-value']}>
                         {getEngagementValue(
-                          sort === 'likes' ? post.likes : post.views
+                          sort === 'likes' ? post.likes : post.views,
                         )}
                       </td>
                       <td className={styles['content-date']}>

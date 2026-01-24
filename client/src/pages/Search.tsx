@@ -12,7 +12,13 @@ import { AuthContext, GeneralContext } from '../Contexts';
 import { MdOutlineHourglassEmpty, MdOutlineWifiOff } from 'react-icons/md';
 import LoadingAnimation from '../components/LoadingAnimation';
 import Skeleton from 'react-loading-skeleton';
-import { apiClient, getEngagementValue, getTime, getUrl } from '../Utilities';
+import {
+  apiClient,
+  getEngagementValue,
+  getTime,
+  getUrl,
+  parseHTML,
+} from '../Utilities';
 import { toast } from 'sonner';
 import { TbHourglassEmpty } from 'react-icons/tb';
 
@@ -98,14 +104,14 @@ const Search = () => {
       category === 'all'
         ? resultData.users && resultData.posts
         : category === 'contents'
-        ? resultData.posts
-        : resultData.users;
+          ? resultData.posts
+          : resultData.users;
     const data =
       category === 'all'
         ? [...result.users, ...result.posts]
         : category === 'contents'
-        ? result.posts
-        : result.users;
+          ? result.posts
+          : result.users;
 
     if (
       loading === false &&
@@ -148,18 +154,19 @@ const Search = () => {
 
     try {
       const { data } = await apiClient(
-        `v1/search?query=${searchQuery}&page=${resultData.page}`
+        `v1/search?query=${searchQuery}&page=${resultData.page}`,
       );
 
       let { users, posts } = data.data.results;
+      const dataLength = data.data.dataLength;
 
       setUser(data.data.user);
 
       users = users.filter(
-        (user: any) => !result.users.find((data) => data._id === user._id)
+        (user: any) => !result.users.find((data) => data._id === user._id),
       );
       posts = posts.filter(
-        (post: any) => !result.posts.find((data) => data._id === post._id)
+        (post: any) => !result.posts.find((data) => data._id === post._id),
       );
 
       setResult((prev) => ({
@@ -169,8 +176,8 @@ const Search = () => {
       }));
       setResultData((prev) => ({
         ...prev,
-        users: users.length < 20,
-        posts: posts.length < 10,
+        users: dataLength.users < 20,
+        posts: dataLength.posts < 10,
       }));
 
       const list = users
@@ -234,7 +241,7 @@ const Search = () => {
           setFollowData((prev) => ({ ...prev, list: prev.list.add(id) }));
         } else {
           const followId = followersList.find(
-            (data) => data.following === id
+            (data) => data.following === id,
           )._id;
           await apiClient.delete(`v1/follow/${followId}`);
 
@@ -242,7 +249,7 @@ const Search = () => {
           list.delete(id);
 
           setFollowersList((prevValue) =>
-            prevValue.filter((follow) => follow._id !== followId)
+            prevValue.filter((follow) => follow._id !== followId),
           );
           setFollowData((prev) => ({ ...prev, list }));
         }
@@ -262,8 +269,8 @@ const Search = () => {
         ? (count -= 1)
         : count
       : followData.list.has(user._id)
-      ? (count += 1)
-      : count;
+        ? (count += 1)
+        : count;
 
     return count;
   };
@@ -560,7 +567,7 @@ const Search = () => {
                                       <source
                                         src={getUrl(
                                           post.media[0].src,
-                                          'contents'
+                                          'contents',
                                         )}
                                       />
                                       Your browser does not support playing
@@ -577,7 +584,7 @@ const Search = () => {
                                       className={styles['user-latest-img']}
                                       src={getUrl(
                                         post.media[0].src,
-                                        'contents'
+                                        'contents',
                                       )}
                                     />
                                     <time className={styles['content-time']}>
@@ -742,12 +749,9 @@ const Search = () => {
                             </span>
                           </div>
 
-                          <div
-                            className={styles['content-description']}
-                            dangerouslySetInnerHTML={{
-                              __html: post.description,
-                            }}
-                          ></div>
+                          <div className={styles['content-description']}>
+                            {parseHTML(post.description || '')}
+                          </div>
                         </article>
                       ))}
                     </div>
@@ -1073,12 +1077,9 @@ const Search = () => {
                       </span>
                     </div>
 
-                    <div
-                      className={styles['content-description']}
-                      dangerouslySetInnerHTML={{
-                        __html: post.description,
-                      }}
-                    ></div>
+                    <div className={styles['content-description']}>
+                      {parseHTML(post.description || '')}
+                    </div>
                   </article>
                 ))
               )}

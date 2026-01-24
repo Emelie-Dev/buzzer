@@ -4,11 +4,10 @@ import { BsReply } from 'react-icons/bs';
 import { useContext, useState } from 'react';
 import { IoMdHeart } from 'react-icons/io';
 import useArrayRef from '../hooks/useArrayRef';
-import { apiClient, getUrl } from '../Utilities';
+import { apiClient, getUrl, parseHTML } from '../Utilities';
 import { MdSecurity, MdNotificationsActive } from 'react-icons/md';
 import { GrSecure } from 'react-icons/gr';
 import { Link, useNavigate } from 'react-router-dom';
-import parse from 'html-react-parser';
 import { MdOutlineSettings } from 'react-icons/md';
 import { toast } from 'sonner';
 import { RiUserFollowLine, RiUserUnfollowLine } from 'react-icons/ri';
@@ -54,7 +53,7 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
     const docId = notificationData?.commentId || documentId;
 
     return likes[collection as 'content' | 'reel' | 'story' | 'comment'].find(
-      (data) => data.value === docId
+      (data) => data.value === docId,
     );
   };
 
@@ -72,8 +71,8 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
       hour === 0
         ? '12'
         : hour > 12
-        ? `${String(hour - 12).padStart(2, '0')}`
-        : `${String(hour).padStart(2, '0')}`;
+          ? `${String(hour - 12).padStart(2, '0')}`
+          : `${String(hour).padStart(2, '0')}`;
 
     return `${hourText}:${String(minute).padStart(2, '0')} ${suffix}`;
   };
@@ -121,8 +120,8 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
         notificationType === 'like'
           ? 'liked your'
           : notificationType === 'comment'
-          ? 'commented on your'
-          : 'replied to your comment on this';
+            ? 'commented on your'
+            : 'replied to your comment on this';
 
       if (typeDetails === 'batch') {
         return (
@@ -148,7 +147,7 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
             {text} {typeName}
             {notificationType !== 'like' && notificationData && (
               <span className={styles['notification-comment']}>
-                : {parse(notificationData.text)}
+                : {parseHTML(notificationData.text)}
               </span>
             )}
           </span>
@@ -179,7 +178,7 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
             mentioned you in {typeName === 'comment' ? 'a' : 'their'} {typeName}
             {notificationData && (
               <span className={styles['notification-comment']}>
-                : {parse(notificationData.text)}
+                : {parseHTML(notificationData.text)}
               </span>
             )}
           </span>
@@ -506,7 +505,7 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
         const like = likes[collection].find((data) => data.value === docId);
 
         await apiClient.delete(
-          `v1/likes/${collection}/${docId}?id=${like?.obj._id}`
+          `v1/likes/${collection}/${docId}?id=${like?.obj._id}`,
         );
 
         setLikes((prev) => {
@@ -520,7 +519,7 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
       toast.error(
         `Could not ${
           !isDocLiked ? 'remove like' : `like ${collection}`
-        }. Please Try again.`
+        }. Please Try again.`,
       );
     } finally {
       setLoading(false);
@@ -540,13 +539,13 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
         setFollowingList((prev) => [...prev, follow]);
       } else {
         const follow = followingList.find(
-          (data) => data.value === secondUser._id
+          (data) => data.value === secondUser._id,
         );
 
         await apiClient.delete(`v1/follow/${follow.obj._id}`);
 
         setFollowingList((prev) =>
-          prev.filter((data) => data.value !== secondUser._id)
+          prev.filter((data) => data.value !== secondUser._id),
         );
       }
     } catch (err: any) {
@@ -554,7 +553,7 @@ const NotificationBox = ({ checkBoxRef, data }: NotificationBoxProps) => {
         toast.error(
           `Could not ${
             isFollowing ? 'unfollow' : 'follow'
-          } user. Please Try again.`
+          } user. Please Try again.`,
         );
       } else {
         toast.error(err.response.data.message);

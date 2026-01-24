@@ -6,7 +6,7 @@ import CustomError from '../utils/CustomError.js';
 import View from '../models/viewModel.js';
 import User from '../models/userModel.js';
 import Reel from '../models/reelModel.js';
-import Story from '../models/storyModel.js';
+import Story, { ContentAccessibility } from '../models/storyModel.js';
 import { isValidDateString } from './commentController.js';
 
 export const viewItem = asyncErrorHandler(
@@ -19,12 +19,12 @@ export const viewItem = asyncErrorHandler(
       collection === 'story'
         ? Story.findById(documentId)
         : collection === 'content'
-        ? Content.findById(documentId)
-        : collection === 'user'
-        ? User.findById(documentId)
-        : collection === 'reel'
-        ? Reel.findById(documentId)
-        : null;
+          ? Content.findById(documentId)
+          : collection === 'user'
+            ? User.findById(documentId)
+            : collection === 'reel'
+              ? Reel.findById(documentId)
+              : null;
 
     const data = (await query) as Record<string, any>;
 
@@ -75,7 +75,7 @@ export const viewItem = asyncErrorHandler(
       status: 'success',
       message: null,
     });
-  }
+  },
 );
 
 export const getProfileViews = asyncErrorHandler(
@@ -193,12 +193,13 @@ export const getProfileViews = asyncErrorHandler(
         views,
       },
     });
-  }
+  },
 );
 
 export const getWatchHistory = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const { cursor, period } = req.body;
+    const viewerId = req.user?._id;
     const allowedPeriod = ['1y', '1m', '1w', '1d', 'all'];
 
     if (!(allowedPeriod.includes(period) || (period.start && period.end))) {
@@ -265,38 +266,197 @@ export const getWatchHistory = asyncErrorHandler(
             _id: '$documentId',
             collectionName: '$collectionName',
           },
+          creator: { $first: '$creator' },
           createdAt: { $max: '$createdAt' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          as: 'users',
+          let: { userId: '$creator' },
+          pipeline: [
+            {
+              $match: {
+                active: true,
+                $expr: {
+                  $and: [
+                    { $eq: ['$_id', '$$userId'] },
+                    {
+                      $or: [
+                        { $eq: ['$_id', viewerId] },
+                        {
+                          $eq: ['$settings.general.privacy.value', false],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: ['$settings.general.privacy.value', true],
+                            },
+                            {
+                              $in: [
+                                viewerId,
+                                '$settings.general.privacy.users',
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      { $match: { 'users.0': { $exists: true } } },
+      {
+        $lookup: {
+          from: 'friends',
+          let: { userId: '$creator' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$requester', '$$userId'] },
+                        { $eq: ['$recipient', viewerId] },
+                      ],
+                    },
+                    {
+                      $and: [
+                        { $eq: ['$requester', viewerId] },
+                        { $eq: ['$recipient', '$$userId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'isFriend',
+        },
+      },
+      {
+        $addFields: {
+          isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
+        },
+      },
+      {
+        $lookup: {
+          from: 'contents',
+          as: 'content',
+          let: {
+            contentId: '$_id._id',
+            collection: '$_id.collectionName',
+            isFriend: '$isFriend',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$collection', 'content'] },
+                    { $eq: ['$$contentId', '$_id'] },
+                    {
+                      $or: [
+                        { $eq: ['$user', viewerId] },
+                        {
+                          $eq: [
+                            '$settings.accessibility',
+                            ContentAccessibility.EVERYONE,
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                '$settings.accessibility',
+                                ContentAccessibility.FRIENDS,
+                              ],
+                            },
+                            { $eq: ['$$isFriend', true] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'reels',
+          as: 'reel',
+          let: {
+            reelId: '$_id._id',
+            collection: '$_id.collectionName',
+            isFriend: '$isFriend',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$collection', 'reel'] },
+                    { $eq: ['$$reelId', '$_id'] },
+                    {
+                      $or: [
+                        { $eq: ['$user', viewerId] },
+                        {
+                          $eq: [
+                            '$settings.accessibility',
+                            ContentAccessibility.EVERYONE,
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                '$settings.accessibility',
+                                ContentAccessibility.FRIENDS,
+                              ],
+                            },
+                            { $eq: ['$$isFriend', true] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          post: {
+            $cond: [
+              { $eq: ['$_id.collectionName', 'reel'] },
+              { $first: '$reel' },
+              { $first: '$content' },
+            ],
+          },
+        },
+      },
+      {
+        $match: {
+          post: { $ne: null },
         },
       },
       { $sort: { createdAt: -1 } },
       { $limit: limit },
       {
         $lookup: {
-          from: 'contents',
-          localField: '_id._id',
-          foreignField: '_id',
-          as: 'content',
-        },
-      },
-      {
-        $lookup: {
-          from: 'reels',
-          localField: '_id._id',
-          foreignField: '_id',
-          as: 'reel',
-        },
-      },
-      {
-        $addFields: {
-          reel: { $first: '$reel' },
-          content: { $first: '$content' },
-          collection: '$_id.collectionName',
-        },
-      },
-      {
-        $lookup: {
           from: 'views',
-          let: { collection: '$collection', docId: '$_id._id' },
+          let: { collection: '$_id.collectionName', docId: '$_id._id' },
           pipeline: [
             {
               $match: {
@@ -316,19 +476,19 @@ export const getWatchHistory = asyncErrorHandler(
         $project: {
           _id: '$_id._id',
           createdAt: 1,
-          collection: 1,
+          collection: '$_id.collectionName',
           src: {
             $cond: [
               { $eq: ['$_id.collectionName', 'reel'] },
-              '$reel.src',
-              { $first: '$content.media.src' },
+              '$post.src',
+              { $first: '$post.media.src' },
             ],
           },
           type: {
             $cond: [
               { $eq: ['$_id.collectionName', 'reel'] },
               'video',
-              { $first: '$content.media.mediaType' },
+              { $first: '$post.media.mediaType' },
             ],
           },
           views: { $size: '$views' },
@@ -340,7 +500,7 @@ export const getWatchHistory = asyncErrorHandler(
       status: 'success',
       data: { history },
     });
-  }
+  },
 );
 
 export const deleteWatchHistory = asyncErrorHandler(
@@ -365,7 +525,7 @@ export const deleteWatchHistory = asyncErrorHandler(
                 $concat: [{ $toString: '$documentId' }, ':', '$collectionName'],
               },
               history.map(
-                (obj: any) => `${obj.id.toString()}:${obj.collection}`
+                (obj: any) => `${obj.id.toString()}:${obj.collection}`,
               ),
             ],
           },
@@ -377,5 +537,5 @@ export const deleteWatchHistory = asyncErrorHandler(
     await View.deleteMany({ _id: { $in: ids } });
 
     return res.status(204).send({ status: 'success', message: null });
-  }
+  },
 );

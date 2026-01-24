@@ -79,7 +79,8 @@ const Reels = () => {
     }
 
     if (contents && postData.batch === 1) {
-      if (mainRef.current) mainRef.current.scrollTop = 0;
+      if (mainRef.current)
+        mainRef.current.scrollTo({ top: 0, behavior: 'instant' });
     }
 
     const resizeHandler = () => {

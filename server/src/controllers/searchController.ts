@@ -22,6 +22,7 @@ const getQueriesArray = (arr: any[]) => {
 
 export const handleSearch = asyncErrorHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const viewerId = req.user?._id;
     let { query, page } = req.query;
 
     if (!query || String(query).toLowerCase().trim() === '')
@@ -40,7 +41,7 @@ export const handleSearch = asyncErrorHandler(
         {
           $inc: { searchCount: 1 },
         },
-        { new: true }
+        { new: true },
       );
     } else {
       const location = await getUserLocation(req.clientIp);
@@ -57,7 +58,7 @@ export const handleSearch = asyncErrorHandler(
 
     if (searchHistory.length > 0) {
       const index = searchHistory.findIndex(
-        (data: any) => data.query === query
+        (data: any) => data.query === query,
       );
 
       if (index === -1) {
@@ -75,14 +76,14 @@ export const handleSearch = asyncErrorHandler(
         searchHistory: searchHistory
           .sort(
             (a: any, b: any) =>
-              +new Date(b.searchedAt) - +new Date(a.searchedAt)
+              +new Date(b.searchedAt) - +new Date(a.searchedAt),
           )
           .slice(0, 10),
       },
       {
         runValidators: true,
         new: true,
-      }
+      },
     );
     const userData = protectData(user as Document, 'user');
 
@@ -97,7 +98,7 @@ export const handleSearch = asyncErrorHandler(
           page: Number(page),
           per_page: 20,
         },
-        ['username', 'photo', 'name', 'createdAt']
+        ['username', 'photo', 'name', 'createdAt'],
       ),
       queryFromTypesense(
         'contents',
@@ -108,7 +109,7 @@ export const handleSearch = asyncErrorHandler(
           page: Number(page),
           per_page: 10,
         },
-        ['user', 'description', 'createdAt', 'media']
+        ['user', 'description', 'createdAt', 'media'],
       ),
       queryFromTypesense(
         'reels',
@@ -119,20 +120,21 @@ export const handleSearch = asyncErrorHandler(
           page: Number(page),
           per_page: 10,
         },
-        ['user', 'description', 'createdAt', 'src']
+        ['user', 'description', 'createdAt', 'src'],
       ),
     ]);
 
-    const results = async () => {
+    const getResults = async () => {
       const results = await Promise.all([
         User.aggregate([
           {
             $match: {
               _id: {
                 $in: matchedUsers?.map(
-                  (user) => new mongoose.Types.ObjectId(String(user.id))
+                  (user) => new mongoose.Types.ObjectId(String(user.id)),
                 ),
               },
+              active: true,
             },
           },
           {
@@ -141,6 +143,35 @@ export const handleSearch = asyncErrorHandler(
               localField: '_id',
               foreignField: 'following',
               as: 'followers',
+            },
+          },
+          {
+            $lookup: {
+              from: 'friends',
+              let: { ownerId: '$_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $or: [
+                        {
+                          $and: [
+                            { $eq: ['$requester', '$$ownerId'] },
+                            { $eq: ['$recipient', viewerId] },
+                          ],
+                        },
+                        {
+                          $and: [
+                            { $eq: ['$requester', viewerId] },
+                            { $eq: ['$recipient', '$$ownerId'] },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'isFriend',
             },
           },
           {
@@ -162,6 +193,7 @@ export const handleSearch = asyncErrorHandler(
                 ],
               },
               followers: { $size: '$followers' },
+              isFriend: { $gt: [{ $size: '$isFriend' }, 0] },
             },
           },
         ]),
@@ -170,7 +202,7 @@ export const handleSearch = asyncErrorHandler(
             $match: {
               _id: {
                 $in: matchedContents?.map(
-                  (content) => new mongoose.Types.ObjectId(String(content.id))
+                  (content) => new mongoose.Types.ObjectId(String(content.id)),
                 ),
               },
             },
@@ -188,6 +220,7 @@ export const handleSearch = asyncErrorHandler(
                     $expr: {
                       $and: [
                         { $eq: ['$_id', '$$userId'] },
+                        { $eq: ['$active', true] },
                         {
                           $cond: [
                             { $eq: ['$settings.general.privacy.value', true] },
@@ -214,11 +247,7 @@ export const handleSearch = asyncErrorHandler(
               as: 'owner',
             },
           },
-          {
-            $match: {
-              owner: { $ne: [] },
-            },
-          },
+          { $match: { 'owner.0': { $exists: true } } },
           {
             $lookup: {
               from: 'friends',
@@ -275,7 +304,7 @@ export const handleSearch = asyncErrorHandler(
                 {
                   $and: [
                     { 'settings.accessibility': ContentAccessibility.FRIENDS },
-                    { friend: { $ne: [] } },
+                    { 'friend.0': { $exists: true } },
                   ],
                 },
                 { 'settings.accessibility': ContentAccessibility.EVERYONE },
@@ -313,7 +342,7 @@ export const handleSearch = asyncErrorHandler(
             $match: {
               _id: {
                 $in: matchedReels?.map(
-                  (content) => new mongoose.Types.ObjectId(String(content.id))
+                  (content) => new mongoose.Types.ObjectId(String(content.id)),
                 ),
               },
             },
@@ -331,6 +360,7 @@ export const handleSearch = asyncErrorHandler(
                     $expr: {
                       $and: [
                         { $eq: ['$_id', '$$userId'] },
+                        { $eq: ['$active', true] },
                         {
                           $cond: [
                             { $eq: ['$settings.general.privacy.value', true] },
@@ -357,11 +387,7 @@ export const handleSearch = asyncErrorHandler(
               as: 'owner',
             },
           },
-          {
-            $match: {
-              owner: { $ne: [] },
-            },
-          },
+          { $match: { 'owner.0': { $exists: true } } },
           {
             $lookup: {
               from: 'friends',
@@ -418,7 +444,7 @@ export const handleSearch = asyncErrorHandler(
                 {
                   $and: [
                     { 'settings.accessibility': ContentAccessibility.FRIENDS },
-                    { friend: { $ne: [] } },
+                    { 'friend.0': { $exists: true } },
                   ],
                 },
                 { 'settings.accessibility': ContentAccessibility.EVERYONE },
@@ -455,7 +481,7 @@ export const handleSearch = asyncErrorHandler(
 
       let users = results[0].map((user) => {
         user.score = matchedUsers?.find(
-          (obj) => obj.id === String(user._id)
+          (obj) => obj.id === String(user._id),
         ).score;
         return user;
       });
@@ -488,12 +514,19 @@ export const handleSearch = asyncErrorHandler(
         users = await Promise.all(
           users.map(async (user, index) => {
             if (index === 0 || index === 1 || index === 2) {
-              const contents = await Content.find({ user: user._id })
+              const matchObj = user.isFriend
+                ? { 'settings.accessibility': { $in: [0, 1] } }
+                : { 'settings.accessibility': 0 };
+
+              const contents = await Content.find({
+                user: user._id,
+                ...matchObj,
+              })
                 .sort({ createdAt: -1 })
                 .select('media createdAt')
                 .limit(2);
 
-              const reels = await Reel.find({ user: user._id })
+              const reels = await Reel.find({ user: user._id, ...matchObj })
                 .sort({ createdAt: -1 })
                 .select('src createdAt')
                 .limit(2);
@@ -506,7 +539,7 @@ export const handleSearch = asyncErrorHandler(
               user.posts = posts;
               return user;
             }
-          })
+          }),
         );
       }
 
@@ -516,11 +549,15 @@ export const handleSearch = asyncErrorHandler(
     return res.status(200).json({
       status: 'success',
       data: {
-        results: await results(),
+        results: await getResults(),
         user: userData,
+        dataLength: {
+          users: matchedUsers?.length || 0,
+          posts: (matchedContents?.length || 0) + (matchedReels?.length || 0),
+        },
       },
     });
-  }
+  },
 );
 
 export const getTrendingSearches = asyncErrorHandler(
@@ -699,7 +736,7 @@ export const getTrendingSearches = asyncErrorHandler(
         result,
       },
     });
-  }
+  },
 );
 
 export const getSearchSuggestions = asyncErrorHandler(
@@ -717,7 +754,7 @@ export const getSearchSuggestions = asyncErrorHandler(
           per_page: 6,
           sort_by: '_text_match:desc, query:asc',
         },
-        ['query']
+        ['query'],
       ),
       queryFromTypesense(
         'users',
@@ -727,7 +764,7 @@ export const getSearchSuggestions = asyncErrorHandler(
           filter_by: `id:!=${String(req.user?._id)}`,
           per_page: 5,
         },
-        ['username', 'photo', 'name']
+        ['username', 'photo', 'name'],
       ),
     ]);
 
@@ -740,7 +777,7 @@ export const getSearchSuggestions = asyncErrorHandler(
         },
       },
     });
-  }
+  },
 );
 
 export const searchForUsers = asyncErrorHandler(
@@ -783,18 +820,18 @@ export const searchForUsers = asyncErrorHandler(
             page: Number(page),
             per_page: 30,
           },
-          ['id']
+          ['id'],
         )) || [];
 
       resultLength = users.length;
 
       if (users.length > 0) {
         const userIds = users.map(
-          (user) => new Types.ObjectId(String(user.id))
+          (user) => new Types.ObjectId(String(user.id)),
         );
 
         const pipeline: PipelineStage[] = [
-          { $match: { _id: { $in: userIds } } },
+          { $match: { _id: { $in: userIds }, active: true } },
           {
             $lookup: {
               from: 'follows',
@@ -906,7 +943,7 @@ export const searchForUsers = asyncErrorHandler(
                       $gt: [{ $size: '$followerInfo' }, 0],
                     },
                   },
-                }
+                },
               );
             } else {
               if (username) {
@@ -940,7 +977,7 @@ export const searchForUsers = asyncErrorHandler(
                         $gt: [{ $size: '$userFollowerInfo' }, 0],
                       },
                     },
-                  }
+                  },
                 );
               } else {
                 pipeline.splice(2, 0, {
@@ -956,14 +993,68 @@ export const searchForUsers = asyncErrorHandler(
 
           pipeline.push(
             {
+              $addFields: {
+                isFriend: { $gt: [{ $size: 'friendInfo' }, 0] },
+                isAllowed: {
+                  $or: [
+                    { $eq: ['$_id', viewerId] },
+                    {
+                      $eq: ['$settings.general.privacy.value', false],
+                    },
+                    {
+                      $and: [
+                        {
+                          $eq: ['$settings.general.privacy.value', true],
+                        },
+                        {
+                          $in: [viewerId, '$settings.general.privacy.users'],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            {
               $lookup: {
                 from: 'stories',
-                let: { userId: '$_id' },
+                let: {
+                  userId: '$_id',
+                  isAllowed: '$isAllowed',
+                  isFriend: '$isFriend',
+                },
                 pipeline: [
                   {
                     $match: {
                       expired: false,
-                      $expr: { $eq: ['$user', '$$userId'] },
+                      $expr: {
+                        $and: [
+                          { $eq: ['$user', '$$userId'] },
+                          { $eq: ['$$isAllowed', true] },
+                          {
+                            $or: [
+                              { $eq: ['$user', viewerId] },
+                              {
+                                $eq: [
+                                  '$accessibility',
+                                  ContentAccessibility.EVERYONE,
+                                ],
+                              },
+                              {
+                                $and: [
+                                  {
+                                    $eq: [
+                                      '$accessibility',
+                                      ContentAccessibility.FRIENDS,
+                                    ],
+                                  },
+                                  { $eq: ['$$isFriend', true] },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
                     },
                   },
                   {
@@ -1018,7 +1109,7 @@ export const searchForUsers = asyncErrorHandler(
                       $in: ['$_id', privateAudience],
                     },
               },
-            }
+            },
           );
         } else {
           pipeline.push({
@@ -1054,8 +1145,10 @@ export const searchForUsers = asyncErrorHandler(
             localField: 'following',
             foreignField: '_id',
             as: 'users',
+            pipeline: [{ $match: { active: true } }],
           },
         },
+        { $match: { 'users.0': { $exists: true } } },
         {
           $addFields: {
             user: { $first: '$users' },
@@ -1104,8 +1197,10 @@ export const searchForUsers = asyncErrorHandler(
             localField: 'user',
             foreignField: '_id',
             as: 'users',
+            pipeline: [{ $match: { active: true } }],
           },
         },
+        { $match: { 'users.0': { $exists: true } } },
         { $addFields: { user: { $first: '$users' }, isFriend: true } },
         {
           $project: {
@@ -1146,7 +1241,7 @@ export const searchForUsers = asyncErrorHandler(
       status: 'success',
       data: { result, resultLength },
     });
-  }
+  },
 );
 
 export const deleteUserSearch = asyncErrorHandler(
@@ -1162,7 +1257,7 @@ export const deleteUserSearch = asyncErrorHandler(
         searchHistory = [];
       } else {
         searchHistory = searchHistory.filter(
-          (data: any) => String(data._id) !== id
+          (data: any) => String(data._id) !== id,
         );
       }
     }
@@ -1175,7 +1270,7 @@ export const deleteUserSearch = asyncErrorHandler(
       {
         runValidators: true,
         new: true,
-      }
+      },
     );
 
     const userData = protectData(user as Document, 'user');
@@ -1183,5 +1278,6 @@ export const deleteUserSearch = asyncErrorHandler(
     return res
       .status(200)
       .json({ status: 'success', data: { user: userData } });
-  }
+  },
 );
+7;
