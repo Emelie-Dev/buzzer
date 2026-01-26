@@ -175,6 +175,7 @@
 
 .content-time {
   color: gray;
+  white-space: nowrap;
 }
 
 .menu-div {
@@ -452,10 +453,6 @@
   line-clamp: 2;
 }
 
-.empty-disc {
-  margin-top: 2.3rem;
-}
-
 .content-description2::after {
   content: '';
   position: absolute;
@@ -523,6 +520,10 @@
 
 .auth-user {
   color: var(--app-theme-color);
+}
+
+.last-post .empty-disc {
+  margin-top: 2rem;
 }
 
 /* Animations */
@@ -707,6 +708,15 @@
   .menu-icon-box:hover {
     box-shadow: none;
   }
+
+  .empty-disc {
+    margin-top: 1rem;
+  }
+
+  .last-post .empty-disc,
+  .last-post .non-empty-desc {
+    margin-top: 3rem;
+  }
 }
 
 @media screen and (max-width: 400px) {
@@ -736,8 +746,5 @@
 
   .small-details-box {
     column-gap: 0.2rem;
-  }
-
-  .menu-list {
   }
 }

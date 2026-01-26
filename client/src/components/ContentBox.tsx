@@ -35,6 +35,7 @@ type ContentBoxProps = {
       batch: number;
     }>
   >;
+  lastPost?: boolean;
 };
 
 export type CommentData =
@@ -60,6 +61,7 @@ const ContentBox = ({
   pinnedReels,
   setPinnedReels,
   setPostData,
+  lastPost = false,
 }: ContentBoxProps) => {
   const {
     _id: contentId,
@@ -84,8 +86,8 @@ const ContentBox = ({
     contentType === 'reels'
       ? 'video'
       : media.length === 1
-      ? media[0].mediaType
-      : 'carousel';
+        ? media[0].mediaType
+        : 'carousel';
   const [showMore, setShowMore] = useState<boolean>(false);
   const [descriptionWidth, setDescriptionWidth] = useState<number>(0);
   const [showMenu, setShowMenu] = useState<boolean>(false);
@@ -95,7 +97,7 @@ const ContentBox = ({
       value: Boolean(userLike),
       obj: userLike,
       count: likesCount,
-    }
+    },
   );
   const [isFollowing, setIsFollowing] = useState<any>(user.isFollowing);
   const [follow, setFollow] = useState<any>(Boolean(user.isFollowing));
@@ -113,7 +115,7 @@ const ContentBox = ({
   const [followersList, setFollowersList] = useState<any[]>(
     collaborators
       .map((user: any) => user.isFollowing)
-      .filter((data: any) => data)
+      .filter((data: any) => data),
   );
   const { setUser, user: authUser } = useContext(AuthContext);
   const [loading, setLoading] = useState({ like: false, save: false });
@@ -168,7 +170,7 @@ const ContentBox = ({
     setFollowersList(
       collaboratorsList.value
         .map((user: any) => user.isFollowing)
-        .filter((data: any) => data)
+        .filter((data: any) => data),
     );
   }, [collaboratorsList]);
 
@@ -207,7 +209,7 @@ const ContentBox = ({
           {
             fill: 'both',
             duration: 100,
-          }
+          },
         );
       } else {
         animation = listRef.current.animate(
@@ -217,7 +219,7 @@ const ContentBox = ({
           {
             fill: 'both',
             duration: 100,
-          }
+          },
         );
         animation.onfinish = () => {
           setHideMenu(true);
@@ -241,7 +243,7 @@ const ContentBox = ({
       {
         fill: 'both',
         duration: 200,
-      }
+      },
     );
 
     setShowMore(true);
@@ -254,7 +256,7 @@ const ContentBox = ({
 
   const handleFollow = async (
     e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
-    id: string
+    id: string,
   ) => {
     e.preventDefault();
 
@@ -274,18 +276,18 @@ const ContentBox = ({
         setFollowersList((prevValue) => [...prevValue, follow]);
       } else {
         const followId = followersList.find(
-          (data) => data.following === id
+          (data) => data.following === id,
         )._id;
         await apiClient.delete(`v1/follow/${followId}`);
 
         setFollowersList((prevValue) =>
-          prevValue.filter((follow) => follow._id !== followId)
+          prevValue.filter((follow) => follow._id !== followId),
         );
       }
     } catch (err: any) {
       if (!err.response) {
         toast.error(
-          `Could not ${action.toLowerCase()} user. Please Try again.`
+          `Could not ${action.toLowerCase()} user. Please Try again.`,
         );
       } else {
         toast.error(err.response.data.message);
@@ -427,7 +429,7 @@ const ContentBox = ({
         toast.error(
           `Could not ${
             isFollowing ? 'unfollow' : 'follow'
-          } user. Please Try again.`
+          } user. Please Try again.`,
         );
       } else {
         toast.error(err.response.data.message);
@@ -455,7 +457,7 @@ const ContentBox = ({
       setUser(data.data.user);
 
       setContents((prevValue) =>
-        prevValue.filter((content) => content._id !== contentId)
+        prevValue.filter((content) => content._id !== contentId),
       );
 
       toast.success(`We'll show you fewer posts like this.`);
@@ -485,7 +487,7 @@ const ContentBox = ({
         setLike({ value: true, count: like.count + 1, obj: data.data.like });
       } else {
         await apiClient.delete(
-          `v1/likes/content/${contentId}?id=${like.obj._id}`
+          `v1/likes/content/${contentId}?id=${like.obj._id}`,
         );
         setLike({ value: false, count: like.count - 1, obj: null });
       }
@@ -493,7 +495,7 @@ const ContentBox = ({
       toast.error(
         `Could not ${
           like.value ? 'remove like' : `like ${collection}`
-        }. Please Try again.`
+        }. Please Try again.`,
       );
     } finally {
       setLoading({ ...loading, like: false });
@@ -521,7 +523,7 @@ const ContentBox = ({
       toast.error(
         `Could not ${
           save.value ? `remove ${collection} from saved` : `save ${collection}`
-        }. Please Try again.`
+        }. Please Try again.`,
       );
     } finally {
       setLoading({ ...loading, save: false });
@@ -576,7 +578,7 @@ const ContentBox = ({
         reels = reels.filter((obj) => obj._id !== contentId);
         if (setPinnedReels)
           setPinnedReels((prev) =>
-            (prev as any[]).filter((obj) => obj._id !== contentId)
+            (prev as any[]).filter((obj) => obj._id !== contentId),
           );
       }
 
@@ -659,7 +661,7 @@ const ContentBox = ({
     setShowMenu(false);
     setShowMobileMenu(false);
     toast.success(
-      'Thanks for reporting. We’ll review and take action if necessary.'
+      'Thanks for reporting. We’ll review and take action if necessary.',
     );
   };
 
@@ -728,8 +730,8 @@ const ContentBox = ({
               contentType === 'reels'
                 ? src
                 : media.length === 1
-                ? media[0].src
-                : media,
+                  ? media[0].src
+                  : media,
           }}
           isFollowing={isFollowing}
           save={save}
@@ -758,7 +760,7 @@ const ContentBox = ({
       <article
         className={`${styles.content} ${
           contentType === 'reels' ? styles['reels-content'] : ''
-        }`}
+        } ${lastPost ? styles['last-post'] : ''}`}
         ref={contentRef}
       >
         {contentType !== 'reels' && (
@@ -899,7 +901,7 @@ const ContentBox = ({
                       onClick={() => {
                         setShowMenu(false);
                         toast.success(
-                          'Thanks for reporting. We’ll review and take action if necessary.'
+                          'Thanks for reporting. We’ll review and take action if necessary.',
                         );
                       }}
                     >
@@ -963,8 +965,8 @@ const ContentBox = ({
                   hasStory && hasUnviewedStory
                     ? styles['profile-img-span3']
                     : hasStory
-                    ? styles['profile-img-span2']
-                    : ''
+                      ? styles['profile-img-span2']
+                      : ''
                 }`}
               >
                 <img
@@ -1171,7 +1173,7 @@ const ContentBox = ({
         )}
 
         {contentType !== 'reels' && description === '' && (
-          <div className={styles['empty-disc']}></div>
+          <div className={styles['empty-disc']}>&nbsp;</div>
         )}
       </article>
     </LikeContext.Provider>

@@ -73,12 +73,13 @@
   border-radius: 50%;
   padding: 1px;
   background: conic-gradient(#0000 10%, var(--app-theme-color)) content-box;
-  -webkit-mask: repeating-conic-gradient(#0000 0deg,
-      #000 1deg 20deg,
-      #0000 21deg 36deg),
-    radial-gradient(farthest-side,
+  -webkit-mask:
+    repeating-conic-gradient(#0000 0deg, #000 1deg 20deg, #0000 21deg 36deg),
+    radial-gradient(
+      farthest-side,
       #0000 calc(100% - var(--b) - 1px),
-      #000 calc(100% - var(--b)));
+      #000 calc(100% - var(--b))
+    );
   -webkit-mask-composite: destination-in;
   mask-composite: intersect;
   animation: l4 1s infinite steps(10);
@@ -436,7 +437,6 @@
   transform: translateY(1px);
 }
 
-
 .collaborators-list {
   list-style-type: none;
   position: absolute;
@@ -483,7 +483,6 @@
   object-fit: cover;
 }
 
-
 .follow-btn-box {
   margin-left: auto;
   display: flex;
@@ -517,7 +516,6 @@
   pointer-events: none;
 }
 
-
 .collaborators-names {
   display: flex;
   flex-direction: column;
@@ -528,7 +526,6 @@
 .auth-user {
   color: var(--app-theme-color);
 }
-
 
 .collaborators-name {
   overflow: hidden;
@@ -542,7 +539,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 
 .collaborators-div:hover .collaborators-list {
   display: block;

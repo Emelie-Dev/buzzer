@@ -16,6 +16,7 @@ import { apiClient, getUrl } from '../Utilities';
 import { toast } from 'sonner';
 import { MdOutlineHourglassEmpty, MdOutlineWifiOff } from 'react-icons/md';
 import { Link } from 'react-router-dom';
+import { Virtuoso } from 'react-virtuoso';
 
 const Friends = () => {
   const [category, setCategory] = useState<'users' | 'contents' | null>(null);
@@ -52,6 +53,8 @@ const Friends = () => {
     queue: new Set(),
     list: new Map(),
   });
+
+  const scrollRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     document.title = 'Buzzer - Friends';
@@ -294,7 +297,9 @@ const Friends = () => {
               onClick={() => setShowFriendRequests(true)}
             >
               <IoPeopleSharp className={styles['friends-icon']} />
-              {/* <span className={styles['request-length']}>{}</span> */}
+              <span className={styles['request-length']}>
+                {requests.received.value.length}
+              </span>
             </span>
           </div>
 
@@ -409,6 +414,7 @@ const Friends = () => {
             >
               <div
                 className={styles['content-container']}
+                ref={scrollRef}
                 onScroll={scrollHandler}
               >
                 {contents === null ? (
@@ -450,14 +456,21 @@ const Friends = () => {
                     later to see new posts.
                   </div>
                 ) : (
-                  contents.map((data) => (
-                    <ContentBox
-                      key={data._id}
-                      data={data}
-                      contentType="home"
-                      setContents={setContents}
-                    />
-                  ))
+                  <Virtuoso
+                    customScrollParent={scrollRef.current}
+                    data={contents}
+                    itemContent={(index, data) => (
+                      <ContentBox
+                        key={data._id}
+                        data={data}
+                        contentType="home"
+                        setContents={setContents}
+                        lastPost={index === contents.length - 1}
+                      />
+                    )}
+                    overscan={Math.min(window.innerHeight * 2, 2000)}
+                    style={{ width: '100%' }}
+                  />
                 )}
 
                 {postData.loading && (

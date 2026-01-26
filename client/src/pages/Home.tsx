@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { MdOutlineHourglassEmpty, MdOutlineWifiOff } from 'react-icons/md';
 import CollaborationRequests from '../components/CollaborationRequests';
+import { Virtuoso } from 'react-virtuoso';
 
 export interface User {
   name: string;
@@ -73,6 +74,7 @@ const Home = () => {
   const [replyQueue, setReplyQueue] = useState<Set<string>>(new Set());
 
   const storyRef = useRef<HTMLDivElement>(null!);
+  const scrollRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
     document.title = 'Buzzer - Home';
@@ -217,7 +219,11 @@ const Home = () => {
       <NavBar page="home" />
 
       <section className={styles.main}>
-        <section className={styles['main-container']} onScroll={scrollHandler}>
+        <section
+          className={styles['main-container']}
+          ref={scrollRef}
+          onScroll={scrollHandler}
+        >
           <Header />
 
           <div className={styles['scroll-div']}>
@@ -425,14 +431,20 @@ const Home = () => {
                   the page or check your connection.
                 </div>
               ) : (
-                contents.map((data) => (
-                  <ContentBox
-                    key={data._id}
-                    data={data}
-                    contentType="home"
-                    setContents={setContents}
-                  />
-                ))
+                <Virtuoso
+                  customScrollParent={scrollRef.current}
+                  data={contents}
+                  itemContent={(_, data) => (
+                    <ContentBox
+                      key={data._id}
+                      data={data}
+                      contentType="home"
+                      setContents={setContents}
+                    />
+                  )}
+                  overscan={Math.min(window.innerHeight * 2, 2000)}
+                  style={{ width: '100%' }}
+                />
               )}
 
               {postData.loading && (

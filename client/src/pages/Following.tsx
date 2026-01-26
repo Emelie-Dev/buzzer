@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import NavBar from '../components/NavBar';
 import styles from '../styles/Home.module.css';
 import { Content } from '../components/CarouselItem';
@@ -14,6 +14,7 @@ import { apiClient, getUrl } from '../Utilities';
 import { toast } from 'sonner';
 import Engagements from '../components/Engagements';
 import { Link } from 'react-router-dom';
+import { Virtuoso } from 'react-virtuoso';
 
 type CarouselData = {
   media: Content[];
@@ -58,6 +59,8 @@ const Following = () => {
   const { setShowSearchPage, suggestedUsers, setSuggestedUsers } =
     useContext(GeneralContext);
 
+  const scrollRef = useRef<HTMLDivElement>(null!);
+
   useEffect(() => {
     document.title = 'Buzzer - Following';
 
@@ -96,7 +99,11 @@ const Following = () => {
       <NavBar page="following" />
 
       <section className={styles.main}>
-        <section className={styles['main-container2']} onScroll={scrollHandler}>
+        <section
+          className={styles['main-container2']}
+          ref={scrollRef}
+          onScroll={scrollHandler}
+        >
           <Header />
 
           <ContentContext.Provider
@@ -143,14 +150,20 @@ const Following = () => {
                   later to see new posts.
                 </div>
               ) : (
-                contents.map((data) => (
-                  <ContentBox
-                    key={data._id}
-                    data={data}
-                    contentType="following"
-                    setContents={setContents}
-                  />
-                ))
+                <Virtuoso
+                  customScrollParent={scrollRef.current}
+                  data={contents}
+                  itemContent={(_, data) => (
+                    <ContentBox
+                      key={data._id}
+                      data={data}
+                      contentType="following"
+                      setContents={setContents}
+                    />
+                  )}
+                  overscan={Math.min(window.innerHeight * 2, 2000)}
+                  style={{ width: '100%' }}
+                />
               )}
 
               {postData.loading && (

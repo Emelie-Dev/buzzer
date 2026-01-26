@@ -690,7 +690,7 @@ export const getFriendsSugestions = asyncErrorHandler(
                         $and: [
                           { $eq: ['$collectionName', 'story'] },
                           { $eq: ['$documentId', '$$storyId'] },
-                          { $eq: ['$user', req.user?._id] },
+                          { $eq: ['$user', viewerId] },
                         ],
                       },
                     },
@@ -703,6 +703,27 @@ export const getFriendsSugestions = asyncErrorHandler(
             { $project: { _id: 1, storyView: 1 } },
           ],
           as: 'stories',
+        },
+      },
+      {
+        $addFields: {
+          post: {
+            $cond: {
+              if: {
+                $gt: [
+                  { $arrayElemAt: ['$contents.createdAt', 0] },
+                  { $arrayElemAt: ['$reels.createdAt', 0] },
+                ],
+              },
+              then: { $arrayElemAt: ['$contents', 0] },
+              else: { $arrayElemAt: ['$reels', 0] },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          post: { $exists: true, $ne: null },
         },
       },
       {
@@ -727,18 +748,7 @@ export const getFriendsSugestions = asyncErrorHandler(
               0,
             ],
           },
-          post: {
-            $cond: {
-              if: {
-                $gt: [
-                  { $arrayElemAt: ['$contents.createdAt', 0] },
-                  { $arrayElemAt: ['$reels.createdAt', 0] },
-                ],
-              },
-              then: { $arrayElemAt: ['$contents', 0] },
-              else: { $arrayElemAt: ['$reels', 0] },
-            },
-          },
+          post: 1,
         },
       },
     ]);

@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import { HiOutlineGlobe } from 'react-icons/hi';
 import Skeleton from 'react-loading-skeleton';
 import LoadingAnimation from '../components/LoadingAnimation';
+import { FiLogOut } from 'react-icons/fi';
 
 const Profile = () => {
   const { user } = useContext(AuthContext);
@@ -147,6 +148,7 @@ const Profile = () => {
   const [switchAccount, setSwitchAccount] = useState<boolean>(false);
   const [mobileMenu, setMobileMenu] = useState<boolean>(false);
   const [showSort, setShowSort] = useState<boolean>(false);
+  const [logging, setLogging] = useState(false);
 
   const optionsRef = useRef<HTMLDivElement>(null!);
   const inputRef = useRef<HTMLInputElement>(null!);
@@ -179,7 +181,7 @@ const Profile = () => {
         setProfileData(data.data);
       } catch {
         toast.error(
-          'Failed to load some profile details. Please refresh and try again.'
+          'Failed to load some profile details. Please refresh and try again.',
         );
       }
     };
@@ -213,7 +215,7 @@ const Profile = () => {
         {
           fill: 'both',
           duration: 150,
-        }
+        },
       );
     }
   }, [mobileMenu]);
@@ -223,12 +225,12 @@ const Profile = () => {
       category === 'all'
         ? 0
         : category === 'reels'
-        ? 1
-        : category === 'private'
-        ? 2
-        : category === 'bookmarks'
-        ? 3
-        : 4;
+          ? 1
+          : category === 'private'
+            ? 2
+            : category === 'bookmarks'
+              ? 3
+              : 4;
 
     if (containerRef.current) {
       containerRef.current.scroll({
@@ -278,7 +280,7 @@ const Profile = () => {
         bookmarks: HTMLDivElement;
         liked: HTMLDivElement;
       }>,
-      prop: typeof category
+      prop: typeof category,
     ) =>
     (el: HTMLDivElement) => {
       if (el && !ref.current[prop]) {
@@ -319,45 +321,45 @@ const Profile = () => {
 
       case 'x':
         link = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          message
+          message,
         )}`;
         break;
 
       case 'facebook':
         link = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-          message
+          message,
         )}`;
         break;
 
       case 'telegram':
         link = `https://t.me/share/url?url=${encodeURIComponent(
-          profileLink
+          profileLink,
         )}&text=${encodeURIComponent(`\nCheck out my profile on Buzzer.`)}`;
         break;
 
       case 'email':
         link = `mailto:?subject=${encodeURIComponent(
-          'Buzzer Profile'
+          'Buzzer Profile',
         )}&body=${encodeURIComponent(message)}`;
         break;
 
       case 'messenger':
         link = `https://www.facebook.com/dialog/send?link=${encodeURIComponent(
-          profileLink
+          profileLink,
         )}&app_id=1830966198299023&redirect_uri=${encodeURIComponent(
-          serverUrl
+          serverUrl,
         )}`;
         break;
 
       case 'snapchat':
         link = `https://www.snapchat.com/share?link=${encodeURIComponent(
-          profileLink
+          profileLink,
         )}`;
         break;
 
       case 'reddit':
         link = `https://www.reddit.com/submit?url=${encodeURIComponent(
-          profileLink
+          profileLink,
         )}&title=${encodeURIComponent(`Check out my profile on Buzzer!`)}`;
         break;
 
@@ -372,13 +374,13 @@ const Profile = () => {
   const getPosts = async () => {
     try {
       const { data } = await apiClient(
-        `v1/users/posts/${category}?sort=${sort}&cursor=${postsData[category].cursor}&views=${postsData[category].views}`
+        `v1/users/posts/${category}?sort=${sort}&cursor=${postsData[category].cursor}&views=${postsData[category].views}`,
       );
 
       setPosts((prev) => {
         const postArr = data.data.posts.filter(
           (obj: any) =>
-            !(prev[category] || []).find((data: any) => data._id === obj._id)
+            !(prev[category] || []).find((data: any) => data._id === obj._id),
         );
 
         return {
@@ -443,6 +445,19 @@ const Profile = () => {
           },
         };
       });
+    }
+  };
+
+  const logOut = async () => {
+    if (logging) return;
+    setLogging(true);
+
+    try {
+      await apiClient.post('v1/auth/logout');
+      window.location.href = '/auth';
+    } catch {
+      setLogging(false);
+      return toast.error('An error occured while logging out.');
     }
   };
 
@@ -1925,6 +1940,13 @@ const Profile = () => {
             >
               <IoSettingsOutline className={styles['menu-item-icon']} />
               Settings
+            </li>
+            <li
+              className={`${styles['menu-item']} ${logging ? styles['loading-btn'] : ''}`}
+              onClick={logOut}
+            >
+              <FiLogOut className={styles['menu-item-icon']} />
+              Log out
             </li>
           </ul>
         </section>

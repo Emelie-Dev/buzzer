@@ -72,9 +72,7 @@ Server =>
   - Add error boundary ✔
   - Add space to reels page ✔
   - Fallback 404 page ✔
-  - Handle virtualization
-  - Handle hide engagement for posts ✔
+  - Handle hide engagement for posts ✔   
+  - Handle virtualization ✔
   - Handle screen time features
   - Handle all story issues
-  - Add indexes for specific queries
- 
