@@ -30,7 +30,7 @@ interface LikeObj {
   };
   handleFollow: (
     e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
-    id: string
+    id: string,
   ) => Promise<void>;
   followList: Set<string>;
   getFollowText: (id: string) => 'Unfollow' | 'Follow';
@@ -194,4 +194,8 @@ export const NotificationContext = createContext<{
     }>
   >;
   deleteNotifications: () => Promise<void>;
+}>(null!);
+
+export const TimeManagementContext = createContext<{
+  screenTime: React.MutableRefObject<number>;
 }>(null!);

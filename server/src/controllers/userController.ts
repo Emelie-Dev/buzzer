@@ -23,6 +23,7 @@ import handleCloudinary from '../utils/handleCloudinary.js';
 import { isValidDateString } from './commentController.js';
 import Share from '../models/shareModel.js';
 import Session from '../models/sessionModel.js';
+import { DateTime } from 'luxon';
 
 const upload = multerConfig('users');
 
@@ -1102,12 +1103,23 @@ export const updateSettings = asyncErrorHandler(
         data = await User.findByIdAndUpdate(
           req.user?._id,
           {
-            'settings.content.timeManagement.dailyLimit':
-              body.dailyLimit || dailyLimit,
-            'settings.content.timeManagement.scrollBreak':
-              body.scrollBreak || scrollBreak,
-            'settings.content.timeManagement.sleepReminders':
-              body.sleepReminders || sleepReminders,
+            'settings.content.timeManagement.dailyLimit.enabled':
+              body.dailyLimit.enabled ?? dailyLimit.enabled,
+            'settings.content.timeManagement.dailyLimit.value':
+              body.dailyLimit.value ?? dailyLimit.value,
+            'settings.content.timeManagement.scrollBreak.enabled':
+              body.scrollBreak.enabled ?? scrollBreak.enabled,
+            'settings.content.timeManagement.scrollBreak.value':
+              body.scrollBreak.value ?? scrollBreak.value,
+            'settings.content.timeManagement.sleepReminders.enabled':
+              body.sleepReminders.enabled ?? sleepReminders.enabled,
+            'settings.content.timeManagement.sleepReminders.value.startTime':
+              body.sleepReminders.value.startTime ??
+              sleepReminders.value.startTime,
+            'settings.content.timeManagement.sleepReminders.value.endTime':
+              body.sleepReminders.value.endTime ?? sleepReminders.value.endTime,
+            'settings.content.timeManagement.sleepReminders.value.days':
+              body.sleepReminders.value.days ?? sleepReminders.value.days,
           },
           {
             new: true,
@@ -1503,23 +1515,52 @@ export const updateScreenTime = asyncErrorHandler(
       return next(new CustomError('The value field is missing!', 400));
     }
 
+    if (typeof value !== 'number') {
+      return next(new CustomError('Invalid value type!', 400));
+    }
+
     const summary = req.user?.settings.content.timeManagement.summary;
     const newSummary: Record<string, any> = {};
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const todayDate = DateTime.fromJSDate(new Date(), {
+      zone: timezone,
+    }).setZone(req.clientTimeZone!);
+    let isNotified = true;
 
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
 
-      const day = date.toISOString().split('T')[0];
+      const clientDate = DateTime.fromJSDate(date, {
+        zone: timezone,
+      }).setZone(req.clientTimeZone!);
+
+      const dateString = clientDate.toISO()!;
+
+      const day = dateString.split('T')[0];
       const data = summary[day] || 0;
 
       newSummary[day] =
-        date.getDate() === new Date().getDate() ? data + value : data;
+        clientDate.day === todayDate.day
+          ? data + parseInt(String(value))
+          : data;
+
+      if (clientDate.day === todayDate.day) {
+        if (
+          newSummary[day] <
+          req.user?.settings.content.timeManagement.dailyLimit.value * 60
+        ) {
+          isNotified = false;
+        }
+      }
     }
 
     const user = await User.findByIdAndUpdate(
       req.user?._id,
       {
+        'settings.content.timeManagement.dailyLimit.notified':
+          req.user?.settings.content.timeManagement.dailyLimit.notified &&
+          isNotified,
         'settings.content.timeManagement.summary': newSummary,
       },
       {
@@ -1527,6 +1568,47 @@ export const updateScreenTime = asyncErrorHandler(
         runValidators: true,
       },
     );
+
+    const userData = protectData(user!, 'user');
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: userData,
+      },
+    });
+  },
+);
+
+export const updateDailyLimitNotification = asyncErrorHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const todayDate = DateTime.fromJSDate(new Date(), {
+      zone: timezone,
+    }).setZone(req.clientTimeZone!);
+    let user;
+
+    const summary = req.user?.settings.content.timeManagement.summary;
+    const day = todayDate.toISO()!.split('T')[0];
+    const data = summary[day] || 0;
+
+    if (
+      data >=
+      req.user?.settings.content.timeManagement.dailyLimit.value * 60
+    ) {
+      user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+          'settings.content.timeManagement.dailyLimit.notified': true,
+        },
+        {
+          new: true,
+          runValidators: true,
+        },
+      );
+    } else {
+      return next(new CustomError('Invalid request!', 400));
+    }
 
     const userData = protectData(user!, 'user');
 

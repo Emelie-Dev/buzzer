@@ -74,5 +74,6 @@ Server =>
   - Fallback 404 page ✔
   - Handle hide engagement for posts ✔   
   - Handle virtualization ✔
-  - Handle screen time features
+  - Handle screen time features ✔
   - Handle all story issues
+  - Handle posts view time

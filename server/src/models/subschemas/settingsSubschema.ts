@@ -55,7 +55,6 @@ export interface ISettings extends Document {
           endTime: Number;
           days: Number[];
         };
-        notified: Boolean;
       };
       summary: {};
     };

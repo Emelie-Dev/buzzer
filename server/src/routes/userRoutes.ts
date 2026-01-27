@@ -16,7 +16,8 @@ import {
   leaveCollaboration,
   getPrivateAudience,
   removeSuggestedUser,
-  getUserData,
+  getUserData, 
+  updateDailyLimitNotification,
 } from '../controllers/userController.js';
 import protectRoute from '../middleware/protectRoute.js';
 import { cancelRequest } from '../utils/handleNotifications.js';
@@ -49,12 +50,14 @@ router.get('/password-token', getPasswordToken);
 router.patch(
   '/deactivate/:stage',
   getAccountToken('deactivate'),
-  deactivateAccount
+  deactivateAccount,
 );
 
 router.patch('/delete/:stage', getAccountToken('delete'), deleteAccount);
 
 router.patch('/screen-time', updateScreenTime);
+
+router.patch('/daily-limit', updateDailyLimitNotification);
 
 router.get('/collaborate', getCollaborationRequests);
 

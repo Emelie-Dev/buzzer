@@ -47,12 +47,12 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  crosshairPlugin
+  crosshairPlugin,
 );
 
 const getSettingsValue = <T extends 'limit' | 'break'>(
   type: T,
-  value: number
+  value: number,
 ): InitialState<T> => {
   const options = { limit: [30, 60, 90, 120], break: [10, 20, 30, 60] };
 
@@ -116,10 +116,10 @@ const Notifications = () => {
   const { user, setUser } = useContext(AuthContext);
   const { setMainCategory } = useContext(SettingsContext);
   const [pushNotifications, setPushNotifications] = useState<boolean>(
-    user.settings.content.notifications.push
+    user.settings.content.notifications.push,
   );
   const [emailNotifications, setEmailNotifications] = useState<boolean>(
-    user.settings.content.notifications.email
+    user.settings.content.notifications.email,
   );
   const [updateList, setUpdateList] = useState<Set<string>>(new Set());
 
@@ -206,7 +206,7 @@ const Notifications = () => {
       | 'followers'
       | 'mentions'
       | 'profileViews'
-      | 'messages'
+      | 'messages',
   ) => {
     if (updateList.has(type)) return;
 
@@ -215,7 +215,7 @@ const Notifications = () => {
     try {
       const { data } = await apiClient.patch(
         'v1/users/settings/notifications',
-        { push: pushNotifications, email: emailNotifications, interactions }
+        { push: pushNotifications, email: emailNotifications, interactions },
       );
       setUser(data.data.user);
     } catch {
@@ -367,10 +367,10 @@ const TimeManagement = () => {
   const { user, setUser } = useContext(AuthContext);
   const { setMainCategory } = useContext(SettingsContext);
   const [dailyLimit, setDailyLimit] = useState<boolean>(
-    user.settings.content.timeManagement.dailyLimit.enabled
+    user.settings.content.timeManagement.dailyLimit.enabled,
   );
   const [scrollBreak, setScrollBreak] = useState<boolean>(
-    user.settings.content.timeManagement.scrollBreak.enabled
+    user.settings.content.timeManagement.scrollBreak.enabled,
   );
   const [dailyLimitValue, setDailyLimitValue] = useState<{
     value: number | 'custom';
@@ -379,8 +379,8 @@ const TimeManagement = () => {
   }>(
     getSettingsValue(
       'limit',
-      user.settings.content.timeManagement.dailyLimit.value
-    )
+      user.settings.content.timeManagement.dailyLimit.value,
+    ),
   );
   const [scrollBreakValue, setScrollBreakValue] = useState<{
     value: number | 'custom';
@@ -389,16 +389,16 @@ const TimeManagement = () => {
   }>(
     getSettingsValue(
       'break',
-      user.settings.content.timeManagement.scrollBreak.value
-    )
+      user.settings.content.timeManagement.scrollBreak.value,
+    ),
   );
   const [sleepReminder, setSleepReminder] = useState<boolean>(
-    user.settings.content.timeManagement.sleepReminders.enabled
+    user.settings.content.timeManagement.sleepReminders.enabled,
   );
   const [inactiveDays, setInactiveDays] = useState<number[]>(
     getInactiveDays(
-      user.settings.content.timeManagement.sleepReminders.value.days
-    )
+      user.settings.content.timeManagement.sleepReminders.value.days,
+    ),
   );
   const [sleepReminderTime, setSleepReminderTime] = useState({
     startTime:
@@ -412,7 +412,7 @@ const TimeManagement = () => {
   });
 
   const [graphSize, setGraphSize] = useState<{ width: number; height: number }>(
-    { width: 650, height: 350 }
+    { width: 650, height: 350 },
   );
   const [showGraph, setShowGraph] = useState<boolean>(true);
   const [updateList, setUpdateList] = useState<
@@ -422,7 +422,7 @@ const TimeManagement = () => {
   useEffect(() => {
     const currentDate = new Date();
     const previousDate = new Date(
-      new Date().setDate(currentDate.getDate() - 6)
+      new Date().setDate(currentDate.getDate() - 6),
     );
 
     setGraphDate(() => ({
@@ -454,6 +454,16 @@ const TimeManagement = () => {
       }, 100);
     };
 
+    const getUser = async () => {
+      try {
+        const response = await apiClient('v1/auth/auth-check');
+        setUser(response.data.data.user);
+
+        // eslint-disable-next-line no-empty
+      } catch {}
+    };
+
+    getUser();
     resizeHandler();
 
     window.addEventListener('resize', resizeHandler);
@@ -525,7 +535,7 @@ const TimeManagement = () => {
       if (
         inactiveDays.length !==
         getInactiveDays(
-          user.settings.content.timeManagement.sleepReminders.value.days
+          user.settings.content.timeManagement.sleepReminders.value.days,
         ).length
       ) {
         updateTimeSettings('reminder');
@@ -571,8 +581,6 @@ const TimeManagement = () => {
     },
   ];
 
-  const timeSpent = [30, 240, 270, 120, 480, 420, 60];
-
   const handleDays = (index: number) => () => {
     const active = inactiveDays.includes(index);
 
@@ -605,6 +613,22 @@ const TimeManagement = () => {
   };
 
   const getYLabel = useMemo(() => {
+    let timeSpent: number[] = new Array(7);
+
+    if (Object.keys(user.settings.content.timeManagement.summary).length < 1) {
+      timeSpent.fill(0);
+    } else {
+      const sortedKeys = Object.keys(
+        user.settings.content.timeManagement.summary,
+      ).sort((a, b) => +new Date(a) - +new Date(b));
+
+      timeSpent = sortedKeys.map((key) =>
+        Math.floor(
+          Number(user.settings.content.timeManagement.summary[key]) / 60,
+        ),
+      );
+    }
+
     const isHourPresent = timeSpent.find((value) => value > 60);
 
     const labels: { yAxis: number[]; barValue: string[] } = {
@@ -615,7 +639,7 @@ const TimeManagement = () => {
     if (isHourPresent) {
       setYUnit('hr');
       labels.yAxis = timeSpent.map((value) =>
-        parseFloat((value / 60).toFixed(2))
+        parseFloat((value / 60).toFixed(2)),
       );
     } else setYUnit('min');
 
@@ -631,15 +655,30 @@ const TimeManagement = () => {
     });
 
     return labels;
-  }, []);
+  }, [user]);
 
-  const getXLabel = useCallback((value: number) => {
-    const date = new Date(
-      new Date().setDate(new Date().getDate() - (6 - value))
-    );
+  const getXLabel = useCallback(
+    (value: number) => {
+      if (
+        Object.keys(user.settings.content.timeManagement.summary).length < 1
+      ) {
+        const date = new Date(
+          new Date().setDate(new Date().getDate() - (6 - value)),
+        );
 
-    return [monthLabels[date.getMonth()], String(date.getDate())];
-  }, []);
+        return [monthLabels[date.getMonth()], String(date.getDate())];
+      } else {
+        const sortedKeys = Object.keys(
+          user.settings.content.timeManagement.summary,
+        ).sort((a, b) => +new Date(a) - +new Date(b));
+
+        const date = new Date(sortedKeys[value]);
+
+        return [monthLabels[date.getMonth()], String(date.getDate())];
+      }
+    },
+    [user],
+  );
 
   const lineData = {
     labels: getYLabel.barValue,
@@ -744,7 +783,7 @@ const TimeManagement = () => {
               })(),
             },
           },
-        }
+        },
       );
       setUser(data.data.user);
     } catch {
@@ -753,27 +792,27 @@ const TimeManagement = () => {
         setDailyLimitValue(
           getSettingsValue(
             'limit',
-            user.settings.content.timeManagement.dailyLimit.value
-          )
+            user.settings.content.timeManagement.dailyLimit.value,
+          ),
         );
       } else if (type === 'break') {
         setScrollBreak(
-          user.settings.content.timeManagement.scrollBreak.enabled
+          user.settings.content.timeManagement.scrollBreak.enabled,
         );
         setScrollBreakValue(
           getSettingsValue(
             'break',
-            user.settings.content.timeManagement.scrollBreak.value
-          )
+            user.settings.content.timeManagement.scrollBreak.value,
+          ),
         );
       } else {
         setSleepReminder(
-          user.settings.content.timeManagement.sleepReminders.enabled
+          user.settings.content.timeManagement.sleepReminders.enabled,
         );
         setInactiveDays(
           getInactiveDays(
-            user.settings.content.timeManagement.sleepReminders.value.days
-          )
+            user.settings.content.timeManagement.sleepReminders.value.days,
+          ),
         );
         setSleepReminderTime({
           startTime:
@@ -788,9 +827,9 @@ const TimeManagement = () => {
           type === 'limit'
             ? 'daily limit'
             : type === 'break'
-            ? 'scroll break'
-            : 'sleep reminders'
-        }.`
+              ? 'scroll break'
+              : 'sleep reminders'
+        }.`,
       );
     } finally {
       setUpdateList((prev) => {
@@ -800,6 +839,29 @@ const TimeManagement = () => {
       });
     }
   };
+
+  const getTimeText = (value: number) => {
+    value = isNaN(value) ? 0 : value;
+
+    if (value < 60) {
+      return `${value} min`;
+    } else {
+      const hour = Math.trunc(value / 60);
+      const min = Math.floor(value - hour * 60);
+
+      return `${hour}hr${min ? `  ${min} min` : ''}`;
+    }
+  };
+
+  const getTime = useMemo(() => {
+    let total = 0;
+
+    for (const key in user.settings.content.timeManagement.summary) {
+      total += user.settings.content.timeManagement.summary[key];
+    }
+
+    return { total: getTimeText(total), avg: getTimeText(total / 7) };
+  }, [user]);
 
   return (
     <section className={styles.section}>
@@ -1020,10 +1082,10 @@ const TimeManagement = () => {
                     {scrollBreakValue.custom === 60
                       ? '1hr'
                       : scrollBreakValue.custom === 90
-                      ? '1hr 30 mins'
-                      : scrollBreakValue.custom === 120
-                      ? '2hr'
-                      : `${scrollBreakValue.custom} mins`}
+                        ? '1hr 30 mins'
+                        : scrollBreakValue.custom === 120
+                          ? '2hr'
+                          : `${scrollBreakValue.custom} mins`}
                   </span>
                 )}
               </div>
@@ -1044,7 +1106,7 @@ const TimeManagement = () => {
         </div>
 
         <span className={styles['time-category-text']}>
-          Receive reminders every hour when it's bedtime.
+          Show a reminder when the app is used during bedtime hours.
         </span>
 
         {sleepReminder && (
@@ -1146,12 +1208,12 @@ const TimeManagement = () => {
         <div className={styles['graph-time-div']}>
           <span className={styles['graph-time-box']}>
             <span className={styles['graph-time-label']}>Total time:</span>
-            <span className={styles['graph-time']}>27hr 0min</span>
+            <span className={styles['graph-time']}>{getTime.total}</span>
           </span>
 
           <span className={styles['graph-time-box2']}>
             <span className={styles['graph-time-label']}>Average time:</span>
-            <span className={styles['graph-time']}>3hr 51min</span>
+            <span className={styles['graph-time']}>{getTime.avg}</span>
           </span>
         </div>
       </div>
